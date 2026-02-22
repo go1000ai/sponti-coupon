@@ -164,21 +164,23 @@ body {
   100% { transform: translateX(100%); }
 }
 
-/* Sponti badge glow — pulsing orange outline */
+/* Sponti badge glow — strong pulsing orange outline */
 .sponti-glow {
-  animation: spontiGlow 2s ease-in-out infinite;
+  animation: spontiGlow 1.8s ease-in-out infinite;
 }
 
 @keyframes spontiGlow {
   0%, 100% {
     box-shadow:
-      0 0 4px rgba(232, 99, 43, 0.4),
-      0 0 12px rgba(232, 99, 43, 0.2);
+      0 0 6px rgba(232, 99, 43, 0.6),
+      0 0 14px rgba(232, 99, 43, 0.35),
+      0 0 24px rgba(232, 99, 43, 0.15);
   }
   50% {
     box-shadow:
-      0 0 8px rgba(232, 99, 43, 0.6),
-      0 0 20px rgba(232, 99, 43, 0.35),
-      0 0 32px rgba(232, 99, 43, 0.15);
+      0 0 12px rgba(232, 99, 43, 0.8),
+      0 0 28px rgba(232, 99, 43, 0.5),
+      0 0 48px rgba(232, 99, 43, 0.25),
+      0 0 64px rgba(232, 99, 43, 0.1);
   }
 }
