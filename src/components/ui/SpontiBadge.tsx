@@ -38,14 +38,14 @@ export function DealTypeBadge({ type, size = 'md', className = '' }: DealTypeBad
         className={`
           inline-flex items-center justify-center
           ${outer} rounded-full
-          bg-white shadow-lg
-          ring-2 ring-primary-500/70
+          bg-primary-500/15 backdrop-blur-sm
+          ring-2 ring-primary-500
           sponti-glow
           ${className}
         `}
         title="Sponti Coupon — Flash deal with countdown timer"
       >
-        <SpontiIcon className={`${icon} text-primary-500`} />
+        <SpontiIcon className={`${icon} text-primary-500 drop-shadow-[0_0_6px_rgba(232,99,43,0.6)]`} />
       </div>
     );
   }
@@ -55,8 +55,8 @@ export function DealTypeBadge({ type, size = 'md', className = '' }: DealTypeBad
       className={`
         inline-flex items-center justify-center
         ${outer} rounded-full
-        bg-white shadow-lg
-        ring-2 ring-secondary-500/50
+        bg-secondary-500/15 backdrop-blur-sm
+        ring-2 ring-secondary-500/70
         ${className}
       `}
       title="Regular Deal"
@@ -74,14 +74,14 @@ export function DealTypeLegend({ className = '' }: { className?: string }) {
   return (
     <div className={`inline-flex items-center gap-4 text-xs text-gray-500 ${className}`}>
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white shadow ring-[1.5px] ring-primary-500/70 sponti-glow">
-          <SpontiIcon className="w-3.5 h-3.5 text-primary-500" />
+        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/15 ring-[1.5px] ring-primary-500 sponti-glow">
+          <SpontiIcon className="w-3.5 h-3.5 text-primary-500 drop-shadow-[0_0_4px_rgba(232,99,43,0.6)]" />
         </div>
         <span className="font-medium">Sponti Coupon</span>
         <span className="text-gray-400">— Flash deal, limited time</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white shadow ring-[1.5px] ring-secondary-500/50">
+        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary-500/15 ring-[1.5px] ring-secondary-500/70">
           <Tag className="w-3.5 h-3.5 text-secondary-500" />
         </div>
         <span className="font-medium">Regular Deal</span>

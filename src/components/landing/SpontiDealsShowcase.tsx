@@ -107,7 +107,7 @@ export function SpontiDealsShowcase() {
                   alt="SpontiCoupon"
                   width={200}
                   height={60}
-                  className="h-11 sm:h-14 w-auto drop-shadow-lg brightness-0 invert"
+                  className="h-11 sm:h-14 w-auto drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
                 />
                 <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white drop-shadow-lg">
                   Coupons
