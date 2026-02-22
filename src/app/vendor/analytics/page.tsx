@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency } from '@/lib/utils';
-import { BarChart3, Users, QrCode, DollarSign, Tag, Zap } from 'lucide-react';
+import { BarChart3, Users, QrCode, DollarSign, Tag } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal, Redemption } from '@/lib/types/database';
 
 interface Analytics {
@@ -78,7 +79,7 @@ export default function VendorAnalyticsPage() {
           <p className="text-sm text-gray-500">Total Deals</p>
         </div>
         <div className="card p-5">
-          <Zap className="w-5 h-5 text-green-500 mb-2" />
+          <SpontiIcon className="w-5 h-5 text-green-500 mb-2" />
           <p className="text-2xl font-bold text-secondary-500">{analytics?.active_deals || 0}</p>
           <p className="text-sm text-gray-500">Active Deals</p>
         </div>
@@ -113,7 +114,7 @@ export default function VendorAnalyticsPage() {
                 <div key={deal.id} className="p-4 flex items-center gap-4">
                   <div className={`rounded-lg p-2 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-50'}`}>
                     {deal.deal_type === 'sponti_coupon' ? (
-                      <Zap className="w-4 h-4 text-primary-500" />
+                      <SpontiIcon className="w-4 h-4 text-primary-500" />
                     ) : (
                       <Tag className="w-4 h-4 text-gray-500" />
                     )}

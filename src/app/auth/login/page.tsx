@@ -4,7 +4,8 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Zap, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 export default function LoginPage() {
   return (
@@ -63,7 +64,7 @@ function LoginForm() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="bg-primary-500 rounded-lg p-2">
-              <Zap className="w-8 h-8 text-white" />
+              <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-secondary-500">Welcome Back</h1>

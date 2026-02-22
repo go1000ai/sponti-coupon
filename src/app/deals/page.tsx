@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { DealCard } from '@/components/deals/DealCard';
-import { MapPin, Search, SlidersHorizontal, Zap, Tag } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Tag } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 
 const RADIUS_OPTIONS = [5, 10, 25, 50];
@@ -58,7 +59,7 @@ export default function DealsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500">Browse Deals</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-secondary-500">Browse Deals</h1>
           <p className="text-gray-500 mt-1">
             {deals.length} deal{deals.length !== 1 ? 's' : ''} available
             {userLocation && ` within ${filters.radius} miles`}
@@ -67,7 +68,7 @@ export default function DealsPage() {
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <SlidersHorizontal className="w-4 h-4" />
           Filters
@@ -75,7 +76,7 @@ export default function DealsPage() {
       </div>
 
       {/* Search & Filters */}
-      <div className={`card p-6 mb-8 ${showFilters ? '' : 'hidden sm:block'}`}>
+      <div className={`card p-4 sm:p-6 mb-8 ${showFilters ? '' : 'hidden sm:block'}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative sm:col-span-2">
@@ -112,10 +113,10 @@ export default function DealsPage() {
         </div>
 
         {/* Deal Type Filter */}
-        <div className="flex gap-2 mt-4">
+        <div className="flex flex-wrap gap-2 mt-4">
           <button
             onClick={() => setFilters(f => ({ ...f, type: '' }))}
-            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               filters.type === '' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -123,15 +124,15 @@ export default function DealsPage() {
           </button>
           <button
             onClick={() => setFilters(f => ({ ...f, type: 'sponti_coupon' }))}
-            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               filters.type === 'sponti_coupon' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Zap className="w-3.5 h-3.5" /> Sponti Coupons
+            <SpontiIcon className="w-3.5 h-3.5" /> Sponti Coupons
           </button>
           <button
             onClick={() => setFilters(f => ({ ...f, type: 'regular' }))}
-            className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-1 px-4 py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
               filters.type === 'regular' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -145,7 +146,7 @@ export default function DealsPage() {
             <button
               key={cat}
               onClick={() => setFilters(f => ({ ...f, category: f.category === cat ? '' : cat }))}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`px-3.5 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors ${
                 filters.category === cat
                   ? 'bg-secondary-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -159,7 +160,7 @@ export default function DealsPage() {
 
       {/* Deals Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {[...Array(8)].map((_, i) => (
             <div key={i} className="card animate-pulse">
               <div className="h-48 bg-gray-200" />
@@ -178,7 +179,7 @@ export default function DealsPage() {
           <p className="text-gray-400 mt-2">Try adjusting your filters or expanding your search radius</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {deals.map(deal => (
             <DealCard
               key={deal.id}

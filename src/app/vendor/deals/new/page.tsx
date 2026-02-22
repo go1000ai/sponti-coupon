@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency, formatPercentage, calculateDiscount } from '@/lib/utils';
-import { Zap, Tag, AlertCircle, ArrowLeft, Info } from 'lucide-react';
+import { Tag, AlertCircle, ArrowLeft, Info } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
 import type { Deal } from '@/lib/types/database';
 
@@ -145,7 +146,7 @@ export default function NewDealPage() {
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-primary-50 rounded-lg p-2">
-              <Zap className="w-6 h-6 text-primary-500" />
+              <SpontiIcon className="w-6 h-6 text-primary-500" />
             </div>
             <h3 className="font-bold text-primary-500">Sponti Coupon</h3>
           </div>

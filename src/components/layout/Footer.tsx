@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Zap } from 'lucide-react';
+import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -7,13 +7,14 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="bg-primary-500 rounded-lg p-1.5">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-lg font-bold">
-                Sponti<span className="text-primary-500">Coupon</span>
-              </span>
+            <div className="mb-4">
+              <Image
+                src="/logo.png"
+                alt="SpontiCoupon"
+                width={160}
+                height={50}
+                className="h-12 w-auto brightness-110"
+              />
             </div>
             <p className="text-gray-400 text-sm">
               Flash deals that won&apos;t wait. Save big on local businesses with 24-hour spontaneous coupons.

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Check, Zap } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
@@ -99,7 +100,7 @@ export default function PricingPage() {
       {/* Zero Fees Banner */}
       <div className="mt-16 bg-secondary-500 rounded-2xl p-8 sm:p-12 text-white text-center">
         <div className="inline-flex bg-primary-500/20 rounded-full p-3 mb-4">
-          <Zap className="w-8 h-8 text-primary-400" />
+          <SpontiIcon className="w-8 h-8 text-primary-400" />
         </div>
         <h2 className="text-3xl font-bold mb-3">Zero Transaction Fees. Always.</h2>
         <p className="text-gray-300 max-w-2xl mx-auto text-lg">

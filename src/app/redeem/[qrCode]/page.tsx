@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { CheckCircle2, XCircle, Clock, QrCode, Zap } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, QrCode } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 interface RedemptionStatus {
   status: 'valid' | 'redeemed' | 'expired';
@@ -87,7 +88,7 @@ export default function RedeemPage() {
 
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <Zap className="w-4 h-4 text-primary-500" />
+                <SpontiIcon className="w-4 h-4 text-primary-500" />
                 <span className="font-semibold text-secondary-500">{data.claim.deal.title}</span>
               </div>
               <p className="text-sm text-gray-500">{data.claim.deal.vendor?.business_name}</p>

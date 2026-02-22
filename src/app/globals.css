@@ -5,8 +5,10 @@
 :root {
   --background: #ffffff;
   --foreground: #1A1A2E;
-  --primary: #FF6B00;
+  --primary: #E8632B;
   --secondary: #1A1A2E;
+  --accent: #29ABE2;
+  --amber: #F5A623;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -62,4 +64,102 @@ body {
   .countdown-box {
     @apply bg-secondary-500 text-white rounded-lg px-3 py-2 text-center min-w-[60px];
   }
+
+  .floating-card {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .floating-card:hover {
+    @apply -translate-y-2 shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/30 shadow-lg;
+  }
+
+  .bento-card {
+    @apply relative overflow-hidden rounded-2xl transition-all duration-500 ease-out cursor-pointer;
+  }
+
+  .bento-card:hover {
+    @apply -translate-y-1 shadow-2xl;
+  }
+
+  .bento-card:hover .bento-image {
+    @apply scale-105;
+  }
+
+  .pulse-dot {
+    @apply relative inline-block;
+  }
+
+  .pulse-dot::after {
+    content: '';
+    @apply absolute inset-0 rounded-full bg-green-500 animate-ping opacity-40;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .category-card {
+    @apply relative overflow-hidden rounded-2xl transition-all duration-300 ease-out cursor-pointer;
+  }
+
+  .category-card:hover {
+    @apply -translate-y-1 shadow-xl;
+  }
+
+  /* Shimmer shine sweep on hover for deal cards */
+  .deal-card-shine {
+    @apply relative overflow-hidden;
+  }
+  .deal-card-shine::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300 z-10 pointer-events-none;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.15) 45%,
+      rgba(255, 255, 255, 0.25) 50%,
+      rgba(255, 255, 255, 0.15) 55%,
+      transparent 60%
+    );
+  }
+  .deal-card-shine:hover::before {
+    @apply opacity-100;
+    animation: shimmerSlide 1.5s ease-in-out;
+  }
+
+  /* Animated underline for nav links */
+  .nav-link-animated {
+    @apply relative;
+  }
+  .nav-link-animated::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-0.5 bg-primary-500 transition-all duration-300;
+  }
+  .nav-link-animated:hover::after {
+    @apply w-full;
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes shimmerSlide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

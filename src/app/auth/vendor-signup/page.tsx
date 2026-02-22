@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Zap, Mail, Lock, Building2, Phone, MapPin, CreditCard, Check } from 'lucide-react';
+import { Mail, Lock, Building2, Phone, MapPin, CreditCard, Check } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
@@ -100,7 +101,7 @@ export default function VendorSignupPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="bg-primary-500 rounded-lg p-2">
-              <Zap className="w-8 h-8 text-white" />
+              <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-secondary-500">List Your Business</h1>

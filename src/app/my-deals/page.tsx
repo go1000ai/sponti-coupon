@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { QrCode, Zap, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { QrCode, Clock, CheckCircle2, XCircle, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Claim, Deal } from '@/lib/types/database';
 
 export default function MyDealsPage() {
@@ -35,10 +36,67 @@ export default function MyDealsPage() {
     return 'active';
   };
 
+  // Calculate savings stats
+  const totalSavings = claims.reduce((sum, claim) => {
+    if (claim.deal && claim.redeemed) {
+      return sum + (claim.deal.original_price - claim.deal.deal_price);
+    }
+    return sum;
+  }, 0);
+
+  const pendingSavings = claims.reduce((sum, claim) => {
+    const status = getStatus(claim);
+    if (claim.deal && (status === 'active' || status === 'pending_deposit')) {
+      return sum + (claim.deal.original_price - claim.deal.deal_price);
+    }
+    return sum;
+  }, 0);
+
+  const redeemedCount = claims.filter(c => c.redeemed).length;
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-secondary-500 mb-2">My Deals</h1>
-      <p className="text-gray-500 mb-8">View your claimed deals and QR codes</p>
+      <p className="text-gray-500 mb-6">View your claimed deals and QR codes</p>
+
+      {/* Savings Tracker */}
+      {!loading && claims.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="card p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-green-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-500 rounded-xl p-2.5">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-green-600 font-medium">Total Saved</p>
+                <p className="text-2xl font-bold text-green-700">{formatCurrency(totalSavings)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card p-5 bg-gradient-to-br from-primary-50 to-orange-50 border-primary-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary-500 rounded-xl p-2.5">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-primary-600 font-medium">Pending Savings</p>
+                <p className="text-2xl font-bold text-primary-700">{formatCurrency(pendingSavings)}</p>
+              </div>
+            </div>
+          </div>
+          <div className="card p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-100">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-500 rounded-xl p-2.5">
+                <ShoppingBag className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-blue-600 font-medium">Deals Redeemed</p>
+                <p className="text-2xl font-bold text-blue-700">{redeemedCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-2 mb-6">
@@ -107,7 +165,7 @@ export default function MyDealsPage() {
                     <div className="flex items-center gap-2 mb-1">
                       {deal?.deal_type === 'sponti_coupon' ? (
                         <span className="bg-primary-50 text-primary-600 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <Zap className="w-3 h-3" /> Sponti
+                          <SpontiIcon className="w-3 h-3" /> Sponti
                         </span>
                       ) : (
                         <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-0.5 rounded-full">

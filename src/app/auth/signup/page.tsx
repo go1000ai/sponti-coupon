@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Zap, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 export default function CustomerSignupPage() {
   const [form, setForm] = useState({
@@ -81,7 +82,7 @@ export default function CustomerSignupPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <div className="bg-primary-500 rounded-lg p-2">
-              <Zap className="w-8 h-8 text-white" />
+              <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-secondary-500">Create Account</h1>

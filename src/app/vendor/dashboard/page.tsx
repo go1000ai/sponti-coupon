@@ -7,9 +7,10 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import {
-  Plus, Zap, Tag, Users, QrCode, TrendingUp,
+  Plus, Tag, Users, QrCode, TrendingUp,
   ArrowRight, Clock
 } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal, Vendor } from '@/lib/types/database';
 
 interface Analytics {
@@ -159,7 +160,7 @@ export default function VendorDashboard() {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className={`rounded-lg p-2 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-50'}`}>
                     {deal.deal_type === 'sponti_coupon' ? (
-                      <Zap className="w-5 h-5 text-primary-500" />
+                      <SpontiIcon className="w-5 h-5 text-primary-500" />
                     ) : (
                       <Tag className="w-5 h-5 text-gray-500" />
                     )}

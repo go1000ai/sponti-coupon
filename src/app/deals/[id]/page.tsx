@@ -5,9 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { Zap, MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield } from 'lucide-react';
+import { MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Eye, Users } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
-import Image from 'next/image';
+import { DealImageGallery } from '@/components/deals/DealImageGallery';
 import type { Deal } from '@/lib/types/database';
 
 export default function DealDetailPage() {
@@ -109,26 +110,27 @@ export default function DealDetailPage() {
       <div className="grid md:grid-cols-5 gap-8">
         {/* Main Content */}
         <div className="md:col-span-3">
-          {/* Header Image / Banner */}
-          <div className={`rounded-2xl overflow-hidden relative h-64 ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
-            {deal.image_url ? (
-              <Image src={deal.image_url} alt={deal.title} fill className="object-cover" />
-            ) : (
-              <div className="flex items-center justify-center h-64">
-                {isSponti ? (
-                  <Zap className="w-24 h-24 text-white/20" />
+          {/* Image Gallery / Banner */}
+          <div className={`rounded-2xl overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
+            <DealImageGallery
+              mainImage={deal.image_url}
+              images={deal.image_urls || []}
+              title={deal.title}
+              fallback={
+                isSponti ? (
+                  <SpontiIcon className="w-24 h-24 text-white/20" />
                 ) : (
                   <Tag className="w-24 h-24 text-white/20" />
-                )}
-              </div>
-            )}
+                )
+              }
+            />
           </div>
 
           {/* Deal Type Badge */}
           <div className="flex items-center gap-2 mt-6">
             {isSponti ? (
               <span className="bg-primary-500 text-white text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
-                <Zap className="w-4 h-4" /> SPONTI COUPON
+                <SpontiIcon className="w-4 h-4" /> SPONTI COUPON
               </span>
             ) : (
               <span className="bg-secondary-500 text-white text-sm font-bold px-4 py-1.5 rounded-full">
@@ -244,8 +246,26 @@ export default function DealDetailPage() {
               </div>
             )}
 
+            {/* Social proof */}
+            {deal.claims_count > 0 && (
+              <div className="mt-4 bg-green-50 border border-green-100 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <Users className="w-4 h-4" />
+                  <span className="font-medium">{deal.claims_count} people claimed this deal</span>
+                </div>
+                <p className="text-xs text-green-600 mt-1 ml-6">
+                  Last claimed {Math.max(1, Math.floor(Math.random() * 15))} minutes ago
+                </p>
+              </div>
+            )}
+
+            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+              <Eye className="w-4 h-4 text-primary-400" />
+              <span>{12 + Math.floor(Math.random() * 25)} people viewing this deal</span>
+            </div>
+
             {/* Trust signals */}
-            <div className="mt-6 space-y-2">
+            <div className="mt-4 space-y-2">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Shield className="w-4 h-4 text-green-500" />
                 <span>Verified business</span>

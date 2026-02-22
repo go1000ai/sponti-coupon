@@ -67,6 +67,7 @@ export interface Deal {
   timezone: string;
   status: DealStatus;
   image_url: string | null;
+  image_urls: string[];
   benchmark_deal_id: string | null;
   created_at: string;
   // Joined fields

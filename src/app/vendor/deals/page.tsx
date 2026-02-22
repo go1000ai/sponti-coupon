@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { Plus, Zap, Tag, Pause, Play, Trash2 } from 'lucide-react';
+import { Plus, Tag, Pause, Play, Trash2 } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 
 export default function VendorDealsPage() {
@@ -98,7 +99,7 @@ export default function VendorDealsPage() {
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div className={`rounded-lg p-3 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-50'}`}>
                     {deal.deal_type === 'sponti_coupon' ? (
-                      <Zap className="w-6 h-6 text-primary-500" />
+                      <SpontiIcon className="w-6 h-6 text-primary-500" />
                     ) : (
                       <Tag className="w-6 h-6 text-gray-500" />
                     )}

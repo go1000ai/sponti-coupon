@@ -1,0 +1,39 @@
+{
+  "name": "SpontiCoupon — Flash Deals Near You",
+  "short_name": "SpontiCoupon",
+  "description": "Discover 24-hour flash deals from local businesses. Save big before the countdown hits zero.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E8632B",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Browse Deals",
+      "url": "/deals",
+      "description": "See all available deals near you"
+    },
+    {
+      "name": "My Deals",
+      "url": "/my-deals",
+      "description": "View your claimed deals"
+    }
+  ]
+}
