@@ -100,8 +100,17 @@ export function SpontiDealsShowcase() {
                 <span className="text-sm font-bold text-white tracking-wide">FLASH DEALS</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                Sponti Coupons
+              <h2 className="flex items-center gap-3 flex-wrap">
+                <Image
+                  src="/logo.png"
+                  alt="SpontiCoupon"
+                  width={200}
+                  height={60}
+                  className="h-11 sm:h-14 w-auto drop-shadow-lg brightness-0 invert"
+                />
+                <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white drop-shadow-lg">
+                  Coupons
+                </span>
               </h2>
               <p className="text-gray-300 mt-1 text-base sm:text-lg">
                 24-hour exclusive deals — grab them before they&apos;re gone

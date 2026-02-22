@@ -75,8 +75,17 @@ export function BentoDeals() {
                 <span className="text-sm font-bold text-white tracking-wide">SPONTI DEALS</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
-                Sponti Deals
+              <h2 className="flex items-center gap-3 flex-wrap">
+                <Image
+                  src="/logo.png"
+                  alt="SpontiCoupon"
+                  width={200}
+                  height={60}
+                  className="h-11 sm:h-14 w-auto drop-shadow-lg"
+                />
+                <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary-500 via-orange-500 to-primary-600 bg-clip-text text-transparent drop-shadow-sm">
+                  Deals
+                </span>
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
                 Flash deals with the biggest savings — grab them before they&apos;re gone
