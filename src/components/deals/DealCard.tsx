@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Clock, MapPin, Tag, ShieldCheck, Users } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
@@ -40,15 +41,7 @@ export function DealCard({ deal, distance }: DealCardProps) {
 
         {/* Badges - top left */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          {isSponti ? (
-            <span className="bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 shadow-lg">
-              <SpontiIcon className="w-3 h-3" /> SPONTI COUPON
-            </span>
-          ) : (
-            <span className="bg-secondary-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-              REGULAR DEAL
-            </span>
-          )}
+          <DealTypeBadge type={deal.deal_type} size="md" />
           {/* Verified badge */}
           <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow w-fit">
             <ShieldCheck className="w-2.5 h-2.5" /> Verified
@@ -60,12 +53,12 @@ export function DealCard({ deal, distance }: DealCardProps) {
           {formatPercentage(deal.discount_percentage)} OFF
         </div>
 
-        {/* Countdown overlay for Sponti deals */}
-        {isSponti && deal.status === 'active' && (
+        {/* Countdown overlay — shows for all active deals */}
+        {deal.status === 'active' && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <div className="flex items-center gap-2 text-white text-xs mb-1">
               <Clock className="w-3 h-3" />
-              <span>Expires in:</span>
+              <span>{isSponti ? 'Expires in:' : 'Deal ends in:'}</span>
             </div>
             <CountdownTimer expiresAt={deal.expires_at} size="sm" />
           </div>

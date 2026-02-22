@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { ArrowRight, Clock, ShieldCheck, MapPin } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
@@ -171,9 +172,7 @@ function SpontiDealCard({ deal }: { deal: DealWithDistance }) {
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-            <span className="inline-flex items-center gap-1.5 bg-primary-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-              <SpontiIcon className="w-3 h-3" /> SPONTI COUPON
-            </span>
+            <DealTypeBadge type="sponti_coupon" size="md" />
             <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full w-fit">
               <ShieldCheck className="w-2.5 h-2.5" /> Verified
             </span>

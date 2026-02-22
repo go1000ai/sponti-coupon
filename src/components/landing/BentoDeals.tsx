@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { ArrowRight, Clock, MapPin, Eye, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { DealTypeBadge, DealTypeLegend } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
@@ -90,6 +91,8 @@ export function BentoDeals() {
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
                 Flash deals with the biggest savings — grab them before they&apos;re gone
               </p>
+              {/* Deal type legend */}
+              <DealTypeLegend className="mt-3 flex-wrap" />
             </div>
             <Link
               href="/deals"
@@ -161,10 +164,7 @@ function HeroDealCard({ deal }: { deal: DealWithDistance }) {
       {/* Top badges */}
       <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
         <div className="flex flex-col gap-2">
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white shadow-lg ${isSponti ? 'bg-primary-500' : 'bg-secondary-500'}`}>
-            {isSponti ? <SpontiIcon className="w-3 h-3" /> : null}
-            {isSponti ? 'SPONTI COUPON' : 'REGULAR DEAL'}
-          </span>
+          <DealTypeBadge type={deal.deal_type} size="lg" />
           <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg w-fit">
             <ShieldCheck className="w-3 h-3" /> Verified Business
           </span>
@@ -264,10 +264,7 @@ function SmallDealCard({ deal }: { deal: DealWithDistance }) {
 
       {/* Top badges */}
       <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-start z-10">
-        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold text-white ${isSponti ? 'bg-primary-500' : 'bg-secondary-500'}`}>
-          {isSponti ? <SpontiIcon className="w-2.5 h-2.5" /> : null}
-          {isSponti ? 'SPONTI' : 'DEAL'}
-        </span>
+        <DealTypeBadge type={deal.deal_type} size="sm" />
         <span className="bg-white text-primary-500 font-bold text-xs px-2 py-1 rounded-full shadow-md">
           {formatPercentage(deal.discount_percentage)}%
         </span>

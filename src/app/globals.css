@@ -163,3 +163,22 @@ body {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+
+/* Sponti badge glow — pulsing orange outline */
+.sponti-glow {
+  animation: spontiGlow 2s ease-in-out infinite;
+}
+
+@keyframes spontiGlow {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(232, 99, 43, 0.4),
+      0 0 12px rgba(232, 99, 43, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 8px rgba(232, 99, 43, 0.6),
+      0 0 20px rgba(232, 99, 43, 0.35),
+      0 0 32px rgba(232, 99, 43, 0.15);
+  }
+}

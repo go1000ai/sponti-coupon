@@ -7,6 +7,7 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Eye, Users } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import Link from 'next/link';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
 import type { Deal } from '@/lib/types/database';
@@ -127,16 +128,11 @@ export default function DealDetailPage() {
           </div>
 
           {/* Deal Type Badge */}
-          <div className="flex items-center gap-2 mt-6">
-            {isSponti ? (
-              <span className="bg-primary-500 text-white text-sm font-bold px-4 py-1.5 rounded-full flex items-center gap-1">
-                <SpontiIcon className="w-4 h-4" /> SPONTI COUPON
-              </span>
-            ) : (
-              <span className="bg-secondary-500 text-white text-sm font-bold px-4 py-1.5 rounded-full">
-                REGULAR DEAL
-              </span>
-            )}
+          <div className="flex items-center gap-3 mt-6">
+            <DealTypeBadge type={deal.deal_type} size="lg" />
+            <span className={`text-sm font-bold ${isSponti ? 'text-primary-500' : 'text-secondary-500'}`}>
+              {isSponti ? 'Sponti Coupon' : 'Regular Deal'}
+            </span>
             {isExpired && (
               <span className="bg-red-100 text-red-600 text-sm font-bold px-4 py-1.5 rounded-full">EXPIRED</span>
             )}
