@@ -51,7 +51,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
-          &copy; {new Date().getFullYear()} Sponti Coupon. All rights reserved.
+          <p>&copy; {new Date().getFullYear()} SpontiCoupon, a Go1000 AI company. All rights reserved.</p>
         </div>
       </div>
     </footer>

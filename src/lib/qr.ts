@@ -7,6 +7,14 @@ export function generateQRCodeId(): string {
   return uuidv4();
 }
 
+/**
+ * Generate a unique 6-digit redemption code (e.g. "482917").
+ * Customer gives this to the vendor as an alternative to QR scanning.
+ */
+export function generateRedemptionCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 export function getRedemptionUrl(qrCodeId: string): string {
   return `${APP_URL}/redeem/${qrCodeId}`;
 }

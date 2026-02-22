@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
+import { generateRedemptionCode } from '@/lib/qr';
 
 // POST /api/claims - Create a new claim on a deal
 export async function POST(request: NextRequest) {
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
   // For regular deals, no deposit needed — create claim with QR immediately
   if (deal.deal_type === 'regular') {
     const qrCode = uuidv4();
+    const redemptionCode = generateRedemptionCode();
     const { data: claim, error: claimError } = await supabase
       .from('claims')
       .insert({
@@ -66,6 +68,7 @@ export async function POST(request: NextRequest) {
         deposit_confirmed_at: new Date().toISOString(),
         qr_code: qrCode,
         qr_code_url: `${process.env.NEXT_PUBLIC_APP_URL}/redeem/${qrCode}`,
+        redemption_code: redemptionCode,
         expires_at: deal.expires_at,
       })
       .select()

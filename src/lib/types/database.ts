@@ -84,6 +84,7 @@ export interface Claim {
   deposit_confirmed_at: string | null;
   qr_code: string | null;
   qr_code_url: string | null;
+  redemption_code: string | null;
   redeemed: boolean;
   redeemed_at: string | null;
   expires_at: string;

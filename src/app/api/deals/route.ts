@@ -156,8 +156,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check expires within 24 hours
+    // Check duration: minimum 4 hours, maximum 24 hours
     const expiryMs = new Date(expires_at).getTime() - new Date(starts_at).getTime();
+    if (expiryMs < 4 * 60 * 60 * 1000) {
+      return NextResponse.json({
+        error: 'Sponti Coupons must last at least 4 hours to give customers enough time to redeem.',
+      }, { status: 400 });
+    }
     if (expiryMs > 24 * 60 * 60 * 1000) {
       return NextResponse.json({
         error: 'Sponti Coupons can only last up to 24 hours.',

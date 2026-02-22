@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { QrCode, Clock, CheckCircle2, XCircle, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
+import { QrCode, Clock, CheckCircle2, XCircle, TrendingUp, DollarSign, ShoppingBag, Copy, Check } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Claim, Deal } from '@/lib/types/database';
 
@@ -14,6 +14,8 @@ export default function MyDealsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
   const [loading, setLoading] = useState(true);
   const [selectedQR, setSelectedQR] = useState<string | null>(null);
+  const [selectedCode, setSelectedCode] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const fetchClaims = useCallback(async () => {
     setLoading(true);
@@ -132,15 +134,18 @@ export default function MyDealsPage() {
             return (
               <div key={claim.id} className="card p-6">
                 <div className="flex flex-col sm:flex-row gap-4">
-                  {/* QR Code */}
+                  {/* QR Code + 6-Digit Code */}
                   <div className="flex-shrink-0">
                     {status === 'active' && claim.qr_code ? (
                       <button
-                        onClick={() => setSelectedQR(claim.qr_code!)}
+                        onClick={() => { setSelectedQR(claim.qr_code!); setSelectedCode(claim.redemption_code || null); }}
                         className="bg-gray-50 rounded-lg p-3 hover:bg-gray-100 transition-colors"
                       >
                         <QrCode className="w-16 h-16 text-secondary-500" />
-                        <p className="text-xs text-primary-500 font-medium mt-1">Tap to view</p>
+                        {claim.redemption_code && (
+                          <p className="text-lg font-bold text-primary-500 tracking-widest mt-1">{claim.redemption_code}</p>
+                        )}
+                        <p className="text-xs text-primary-500 font-medium mt-0.5">Tap to view</p>
                       </button>
                     ) : status === 'redeemed' ? (
                       <div className="bg-green-50 rounded-lg p-3 flex flex-col items-center">
@@ -217,28 +222,61 @@ export default function MyDealsPage() {
         </div>
       )}
 
-      {/* QR Code Modal */}
+      {/* QR Code + Redemption Code Modal */}
       {selectedQR && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => setSelectedQR(null)}>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4" onClick={() => { setSelectedQR(null); setSelectedCode(null); setCodeCopied(false); }}>
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center" onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-secondary-500 mb-4">Your QR Code</h3>
+            <h3 className="text-xl font-bold text-secondary-500 mb-4">Your Redemption Code</h3>
 
-            {/* QR Code Display */}
+            {/* 6-Digit Code - Primary */}
+            {selectedCode && (
+              <div className="mb-6">
+                <p className="text-sm text-gray-500 mb-2">Tell the vendor this code:</p>
+                <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5">
+                  <div className="flex items-center justify-center gap-2">
+                    {selectedCode.split('').map((digit, i) => (
+                      <span key={i} className="w-10 h-12 bg-white border-2 border-primary-300 rounded-lg flex items-center justify-center text-2xl font-bold text-secondary-500 shadow-sm">
+                        {digit}
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedCode);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }}
+                    className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                  >
+                    {codeCopied ? (
+                      <><Check className="w-4 h-4" /> Copied!</>
+                    ) : (
+                      <><Copy className="w-4 h-4" /> Copy Code</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs text-gray-400 font-medium">or show QR code</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+
+            {/* QR Code Display - Secondary */}
             <div className="bg-white border-4 border-secondary-500 rounded-xl p-4 inline-block mb-4">
-              <div className="w-48 h-48 bg-gray-100 flex items-center justify-center rounded-lg">
-                <QrCode className="w-32 h-32 text-secondary-500" />
+              <div className="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
+                <QrCode className="w-28 h-28 text-secondary-500" />
               </div>
             </div>
 
             <p className="text-sm text-gray-500 mb-4">
-              Show this QR code to the vendor to redeem your deal
+              Show either the code or QR to the vendor to redeem your deal
             </p>
 
-            <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <p className="text-xs text-gray-400 font-mono break-all">{selectedQR}</p>
-            </div>
-
-            <button onClick={() => setSelectedQR(null)} className="btn-primary w-full">
+            <button onClick={() => { setSelectedQR(null); setSelectedCode(null); setCodeCopied(false); }} className="btn-primary w-full">
               Close
             </button>
           </div>

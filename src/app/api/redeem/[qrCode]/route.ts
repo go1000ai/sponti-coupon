@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-// POST /api/redeem/[qrCode] - Vendor scans and redeems a QR code
+// POST /api/redeem/[qrCode] - Vendor redeems via QR code or 6-digit code
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
@@ -22,27 +22,46 @@ export async function POST(
     .single();
 
   if (profile?.role !== 'vendor') {
-    return NextResponse.json({ error: 'Only vendors can redeem QR codes' }, { status: 403 });
+    return NextResponse.json({ error: 'Only vendors can redeem codes' }, { status: 403 });
   }
 
-  // Find the claim by QR code
-  const { data: claim, error: claimError } = await supabase
-    .from('claims')
-    .select('*, deal:deals(*), customer:customers(first_name, last_name, email)')
-    .eq('qr_code', qrCode)
-    .single();
+  // Find the claim by QR code UUID or 6-digit redemption code
+  const is6Digit = /^\d{6}$/.test(qrCode.trim());
+
+  let claim;
+  let claimError;
+
+  if (is6Digit) {
+    // Lookup by 6-digit redemption code
+    const result = await supabase
+      .from('claims')
+      .select('*, deal:deals(*), customer:customers(first_name, last_name, email)')
+      .eq('redemption_code', qrCode.trim())
+      .single();
+    claim = result.data;
+    claimError = result.error;
+  } else {
+    // Lookup by QR code UUID
+    const result = await supabase
+      .from('claims')
+      .select('*, deal:deals(*), customer:customers(first_name, last_name, email)')
+      .eq('qr_code', qrCode)
+      .single();
+    claim = result.data;
+    claimError = result.error;
+  }
 
   if (claimError || !claim) {
     return NextResponse.json({
-      error: 'Invalid QR code',
+      error: is6Digit ? 'Invalid redemption code' : 'Invalid QR code',
       code: 'INVALID',
     }, { status: 404 });
   }
 
-  // Verify this QR belongs to the vendor's deal
+  // Verify this code belongs to the vendor's deal
   if (claim.deal?.vendor_id !== user.id) {
     return NextResponse.json({
-      error: 'This QR code is not for your deal',
+      error: 'This code is not for your deal',
       code: 'WRONG_VENDOR',
     }, { status: 403 });
   }
@@ -50,7 +69,7 @@ export async function POST(
   // Check if already redeemed
   if (claim.redeemed) {
     return NextResponse.json({
-      error: 'This QR code has already been redeemed',
+      error: 'This code has already been redeemed',
       code: 'ALREADY_REDEEMED',
       redeemed_at: claim.redeemed_at,
     }, { status: 400 });
@@ -59,7 +78,7 @@ export async function POST(
   // Check if expired
   if (new Date(claim.expires_at) < new Date()) {
     return NextResponse.json({
-      error: 'This QR code has expired',
+      error: 'This code has expired',
       code: 'EXPIRED',
       expired_at: claim.expires_at,
     }, { status: 400 });
@@ -95,6 +114,11 @@ export async function POST(
     scanned_by: user.id,
   });
 
+  // Calculate remaining balance: deal price - deposit already paid
+  const depositPaid = claim.deal?.deposit_amount || 0;
+  const dealPrice = claim.deal?.deal_price || 0;
+  const remainingBalance = Math.max(0, dealPrice - depositPaid);
+
   return NextResponse.json({
     success: true,
     customer: {
@@ -103,15 +127,18 @@ export async function POST(
     },
     deal: {
       title: claim.deal?.title,
+      deal_type: claim.deal?.deal_type,
       deal_price: claim.deal?.deal_price,
       original_price: claim.deal?.original_price,
       discount_percentage: claim.deal?.discount_percentage,
+      deposit_amount: claim.deal?.deposit_amount,
     },
+    remaining_balance: remainingBalance,
     redeemed_at: new Date().toISOString(),
   });
 }
 
-// GET /api/redeem/[qrCode] - Check QR code status (for customer view)
+// GET /api/redeem/[qrCode] - Check QR code or 6-digit code status (for customer view)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
@@ -119,15 +146,23 @@ export async function GET(
   const { qrCode } = await params;
   const supabase = await createServerSupabaseClient();
 
+  // Support both QR UUID and 6-digit code lookup
+  const is6Digit = /^\d{6}$/.test(qrCode.trim());
+  const column = is6Digit ? 'redemption_code' : 'qr_code';
+
   const { data: claim } = await supabase
     .from('claims')
-    .select('*, deal:deals(title, deal_price, original_price, discount_percentage, expires_at, vendor_id, vendor:vendors(business_name))')
-    .eq('qr_code', qrCode)
+    .select('*, deal:deals(title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name))')
+    .eq(column, is6Digit ? qrCode.trim() : qrCode)
     .single();
 
   if (!claim) {
-    return NextResponse.json({ error: 'Invalid QR code', code: 'INVALID' }, { status: 404 });
+    return NextResponse.json({ error: 'Invalid code', code: 'INVALID' }, { status: 404 });
   }
+
+  const depositPaid = claim.deal?.deposit_amount || 0;
+  const dealPrice = claim.deal?.deal_price || 0;
+  const remainingBalance = Math.max(0, dealPrice - depositPaid);
 
   return NextResponse.json({
     status: claim.redeemed ? 'redeemed' : new Date(claim.expires_at) < new Date() ? 'expired' : 'valid',
@@ -137,6 +172,7 @@ export async function GET(
       redeemed_at: claim.redeemed_at,
       expires_at: claim.expires_at,
       deal: claim.deal,
+      remaining_balance: remainingBalance,
     },
   });
 }

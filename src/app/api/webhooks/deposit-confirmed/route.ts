@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { generateQRCodeId, getRedemptionUrl } from '@/lib/qr';
+import { generateQRCodeId, getRedemptionUrl, generateRedemptionCode } from '@/lib/qr';
 import crypto from 'crypto';
 
 // POST /api/webhooks/deposit-confirmed
@@ -82,11 +82,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Claim has expired' }, { status: 400 });
     }
 
-    // Generate QR code
+    // Generate QR code + 6-digit redemption code
     const qrCode = generateQRCodeId();
     const qrCodeUrl = getRedemptionUrl(qrCode);
+    const redemptionCode = generateRedemptionCode();
 
-    // Mark deposit as confirmed and assign QR code
+    // Mark deposit as confirmed and assign QR code + redemption code
     const { error: updateError } = await supabase
       .from('claims')
       .update({
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
         deposit_confirmed_at: new Date().toISOString(),
         qr_code: qrCode,
         qr_code_url: qrCodeUrl,
+        redemption_code: redemptionCode,
       })
       .eq('id', claim.id);
 

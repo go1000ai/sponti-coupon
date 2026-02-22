@@ -5,22 +5,28 @@ import { useScrollAnimation } from '@/lib/hooks/useScrollAnimation';
 import { useCountUp } from '@/lib/hooks/useCountUp';
 import {
   CircleCheck, HandCoins, TrendingDown, TrendingUp,
-  ReceiptText, Landmark, Ban, Sparkles, PiggyBank
+  ReceiptText, Landmark, Ban, Sparkles, PiggyBank,
+  Clock, Wallet, CalendarX, XCircle,
+  Zap, BadgeCheck, ArrowDownUp
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 const traditionalPlatform = [
-  { icon: ReceiptText, text: '15–30% commission on every transaction' },
-  { icon: HandCoins, text: 'Platform controls the customer payments' },
-  { icon: TrendingDown, text: 'Your revenue shrinks as you sell more' },
-  { icon: Ban, text: 'Hidden fees and payout delays' },
+  { icon: ReceiptText, text: '15–30% commission taken from every sale' },
+  { icon: HandCoins, text: 'Platform collects & controls all customer payments' },
+  { icon: Clock, text: 'Wait 60–90 days to receive your earnings' },
+  { icon: TrendingDown, text: 'The more you sell, the more they take' },
+  { icon: CalendarX, text: 'Locked into long-term contracts' },
+  { icon: Ban, text: 'Hidden fees, chargebacks, and fine print' },
 ];
 
 const spontiCoupon = [
-  { icon: PiggyBank, text: '$0 commission — ever' },
-  { icon: Landmark, text: 'Deposits go directly to YOUR Stripe' },
-  { icon: TrendingUp, text: 'Predictable flat monthly rate' },
-  { icon: CircleCheck, text: 'No hidden fees, cancel anytime' },
+  { icon: PiggyBank, text: '$0 commission — not now, not ever' },
+  { icon: Landmark, text: 'Customer deposits go directly to YOUR Stripe account' },
+  { icon: Zap, text: 'Get paid instantly — no waiting 60-90 days' },
+  { icon: TrendingUp, text: 'Flat monthly rate — predictable costs' },
+  { icon: Wallet, text: 'You keep 100% of every transaction' },
+  { icon: CircleCheck, text: 'No contracts, no hidden fees — cancel anytime' },
 ];
 
 function AnimatedBar({ targetPercent, color, label, amount, delay = 0 }: {
@@ -104,6 +110,9 @@ export function CompetitorComparison() {
                 <p className="text-3xl font-bold text-gray-400">15–30%</p>
                 <p className="text-sm text-gray-400">of every sale goes to the platform</p>
               </div>
+              <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3">
+                <p className="text-xs text-red-600 font-medium">On a $100 deal, you lose $15–$30 per transaction. Then wait up to 90 days to get the rest.</p>
+              </div>
             </div>
           </ScrollReveal>
 
@@ -135,6 +144,9 @@ export function CompetitorComparison() {
               <div className="mt-6 pt-6 border-t border-primary-100">
                 <p className="text-3xl font-bold text-primary-500">$0</p>
                 <p className="text-sm text-gray-500">commission — flat monthly subscription</p>
+              </div>
+              <div className="mt-3 bg-green-50 border border-green-100 rounded-lg p-3">
+                <p className="text-xs text-green-700 font-medium">On a $100 deal, you keep $100. Money hits your account instantly via Stripe.</p>
               </div>
             </div>
           </ScrollReveal>
@@ -176,6 +188,79 @@ export function CompetitorComparison() {
               <p className="text-gray-300 mt-2">
                 That&apos;s <span className="text-white font-semibold">${(savingsValue * 12).toLocaleString()}</span> more in your pocket every year
               </p>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Feature Comparison Table */}
+        <ScrollReveal animation="fade-up" delay={200}>
+          <div className="mt-16">
+            <h3 className="text-2xl font-bold text-secondary-500 text-center mb-8">
+              Feature-by-Feature Comparison
+            </h3>
+            <div className="card overflow-hidden border-gray-200">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="text-left py-4 px-6 font-semibold text-gray-600">Feature</th>
+                      <th className="text-center py-4 px-6 font-semibold text-gray-400">Traditional Platforms</th>
+                      <th className="text-center py-4 px-6 font-semibold text-primary-600 bg-primary-50/50">SpontiCoupon</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {[
+                      { feature: 'Commission per sale', trad: '15–30%', sponti: '0%', spontiHighlight: true },
+                      { feature: 'When you get paid', trad: '60–90 days', sponti: 'Instantly via Stripe', spontiHighlight: true },
+                      { feature: 'Who controls the money', trad: 'The platform', sponti: 'You — always', spontiHighlight: true },
+                      { feature: 'Monthly cost', trad: '$0 + huge commissions', sponti: 'Flat $29–$99/mo', spontiHighlight: false },
+                      { feature: 'Contract length', trad: '6–12 month lock-in', sponti: 'No contract — cancel anytime', spontiHighlight: true },
+                      { feature: 'Hidden fees', trad: 'Marketing fees, setup fees, penalties', sponti: 'None', spontiHighlight: true },
+                      { feature: 'Flash deals (same day)', trad: 'Not available', sponti: '4–24 hour Sponti Coupons', spontiHighlight: true },
+                      { feature: 'Customer deposit', trad: 'Platform collects & holds', sponti: 'Direct to your Stripe', spontiHighlight: true },
+                      { feature: 'QR + 6-digit redemption', trad: 'QR only (some)', sponti: 'QR code + 6-digit code', spontiHighlight: false },
+                      { feature: 'Vendor dashboard', trad: 'Limited analytics', sponti: 'Real-time analytics', spontiHighlight: false },
+                    ].map((row) => (
+                      <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-3.5 px-6 font-medium text-secondary-500">{row.feature}</td>
+                        <td className="py-3.5 px-6 text-center text-gray-400">
+                          <span className="inline-flex items-center gap-1.5">
+                            <XCircle className="w-4 h-4 text-red-300 shrink-0" />
+                            {row.trad}
+                          </span>
+                        </td>
+                        <td className={`py-3.5 px-6 text-center bg-primary-50/30 ${row.spontiHighlight ? 'font-semibold text-primary-600' : 'text-secondary-500'}`}>
+                          <span className="inline-flex items-center gap-1.5">
+                            <BadgeCheck className="w-4 h-4 text-green-500 shrink-0" />
+                            {row.sponti}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </ScrollReveal>
+
+        {/* Bottom line CTA */}
+        <ScrollReveal animation="scale-up" delay={100}>
+          <div className="mt-12 text-center bg-gradient-to-r from-primary-50 to-orange-50 border border-primary-200 rounded-2xl p-8">
+            <h3 className="text-2xl font-bold text-secondary-500 mb-2">
+              Stop Giving Away Your Revenue
+            </h3>
+            <p className="text-gray-600 max-w-xl mx-auto mb-6">
+              Other platforms take up to 30% of every sale and make you wait months for your money.
+              With SpontiCoupon, every dollar goes directly to you — instantly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a href="/auth/vendor-signup" className="btn-primary inline-flex items-center gap-2">
+                <Zap className="w-4 h-4" /> Start Your Free Trial
+              </a>
+              <a href="/pricing" className="text-primary-500 font-semibold inline-flex items-center gap-1 px-4 py-3 hover:underline">
+                View Pricing <ArrowDownUp className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </ScrollReveal>
