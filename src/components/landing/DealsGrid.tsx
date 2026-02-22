@@ -28,10 +28,13 @@ export function DealsGrid() {
           params.set('lng', String(lng));
         }
         const res = await fetch(`/api/deals?${params.toString()}`);
+        if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setDeals(data.deals || []);
+        if (data.deals?.length > 0) {
+          setDeals(data.deals);
+        }
       } catch {
-        setDeals([]);
+        // Keep existing deals on error
       }
       setLoading(false);
     }

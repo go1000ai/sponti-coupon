@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Menu, X, User, Store, LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 export function Navbar() {
   const { user, role, loading, signOut } = useAuth();
@@ -28,8 +29,10 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/deals" className="nav-link-animated text-gray-600 hover:text-primary-500 transition-colors font-medium pb-1">
+            <Link href="/deals" className="relative inline-flex items-center gap-1.5 text-primary-500 font-bold pb-1 hover:text-primary-600 transition-colors group">
+              <SpontiIcon className="w-4 h-4 group-hover:animate-wiggle" />
               Browse Deals
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500 rounded-full animate-pulse" />
             </Link>
 
             {!loading && !user && (
@@ -103,8 +106,8 @@ export function Navbar() {
       {/* Mobile Menu */}
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-1">
-          <Link href="/deals" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>
-            Browse Deals
+          <Link href="/deals" className="block text-primary-500 font-bold py-3 inline-flex items-center gap-1.5 border-b-2 border-primary-500" onClick={() => setMobileOpen(false)}>
+            <SpontiIcon className="w-4 h-4" /> Browse Deals
           </Link>
           {!loading && !user && (
             <>

@@ -1,8 +1,27 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
+
+export const metadata: Metadata = {
+  title: 'Pricing — Plans for Local Businesses',
+  description:
+    'Choose the right SpontiCoupon plan for your business. Start at $29/month with zero transaction fees. Post flash deals, attract new customers, and grow your local business with Sponti Coupons.',
+  alternates: {
+    canonical: `${BASE_URL}/pricing`,
+  },
+  openGraph: {
+    title: 'Pricing — Plans for Local Businesses | SpontiCoupon',
+    description:
+      'Affordable plans starting at $29/month. Post flash deals, attract customers, zero transaction fees.',
+    url: `${BASE_URL}/pricing`,
+    type: 'website',
+  },
+};
 
 const tierHighlights: Record<string, string[]> = {
   starter: [

@@ -20,8 +20,9 @@ export function CTASection() {
     async function fetchStats() {
       try {
         const res = await fetch('/api/deals/stats');
+        if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
-        setStats(data);
+        if (data) setStats(data);
       } catch {
         // Stats bar just won't show
       }
