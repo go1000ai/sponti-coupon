@@ -136,7 +136,7 @@ export default function DealsPage() {
               filters.type === 'regular' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            <Tag className="w-3.5 h-3.5" /> Regular Deals
+            <Tag className="w-3.5 h-3.5" /> Steady Deals
           </button>
         </div>
 

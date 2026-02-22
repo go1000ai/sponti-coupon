@@ -6,11 +6,10 @@ import { Tag } from 'lucide-react';
 /**
  * DealTypeBadge — glowing icon badge that identifies the deal type at a glance.
  *
- * - Sponti Coupon: Orange stopwatch icon with pulsing orange glow
- * - Regular Deal: Navy tag icon with subtle navy glow
+ * - Sponti: Orange stopwatch icon with pulsing orange glow (spontaneous deals)
+ * - Steady Deal: Navy tag icon with subtle navy ring (longer-duration deals)
  *
- * Replaces the old text badges ("SPONTI COUPON" / "REGULAR DEAL") with
- * recognizable icons so customers learn the visual language.
+ * Icon-only — no text pills. Customers learn the visual language via DealTypeLegend.
  *
  * Sizes: "sm" for small cards, "md" for standard cards, "lg" for detail pages.
  */
@@ -43,7 +42,7 @@ export function DealTypeBadge({ type, size = 'md', className = '' }: DealTypeBad
           sponti-glow
           ${className}
         `}
-        title="Sponti Coupon — Flash deal with countdown timer"
+        title="Sponti — Spontaneous deal with countdown timer"
       >
         <SpontiIcon className={`${icon} text-primary-400 drop-shadow-[0_0_10px_rgba(232,99,43,0.9)]`} />
       </div>
@@ -59,7 +58,7 @@ export function DealTypeBadge({ type, size = 'md', className = '' }: DealTypeBad
         ring-2 ring-secondary-500/70
         ${className}
       `}
-      title="Regular Deal"
+      title="Steady Deal"
     >
       <Tag className={`${icon} text-secondary-500`} />
     </div>
@@ -77,15 +76,15 @@ export function DealTypeLegend({ className = '' }: { className?: string }) {
         <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 ring-[1.5px] ring-primary-400 sponti-glow">
           <SpontiIcon className="w-3.5 h-3.5 text-primary-400 drop-shadow-[0_0_8px_rgba(232,99,43,0.9)]" />
         </div>
-        <span className="font-medium">Sponti Coupon</span>
-        <span className="text-gray-400">— Flash deal, limited time</span>
+        <span className="font-medium">Sponti</span>
+        <span className="text-gray-400">— Spontaneous deal, limited time</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary-500/15 ring-[1.5px] ring-secondary-500/70">
           <Tag className="w-3.5 h-3.5 text-secondary-500" />
         </div>
-        <span className="font-medium">Regular Deal</span>
-        <span className="text-gray-400">— Standard coupon, longer duration</span>
+        <span className="font-medium">Steady Deal</span>
+        <span className="text-gray-400">— Everyday savings, longer duration</span>
       </div>
     </div>
   );

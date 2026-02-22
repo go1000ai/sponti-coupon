@@ -67,13 +67,13 @@ export function SpontiDealsShowcase() {
           <ScrollReveal animation="fade-up">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center">
               <SpontiIcon className="w-12 h-12 text-primary-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Flash Deals Drop Daily</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Sponti Deals Drop Daily</h3>
               <p className="text-gray-300 mb-6">New Sponti Coupons with 50-70% off appear every day. Check back soon!</p>
               <Link
                 href="/deals"
                 className="btn-primary inline-flex items-center gap-2 px-6 py-3"
               >
-                Browse Regular Deals <ArrowRight className="w-4 h-4" />
+                Browse Steady Deals <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </ScrollReveal>
@@ -98,7 +98,7 @@ export function SpontiDealsShowcase() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 rounded-full px-5 py-2 mb-3 shadow-md">
                 <SpontiIcon className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">FLASH DEALS</span>
+                <span className="text-sm font-bold text-white tracking-wide">SPONTI DEALS</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
               <h2 className="flex items-center gap-3 flex-wrap">
@@ -121,7 +121,7 @@ export function SpontiDealsShowcase() {
               href="/deals?type=sponti_coupon"
               className="text-primary-400 font-semibold inline-flex items-center gap-1 hover:text-primary-300 transition-colors group"
             >
-              See All Flash Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              See All Sponti Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </ScrollReveal>

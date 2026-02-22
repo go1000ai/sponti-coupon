@@ -58,7 +58,7 @@ export function DealCard({ deal, distance }: DealCardProps) {
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <div className="flex items-center gap-2 text-white text-xs mb-1">
               <Clock className="w-3 h-3" />
-              <span>{isSponti ? 'Expires in:' : 'Deal ends in:'}</span>
+              <span>{isSponti ? 'Sponti expires:' : 'Steady ends:'}</span>
             </div>
             <CountdownTimer expiresAt={deal.expires_at} size="sm" />
           </div>

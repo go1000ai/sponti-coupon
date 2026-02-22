@@ -89,7 +89,7 @@ export function BentoDeals() {
                 </span>
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
-                Flash deals with the biggest savings — grab them before they&apos;re gone
+                Spontaneous deals with the biggest savings — grab them before they&apos;re gone
               </p>
               {/* Deal type legend */}
               <DealTypeLegend className="mt-3 flex-wrap" />

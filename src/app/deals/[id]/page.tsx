@@ -131,7 +131,7 @@ export default function DealDetailPage() {
           <div className="flex items-center gap-3 mt-6">
             <DealTypeBadge type={deal.deal_type} size="lg" />
             <span className={`text-sm font-bold ${isSponti ? 'text-primary-500' : 'text-secondary-500'}`}>
-              {isSponti ? 'Sponti Coupon' : 'Regular Deal'}
+              {isSponti ? 'Sponti' : 'Steady Deal'}
             </span>
             {isExpired && (
               <span className="bg-red-100 text-red-600 text-sm font-bold px-4 py-1.5 rounded-full">EXPIRED</span>

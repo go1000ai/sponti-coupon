@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, Tag, MapPin, ShieldCheck, Clock, Sparkles } from 'lucide-react';
-import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { ArrowRight, MapPin, ShieldCheck, Clock, Sparkles } from 'lucide-react';
+import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
@@ -136,14 +136,9 @@ function DealGridCard({ deal }: { deal: DealWithDistance }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
-          {/* Type badge */}
+          {/* Type badge — icon only, no pill */}
           <div className="absolute top-3 left-3">
-            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white shadow-md ${
-              isSponti ? 'bg-primary-500' : 'bg-secondary-500'
-            }`}>
-              {isSponti ? <SpontiIcon className="w-2.5 h-2.5" /> : <Tag className="w-2.5 h-2.5" />}
-              {isSponti ? 'SPONTI' : 'DEAL'}
-            </span>
+            <DealTypeBadge type={deal.deal_type} size="sm" />
           </div>
 
           {/* Discount badge */}
@@ -168,10 +163,10 @@ function DealGridCard({ deal }: { deal: DealWithDistance }) {
 
         {/* Content */}
         <div className="p-4 flex flex-col flex-1">
-          {/* Countdown for Sponti deals */}
-          {isSponti && deal.status === 'active' && (
+          {/* Countdown for all deals */}
+          {deal.status === 'active' && (
             <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-              <Clock className="w-3 h-3 text-primary-500" />
+              <Clock className={`w-3 h-3 ${isSponti ? 'text-primary-500' : 'text-secondary-400'}`} />
               <CountdownTimer expiresAt={deal.expires_at} size="sm" />
             </div>
           )}
