@@ -73,23 +73,14 @@ export function BentoDeals() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 rounded-full px-5 py-2 mb-3 shadow-md">
                 <SpontiIcon className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">SPONTI DEALS</span>
+                <span className="text-sm font-bold text-white tracking-wide">TOP PICKS</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
-              <h2 className="flex items-center gap-3 flex-wrap">
-                <Image
-                  src="/logo.png"
-                  alt="SpontiCoupon"
-                  width={200}
-                  height={60}
-                  className="h-11 sm:h-14 w-auto drop-shadow-lg"
-                />
-                <span className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-primary-500 via-orange-500 to-primary-600 bg-clip-text text-transparent drop-shadow-sm">
-                  Deals
-                </span>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-secondary-500">
+                Today&apos;s Best Deals
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
-                Spontaneous deals with the biggest savings — grab them before they&apos;re gone
+                Handpicked Sponti &amp; Steady deals — grab them before they&apos;re gone
               </p>
               {/* Deal type legend */}
               <DealTypeLegend className="mt-3 flex-wrap" />
