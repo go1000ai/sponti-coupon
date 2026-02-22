@@ -30,36 +30,16 @@ export function PreferencePicker() {
   const router = useRouter();
 
   useEffect(() => {
-    // Don't show if user has already dismissed or interacted
+    // Only show once — never again after dismissed
     const dismissed = localStorage.getItem(STORAGE_KEY);
     if (dismissed) return;
 
-    let timeReady = false;
-    let scrollReady = false;
-
-    const tryShow = () => {
-      if (timeReady && scrollReady) setShow(true);
-    };
-
-    // Time gate: wait 15 seconds
+    // Brief delay so the page loads first, then show the popup
     const timer = setTimeout(() => {
-      timeReady = true;
-      tryShow();
-    }, 15000);
+      setShow(true);
+    }, 1500);
 
-    // Scroll depth gate: user has scrolled past 40% of viewport height
-    const handleScroll = () => {
-      if (window.scrollY > window.innerHeight * 0.4) {
-        scrollReady = true;
-        tryShow();
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => clearTimeout(timer);
   }, []);
 
   const dismiss = () => {
