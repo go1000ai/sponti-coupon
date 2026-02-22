@@ -24,7 +24,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">1. Introduction</h2>
           <p className="text-gray-600 leading-relaxed">
-            SpontiCoupon, operated by Go1000 AI (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform at sponticoupon.com and any related services (collectively, the &quot;Service&quot;).
+            SpontiCoupon, operated by Online Commerce Hub, LLC (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform at sponticoupon.com and any related services (collectively, the &quot;Service&quot;).
           </p>
         </section>
 
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
             If you have any questions about this Privacy Policy, please contact us at:
           </p>
           <div className="bg-gray-50 rounded-lg p-4 mt-3">
-            <p className="text-gray-700 font-medium">Go1000 AI — SpontiCoupon</p>
+            <p className="text-gray-700 font-medium">Online Commerce Hub, LLC — SpontiCoupon</p>
             <p className="text-gray-500 text-sm mt-1">Email: privacy@sponticoupon.com</p>
             <p className="text-gray-500 text-sm">Website: sponticoupon.com</p>
           </div>

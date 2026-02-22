@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     "coupon app", "flash sale", "limited time offers",
   ],
   authors: [{ name: "SpontiCoupon", url: BASE_URL }],
-  creator: "Go1000 AI",
+  creator: "Online Commerce Hub, LLC",
   publisher: "SpontiCoupon",
   manifest: "/manifest.json",
   alternates: {
@@ -106,7 +106,7 @@ export default function RootLayout({
     logo: `${BASE_URL}/logo.png`,
     description: "SpontiCoupon connects consumers with exclusive 24-hour flash deals from verified local businesses, offering up to 70% off restaurants, spas, fitness, entertainment and more.",
     foundingDate: "2025",
-    founder: { "@type": "Organization", name: "Go1000 AI" },
+    founder: { "@type": "Organization", name: "Online Commerce Hub, LLC" },
     sameAs: [],
     contactPoint: {
       "@type": "ContactPoint",

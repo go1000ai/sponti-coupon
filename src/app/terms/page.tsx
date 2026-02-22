@@ -24,7 +24,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">1. Acceptance of Terms</h2>
           <p className="text-gray-600 leading-relaxed">
-            By accessing or using the SpontiCoupon platform (&quot;Service&quot;), operated by Go1000 AI (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any modifications.
+            By accessing or using the SpontiCoupon platform (&quot;Service&quot;), operated by Online Commerce Hub, LLC (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, do not use the Service. We reserve the right to update these terms at any time, and continued use of the Service constitutes acceptance of any modifications.
           </p>
         </section>
 
@@ -50,7 +50,7 @@ export default function TermsPage() {
               Sponti Coupons are time-limited flash deals with a minimum duration of 4 hours and a maximum of 24 hours, as set by each Vendor. By claiming a Sponti Coupon, you acknowledge that you are accepting a time-sensitive offer and voluntarily choosing to redeem it within the specified timeframe.
             </p>
             <p className="text-amber-800 leading-relaxed mt-3">
-              <strong>SpontiCoupon, Go1000 AI, its officers, directors, employees, and affiliates are not liable for any accidents, injuries, property damage, or any other harm that may occur while traveling to or from a Vendor&apos;s location to redeem a deal.</strong> Users are solely responsible for their own safety and should never rush, drive recklessly, or violate any traffic laws to meet a deal&apos;s expiration time. No deal is worth risking your safety.
+              <strong>SpontiCoupon, Online Commerce Hub, LLC, its officers, directors, employees, and affiliates are not liable for any accidents, injuries, property damage, or any other harm that may occur while traveling to or from a Vendor&apos;s location to redeem a deal.</strong> Users are solely responsible for their own safety and should never rush, drive recklessly, or violate any traffic laws to meet a deal&apos;s expiration time. No deal is worth risking your safety.
             </p>
             <p className="text-amber-800 leading-relaxed mt-3">
               By using Sponti Coupons, you agree to exercise reasonable caution and judgment. You understand that the countdown timer is an incentive feature and does not create an obligation to take unsafe actions. If you cannot safely redeem a deal within the timeframe, let it expire. Your safety always comes first.
@@ -101,14 +101,14 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">9. Indemnification</h2>
           <p className="text-gray-600 leading-relaxed">
-            You agree to indemnify and hold harmless SpontiCoupon, Go1000 AI, and their officers, directors, employees, agents, and affiliates from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorney&apos;s fees) arising from: (a) your use of the Service; (b) your violation of these Terms; (c) your violation of any rights of another party; or (d) any claim related to your interaction with a Vendor or another User.
+            You agree to indemnify and hold harmless SpontiCoupon, Online Commerce Hub, LLC, and their officers, directors, employees, agents, and affiliates from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorney&apos;s fees) arising from: (a) your use of the Service; (b) your violation of these Terms; (c) your violation of any rights of another party; or (d) any claim related to your interaction with a Vendor or another User.
           </p>
         </section>
 
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">10. Intellectual Property</h2>
           <p className="text-gray-600 leading-relaxed">
-            All content on the SpontiCoupon platform, including text, graphics, logos, icons, images, and software, is the property of Go1000 AI or its content suppliers and is protected by intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of the Service without our written permission.
+            All content on the SpontiCoupon platform, including text, graphics, logos, icons, images, and software, is the property of Online Commerce Hub, LLC or its content suppliers and is protected by intellectual property laws. You may not copy, modify, distribute, sell, or lease any part of the Service without our written permission.
           </p>
         </section>
 
@@ -122,7 +122,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">12. Dispute Resolution</h2>
           <p className="text-gray-600 leading-relaxed">
-            Any disputes arising from or relating to these Terms or the Service shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall take place in the state where Go1000 AI is incorporated, and the arbitrator&apos;s decision shall be final and binding. You agree to waive any right to a jury trial or class action.
+            Any disputes arising from or relating to these Terms or the Service shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall take place in the state where Online Commerce Hub, LLC is incorporated, and the arbitrator&apos;s decision shall be final and binding. You agree to waive any right to a jury trial or class action.
           </p>
         </section>
 
@@ -146,7 +146,7 @@ export default function TermsPage() {
             If you have any questions about these Terms of Service, please contact us at:
           </p>
           <div className="bg-gray-50 rounded-lg p-4 mt-3">
-            <p className="text-gray-700 font-medium">Go1000 AI — SpontiCoupon</p>
+            <p className="text-gray-700 font-medium">Online Commerce Hub, LLC — SpontiCoupon</p>
             <p className="text-gray-500 text-sm mt-1">Email: legal@sponticoupon.com</p>
             <p className="text-gray-500 text-sm">Website: sponticoupon.com</p>
           </div>
