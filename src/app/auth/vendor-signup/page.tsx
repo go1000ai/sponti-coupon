@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Lock, Building2, Phone, MapPin, CreditCard, Check } from 'lucide-react';
+import {
+  Mail, Lock, Building2, Phone, MapPin, CreditCard, Check,
+  ReceiptText, Zap, PiggyBank, Landmark, TrendingUp, CircleCheck,
+  XCircle, BadgeCheck, Wallet, Clock, CalendarX, Ban
+} from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
@@ -126,6 +130,125 @@ export default function VendorSignupPage() {
         {/* Step 1: Choose Plan */}
         {step === 1 && (
           <div>
+            {/* Why SpontiCoupon — Competitor Comparison */}
+            <div className="mb-12">
+              <h2 className="text-2xl font-bold text-secondary-500 text-center mb-8">
+                Why Businesses Switch to SpontiCoupon
+              </h2>
+              <div className="grid md:grid-cols-2 gap-6 mb-10">
+                {/* Traditional Platforms */}
+                <div className="card p-6 bg-gray-50 border-gray-200">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="bg-gray-400 rounded-lg p-2">
+                      <ReceiptText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-600">Traditional Platforms</h3>
+                      <p className="text-xs text-gray-400">Commission-based model</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { icon: ReceiptText, text: '15–30% commission taken from every sale' },
+                      { icon: Landmark, text: 'Platform collects & controls all payments' },
+                      { icon: Clock, text: 'Wait 60–90 days to receive your earnings' },
+                      { icon: CalendarX, text: 'Locked into long-term contracts' },
+                      { icon: Ban, text: 'Hidden fees, chargebacks, and fine print' },
+                      { icon: Wallet, text: 'The more you sell, the more they take' },
+                    ].map((item) => (
+                      <div key={item.text} className="flex items-start gap-2.5">
+                        <div className="bg-red-50 rounded-md p-1 shrink-0 mt-0.5">
+                          <item.icon className="w-3.5 h-3.5 text-red-400" />
+                        </div>
+                        <p className="text-gray-600 text-sm">{item.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 bg-red-50 border border-red-100 rounded-lg p-3">
+                    <p className="text-xs text-red-600 font-medium">On a $100 deal, you lose $15–$30 per transaction. Then wait up to 90 days to get the rest.</p>
+                  </div>
+                </div>
+
+                {/* SpontiCoupon */}
+                <div className="card p-6 border-primary-200 ring-2 ring-primary-500/20 relative">
+                  <div className="absolute -top-3 right-4 bg-gradient-to-r from-primary-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                    RECOMMENDED
+                  </div>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="bg-gradient-to-br from-primary-500 to-orange-600 rounded-lg p-2 shadow-lg shadow-orange-200">
+                      <SpontiIcon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-secondary-500">SpontiCoupon</h3>
+                      <p className="text-xs text-gray-400">Flat-rate model — 0% commission</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {[
+                      { icon: PiggyBank, text: '$0 commission — not now, not ever' },
+                      { icon: Landmark, text: 'Deposits go directly to YOUR Stripe account' },
+                      { icon: Zap, text: 'Get paid instantly — no waiting 60-90 days' },
+                      { icon: TrendingUp, text: 'Flat monthly rate — predictable costs' },
+                      { icon: Wallet, text: 'You keep 100% of every transaction' },
+                      { icon: CircleCheck, text: 'No contracts, no hidden fees — cancel anytime' },
+                    ].map((item) => (
+                      <div key={item.text} className="flex items-start gap-2.5">
+                        <div className="bg-green-50 rounded-md p-1 shrink-0 mt-0.5">
+                          <item.icon className="w-3.5 h-3.5 text-green-500" />
+                        </div>
+                        <p className="text-secondary-500 text-sm">{item.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 bg-green-50 border border-green-100 rounded-lg p-3">
+                    <p className="text-xs text-green-700 font-medium">On a $100 deal, you keep $100. Money hits your account instantly via Stripe.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick comparison table */}
+              <div className="card overflow-hidden border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-semibold text-gray-600">Feature</th>
+                        <th className="text-center py-3 px-4 font-semibold text-gray-400">Traditional</th>
+                        <th className="text-center py-3 px-4 font-semibold text-primary-600 bg-primary-50/50">SpontiCoupon</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {[
+                        { feature: 'Commission per sale', trad: '15–30%', sponti: '0%' },
+                        { feature: 'When you get paid', trad: '60–90 days', sponti: 'Instantly' },
+                        { feature: 'Who controls the money', trad: 'The platform', sponti: 'You — always' },
+                        { feature: 'Contract length', trad: '6–12 month lock-in', sponti: 'Cancel anytime' },
+                        { feature: 'Hidden fees', trad: 'Setup, marketing, penalties', sponti: 'None' },
+                        { feature: 'Flash deals (same day)', trad: 'Not available', sponti: 'Sponti Coupons' },
+                      ].map((row) => (
+                        <tr key={row.feature} className="hover:bg-gray-50/50">
+                          <td className="py-2.5 px-4 font-medium text-secondary-500">{row.feature}</td>
+                          <td className="py-2.5 px-4 text-center text-gray-400">
+                            <span className="inline-flex items-center gap-1">
+                              <XCircle className="w-3.5 h-3.5 text-red-300" />
+                              {row.trad}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-center bg-primary-50/30 font-semibold text-primary-600">
+                            <span className="inline-flex items-center gap-1">
+                              <BadgeCheck className="w-3.5 h-3.5 text-green-500" />
+                              {row.sponti}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-secondary-500 text-center mb-6">Choose Your Plan</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {tiers.map(([key, tier]) => (
                 <button

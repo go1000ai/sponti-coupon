@@ -38,14 +38,14 @@ export function DealTypeBadge({ type, size = 'md', className = '' }: DealTypeBad
         className={`
           inline-flex items-center justify-center
           ${outer} rounded-full
-          bg-primary-500/15 backdrop-blur-sm
-          ring-2 ring-primary-500
+          bg-primary-500/20 backdrop-blur-sm
+          ring-2 ring-primary-400
           sponti-glow
           ${className}
         `}
         title="Sponti Coupon — Flash deal with countdown timer"
       >
-        <SpontiIcon className={`${icon} text-primary-500 drop-shadow-[0_0_6px_rgba(232,99,43,0.6)]`} />
+        <SpontiIcon className={`${icon} text-primary-400 drop-shadow-[0_0_10px_rgba(232,99,43,0.9)]`} />
       </div>
     );
   }
@@ -74,8 +74,8 @@ export function DealTypeLegend({ className = '' }: { className?: string }) {
   return (
     <div className={`inline-flex items-center gap-4 text-xs text-gray-500 ${className}`}>
       <div className="flex items-center gap-2">
-        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/15 ring-[1.5px] ring-primary-500 sponti-glow">
-          <SpontiIcon className="w-3.5 h-3.5 text-primary-500 drop-shadow-[0_0_4px_rgba(232,99,43,0.6)]" />
+        <div className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary-500/20 ring-[1.5px] ring-primary-400 sponti-glow">
+          <SpontiIcon className="w-3.5 h-3.5 text-primary-400 drop-shadow-[0_0_8px_rgba(232,99,43,0.9)]" />
         </div>
         <span className="font-medium">Sponti Coupon</span>
         <span className="text-gray-400">— Flash deal, limited time</span>
