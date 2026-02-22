@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { ArrowRight, Clock, MapPin, Eye, ShieldCheck, TrendingUp, Users } from 'lucide-react';
-import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge, DealTypeLegend } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -72,15 +71,15 @@ export function BentoDeals() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 rounded-full px-5 py-2 mb-3 shadow-md">
-                <SpontiIcon className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">TOP PICKS</span>
+                <MapPin className="w-4 h-4 text-white" />
+                <span className="text-sm font-bold text-white tracking-wide">NEAR YOU</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-secondary-500">
-                Today&apos;s Best Deals
+                Deals Near You
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
-                Handpicked Sponti &amp; Steady deals — grab them before they&apos;re gone
+                The best Sponti &amp; Steady deals close to your location
               </p>
               {/* Deal type legend */}
               <DealTypeLegend className="mt-3 flex-wrap" />
