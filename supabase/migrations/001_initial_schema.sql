@@ -1,6 +1,5 @@
 -- Enable necessary extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "postgis";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Create custom types
 CREATE TYPE deal_type AS ENUM ('regular', 'sponti_coupon');
@@ -20,7 +19,7 @@ CREATE TABLE user_profiles (
 
 -- Categories
 CREATE TABLE categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   icon TEXT NOT NULL DEFAULT '🏷️',
   slug TEXT NOT NULL UNIQUE
@@ -67,7 +66,7 @@ CREATE TABLE customers (
 
 -- Deals
 CREATE TABLE deals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
   deal_type deal_type NOT NULL,
   title TEXT NOT NULL,
@@ -97,7 +96,7 @@ CREATE TABLE deals (
 
 -- Claims
 CREATE TABLE claims (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   session_token TEXT NOT NULL UNIQUE,
@@ -113,7 +112,7 @@ CREATE TABLE claims (
 
 -- Redemptions
 CREATE TABLE redemptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   claim_id UUID NOT NULL REFERENCES claims(id) ON DELETE CASCADE,
   deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
   vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
@@ -124,7 +123,7 @@ CREATE TABLE redemptions (
 
 -- Vendor locations (for multi-location Business/Enterprise)
 CREATE TABLE vendor_locations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   address TEXT NOT NULL,
@@ -138,7 +137,7 @@ CREATE TABLE vendor_locations (
 
 -- Subscriptions
 CREATE TABLE subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   vendor_id UUID NOT NULL REFERENCES vendors(id) ON DELETE CASCADE,
   stripe_subscription_id TEXT NOT NULL UNIQUE,
   tier subscription_tier NOT NULL,
@@ -150,7 +149,7 @@ CREATE TABLE subscriptions (
 
 -- Notifications
 CREATE TABLE notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
   type notification_type NOT NULL,
   deal_id UUID REFERENCES deals(id) ON DELETE SET NULL,
@@ -160,7 +159,7 @@ CREATE TABLE notifications (
 
 -- Featured deals (admin curated)
 CREATE TABLE featured_deals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   deal_id UUID NOT NULL REFERENCES deals(id) ON DELETE CASCADE,
   position INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
