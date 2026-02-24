@@ -37,6 +37,15 @@ export default function NewDealPage() {
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [additionalImages, setAdditionalImages] = useState<string[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>([]);
+  const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [amenities, setAmenities] = useState<string[]>([]);
+  const [newAmenity, setNewAmenity] = useState('');
+  const [highlights, setHighlights] = useState<string[]>([]);
+  const [newHighlight, setNewHighlight] = useState('');
+  const [uploadingAdditional, setUploadingAdditional] = useState(false);
+  const additionalFileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -49,6 +58,9 @@ export default function NewDealPage() {
     image_url: '',
     scheduled_date: '',
     scheduled_time: '',
+    terms_and_conditions: '',
+    how_it_works: '',
+    fine_print: '',
   });
 
   useEffect(() => {
@@ -202,6 +214,37 @@ export default function NewDealPage() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // ── Additional Image Upload ────────────────────────────────
+  const handleAdditionalFileUpload = async (file: File) => {
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      setError('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('File too large. Maximum size is 5MB.');
+      return;
+    }
+    setUploadingAdditional(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Upload failed');
+        setUploadingAdditional(false);
+        return;
+      }
+      setAdditionalImages(prev => [...prev, data.url]);
+    } catch {
+      setError('Failed to upload image. Please try again.');
+    }
+    setUploadingAdditional(false);
+  };
+
   // ── Submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -256,8 +299,15 @@ export default function NewDealPage() {
           expires_at: expiresAt,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           image_url: form.image_url || null,
+          image_urls: additionalImages,
           location_ids: locationIds,
           website_url: locationMode === 'website' && websiteUrl ? websiteUrl : null,
+          terms_and_conditions: form.terms_and_conditions || null,
+          video_urls: videoUrls,
+          amenities,
+          how_it_works: form.how_it_works || null,
+          highlights,
+          fine_print: form.fine_print || null,
         }),
       });
 
@@ -526,7 +576,193 @@ export default function NewDealPage() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400 mt-1.5">Upload a photo or paste a URL for your deal image (optional)</p>
+          <p className="text-xs text-gray-400 mt-1.5">Upload a photo or paste a URL for your main deal image (optional)</p>
+        </div>
+
+        {/* ── Additional Images ─────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Additional Images ({additionalImages.length}/10)
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {additionalImages.map((img, i) => (
+              <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img} alt={`Additional ${i + 1}`} className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
+                  className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            {additionalImages.length < 10 && (
+              <button
+                type="button"
+                onClick={() => additionalFileInputRef.current?.click()}
+                disabled={uploadingAdditional}
+                className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex flex-col items-center justify-center text-gray-400 hover:text-primary-500 transition-colors"
+              >
+                {uploadingAdditional ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    <span className="text-[10px] mt-0.5">Add</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <input
+            ref={additionalFileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) handleAdditionalFileUpload(file);
+              if (additionalFileInputRef.current) additionalFileInputRef.current.value = '';
+            }}
+          />
+          <p className="text-xs text-gray-400 mt-1.5">Add multiple photos to showcase your deal — customers can scroll through them</p>
+        </div>
+
+        {/* ── Video URLs ───────────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Videos (optional)</label>
+          {videoUrls.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {videoUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+                  <span className="text-sm text-gray-600 truncate flex-1">{url}</span>
+                  <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={newVideoUrl}
+              onChange={e => setNewVideoUrl(e.target.value)}
+              className="input-field flex-1"
+              placeholder="Paste YouTube or Vimeo URL..."
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (newVideoUrl.trim()) {
+                    setVideoUrls(prev => [...prev, newVideoUrl.trim()]);
+                    setNewVideoUrl('');
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newVideoUrl.trim()) {
+                  setVideoUrls(prev => [...prev, newVideoUrl.trim()]);
+                  setNewVideoUrl('');
+                }
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1.5">Add YouTube or Vimeo links to show off your product or service</p>
+        </div>
+
+        {/* ── Highlights ───────────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Highlights (optional)</label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {highlights.map((h, i) => (
+              <span key={i} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200">
+                {h}
+                <button type="button" onClick={() => setHighlights(prev => prev.filter((_, idx) => idx !== i))}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={newHighlight}
+              onChange={e => setNewHighlight(e.target.value)}
+              className="input-field flex-1"
+              placeholder="e.g., Best Seller, Family Friendly, Award Winning..."
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (newHighlight.trim()) {
+                    setHighlights(prev => [...prev, newHighlight.trim()]);
+                    setNewHighlight('');
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newHighlight.trim()) {
+                  setHighlights(prev => [...prev, newHighlight.trim()]);
+                  setNewHighlight('');
+                }
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* ── Amenities ────────────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Amenities (optional)</label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {amenities.map((a, i) => (
+              <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full border border-blue-200">
+                {a}
+                <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))}>
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={newAmenity}
+              onChange={e => setNewAmenity(e.target.value)}
+              className="input-field flex-1"
+              placeholder="e.g., Free Parking, WiFi, Pet Friendly, Outdoor Seating..."
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (newAmenity.trim()) {
+                    setAmenities(prev => [...prev, newAmenity.trim()]);
+                    setNewAmenity('');
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newAmenity.trim()) {
+                  setAmenities(prev => [...prev, newAmenity.trim()]);
+                  setNewAmenity('');
+                }
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -828,6 +1064,44 @@ export default function NewDealPage() {
             className="input-field"
             placeholder="Leave empty for unlimited"
           />
+        </div>
+
+        {/* ── How It Works ─────────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">How It Works (optional)</label>
+          <textarea
+            name="how_it_works"
+            value={form.how_it_works}
+            onChange={handleChange as React.ChangeEventHandler<HTMLTextAreaElement>}
+            className="input-field min-h-[80px]"
+            placeholder="Step-by-step instructions: 1. Claim the deal 2. Show QR code at checkout 3. Enjoy your savings!"
+          />
+          <p className="text-xs text-gray-400 mt-1">Help customers understand exactly how to use this deal</p>
+        </div>
+
+        {/* ── Terms & Conditions ───────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions (optional)</label>
+          <textarea
+            name="terms_and_conditions"
+            value={form.terms_and_conditions}
+            onChange={handleChange as React.ChangeEventHandler<HTMLTextAreaElement>}
+            className="input-field min-h-[80px]"
+            placeholder="e.g., Valid for dine-in only. Not combinable with other offers. One per customer per visit."
+          />
+        </div>
+
+        {/* ── Fine Print ───────────────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fine Print (optional)</label>
+          <textarea
+            name="fine_print"
+            value={form.fine_print}
+            onChange={handleChange as React.ChangeEventHandler<HTMLTextAreaElement>}
+            className="input-field min-h-[60px]"
+            placeholder="e.g., Must be 18+. Gratuity not included. Subject to availability."
+          />
+          <p className="text-xs text-gray-400 mt-1">Short restrictions or legal notes shown prominently to customers</p>
         </div>
 
         <button

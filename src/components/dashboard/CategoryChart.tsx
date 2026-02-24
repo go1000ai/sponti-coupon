@@ -49,6 +49,7 @@ export default function CategoryChart({ data }: { data: CategoryData[] }) {
                 fontSize: '13px',
                 color: '#fff',
               }}
+              itemStyle={{ color: '#fff' }}
               formatter={(value, name) => [`${value} deals`, name]}
               labelStyle={{ color: '#94a3b8' }}
             />

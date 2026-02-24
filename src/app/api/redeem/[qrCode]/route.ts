@@ -124,103 +124,107 @@ export async function POST(
   const remainingBalance = Math.max(0, dealPrice - depositPaid);
 
   // === LOYALTY AWARD (non-blocking — errors don't fail the redemption) ===
-  let loyaltyInfo: { program_type: string; program_name: string; earned: string; current: string } | null = null;
+  // Awards loyalty across ALL active programs for this vendor
+  const loyaltyAwards: { program_type: string; program_name: string; earned: string; current: string }[] = [];
   try {
     const serviceClient = await createServiceRoleClient();
 
-    // Check if vendor has an active loyalty program
-    const { data: program } = await serviceClient
+    // Get all active loyalty programs for this vendor
+    const { data: programs } = await serviceClient
       .from('loyalty_programs')
       .select('*')
       .eq('vendor_id', user.id)
-      .eq('is_active', true)
-      .single();
+      .eq('is_active', true);
 
-    if (program) {
-      // Find or create loyalty card for this customer+vendor
-      let { data: card } = await serviceClient
-        .from('loyalty_cards')
-        .select('*')
-        .eq('customer_id', claim.customer_id)
-        .eq('vendor_id', user.id)
-        .single();
-
-      if (!card) {
-        const { data: newCard } = await serviceClient
+    if (programs && programs.length > 0) {
+      for (const program of programs) {
+        // Find or create loyalty card for this customer+program
+        let { data: card } = await serviceClient
           .from('loyalty_cards')
-          .insert({
-            program_id: program.id,
-            customer_id: claim.customer_id,
-            vendor_id: user.id,
-          })
-          .select()
+          .select('*')
+          .eq('customer_id', claim.customer_id)
+          .eq('program_id', program.id)
           .single();
-        card = newCard;
-      }
 
-      if (card) {
-        if (program.program_type === 'punch_card') {
-          const newPunches = card.current_punches + 1;
-          await serviceClient
+        if (!card) {
+          const { data: newCard } = await serviceClient
             .from('loyalty_cards')
-            .update({
-              current_punches: newPunches,
-              total_punches_earned: card.total_punches_earned + 1,
+            .insert({
+              program_id: program.id,
+              customer_id: claim.customer_id,
+              vendor_id: user.id,
             })
-            .eq('id', card.id);
+            .select()
+            .single();
+          card = newCard;
+        }
 
-          await serviceClient.from('loyalty_transactions').insert({
-            card_id: card.id,
-            customer_id: claim.customer_id,
-            vendor_id: user.id,
-            redemption_id: redemptionRecord?.id || null,
-            transaction_type: 'earn_punch',
-            punches_amount: 1,
-            description: `Earned 1 stamp from "${claim.deal?.title}"`,
-            deal_title: claim.deal?.title,
-          });
+        if (card) {
+          if (program.program_type === 'punch_card') {
+            const newPunches = card.current_punches + 1;
+            await serviceClient
+              .from('loyalty_cards')
+              .update({
+                current_punches: newPunches,
+                total_punches_earned: card.total_punches_earned + 1,
+              })
+              .eq('id', card.id);
 
-          loyaltyInfo = {
-            program_type: 'punch_card',
-            program_name: program.name,
-            earned: '1 stamp',
-            current: `${newPunches}/${program.punches_required} stamps`,
-          };
-        } else if (program.program_type === 'points') {
-          const pointsEarned = Math.floor(dealPrice * (program.points_per_dollar || 1));
-          const newPoints = card.current_points + pointsEarned;
+            await serviceClient.from('loyalty_transactions').insert({
+              card_id: card.id,
+              customer_id: claim.customer_id,
+              vendor_id: user.id,
+              redemption_id: redemptionRecord?.id || null,
+              transaction_type: 'earn_punch',
+              punches_amount: 1,
+              description: `Earned 1 stamp from "${claim.deal?.title}"`,
+              deal_title: claim.deal?.title,
+            });
 
-          await serviceClient
-            .from('loyalty_cards')
-            .update({
-              current_points: newPoints,
-              total_points_earned: card.total_points_earned + pointsEarned,
-            })
-            .eq('id', card.id);
+            loyaltyAwards.push({
+              program_type: 'punch_card',
+              program_name: program.name,
+              earned: '1 stamp',
+              current: `${newPunches}/${program.punches_required} stamps`,
+            });
+          } else if (program.program_type === 'points') {
+            const pointsEarned = Math.floor(dealPrice * (program.points_per_dollar || 1));
+            const newPoints = card.current_points + pointsEarned;
 
-          await serviceClient.from('loyalty_transactions').insert({
-            card_id: card.id,
-            customer_id: claim.customer_id,
-            vendor_id: user.id,
-            redemption_id: redemptionRecord?.id || null,
-            transaction_type: 'earn_points',
-            points_amount: pointsEarned,
-            description: `Earned ${pointsEarned} points from "${claim.deal?.title}"`,
-            deal_title: claim.deal?.title,
-          });
+            await serviceClient
+              .from('loyalty_cards')
+              .update({
+                current_points: newPoints,
+                total_points_earned: card.total_points_earned + pointsEarned,
+              })
+              .eq('id', card.id);
 
-          loyaltyInfo = {
-            program_type: 'points',
-            program_name: program.name,
-            earned: `${pointsEarned} points`,
-            current: `${newPoints} points`,
-          };
+            await serviceClient.from('loyalty_transactions').insert({
+              card_id: card.id,
+              customer_id: claim.customer_id,
+              vendor_id: user.id,
+              redemption_id: redemptionRecord?.id || null,
+              transaction_type: 'earn_points',
+              points_amount: pointsEarned,
+              description: `Earned ${pointsEarned} points from "${claim.deal?.title}"`,
+              deal_title: claim.deal?.title,
+            });
+
+            loyaltyAwards.push({
+              program_type: 'points',
+              program_name: program.name,
+              earned: `${pointsEarned} points`,
+              current: `${newPoints} points`,
+            });
+          }
         }
       }
     }
   } catch (loyaltyError) {
     console.error('Loyalty award error:', loyaltyError);
   }
+
+  const loyaltyInfo = loyaltyAwards.length > 0 ? loyaltyAwards[0] : null;
 
   return NextResponse.json({
     success: true,
@@ -239,6 +243,7 @@ export async function POST(
     remaining_balance: remainingBalance,
     redeemed_at: new Date().toISOString(),
     loyalty: loyaltyInfo,
+    loyalty_awards: loyaltyAwards.length > 0 ? loyaltyAwards : undefined,
   });
 }
 

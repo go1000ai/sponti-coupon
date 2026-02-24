@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Ticket,
   Heart,
+  Gift,
   Bell,
   Settings,
   Compass,
@@ -21,6 +22,7 @@ import {
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'My Coupons', href: '/dashboard/my-deals', icon: Ticket },
+  { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift },
   { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },

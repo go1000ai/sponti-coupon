@@ -136,6 +136,12 @@ export interface Deal {
   benchmark_deal_id: string | null;
   location_ids: string[] | null;
   website_url: string | null;
+  terms_and_conditions: string | null;
+  video_urls: string[];
+  amenities: string[];
+  how_it_works: string | null;
+  highlights: string[];
+  fine_print: string | null;
   created_at: string;
   // Joined fields
   vendor?: Vendor;

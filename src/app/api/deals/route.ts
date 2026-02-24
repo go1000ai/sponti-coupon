@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   const radius = searchParams.get('radius') || '25';
   const dealType = searchParams.get('type');
   const city = searchParams.get('city');
+  const searchText = searchParams.get('search');
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '20');
   const offset = (page - 1) * limit;
@@ -31,6 +32,10 @@ export async function GET(request: NextRequest) {
 
   if (city) {
     query = query.eq('vendor.city', city);
+  }
+
+  if (searchText) {
+    query = query.or(`title.ilike.%${searchText}%,description.ilike.%${searchText}%`);
   }
 
   const { data: deals, count, error } = await query;
@@ -165,7 +170,8 @@ export async function POST(request: NextRequest) {
   const {
     deal_type, title, description, original_price, deal_price,
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
-    location_ids, website_url,
+    location_ids, website_url, terms_and_conditions, video_urls, amenities,
+    how_it_works, highlights, fine_print, image_urls,
   } = body;
 
   // Check if vendor is trying to schedule a future deal without the custom_scheduling feature
@@ -247,9 +253,16 @@ export async function POST(request: NextRequest) {
         timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         status: dealStatus,
         image_url,
+        image_urls: image_urls || [],
         benchmark_deal_id: regularDeal.id,
         location_ids: location_ids || null,
         website_url: website_url || null,
+        terms_and_conditions: terms_and_conditions || null,
+        video_urls: video_urls || [],
+        amenities: amenities || [],
+        how_it_works: how_it_works || null,
+        highlights: highlights || [],
+        fine_print: fine_print || null,
       })
       .select()
       .single();
@@ -290,8 +303,15 @@ export async function POST(request: NextRequest) {
       timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       status: regularDealStatus,
       image_url,
+      image_urls: image_urls || [],
       location_ids: location_ids || null,
       website_url: website_url || null,
+      terms_and_conditions: terms_and_conditions || null,
+      video_urls: video_urls || [],
+      amenities: amenities || [],
+      how_it_works: how_it_works || null,
+      highlights: highlights || [],
+      fine_print: fine_print || null,
     })
     .select()
     .single();

@@ -171,10 +171,10 @@ export default function RootLayout({
       },
       {
         "@type": "Question",
-        name: "How is SpontiCoupon different from Groupon?",
+        name: "How is SpontiCoupon different from other deal platforms?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Unlike Groupon, SpontiCoupon focuses on 24-hour Sponti Deals (Sponti Coupons) that offer deeper discounts due to their time-limited nature. Vendors can post deals every 3 hours, and the shorter the redemption window, the higher the discount. All businesses are verified, and redemption is instant via QR code.",
+          text: "SpontiCoupon charges a flat monthly fee instead of taking a percentage of each sale. Vendors keep 100% of their revenue, control their own deal terms and deposit policies, and get paid instantly. We focus on 24-hour Sponti Deals (Sponti Coupons) with deeper discounts, verified businesses, and instant QR code redemption.",
         },
       },
       {

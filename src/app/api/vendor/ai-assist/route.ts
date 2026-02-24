@@ -4,13 +4,17 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
 
-type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply';
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name';
 
 const PROMPTS: Record<AssistType, string> = {
   business_description: `You are a marketing copywriter helping local businesses write compelling business descriptions for their profile on a coupon/deal app. Write a warm, professional, and inviting description that highlights what makes the business special. Keep it under 500 characters. Return ONLY the description text, no quotes, no labels.`,
   deal_title: `You are a marketing expert for local businesses. Write a short, catchy, attention-grabbing deal title (max 60 characters). Make it urgent and compelling. Return ONLY the title text, no quotes, no labels.`,
   deal_description: `You are an expert marketing copywriter for local businesses. Write a vivid, specific 3-5 sentence deal description that makes customers want to act immediately. Use sensory language and concrete details about what the customer will experience, taste, or receive. Mention specific items, flavors, or services — NEVER be vague or generic. Include the actual savings when possible and end with a strong call-to-action. The description should read like a mini advertisement, not generic marketing fluff. Return ONLY the description text, no quotes, no labels.`,
   review_reply: `You are a customer service expert helping a local business owner reply to a customer review. Write a professional, warm, and appreciative response. If the review is negative, be empathetic and constructive. Keep it concise (2-3 sentences). Return ONLY the reply text, no quotes, no labels.`,
+  loyalty_program_name: `You are a branding expert helping a local business name their customer loyalty program. Create a catchy, memorable, and on-brand program name that makes customers feel special and excited to participate. The name should be short (2-5 words), easy to remember, and reflect the business category. Examples for inspiration: "Bean Club" for a coffee shop, "Glow Rewards" for a spa, "Fit Points" for a gym. Return ONLY the program name, no quotes, no labels, no explanation.`,
+  loyalty_description: `You are a marketing copywriter helping a local business write a short description for their customer loyalty program. Make it exciting and clear — explain the benefit to the customer in 1-2 sentences. Be specific to the business category. Use action words and make the customer feel like they're getting an exclusive deal. Keep it under 200 characters. Return ONLY the description text, no quotes, no labels.`,
+  loyalty_reward: `You are a marketing expert helping a local business decide what free reward to offer customers who complete their loyalty punch card. Suggest a specific, enticing, and realistic reward that matches the business category and would motivate repeat visits. Be concrete — not "free item" but "Free Large Iced Coffee" or "Free 30-Minute Massage". Return ONLY the reward text, no quotes, no labels, no explanation.`,
+  loyalty_reward_name: `You are a marketing expert helping a local business name a points reward tier for their loyalty program. Create a short, appealing reward name (2-6 words) that sounds exclusive and desirable. Match the business category. Examples: "Free Signature Smoothie", "VIP Styling Session", "Premium Car Wash". Return ONLY the reward name, no quotes, no labels, no explanation.`,
 };
 
 // Tone-specific system prompts for review replies
@@ -93,6 +97,35 @@ export async function POST(request: NextRequest) {
     userMessage += `\nCustomer review: ${context?.review_text || '(no text)'}`;
     if (context?.customer_name) userMessage += `\nCustomer name: ${context.customer_name}`;
     userMessage += `\n\nWrite a professional reply to this review.`;
+  } else if (type === 'loyalty_program_name') {
+    userMessage += `\nProgram type: ${context?.program_type === 'points' ? 'Points System' : 'Punch Card'}`;
+    userMessage += `\n\nCreate a catchy loyalty program name for this ${category || ''} business.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current name (improve or create a new alternative):\n${context.current_text}`;
+    }
+  } else if (type === 'loyalty_description') {
+    userMessage += `\nProgram type: ${context?.program_type === 'points' ? 'Points System' : 'Punch Card'}`;
+    if (context?.program_name) userMessage += `\nProgram name: ${context.program_name}`;
+    userMessage += `\n\nWrite a short, exciting description for this loyalty program.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current description (improve or rewrite it):\n${context.current_text}`;
+    }
+  } else if (type === 'loyalty_reward') {
+    userMessage += `\nProgram type: Punch Card`;
+    if (context?.program_name) userMessage += `\nProgram name: ${context.program_name}`;
+    if (context?.punches_required) userMessage += `\nStamps required: ${context.punches_required}`;
+    userMessage += `\n\nSuggest a specific, enticing free reward for completing the punch card.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current reward (improve or suggest a better alternative):\n${context.current_text}`;
+    }
+  } else if (type === 'loyalty_reward_name') {
+    userMessage += `\nProgram type: Points System`;
+    if (context?.program_name) userMessage += `\nProgram name: ${context.program_name}`;
+    if (context?.points_cost) userMessage += `\nPoints cost: ${context.points_cost}`;
+    userMessage += `\n\nSuggest a reward name for this points tier.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current reward name (improve or suggest an alternative):\n${context.current_text}`;
+    }
   }
 
   const anthropicKey = process.env.SPONTI_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
@@ -142,6 +175,14 @@ function getFallbackText(type: AssistType, businessName: string, category: strin
       return `Don't miss this incredible deal from ${businessName}! Enjoy premium ${category || 'products and services'} at an unbeatable price. This limited-time offer is exclusively available to SpontiCoupon users — grab it before it's gone!`;
     case 'review_reply':
       return `Thank you so much for your feedback! We truly appreciate you taking the time to share your experience with ${businessName}. Your satisfaction means the world to us, and we look forward to seeing you again soon!`;
+    case 'loyalty_program_name':
+      return `${businessName} Rewards`;
+    case 'loyalty_description':
+      return `Earn rewards every time you shop with ${businessName}! The more you visit, the more you save.`;
+    case 'loyalty_reward':
+      return `Free ${category || 'item'} of your choice`;
+    case 'loyalty_reward_name':
+      return `${businessName} Special Reward`;
     default:
       return '';
   }

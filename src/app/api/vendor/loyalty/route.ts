@@ -21,8 +21,8 @@ async function getVendorWithTierCheck(supabase: Awaited<ReturnType<typeof create
   return { user, tier };
 }
 
-// GET /api/vendor/loyalty — Get vendor's loyalty program + rewards + stats
-export async function GET() {
+// GET /api/vendor/loyalty — Get all vendor loyalty programs + rewards + stats
+export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -32,25 +32,91 @@ export async function GET() {
 
   const serviceClient = await createServiceRoleClient();
 
-  // Get program
-  const { data: program } = await serviceClient
+  // Support single-program query via ?id=
+  const programId = request.nextUrl.searchParams.get('id');
+
+  if (programId) {
+    // Single program detail
+    const { data: program } = await serviceClient
+      .from('loyalty_programs')
+      .select('*')
+      .eq('id', programId)
+      .eq('vendor_id', user.id)
+      .single();
+
+    if (!program) {
+      return NextResponse.json({ program: null, rewards: [], stats: null });
+    }
+
+    const { data: rewards } = await serviceClient
+      .from('loyalty_rewards')
+      .select('*')
+      .eq('program_id', program.id)
+      .order('sort_order', { ascending: true });
+
+    // Stats for this program
+    const { count: totalMembers } = await serviceClient
+      .from('loyalty_cards')
+      .select('*', { count: 'exact', head: true })
+      .eq('program_id', program.id);
+
+    const { data: cardStats } = await serviceClient
+      .from('loyalty_cards')
+      .select('total_punches_earned, total_points_earned')
+      .eq('program_id', program.id);
+
+    const totalPunches = cardStats?.reduce((sum, c) => sum + (c.total_punches_earned || 0), 0) || 0;
+    const totalPoints = cardStats?.reduce((sum, c) => sum + (c.total_points_earned || 0), 0) || 0;
+
+    const { count: rewardsRedeemed } = await serviceClient
+      .from('loyalty_transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('vendor_id', user.id)
+      .in('transaction_type', ['redeem_punch_reward', 'redeem_points_reward']);
+
+    return NextResponse.json({
+      program,
+      rewards: rewards || [],
+      stats: {
+        total_members: totalMembers || 0,
+        total_punches: totalPunches,
+        total_points: totalPoints,
+        rewards_redeemed: rewardsRedeemed || 0,
+      },
+    });
+  }
+
+  // All programs for vendor
+  const { data: programs } = await serviceClient
     .from('loyalty_programs')
     .select('*')
     .eq('vendor_id', user.id)
-    .single();
+    .order('created_at', { ascending: false });
 
-  if (!program) {
-    return NextResponse.json({ program: null, rewards: [], stats: null });
+  if (!programs || programs.length === 0) {
+    return NextResponse.json({ programs: [], program: null, rewards: [], stats: null });
   }
 
-  // Get rewards (for points programs)
+  // For each program, get member count
+  const programsWithStats = await Promise.all(
+    programs.map(async (prog) => {
+      const { count: memberCount } = await serviceClient
+        .from('loyalty_cards')
+        .select('*', { count: 'exact', head: true })
+        .eq('program_id', prog.id);
+
+      return { ...prog, member_count: memberCount || 0 };
+    })
+  );
+
+  // Also return first program's full detail for backwards compatibility
+  const firstProgram = programs[0];
   const { data: rewards } = await serviceClient
     .from('loyalty_rewards')
     .select('*')
-    .eq('program_id', program.id)
+    .eq('program_id', firstProgram.id)
     .order('sort_order', { ascending: true });
 
-  // Get stats
   const { count: totalMembers } = await serviceClient
     .from('loyalty_cards')
     .select('*', { count: 'exact', head: true })
@@ -71,7 +137,9 @@ export async function GET() {
     .in('transaction_type', ['redeem_punch_reward', 'redeem_points_reward']);
 
   return NextResponse.json({
-    program,
+    programs: programsWithStats,
+    // Backwards compat
+    program: firstProgram,
     rewards: rewards || [],
     stats: {
       total_members: totalMembers || 0,
@@ -125,16 +193,13 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    if (error.code === '23505') {
-      return NextResponse.json({ error: 'You already have a loyalty program. Delete it first to create a new one.' }, { status: 409 });
-    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({ program });
 }
 
-// PUT /api/vendor/loyalty — Update loyalty program
+// PUT /api/vendor/loyalty — Update loyalty program (requires ?id= or updates first program)
 export async function PUT(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const check = await getVendorWithTierCheck(supabase);
@@ -143,6 +208,7 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
+  const programId = body.id || request.nextUrl.searchParams.get('id');
   const updates: Record<string, unknown> = {};
 
   if (body.name !== undefined) updates.name = body.name;
@@ -153,12 +219,17 @@ export async function PUT(request: NextRequest) {
   if (body.points_per_dollar !== undefined) updates.points_per_dollar = body.points_per_dollar;
 
   const serviceClient = await createServiceRoleClient();
-  const { data: program, error } = await serviceClient
+
+  let query = serviceClient
     .from('loyalty_programs')
     .update(updates)
-    .eq('vendor_id', check.user.id)
-    .select()
-    .single();
+    .eq('vendor_id', check.user.id);
+
+  if (programId) {
+    query = query.eq('id', programId);
+  }
+
+  const { data: program, error } = await query.select().single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -167,8 +238,8 @@ export async function PUT(request: NextRequest) {
   return NextResponse.json({ program });
 }
 
-// DELETE /api/vendor/loyalty — Delete loyalty program (cascades cards/rewards/transactions)
-export async function DELETE() {
+// DELETE /api/vendor/loyalty — Delete a loyalty program (requires ?id= or deletes all)
+export async function DELETE(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -176,11 +247,19 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const programId = request.nextUrl.searchParams.get('id');
   const serviceClient = await createServiceRoleClient();
-  const { error } = await serviceClient
+
+  let query = serviceClient
     .from('loyalty_programs')
     .delete()
     .eq('vendor_id', user.id);
+
+  if (programId) {
+    query = query.eq('id', programId);
+  }
+
+  const { error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

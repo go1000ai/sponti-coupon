@@ -19,7 +19,19 @@ export async function GET(
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ deal });
+  // Fetch other active deals from the same vendor (for "More from this vendor" section)
+  const { data: vendorDeals } = await supabase
+    .from('deals')
+    .select('id, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status')
+    .eq('vendor_id', deal.vendor_id)
+    .eq('status', 'active')
+    .neq('id', id)
+    .gte('expires_at', new Date().toISOString())
+    .order('deal_type', { ascending: true })
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  return NextResponse.json({ deal, vendor_deals: vendorDeals || [] });
 }
 
 // PATCH /api/deals/[id] - Update deal (vendor only)
@@ -47,7 +59,11 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { status, expires_at, title, description, original_price, deal_price, discount_percentage, deposit_amount, max_claims, image_url } = body;
+  const {
+    status, expires_at, title, description, original_price, deal_price,
+    discount_percentage, deposit_amount, max_claims, image_url, image_urls,
+    terms_and_conditions, video_urls, amenities, how_it_works, highlights, fine_print,
+  } = body;
 
   // If trying to edit content fields (not just status), check if deal has any claims
   const isContentEdit = title !== undefined || description !== undefined || original_price !== undefined ||
@@ -72,6 +88,13 @@ export async function PATCH(
   if (deposit_amount !== undefined) updates.deposit_amount = deposit_amount;
   if (max_claims !== undefined) updates.max_claims = max_claims;
   if (image_url !== undefined) updates.image_url = image_url;
+  if (image_urls !== undefined) updates.image_urls = image_urls;
+  if (terms_and_conditions !== undefined) updates.terms_and_conditions = terms_and_conditions;
+  if (video_urls !== undefined) updates.video_urls = video_urls;
+  if (amenities !== undefined) updates.amenities = amenities;
+  if (how_it_works !== undefined) updates.how_it_works = how_it_works;
+  if (highlights !== undefined) updates.highlights = highlights;
+  if (fine_print !== undefined) updates.fine_print = fine_print;
 
   const { data: deal, error } = await supabase
     .from('deals')

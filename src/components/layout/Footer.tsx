@@ -13,7 +13,8 @@ export function Footer() {
   }
 
   return (
-    <footer className="bg-secondary-500 text-white">
+    <footer className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-700 text-white relative overflow-hidden">
+      <div className="absolute inset-0 dot-pattern opacity-[0.03]" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -45,7 +46,7 @@ export function Footer() {
             <ul className="space-y-2 text-gray-400 text-sm">
               <li><Link href="/auth/signup?type=vendor" className="hover:text-primary-500 transition-colors">List Your Business</Link></li>
               <li><Link href="/pricing" className="hover:text-primary-500 transition-colors">Pricing</Link></li>
-              <li><Link href="/vendor-faq" className="hover:text-primary-500 transition-colors">Vendor FAQ</Link></li>
+              <li><Link href="/faq" className="hover:text-primary-500 transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
