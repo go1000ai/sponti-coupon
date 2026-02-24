@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
+export const runtime = 'edge';
+
 // GET /api/reviews/eligibility?vendor_id=...&deal_id=...
 // Returns review eligibility status for the current user
 export async function GET(request: NextRequest) {

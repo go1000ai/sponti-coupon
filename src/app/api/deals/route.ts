@@ -3,6 +3,8 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
+export const runtime = 'edge';
+
 // GET /api/deals - Browse deals with filters (public endpoint, uses anon client with RLS)
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
