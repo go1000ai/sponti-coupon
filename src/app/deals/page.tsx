@@ -37,6 +37,7 @@ export default function DealsPage() {
     if (filters.city) params.set('city', filters.city);
     if (filters.search) params.set('search', filters.search);
 
+    params.set('limit', '100');
     const response = await fetch(`/api/deals?${params.toString()}`);
     const data = await response.json();
     setDeals(data.deals || []);
