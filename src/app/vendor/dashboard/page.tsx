@@ -13,6 +13,7 @@ import {
   Zap, ArrowUpRight, CheckCircle2, XCircle, Loader2,
   Hash, Star,
 } from 'lucide-react';
+import { ROIDashboard } from '@/components/vendor/ROIDashboard';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
@@ -408,8 +409,13 @@ function VendorDashboard() {
         )}
       </div>
 
+      {/* ROI Dashboard */}
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: '900ms' }}>
+        <ROIDashboard />
+      </div>
+
       {/* Recent Deals */}
-      <div className="card animate-fade-up" style={{ animationDelay: '900ms' }}>
+      <div className="card animate-fade-up" style={{ animationDelay: '1000ms' }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-secondary-500">Recent Deals</h2>
           <Link href="/vendor/deals" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">

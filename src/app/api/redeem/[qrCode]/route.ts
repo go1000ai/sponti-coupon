@@ -226,6 +226,50 @@ export async function POST(
 
   const loyaltyInfo = loyaltyAwards.length > 0 ? loyaltyAwards[0] : null;
 
+  // === SPONTIPOINTS AWARD (non-blocking — errors don't fail the redemption) ===
+  let spontiPointsEarned = 0;
+  let spontiPointsBalance = 0;
+  try {
+    const spServiceClient = await createServiceRoleClient();
+    const SPONTI_POINTS_PER_REDEMPTION = 25;
+    const SPONTI_POINTS_EXPIRY_MONTHS = 12;
+
+    if (redemptionRecord?.id) {
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + SPONTI_POINTS_EXPIRY_MONTHS);
+
+      // Idempotent insert — unique index on (redemption_id) WHERE reason='earn_redemption'
+      const { error: spInsertError } = await spServiceClient
+        .from('spontipoints_ledger')
+        .insert({
+          user_id: claim.customer_id,
+          vendor_id: user.id,
+          deal_id: claim.deal_id,
+          redemption_id: redemptionRecord.id,
+          points: SPONTI_POINTS_PER_REDEMPTION,
+          reason: 'earn_redemption',
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (!spInsertError) {
+        spontiPointsEarned = SPONTI_POINTS_PER_REDEMPTION;
+      } else if (spInsertError.code === '23505') {
+        // Duplicate — already awarded for this redemption, ignore
+        console.log('SpontiPoints already awarded for redemption:', redemptionRecord.id);
+      } else {
+        console.error('SpontiPoints insert error:', spInsertError);
+      }
+
+      // Fetch current balance
+      const { data: balanceResult } = await spServiceClient
+        .rpc('get_spontipoints_balance', { p_user_id: claim.customer_id });
+
+      spontiPointsBalance = balanceResult || 0;
+    }
+  } catch (spontiError) {
+    console.error('SpontiPoints award error:', spontiError);
+  }
+
   return NextResponse.json({
     success: true,
     customer: {
@@ -244,6 +288,11 @@ export async function POST(
     redeemed_at: new Date().toISOString(),
     loyalty: loyaltyInfo,
     loyalty_awards: loyaltyAwards.length > 0 ? loyaltyAwards : undefined,
+    sponti_points: spontiPointsEarned > 0 ? {
+      earned: spontiPointsEarned,
+      balance: spontiPointsBalance,
+      message: `You earned ${spontiPointsEarned} SpontiPoints! Balance: ${spontiPointsBalance} pts`,
+    } : undefined,
   });
 }
 

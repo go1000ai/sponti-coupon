@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { LoyaltyCards } from '@/components/customer/LoyaltyCards';
+import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 import type { Claim, Deal, Vendor, BusinessHours } from '@/lib/types/database';
 
@@ -147,6 +148,13 @@ export default function DashboardMyDealsPage() {
 
       {/* Loyalty Cards */}
       {!loading && <LoyaltyCards />}
+
+      {/* SpontiPoints Wallet */}
+      {!loading && (
+        <div className="mb-6">
+          <SpontiPointsWallet />
+        </div>
+      )}
 
       {/* Filters + Sort */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">

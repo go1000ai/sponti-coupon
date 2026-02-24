@@ -33,6 +33,26 @@ export async function GET(
     .order('created_at', { ascending: false })
     .limit(10);
 
+  // Record deal view (non-blocking, fire-and-forget)
+  // Use Edge-compatible Web Crypto API for IP hashing
+  const forwarded = request.headers.get('x-forwarded-for');
+  const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Hash IP for privacy (no raw IPs stored)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + id); // combine IP + deal_id for per-deal dedup
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const ipHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // Fire-and-forget: don't await, don't block response
+  supabase.from('deal_views').insert({
+    deal_id: id,
+    viewer_id: user?.id || null,
+    ip_hash: ipHash,
+  }).then(() => { /* ignore result */ });
+
   return NextResponse.json({ deal, vendor_deals: vendorDeals || [] });
 }
 

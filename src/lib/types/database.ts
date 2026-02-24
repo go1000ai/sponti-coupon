@@ -8,6 +8,7 @@ export type UserRole = 'vendor' | 'customer' | 'admin';
 export type PaymentProcessorType = 'stripe' | 'square' | 'paypal' | 'venmo' | 'zelle' | 'cashapp';
 export type LoyaltyProgramType = 'punch_card' | 'points';
 export type LoyaltyTransactionType = 'earn_punch' | 'earn_points' | 'redeem_punch_reward' | 'redeem_points_reward';
+export type SpontiPointsReason = 'earn_redemption' | 'spend_credit' | 'bonus' | 'adjustment' | 'reversal' | 'expired';
 
 export interface VendorSocialLinks {
   instagram?: string;
@@ -88,6 +89,7 @@ export interface Vendor {
   subscription_status: SubscriptionStatus | null;
   stripe_payment_link: string | null;
   deposit_webhook_secret: string | null;
+  average_ticket_value: number | null;
   created_at: string;
 }
 
@@ -319,6 +321,40 @@ export interface LoyaltyTransaction {
   punches_amount: number;
   description: string | null;
   deal_title: string | null;
+  created_at: string;
+}
+
+// SpontiPoints (platform loyalty)
+export interface SpontiPointsLedgerEntry {
+  id: string;
+  user_id: string;
+  vendor_id: string | null;
+  deal_id: string | null;
+  redemption_id: string | null;
+  points: number;
+  reason: SpontiPointsReason;
+  expires_at: string | null;
+  created_at: string;
+  // Joined
+  deal?: Deal;
+  vendor?: Vendor;
+}
+
+export interface SpontiPointsRedemption {
+  id: string;
+  user_id: string;
+  points_used: number;
+  credit_amount: number;
+  applied_to: string | null;
+  created_at: string;
+}
+
+// Deal view tracking
+export interface DealView {
+  id: string;
+  deal_id: string;
+  viewer_id: string | null;
+  ip_hash: string | null;
   created_at: string;
 }
 
