@@ -368,9 +368,89 @@ export default function DealDetailPage() {
                 </div>
               )}
 
+              {/* What's Included */}
+              <div className="mt-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl p-5 border border-gray-100">
+                <h3 className="text-sm font-bold text-secondary-500 mb-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" /> What&apos;s Included
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                    {deal.title}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                    Save {formatPercentage(deal.discount_percentage)} off retail
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                    Digital QR code for redemption
+                  </div>
+                  {isSponti && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                      Exclusive time-limited pricing
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Sponti vs Steady Explanation */}
+              <div className={`mt-5 rounded-xl p-5 border ${isSponti ? 'bg-gradient-to-br from-primary-50 to-orange-50 border-primary-200' : 'bg-gradient-to-br from-secondary-50 to-blue-50 border-secondary-200'}`}>
+                <div className="flex items-start gap-3">
+                  {isSponti ? (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/30">
+                      <SpontiIcon className="w-5 h-5 text-white" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-secondary-500/30">
+                      <Tag className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-bold text-secondary-500">
+                      {isSponti ? 'This is a Sponti Deal' : 'This is a Steady Deal'}
+                    </h3>
+                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                      {isSponti
+                        ? 'Sponti deals are spontaneous, time-limited offers with deep discounts — often 50-70% off. They appear without warning and expire within hours, so you need to act fast! A small deposit locks in your deal, which you pay when you visit the business.'
+                        : 'Steady deals are everyday savings that stick around longer. They offer reliable discounts from local businesses — typically 20-40% off — with more time to claim and redeem. No deposit required, just claim and show your QR code!'
+                      }
+                    </p>
+                    <div className="flex flex-wrap gap-3 mt-3">
+                      {isSponti ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <Zap className="w-3 h-3" /> Deep discounts
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <Clock className="w-3 h-3" /> Limited time
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <Shield className="w-3 h-3" /> Small deposit to claim
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <Tag className="w-3 h-3" /> Everyday savings
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <Clock className="w-3 h-3" /> More time to redeem
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
+                            <CheckCircle2 className="w-3 h-3" /> No deposit needed
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Countdown for Sponti */}
               {!isExpired && isSponti && (
-                <div className="mt-6 bg-gradient-to-r from-secondary-500 to-secondary-600 rounded-xl p-5 text-white">
+                <div className="mt-5 bg-gradient-to-r from-secondary-500 to-secondary-600 rounded-xl p-5 text-white">
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="w-5 h-5 text-primary-400" />
                     <span className="font-semibold">Deal expires in:</span>
@@ -470,6 +550,31 @@ export default function DealDetailPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Redemption Instructions */}
+                    <div>
+                      <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-primary-500" /> How to Redeem
+                      </h3>
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
+                        <ol className="space-y-3">
+                          {[
+                            { title: 'Claim this deal', desc: isSponti ? `Pay the ${formatCurrency(deal.deposit_amount || 0)} deposit to secure your spot` : 'Click the claim button — no payment required' },
+                            { title: 'Get your QR code', desc: 'A unique QR code will appear in your "My Coupons" dashboard' },
+                            { title: 'Visit the business', desc: `Head to ${vendor?.business_name || 'the business'} before the deal expires` },
+                            { title: 'Show your QR code', desc: 'The staff will scan it to apply your discount' },
+                          ].map((step, i) => (
+                            <li key={i} className="flex items-start gap-3">
+                              <div className="w-7 h-7 rounded-full bg-green-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
+                              <div>
+                                <p className="font-semibold text-secondary-500 text-sm">{step.title}</p>
+                                <p className="text-xs text-gray-600 mt-0.5">{step.desc}</p>
+                              </div>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
 
                     {/* Fine Print */}
                     {deal.fine_print && (
@@ -879,6 +984,41 @@ export default function DealDetailPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Deal at a Glance */}
+              <div className="bg-white rounded-2xl shadow-sm p-5">
+                <h4 className="text-sm font-semibold text-secondary-500 mb-3">Deal at a Glance</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Type</span>
+                    <DealTypeBadge type={deal.deal_type} size="sm" />
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Discount</span>
+                    <span className="font-bold text-green-600">{formatPercentage(deal.discount_percentage)} OFF</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">You Save</span>
+                    <span className="font-semibold text-secondary-500">{formatCurrency(deal.original_price - deal.deal_price)}</span>
+                  </div>
+                  {deal.max_claims && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Available</span>
+                      <span className="font-semibold text-secondary-500">{deal.max_claims - deal.claims_count} of {deal.max_claims} left</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Expires</span>
+                    <span className="font-medium text-gray-700">{new Date(deal.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </div>
+                  {vendor?.category && (
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Category</span>
+                      <span className="font-medium text-gray-700 capitalize">{vendor.category.replace('-', ' & ')}</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Trust Signals Card */}

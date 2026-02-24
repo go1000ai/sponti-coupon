@@ -41,6 +41,7 @@ const PLANS = [
       'Everything in Starter, plus:',
       'Basic charts (3 charts)',
       'Custom deal scheduling',
+      'Loyalty rewards program',
       'Priority support',
       'Zero transaction fees',
     ],
@@ -58,6 +59,7 @@ const PLANS = [
       'AI Deal Assistant & Insights',
       'Advanced analytics (8+ charts)',
       'Competitor benchmarking',
+      'Loyalty rewards program',
       'Multi-location & team access',
     ],
   },
@@ -127,6 +129,7 @@ const FEATURE_MATRIX = [
   { feature: 'AI Deal Advisor', starter: false, pro: false, business: true },
   { feature: 'Competitor benchmarking', starter: false, pro: false, business: true },
   { feature: 'Custom scheduling', starter: false, pro: true, business: true },
+  { feature: 'Loyalty rewards program', starter: false, pro: true, business: true },
   { feature: 'Multi-location support', starter: false, pro: false, business: true },
   { feature: 'Team member access', starter: false, pro: false, business: true },
   { feature: 'Priority support', starter: false, pro: true, business: true },
@@ -349,9 +352,9 @@ export default function PricingPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
                   { label: 'Unlimited Deals', desc: 'Sponti + Regular, no limits' },
-                  { label: 'API Access', desc: 'Integrate with POS, CRM & more' },
+                  { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
                   { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
-                  { label: 'Dedicated Manager', desc: 'Priority support & onboarding' },
+                  { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
                 ].map(item => (
                   <div key={item.label} className="bg-white/10 rounded-xl p-4">
                     <p className="font-semibold text-white text-sm">{item.label}</p>
