@@ -12,7 +12,7 @@ import {
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 const traditionalPlatform = [
-  { icon: ReceiptText, text: '15–30% commission taken from every sale' },
+  { icon: ReceiptText, text: 'Up to 50% commission taken from every sale' },
   { icon: HandCoins, text: 'Platform collects & controls all customer payments' },
   { icon: Clock, text: 'Wait 60–90 days to receive your earnings' },
   { icon: TrendingDown, text: 'The more you sell, the more they take' },
@@ -22,7 +22,7 @@ const traditionalPlatform = [
 
 const spontiCoupon = [
   { icon: PiggyBank, text: '$0 commission — not now, not ever' },
-  { icon: Landmark, text: 'Customer deposits go directly to YOUR Stripe account' },
+  { icon: Landmark, text: 'Deposits go directly to YOUR account' },
   { icon: Zap, text: 'Get paid instantly — no waiting 60-90 days' },
   { icon: TrendingUp, text: 'Flat monthly rate — predictable costs' },
   { icon: Wallet, text: 'You keep 100% of every transaction' },
@@ -61,7 +61,7 @@ function AnimatedBar({ targetPercent, color, label, amount, delay = 0 }: {
 }
 
 export function CompetitorComparison() {
-  const { ref: savingsRef, displayValue: savingsValue } = useCountUp(2451, 2000);
+  const { ref: savingsRef, displayValue: savingsValue } = useCountUp(4951, 2000);
 
   return (
     <section className="py-20 bg-white">
@@ -107,18 +107,18 @@ export function CompetitorComparison() {
                 ))}
               </div>
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-3xl font-bold text-gray-400">15–30%</p>
+                <p className="text-3xl font-bold text-gray-400">Up to 50%</p>
                 <p className="text-sm text-gray-400">of every sale goes to the platform</p>
               </div>
               <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3">
-                <p className="text-xs text-red-600 font-medium">On a $100 deal, you lose $15–$30 per transaction. Then wait up to 90 days to get the rest.</p>
+                <p className="text-xs text-red-600 font-medium">On a $100 deal, you could lose up to $50 per transaction. Then wait up to 90 days to get the rest.</p>
               </div>
             </div>
           </ScrollReveal>
 
           {/* SpontiCoupon */}
           <ScrollReveal animation="slide-left" delay={150}>
-            <div className="card p-8 border-primary-200 bg-white ring-2 ring-primary-500/20 h-full relative overflow-visible">
+            <div className="card p-8 border-primary-200 bg-white ring-2 ring-primary-500/20 h-full relative !overflow-visible">
               <div className="absolute -top-3 right-6 bg-gradient-to-r from-primary-500 to-orange-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md shadow-orange-200">
                 RECOMMENDED
               </div>
@@ -146,7 +146,7 @@ export function CompetitorComparison() {
                 <p className="text-sm text-gray-500">commission — flat monthly subscription</p>
               </div>
               <div className="mt-3 bg-green-50 border border-green-100 rounded-lg p-3">
-                <p className="text-xs text-green-700 font-medium">On a $100 deal, you keep $100. Money hits your account instantly via Stripe.</p>
+                <p className="text-xs text-green-700 font-medium">On a $100 deal, you keep $100. Money hits your account instantly.</p>
               </div>
             </div>
           </ScrollReveal>
@@ -164,10 +164,10 @@ export function CompetitorComparison() {
 
             <div className="max-w-2xl mx-auto space-y-8">
               <AnimatedBar
-                targetPercent={75}
+                targetPercent={50}
                 color="bg-gradient-to-r from-red-400 to-red-500"
-                label="Commission-Based Platform (25% fee)"
-                amount="You keep $7,500"
+                label="Commission-Based Platform (50% fee)"
+                amount="You keep $5,000"
                 delay={0}
               />
               <AnimatedBar
@@ -187,6 +187,9 @@ export function CompetitorComparison() {
               </p>
               <p className="text-gray-300 mt-2">
                 That&apos;s <span className="text-white font-semibold">${(savingsValue * 12).toLocaleString()}</span> more in your pocket every year
+              </p>
+              <p className="text-gray-400 text-sm mt-4">
+                Even on our highest plan at $499/mo, you&apos;d still save <span className="text-primary-400 font-semibold">$4,501/mo</span> — the plan pays for itself many times over.
               </p>
             </div>
           </div>
@@ -210,14 +213,14 @@ export function CompetitorComparison() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {[
-                      { feature: 'Commission per sale', trad: '15–30%', sponti: '0%', spontiHighlight: true },
-                      { feature: 'When you get paid', trad: '60–90 days', sponti: 'Instantly via Stripe', spontiHighlight: true },
+                      { feature: 'Commission per sale', trad: 'Up to 50%', sponti: '0%', spontiHighlight: true },
+                      { feature: 'When you get paid', trad: '60–90 days', sponti: 'Instantly', spontiHighlight: true },
                       { feature: 'Who controls the money', trad: 'The platform', sponti: 'You — always', spontiHighlight: true },
-                      { feature: 'Monthly cost', trad: '$0 + huge commissions', sponti: 'Flat $29–$99/mo', spontiHighlight: false },
+                      { feature: 'Monthly cost', trad: '$0 + huge commissions', sponti: 'Flat $49–$199/mo', spontiHighlight: false },
                       { feature: 'Contract length', trad: '6–12 month lock-in', sponti: 'No contract — cancel anytime', spontiHighlight: true },
                       { feature: 'Hidden fees', trad: 'Marketing fees, setup fees, penalties', sponti: 'None', spontiHighlight: true },
-                      { feature: 'Flash deals (same day)', trad: 'Not available', sponti: '4–24 hour Sponti Coupons', spontiHighlight: true },
-                      { feature: 'Customer deposit', trad: 'Platform collects & holds', sponti: 'Direct to your Stripe', spontiHighlight: true },
+                      { feature: 'Sponti Deals (same day)', trad: 'Not available', sponti: '4–24 hour Sponti Coupons', spontiHighlight: true },
+                      { feature: 'Customer deposit', trad: 'Platform collects & holds', sponti: 'Direct to your account', spontiHighlight: true },
                       { feature: 'QR + 6-digit redemption', trad: 'QR only (some)', sponti: 'QR code + 6-digit code', spontiHighlight: false },
                       { feature: 'Vendor dashboard', trad: 'Limited analytics', sponti: 'Real-time analytics', spontiHighlight: false },
                     ].map((row) => (
@@ -251,11 +254,11 @@ export function CompetitorComparison() {
               Stop Giving Away Your Revenue
             </h3>
             <p className="text-gray-600 max-w-xl mx-auto mb-6">
-              Other platforms take up to 30% of every sale and make you wait months for your money.
+              Other platforms take up to 50% of every sale and make you wait months for your money.
               With SpontiCoupon, every dollar goes directly to you — instantly.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/auth/vendor-signup" className="btn-primary inline-flex items-center gap-2">
+              <a href="/auth/signup?type=vendor" className="btn-primary inline-flex items-center gap-2">
                 <Zap className="w-4 h-4" /> Start Your Free Trial
               </a>
               <a href="/pricing" className="text-primary-500 font-semibold inline-flex items-center gap-1 px-4 py-3 hover:underline">

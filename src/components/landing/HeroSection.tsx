@@ -93,7 +93,7 @@ export function HeroSection() {
               }`}
             >
               <SpontiIcon className="w-4 h-4 text-primary-400" />
-              <span className="text-sm font-medium text-primary-300">Flash Deals. Real Savings. Right Now.</span>
+              <span className="text-sm font-medium text-primary-300">Sponti Deals. Real Savings. Right Now.</span>
             </div>
 
             <h1
@@ -102,7 +102,7 @@ export function HeroSection() {
               }`}
               style={{ transitionDelay: '150ms' }}
             >
-              Unbeatable Flash Deals
+              Unbeatable Sponti Deals
               <span className="text-primary-500"> Near You</span>
             </h1>
 

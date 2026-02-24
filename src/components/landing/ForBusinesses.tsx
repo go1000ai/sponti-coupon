@@ -19,7 +19,7 @@ const benefits = [
     icon: Timer,
     gradient: 'from-blue-500 to-indigo-600',
     shadow: 'shadow-blue-200',
-    title: 'Flash Deal Urgency',
+    title: 'Sponti Deal Urgency',
     description: 'Create 24-hour Sponti Coupons with live countdown timers that drive immediate foot traffic.',
   },
   {
@@ -27,7 +27,7 @@ const benefits = [
     gradient: 'from-violet-500 to-purple-600',
     shadow: 'shadow-purple-200',
     title: 'Direct Deposits',
-    description: 'Customer deposits go straight to your Stripe. We never touch customer money.',
+    description: 'Customer deposits go straight to your account. We never touch customer money.',
   },
 ];
 
@@ -47,7 +47,7 @@ export function ForBusinesses() {
           <ScrollReveal animation="slide-right">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">
-                Grow Your Business with Flash Deals
+                Grow Your Business with Sponti Deals
               </h2>
               <p className="text-gray-500 mt-4 text-lg">
                 The only deal platform with zero transaction fees. We charge a flat monthly subscription — customer deposits go directly to you.
@@ -68,7 +68,7 @@ export function ForBusinesses() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 mt-8">
-                <Link href="/auth/vendor-signup" className="btn-primary inline-flex items-center gap-2 hover:scale-105 transition-transform duration-200">
+                <Link href="/auth/signup?type=vendor" className="btn-primary inline-flex items-center gap-2 hover:scale-105 transition-transform duration-200">
                   <Rocket className="w-4 h-4" /> Start Your Free Trial
                 </Link>
                 <Link href="/pricing" className="text-primary-500 font-semibold inline-flex items-center gap-1 px-4 py-3 hover:underline">

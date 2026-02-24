@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-
-const TIER_PRICES: Record<string, number> = {
-  starter: 4900,
-  pro: 9900,
-  business: 19900,
-  enterprise: 49900,
-};
+import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
+import type { SubscriptionTier } from '@/lib/types/database';
 
 const TIER_NAMES: Record<string, string> = {
   starter: 'Starter',
@@ -18,10 +13,26 @@ const TIER_NAMES: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { tier, vendorId } = await request.json();
+    const { tier, vendorId, interval = 'month' } = await request.json();
 
-    if (!tier || !vendorId || !TIER_PRICES[tier]) {
+    if (!tier || !vendorId || !TIER_NAMES[tier]) {
       return NextResponse.json({ error: 'Invalid tier or vendor' }, { status: 400 });
+    }
+
+    if (interval !== 'month' && interval !== 'year') {
+      return NextResponse.json({ error: 'Invalid interval' }, { status: 400 });
+    }
+
+    const tierConfig = SUBSCRIPTION_TIERS[tier as SubscriptionTier];
+    const priceId = interval === 'year'
+      ? tierConfig.stripe_annual_price_id
+      : tierConfig.stripe_price_id;
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: `No Stripe price ID configured for ${TIER_NAMES[tier]} (${interval})` },
+        { status: 500 },
+      );
     }
 
     const supabase = await createServiceRoleClient();
@@ -54,21 +65,16 @@ export async function POST(request: NextRequest) {
       mode: 'subscription',
       line_items: [
         {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Sponti Coupon ${TIER_NAMES[tier]} Plan`,
-              description: `Monthly subscription for ${TIER_NAMES[tier]} tier`,
-            },
-            unit_amount: TIER_PRICES[tier],
-            recurring: { interval: 'month' },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
-      metadata: { vendor_id: vendorId, tier },
+      subscription_data: {
+        trial_period_days: 14,
+      },
+      metadata: { vendor_id: vendorId, tier, interval },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/dashboard?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/vendor-signup?subscription=canceled`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?subscription=canceled`,
     });
 
     return NextResponse.json({ url: session.url });

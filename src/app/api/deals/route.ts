@@ -58,7 +58,22 @@ export async function GET(request: NextRequest) {
     }));
   }
 
-  return NextResponse.json({ deals: filteredDeals, total: count });
+  // Featured on Homepage: Business & Enterprise vendors' deals sort first
+  const FEATURED_TIERS = ['business', 'enterprise'];
+  filteredDeals.sort((a, b) => {
+    const aFeatured = FEATURED_TIERS.includes(a.vendor?.subscription_tier || '') ? 1 : 0;
+    const bFeatured = FEATURED_TIERS.includes(b.vendor?.subscription_tier || '') ? 1 : 0;
+    if (bFeatured !== aFeatured) return bFeatured - aFeatured; // featured first
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // then newest
+  });
+
+  // Tag featured deals so the frontend can show a badge
+  const taggedDeals = filteredDeals.map(deal => ({
+    ...deal,
+    is_featured: FEATURED_TIERS.includes(deal.vendor?.subscription_tier || ''),
+  }));
+
+  return NextResponse.json({ deals: taggedDeals, total: count });
 }
 
 // POST /api/deals - Create a new deal (vendor only)
@@ -94,29 +109,71 @@ export async function POST(request: NextRequest) {
 
   // Check deal limits for the month
   const tierConfig = SUBSCRIPTION_TIERS[vendor.subscription_tier as SubscriptionTier];
-  if (tierConfig.deals_per_month !== -1) {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const monthStart = startOfMonth.toISOString();
 
-    const { count } = await supabase
+  const body = await request.json();
+
+  // Check total deal limit
+  if (tierConfig.deals_per_month !== -1) {
+    const { count: totalCount } = await supabase
       .from('deals')
       .select('*', { count: 'exact', head: true })
       .eq('vendor_id', user.id)
-      .gte('created_at', startOfMonth.toISOString());
+      .gte('created_at', monthStart);
 
-    if ((count || 0) >= tierConfig.deals_per_month) {
+    if ((totalCount || 0) >= tierConfig.deals_per_month) {
       return NextResponse.json({
-        error: `You've reached your ${tierConfig.deals_per_month} deal limit for this month. Upgrade your plan for more deals.`,
+        error: `You've reached your ${tierConfig.deals_per_month} total deal limit for this month. Upgrade your plan for more deals.`,
       }, { status: 403 });
     }
   }
 
-  const body = await request.json();
+  // Check per-type deal limits (Sponti vs Regular)
+  const incomingType = body.deal_type;
+  if (incomingType === 'sponti_coupon' && tierConfig.sponti_deals_per_month !== -1) {
+    const { count: spontiCount } = await supabase
+      .from('deals')
+      .select('*', { count: 'exact', head: true })
+      .eq('vendor_id', user.id)
+      .eq('deal_type', 'sponti_coupon')
+      .gte('created_at', monthStart);
+
+    if ((spontiCount || 0) >= tierConfig.sponti_deals_per_month) {
+      return NextResponse.json({
+        error: `You've reached your ${tierConfig.sponti_deals_per_month} Sponti deal limit for this month. Upgrade your plan for more Sponti deals.`,
+      }, { status: 403 });
+    }
+  }
+
+  if (incomingType === 'regular' && tierConfig.regular_deals_per_month !== -1) {
+    const { count: regularCount } = await supabase
+      .from('deals')
+      .select('*', { count: 'exact', head: true })
+      .eq('vendor_id', user.id)
+      .eq('deal_type', 'regular')
+      .gte('created_at', monthStart);
+
+    if ((regularCount || 0) >= tierConfig.regular_deals_per_month) {
+      return NextResponse.json({
+        error: `You've reached your ${tierConfig.regular_deals_per_month} Regular deal limit for this month. Upgrade your plan for more Regular deals.`,
+      }, { status: 403 });
+    }
+  }
   const {
     deal_type, title, description, original_price, deal_price,
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
+    location_ids, website_url,
   } = body;
+
+  // Check if vendor is trying to schedule a future deal without the custom_scheduling feature
+  if (new Date(starts_at) > new Date() && !tierConfig.custom_scheduling) {
+    return NextResponse.json({
+      error: 'Scheduling deals for the future requires a Pro plan or higher. Upgrade at /vendor/subscription.',
+    }, { status: 403 });
+  }
 
   // Calculate discount
   const discount_percentage = ((original_price - deal_price) / original_price) * 100;
@@ -169,6 +226,9 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Determine if the deal is scheduled for the future
+    const dealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
+
     // Create the deal with benchmark reference
     const { data: deal, error: createError } = await supabase
       .from('deals')
@@ -185,9 +245,11 @@ export async function POST(request: NextRequest) {
         starts_at,
         expires_at,
         timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-        status: 'active',
+        status: dealStatus,
         image_url,
         benchmark_deal_id: regularDeal.id,
+        location_ids: location_ids || null,
+        website_url: website_url || null,
       })
       .select()
       .single();
@@ -208,6 +270,9 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
   }
 
+  // Determine if the deal is scheduled for the future
+  const regularDealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
+
   const { data: deal, error: createError } = await supabase
     .from('deals')
     .insert({
@@ -218,13 +283,15 @@ export async function POST(request: NextRequest) {
       original_price,
       deal_price,
       discount_percentage,
-      deposit_amount: null,
+      deposit_amount: deposit_amount && deposit_amount > 0 ? deposit_amount : null,
       max_claims,
       starts_at,
       expires_at,
       timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-      status: 'active',
+      status: regularDealStatus,
       image_url,
+      location_ids: location_ids || null,
+      website_url: website_url || null,
     })
     .select()
     .single();

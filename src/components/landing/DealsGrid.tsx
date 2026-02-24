@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, MapPin, ShieldCheck, Clock, Sparkles } from 'lucide-react';
+import { ArrowRight, MapPin, ShieldCheck, Clock, Sparkles, Star } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -12,7 +12,7 @@ import { getDealImage } from '@/lib/constants';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
 
-type DealWithDistance = Deal & { distance?: number | null };
+type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
 export function DealsGrid() {
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
@@ -60,13 +60,15 @@ export function DealsGrid() {
   if (deals.length === 0) return null;
 
   return (
-    <section className="relative py-10 sm:py-16 overflow-hidden">
+    <section className="relative pt-16 sm:pt-24 py-10 sm:py-16 -mt-8 overflow-hidden">
       {/* Parallax background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-secondary-500/80 via-secondary-500/70 to-secondary-500/80 backdrop-blur-[2px]" />
+      {/* Top fade for smooth transition from previous section */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-t from-transparent via-secondary-500/70 to-secondary-500 z-[1]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
@@ -136,9 +138,14 @@ function DealGridCard({ deal }: { deal: DealWithDistance }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
 
-          {/* Type badge — icon only, no pill */}
-          <div className="absolute top-3 left-3">
+          {/* Type + Featured badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-1">
             <DealTypeBadge type={deal.deal_type} size="sm" />
+            {deal.is_featured && (
+              <span className="inline-flex items-center gap-0.5 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md w-fit">
+                <Star className="w-2.5 h-2.5" /> Featured
+              </span>
+            )}
           </div>
 
           {/* Discount badge */}

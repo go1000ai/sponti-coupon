@@ -75,6 +75,15 @@ const config: Config = {
         "glow": "glow 2s ease-in-out infinite",
         "wiggle": "wiggle 0.5s ease-in-out",
         "shimmer-slide": "shimmerSlide 1.5s ease-in-out",
+        "gradient-x": "gradientX 3s ease infinite",
+        "card-pop": "cardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "sparkle": "sparkle 2s ease-in-out infinite",
+        "price-count": "priceCount 0.8s ease-out forwards",
+        "check-pop": "checkPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "border-glow": "borderGlow 3s ease-in-out infinite",
+        "float-slow": "floatSlow 6s ease-in-out infinite",
+        "float-slower": "floatSlow 8s ease-in-out infinite 2s",
+        "pulse-soft": "pulseSoft 4s ease-in-out infinite",
       },
       keyframes: {
         fadeUp: {
@@ -121,6 +130,40 @@ const config: Config = {
         shimmerSlide: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
+        },
+        gradientX: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        cardPop: {
+          '0%': { opacity: '0', transform: 'translateY(20px) scale(0.95)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        sparkle: {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(0.8) rotate(0deg)' },
+          '50%': { opacity: '1', transform: 'scale(1.2) rotate(180deg)' },
+        },
+        priceCount: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '60%': { opacity: '1', transform: 'translateY(-3px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        checkPop: {
+          '0%': { opacity: '0', transform: 'scale(0)' },
+          '50%': { transform: 'scale(1.3)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        borderGlow: {
+          '0%, 100%': { opacity: '0.5' },
+          '50%': { opacity: '1' },
+        },
+        floatSlow: {
+          '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+          '50%': { transform: 'translateY(-20px) rotate(3deg)' },
+        },
+        pulseSoft: {
+          '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
+          '50%': { opacity: '0.6', transform: 'scale(1.05)' },
         },
       },
     },

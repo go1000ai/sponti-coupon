@@ -9,7 +9,7 @@ const steps = [
     icon: Search,
     title: '1. Discover Deals',
     description:
-      'Browse flash deals near you by location, category, or deal type. Find exclusive Sponti Coupons with the deepest discounts.',
+      'Browse Sponti Deals near you by location, category, or deal type. Find exclusive Sponti Coupons with the deepest discounts.',
     gradient: 'from-primary-500 to-orange-600',
     shadow: 'shadow-orange-200',
   },

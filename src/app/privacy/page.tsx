@@ -6,7 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — SpontiCoupon',
-  description: 'SpontiCoupon Privacy Policy. Learn how we collect, use, and protect your personal information on our flash deal platform.',
+  description: 'SpontiCoupon Privacy Policy. Learn how we collect, use, and protect your personal information on our Sponti Deal platform.',
   alternates: { canonical: `${BASE_URL}/privacy` },
 };
 

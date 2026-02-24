@@ -5,12 +5,15 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Eye, Users } from 'lucide-react';
+import {
+  MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Eye, Users,
+  Star, MessageSquare, Send, Loader2, CheckCircle2,
+} from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import Link from 'next/link';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
-import type { Deal } from '@/lib/types/database';
+import type { Deal, Review } from '@/lib/types/database';
 
 export default function DealDetailPage() {
   const params = useParams();
@@ -22,6 +25,20 @@ export default function DealDetailPage() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [error, setError] = useState('');
 
+  // Reviews state
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [avgRating, setAvgRating] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [canReview, setCanReview] = useState(false);
+  const [reviewWaitMessage, setReviewWaitMessage] = useState<string | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   useEffect(() => {
     async function fetchDeal() {
       const response = await fetch(`/api/deals/${params.id}`);
@@ -31,6 +48,118 @@ export default function DealDetailPage() {
     }
     fetchDeal();
   }, [params.id]);
+
+  // Fetch reviews when deal loads
+  useEffect(() => {
+    if (!deal?.vendor_id) return;
+    fetchReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deal?.vendor_id]);
+
+  // Check if user can review
+  useEffect(() => {
+    if (!user || !deal) return;
+    checkCanReview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, deal]);
+
+  const fetchReviews = async () => {
+    if (!deal?.vendor_id) return;
+    setReviewsLoading(true);
+    try {
+      const res = await fetch(`/api/reviews?vendor_id=${deal.vendor_id}&limit=5`);
+      const data = await res.json();
+      setReviews(data.reviews || []);
+      setAvgRating(data.avg_rating || 0);
+      setTotalReviews(data.total_reviews || 0);
+    } catch {
+      // Reviews are non-critical
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const checkCanReview = async () => {
+    if (!user || !deal) return;
+    try {
+      // Check review eligibility via dedicated endpoint
+      const eligRes = await fetch(`/api/reviews/eligibility?vendor_id=${deal.vendor_id}&deal_id=${deal.id}`);
+      if (eligRes.ok) {
+        const eligData = await eligRes.json();
+        if (eligData.has_reviewed) {
+          setCanReview(false);
+          setReviewWaitMessage(null);
+          return;
+        }
+        if (eligData.can_review) {
+          setCanReview(true);
+          setReviewWaitMessage(null);
+          return;
+        }
+        if (eligData.wait_hours !== undefined && eligData.wait_hours !== null) {
+          setCanReview(false);
+          const hoursLeft = Math.ceil(eligData.wait_hours);
+          setReviewWaitMessage(
+            hoursLeft <= 1
+              ? 'You can leave a review in less than 1 hour'
+              : `You can leave a review in about ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''}`
+          );
+          return;
+        }
+        // Default: no redeemed claim
+        setCanReview(false);
+        setReviewWaitMessage(null);
+      }
+    } catch {
+      // Non-critical
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!user || !deal || reviewRating === 0) return;
+    setSubmittingReview(true);
+    setReviewMessage(null);
+
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor_id: deal.vendor_id,
+          deal_id: deal.id,
+          rating: reviewRating,
+          comment: reviewComment.trim() || null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setReviewMessage({ type: 'success', text: 'Thank you for your review!' });
+        setShowReviewForm(false);
+        setCanReview(false);
+        setReviewWaitMessage(null);
+        setReviewRating(0);
+        setReviewComment('');
+        // Refresh reviews
+        fetchReviews();
+      } else {
+        if (data.code === 'REVIEW_TOO_EARLY') {
+          setReviewMessage({ type: 'error', text: data.error });
+          setShowReviewForm(false);
+          setCanReview(false);
+          // Re-check to get accurate countdown
+          checkCanReview();
+        } else {
+          setReviewMessage({ type: 'error', text: data.error || 'Failed to submit review' });
+        }
+      }
+    } catch {
+      setReviewMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const handleClaim = async () => {
     if (!user) {
@@ -79,6 +208,29 @@ export default function DealDetailPage() {
 
     setClaiming(false);
     setShowDisclaimer(false);
+  };
+
+  const getCustomerName = (review: Review) => {
+    if (review.customer?.first_name) {
+      return `${review.customer.first_name} ${(review.customer.last_name || '').charAt(0)}.`;
+    }
+    if (review.customer?.email) {
+      const name = review.customer.email.split('@')[0];
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+    return 'Customer';
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    const months = Math.floor(days / 30);
+    return `${months}mo ago`;
   };
 
   if (loading) {
@@ -147,6 +299,17 @@ export default function DealDetailPage() {
             <div className="flex items-center gap-2 mt-3 text-gray-500">
               <Store className="w-4 h-4" />
               <span className="font-medium">{deal.vendor.business_name}</span>
+              {/* Vendor rating inline */}
+              {totalReviews > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-sm font-medium">{Number(avgRating).toFixed(1)}</span>
+                    <span className="text-sm text-gray-400">({totalReviews})</span>
+                  </div>
+                </>
+              )}
               {deal.vendor.city && (
                 <>
                   <span className="text-gray-300">|</span>
@@ -171,6 +334,183 @@ export default function DealDetailPage() {
               <CountdownTimer expiresAt={deal.expires_at} size="lg" />
             </div>
           )}
+
+          {/* ===== REVIEWS SECTION ===== */}
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <MessageSquare className="w-6 h-6 text-primary-500" />
+                <h2 className="text-xl font-bold text-secondary-500">Customer Reviews</h2>
+                {totalReviews > 0 && (
+                  <span className="text-sm text-gray-400">({totalReviews})</span>
+                )}
+              </div>
+              {user && canReview && !showReviewForm && (
+                <button
+                  onClick={() => setShowReviewForm(true)}
+                  className="btn-primary text-sm flex items-center gap-2"
+                >
+                  <Star className="w-4 h-4" /> Write a Review
+                </button>
+              )}
+              {user && !canReview && reviewWaitMessage && (
+                <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+                  <Clock className="w-4 h-4 flex-shrink-0" />
+                  <span>{reviewWaitMessage}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Review Message */}
+            {reviewMessage && (
+              <div className={`p-3 rounded-lg mb-4 text-sm font-medium ${
+                reviewMessage.type === 'success'
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {reviewMessage.text}
+              </div>
+            )}
+
+            {/* Review Form */}
+            {showReviewForm && (
+              <div className="card p-6 mb-6">
+                <h3 className="font-semibold text-secondary-500 mb-3">How was your experience?</h3>
+
+                {/* Star Rating */}
+                <div className="flex items-center gap-1 mb-4">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      type="button"
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      onClick={() => setReviewRating(star)}
+                      className="p-1 transition-transform hover:scale-110"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= (hoverRating || reviewRating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-200'
+                        } transition-colors`}
+                      />
+                    </button>
+                  ))}
+                  {reviewRating > 0 && (
+                    <span className="ml-2 text-sm text-gray-500">
+                      {reviewRating === 5 ? 'Excellent!' : reviewRating === 4 ? 'Great' : reviewRating === 3 ? 'Good' : reviewRating === 2 ? 'Fair' : 'Poor'}
+                    </span>
+                  )}
+                </div>
+
+                {/* Comment */}
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Tell others about your experience (optional)"
+                  className="input-field min-h-[80px] resize-y mb-4"
+                  rows={3}
+                />
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={submittingReview || reviewRating === 0}
+                    className="btn-primary flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {submittingReview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                  <button
+                    onClick={() => { setShowReviewForm(false); setReviewRating(0); setReviewComment(''); }}
+                    className="btn-outline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Average Rating Display */}
+            {totalReviews > 0 && (
+              <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-secondary-500">{Number(avgRating).toFixed(1)}</p>
+                  <div className="flex items-center gap-0.5 mt-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(avgRating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Reviews List */}
+            {reviewsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-2" />
+                <p className="text-gray-400">No reviews yet. Be the first to review!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map(review => (
+                  <div key={review.id} className="card p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-bold text-primary-600">
+                          {getCustomerName(review).slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium text-secondary-500 text-sm">{getCustomerName(review)}</span>
+                          {review.is_verified && (
+                            <span className="inline-flex items-center gap-0.5 text-xs text-green-600">
+                              <CheckCircle2 className="w-3 h-3" /> Verified
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400">{timeAgo(review.created_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-0.5 mt-1">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star
+                              key={star}
+                              className={`w-3.5 h-3.5 ${
+                                star <= review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-gray-600 mt-2 leading-relaxed">{review.comment}</p>
+                        )}
+                        {/* Vendor reply */}
+                        {review.vendor_reply && (
+                          <div className="mt-3 bg-gray-50 rounded-lg p-3 border-l-3 border-primary-500">
+                            <p className="text-xs font-semibold text-secondary-500 mb-1">Business Response</p>
+                            <p className="text-sm text-gray-600">{review.vendor_reply}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -249,16 +589,8 @@ export default function DealDetailPage() {
                   <Users className="w-4 h-4" />
                   <span className="font-medium">{deal.claims_count} people claimed this deal</span>
                 </div>
-                <p className="text-xs text-green-600 mt-1 ml-6">
-                  Last claimed {Math.max(1, Math.floor(Math.random() * 15))} minutes ago
-                </p>
               </div>
             )}
-
-            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
-              <Eye className="w-4 h-4 text-primary-400" />
-              <span>{12 + Math.floor(Math.random() * 25)} people viewing this deal</span>
-            </div>
 
             {/* Trust signals */}
             <div className="mt-4 space-y-2">
@@ -266,6 +598,12 @@ export default function DealDetailPage() {
                 <Shield className="w-4 h-4 text-green-500" />
                 <span>Verified business</span>
               </div>
+              {totalReviews > 0 && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                  <span>{Number(avgRating).toFixed(1)} stars from {totalReviews} reviews</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Shield className="w-4 h-4 text-green-500" />
                 <span>Secure QR redemption</span>

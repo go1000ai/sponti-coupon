@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
@@ -21,7 +20,6 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
 
@@ -30,32 +28,41 @@ function LoginForm() {
     setError('');
     setLoading(true);
 
-    const supabase = createClient();
-    const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      // Login via server API — avoids browser Supabase client deadlock
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (authError) {
-      setError(authError.message);
-      setLoading(false);
-      return;
-    }
+      const data = await res.json();
 
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      if (profile?.role === 'vendor') {
-        router.push('/vendor/dashboard');
-      } else if (profile?.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push(redirect);
+      if (!res.ok) {
+        setError(data.error || 'Login failed. Please try again.');
+        setLoading(false);
+        return;
       }
-    }
 
-    setLoading(false);
+      // Redirect based on role
+      if (data.role === 'vendor') {
+        if (!data.subscription_status || data.subscription_status === 'canceled') {
+          window.location.href = '/vendor/subscription';
+        } else {
+          window.location.href = '/vendor/dashboard';
+        }
+      } else if (data.role === 'admin') {
+        window.location.href = '/admin';
+      } else if (data.role === 'customer') {
+        window.location.href = '/dashboard';
+      } else {
+        window.location.href = redirect;
+      }
+    } catch (err) {
+      console.error('[Login] Unexpected error:', err);
+      setError('An unexpected error occurred. Please try again.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,7 +136,7 @@ function LoginForm() {
           </p>
           <p className="text-gray-500 text-sm">
             Own a business?{' '}
-            <Link href="/auth/vendor-signup" className="text-primary-500 font-semibold hover:underline">
+            <Link href="/auth/signup?type=vendor" className="text-primary-500 font-semibold hover:underline">
               Register as a Vendor
             </Link>
           </p>

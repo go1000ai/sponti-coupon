@@ -110,7 +110,7 @@ export default function ScanPage() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="max-w-lg mx-auto">
       <div className="text-center mb-8">
         <div className="inline-flex bg-primary-50 rounded-full p-4 mb-4">
           <QrCode className="w-10 h-10 text-primary-500" />
@@ -230,8 +230,8 @@ export default function ScanPage() {
                 </div>
               )}
 
-              {/* Remaining Balance for Sponti Coupons */}
-              {result.deal?.deal_type === 'sponti_coupon' && result.deal.deposit_amount != null && (
+              {/* Remaining Balance when deposit was collected */}
+              {result.deal?.deposit_amount != null && result.deal.deposit_amount > 0 && (
                 <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5 mt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <DollarSign className="w-5 h-5 text-primary-500" />
@@ -259,12 +259,12 @@ export default function ScanPage() {
                 </div>
               )}
 
-              {/* Regular deal */}
-              {result.deal?.deal_type === 'regular' && (
+              {/* No deposit collected */}
+              {(!result.deal?.deposit_amount || result.deal.deposit_amount === 0) && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
                   <p className="text-sm text-blue-700 font-medium">
                     No deposit was collected. Customer pays the full deal price of{' '}
-                    <span className="font-bold">{formatCurrency(result.deal.deal_price)}</span> directly.
+                    <span className="font-bold">{formatCurrency(result.deal?.deal_price || 0)}</span> directly.
                   </p>
                 </div>
               )}

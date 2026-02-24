@@ -39,23 +39,39 @@ export async function POST(request: NextRequest) {
           id: string;
           current_period_start: number;
           current_period_end: number;
+          trial_start: number | null;
+          trial_end: number | null;
           status: string;
         };
 
-        await supabase.from('subscriptions').insert({
-          vendor_id: vendorId,
-          stripe_subscription_id: subscription.id,
-          tier,
-          status: 'active',
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-        });
+        // Map Stripe status — treat 'trialing' as 'active' for vendor access
+        const dbStatus = subscription.status === 'trialing' || subscription.status === 'active'
+          ? 'active'
+          : subscription.status;
+
+        // Check if subscription record already exists (avoid duplicates)
+        const { data: existingSub } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('stripe_subscription_id', subscription.id)
+          .single();
+
+        if (!existingSub) {
+          await supabase.from('subscriptions').insert({
+            vendor_id: vendorId,
+            stripe_subscription_id: subscription.id,
+            tier,
+            status: dbStatus,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          });
+        }
 
         await supabase
           .from('vendors')
           .update({
             subscription_tier: tier,
-            subscription_status: 'active',
+            subscription_status: dbStatus,
           })
           .eq('id', vendorId);
       }
@@ -66,33 +82,58 @@ export async function POST(request: NextRequest) {
       const subObj = event.data.object as unknown as {
         id: string;
         status: string;
+        metadata?: Record<string, string>;
+        items?: { data: Array<{ price?: { id: string } }> };
         current_period_start: number;
         current_period_end: number;
       };
-      const status = subObj.status === 'active' ? 'active'
+      const stripeSubId = subObj.id;
+
+      // Determine status
+      const status = (subObj.status === 'active' || subObj.status === 'trialing') ? 'active'
         : subObj.status === 'past_due' ? 'past_due'
         : 'canceled';
 
+      // Get the tier from metadata (set by our change-plan endpoint)
+      const tier = subObj.metadata?.tier || null;
+
+      // Get the current price to determine the tier if metadata isn't set
+      let resolvedTier = tier;
+      if (!resolvedTier && subObj.items?.data?.[0]?.price?.id) {
+        const priceId = subObj.items.data[0].price.id;
+        resolvedTier = resolveTierFromPriceId(priceId);
+      }
+
+      // Update subscriptions table
+      const updateData: Record<string, unknown> = {
+        status,
+        current_period_start: new Date(subObj.current_period_start * 1000).toISOString(),
+        current_period_end: new Date(subObj.current_period_end * 1000).toISOString(),
+      };
+      if (resolvedTier) {
+        updateData.tier = resolvedTier;
+      }
+
       await supabase
         .from('subscriptions')
-        .update({
-          status,
-          current_period_start: new Date(subObj.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subObj.current_period_end * 1000).toISOString(),
-        })
-        .eq('stripe_subscription_id', subObj.id);
+        .update(updateData)
+        .eq('stripe_subscription_id', stripeSubId);
 
-      // Also update vendor status
+      // Update vendor
       const { data: sub } = await supabase
         .from('subscriptions')
         .select('vendor_id')
-        .eq('stripe_subscription_id', subObj.id)
+        .eq('stripe_subscription_id', stripeSubId)
         .single();
 
       if (sub) {
+        const vendorUpdate: Record<string, unknown> = { subscription_status: status };
+        if (resolvedTier) {
+          vendorUpdate.subscription_tier = resolvedTier;
+        }
         await supabase
           .from('vendors')
-          .update({ subscription_status: status })
+          .update(vendorUpdate)
           .eq('id', sub.vendor_id);
       }
       break;
@@ -120,7 +161,60 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+
+    case 'invoice.paid': {
+      // When a renewal invoice is paid, sync the tier from the subscription
+      const invoice = event.data.object as unknown as { subscription?: string | { id: string } };
+      const subscriptionId = typeof invoice.subscription === 'string'
+        ? invoice.subscription
+        : (invoice.subscription as { id: string } | undefined)?.id;
+
+      if (subscriptionId) {
+        const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
+        const tier = stripeSubscription.metadata?.tier;
+
+        if (tier) {
+          await supabase
+            .from('subscriptions')
+            .update({ tier })
+            .eq('stripe_subscription_id', subscriptionId);
+
+          const { data: sub } = await supabase
+            .from('subscriptions')
+            .select('vendor_id')
+            .eq('stripe_subscription_id', subscriptionId)
+            .single();
+
+          if (sub) {
+            await supabase
+              .from('vendors')
+              .update({ subscription_tier: tier })
+              .eq('id', sub.vendor_id);
+          }
+        }
+      }
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Helper: resolve tier from Stripe price ID
+function resolveTierFromPriceId(priceId: string): string | null {
+  const priceMap: Record<string, string> = {};
+
+  // Monthly prices
+  if (process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID] = 'starter';
+  if (process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID] = 'pro';
+  if (process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID] = 'business';
+  if (process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID] = 'enterprise';
+
+  // Annual prices
+  if (process.env.NEXT_PUBLIC_STRIPE_STARTER_ANNUAL_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_STARTER_ANNUAL_PRICE_ID] = 'starter';
+  if (process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID] = 'pro';
+  if (process.env.NEXT_PUBLIC_STRIPE_BUSINESS_ANNUAL_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_BUSINESS_ANNUAL_PRICE_ID] = 'business';
+  if (process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_ANNUAL_PRICE_ID) priceMap[process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_ANNUAL_PRICE_ID] = 'enterprise';
+
+  return priceMap[priceId] || null;
 }

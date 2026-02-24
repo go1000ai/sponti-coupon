@@ -36,13 +36,64 @@ export async function POST() {
     'luxe@example.com',
   ];
 
+  const customerEmails = [
+    'customer@example.com',
+  ];
+
+  const adminEmails = [
+    'admin@example.com',
+  ];
+
+  const allEmails = [...vendorEmails, ...customerEmails, ...adminEmails];
+
   const authIds: Record<string, string> = {};
-  for (const email of vendorEmails) {
+  for (const email of allEmails) {
     try {
       authIds[email] = await getOrCreateAuthUser(email);
     } catch (err) {
       return NextResponse.json({ error: `Auth user creation failed for ${email}`, details: String(err) }, { status: 500 });
     }
+  }
+
+  // Upsert user_profiles for all users
+  const userProfiles = [
+    ...vendorEmails.map(email => ({ id: authIds[email], role: 'vendor' as const })),
+    ...customerEmails.map(email => ({ id: authIds[email], role: 'customer' as const })),
+    ...adminEmails.map(email => ({ id: authIds[email], role: 'admin' as const })),
+  ];
+
+  for (const profile of userProfiles) {
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .upsert(profile, { onConflict: 'id' });
+    if (profileError) {
+      return NextResponse.json({ error: `user_profiles upsert failed for ${profile.id}`, details: profileError.message }, { status: 500 });
+    }
+  }
+
+  // Create test customer record
+  const testCustomers = [
+    {
+      id: authIds['customer@example.com'],
+      email: 'customer@example.com',
+      first_name: 'Maria',
+      last_name: 'Rodriguez',
+      phone: '(305) 555-0200',
+      city: 'Miami',
+      state: 'FL',
+      zip: '33101',
+      lat: 25.7617,
+      lng: -80.1918,
+      email_digest_opt_in: true,
+    },
+  ];
+
+  // Clean up existing test customers
+  await supabase.from('customers').delete().in('email', customerEmails);
+
+  const { error: customerError } = await supabase.from('customers').upsert(testCustomers, { onConflict: 'id' });
+  if (customerError) {
+    return NextResponse.json({ error: 'Customer insert failed', details: customerError.message }, { status: 500 });
   }
 
   // Create sample vendors
@@ -289,7 +340,7 @@ export async function POST() {
       id: uuidv4(),
       vendor_id: vendorMap['bella@example.com'],
       deal_type: 'sponti_coupon' as const,
-      title: 'Flash: Family Pizza Night — 65% Off!',
+      title: 'Sponti: Family Pizza Night — 65% Off!',
       description: '2 large pizzas + appetizer + drinks for the whole family. Today only!',
       image_url: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=1200&auto=format&fit=crop',
       original_price: 65.00,
@@ -308,7 +359,7 @@ export async function POST() {
       id: uuidv4(),
       vendor_id: vendorMap['glow@example.com'],
       deal_type: 'sponti_coupon' as const,
-      title: 'Flash: Spa Day Package — 55% Off!',
+      title: 'Sponti: Spa Day Package — 55% Off!',
       description: 'Full facial + massage + aromatherapy. Limited spots available today.',
       image_url: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?q=80&w=1200&auto=format&fit=crop',
       original_price: 200.00,
@@ -327,7 +378,7 @@ export async function POST() {
       id: uuidv4(),
       vendor_id: vendorMap['cafe@example.com'],
       deal_type: 'sponti_coupon' as const,
-      title: 'Flash: All-You-Can-Eat Brunch — 60% Off!',
+      title: 'Sponti: All-You-Can-Eat Brunch — 60% Off!',
       description: 'Unlimited brunch buffet with bottomless mimosas. Today only!',
       image_url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?q=80&w=1200&auto=format&fit=crop',
       original_price: 45.00,
@@ -346,7 +397,7 @@ export async function POST() {
       id: uuidv4(),
       vendor_id: vendorMap['escape@example.com'],
       deal_type: 'sponti_coupon' as const,
-      title: 'Flash: VIP Escape Room — 50% Off!',
+      title: 'Sponti: VIP Escape Room — 50% Off!',
       description: 'Private VIP room with bonus puzzles and a free team photo. Book now before it\'s gone!',
       image_url: 'https://images.unsplash.com/photo-1511882150382-421056c89033?q=80&w=1200&auto=format&fit=crop',
       original_price: 240.00,
@@ -372,8 +423,15 @@ export async function POST() {
     success: true,
     seeded: {
       vendors: vendors.length,
+      customers: testCustomers.length,
+      admins: adminEmails.length,
       regular_deals: regularDeals.length,
       sponti_deals: spontiDeals.length,
+    },
+    test_accounts: {
+      customer: { email: 'customer@example.com', password: 'seedpassword123!' },
+      vendor: { email: 'bella@example.com', password: 'seedpassword123!', note: '6 vendor accounts total' },
+      admin: { email: 'admin@example.com', password: 'seedpassword123!' },
     },
   });
 }

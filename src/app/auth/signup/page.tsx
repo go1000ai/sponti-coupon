@@ -1,13 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Store, Building2, CheckCircle } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
-export default function CustomerSignupPage() {
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[80vh] flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" /></div>}>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
+  const searchParams = useSearchParams();
+  const initialType = searchParams.get('type') === 'vendor' ? 'vendor' : 'customer';
+  const selectedPlan = searchParams.get('plan') || 'starter';
+  const selectedInterval = searchParams.get('interval') || 'month';
+
+  const [accountType, setAccountType] = useState<'customer' | 'vendor'>(initialType);
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -18,12 +32,17 @@ export default function CustomerSignupPage() {
     city: '',
     state: '',
     zip: '',
+    // Vendor-only fields
+    businessName: '',
+    address: '',
+    category: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -39,13 +58,44 @@ export default function CustomerSignupPage() {
       setError('Password must be at least 6 characters');
       return;
     }
+    if (accountType === 'vendor' && !form.businessName.trim()) {
+      setError('Business name is required');
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
 
+    // Build the redirect URL for after email confirmation
+    const callbackParams = new URLSearchParams();
+    callbackParams.set('type', accountType);
+    if (accountType === 'vendor') {
+      callbackParams.set('plan', selectedPlan);
+      callbackParams.set('interval', selectedInterval);
+      callbackParams.set('businessName', form.businessName);
+      callbackParams.set('phone', form.phone);
+      callbackParams.set('address', form.address);
+      callbackParams.set('city', form.city);
+      callbackParams.set('state', form.state);
+      callbackParams.set('zip', form.zip);
+      callbackParams.set('category', form.category);
+    } else {
+      callbackParams.set('firstName', form.firstName);
+      callbackParams.set('lastName', form.lastName);
+      callbackParams.set('phone', form.phone);
+      callbackParams.set('city', form.city);
+      callbackParams.set('state', form.state);
+      callbackParams.set('zip', form.zip);
+    }
+
+    const redirectTo = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
+
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: {
+        emailRedirectTo: redirectTo,
+      },
     });
 
     if (authError) {
@@ -54,27 +104,115 @@ export default function CustomerSignupPage() {
       return;
     }
 
-    if (data.user) {
-      // Create user profile
-      await supabase.from('user_profiles').insert({ id: data.user.id, role: 'customer' });
-
-      // Create customer record
-      await supabase.from('customers').insert({
-        id: data.user.id,
-        email: form.email,
-        first_name: form.firstName,
-        last_name: form.lastName,
-        phone: form.phone || null,
-        city: form.city || null,
-        state: form.state || null,
-        zip: form.zip || null,
-      });
-
-      router.push('/deals');
+    // Check if user session is immediately available (autoconfirm enabled)
+    if (data.session) {
+      // Session is active — no email confirmation needed
+      await createProfileAndRedirect(data.user!.id);
+    } else if (data.user && !data.session) {
+      // Email confirmation required — show message
+      setShowConfirmation(true);
     }
 
     setLoading(false);
   };
+
+  const createProfileAndRedirect = async (
+    userId: string,
+  ) => {
+    // Create profile via server API (uses service role to bypass RLS)
+    const profilePayload = accountType === 'vendor'
+      ? {
+          accountType,
+          businessName: form.businessName,
+          phone: form.phone,
+          address: form.address,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+          category: form.category,
+        }
+      : {
+          accountType,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          phone: form.phone,
+          city: form.city,
+          state: form.state,
+          zip: form.zip,
+        };
+
+    const profileRes = await fetch('/api/auth/create-profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profilePayload),
+    });
+
+    if (!profileRes.ok) {
+      const errData = await profileRes.json();
+      setError(errData.error || 'Failed to create profile');
+      return;
+    }
+
+    if (accountType === 'vendor') {
+      // Redirect to Stripe checkout for the selected plan
+      try {
+        const response = await fetch('/api/stripe/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tier: selectedPlan,
+            vendorId: userId,
+            interval: selectedInterval,
+          }),
+        });
+        const checkoutData = await response.json();
+        if (checkoutData.url) {
+          window.location.href = checkoutData.url;
+          return;
+        }
+      } catch {
+        // If Stripe fails, fall back to dashboard
+      }
+      router.push('/vendor/dashboard');
+    } else {
+      router.push('/deals');
+    }
+  };
+
+  // Show email confirmation screen
+  if (showConfirmation) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md text-center">
+          <div className="inline-flex bg-green-100 rounded-full p-4 mb-6">
+            <CheckCircle className="w-12 h-12 text-green-500" />
+          </div>
+          <h1 className="text-3xl font-bold text-secondary-500 mb-3">Check Your Email</h1>
+          <p className="text-gray-500 mb-2">
+            We sent a confirmation link to:
+          </p>
+          <p className="text-lg font-semibold text-secondary-500 mb-6">{form.email}</p>
+          <div className="card p-6">
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Click the link in your email to confirm your account.
+              {accountType === 'vendor' && (
+                <> You&apos;ll be taken directly to set up your subscription after confirming.</>
+              )}
+            </p>
+          </div>
+          <p className="text-sm text-gray-400 mt-6">
+            Didn&apos;t receive it? Check your spam folder or{' '}
+            <button
+              onClick={() => setShowConfirmation(false)}
+              className="text-primary-500 font-semibold hover:underline"
+            >
+              try again
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
@@ -86,7 +224,39 @@ export default function CustomerSignupPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-secondary-500">Create Account</h1>
-          <p className="text-gray-500 mt-2">Start saving with flash deals near you</p>
+          <p className="text-gray-500 mt-2">
+            {accountType === 'vendor'
+              ? 'Start growing your business with Sponti Deals'
+              : 'Start saving with Sponti Deals near you'}
+          </p>
+        </div>
+
+        {/* Account Type Toggle */}
+        <div className="flex bg-gray-100 rounded-xl p-1 mb-6">
+          <button
+            type="button"
+            onClick={() => setAccountType('customer')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
+              accountType === 'customer'
+                ? 'bg-white text-secondary-500 shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Customer
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType('vendor')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
+              accountType === 'vendor'
+                ? 'bg-white text-primary-500 shadow-md'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Store className="w-4 h-4" />
+            Business
+          </button>
         </div>
 
         <form onSubmit={handleSignup} className="card p-8 space-y-4">
@@ -96,19 +266,33 @@ export default function CustomerSignupPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Vendor-only: Business Name */}
+          {accountType === 'vendor' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
               <div className="relative">
-                <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="firstName" value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" required />
+                <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder="Your Business Name" required />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input name="lastName" value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" required />
+          )}
+
+          {/* Customer-only: First/Last Name */}
+          {accountType === 'customer' && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                  <input name="firstName" value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <input name="lastName" value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" required />
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -119,12 +303,41 @@ export default function CustomerSignupPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone {accountType === 'customer' ? '(optional)' : ''}</label>
             <div className="relative">
               <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
               <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder="(555) 123-4567" />
             </div>
           </div>
+
+          {/* Vendor-only: Address + Category */}
+          {accountType === 'vendor' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main St" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Category</label>
+                <select name="category" value={form.category} onChange={handleChange} className="input-field">
+                  <option value="">Select a category</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="salon">Salon & Beauty</option>
+                  <option value="fitness">Fitness & Gym</option>
+                  <option value="wellness">Wellness & Spa</option>
+                  <option value="cafe">Cafe & Coffee</option>
+                  <option value="retail">Retail & Shopping</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="automotive">Automotive</option>
+                  <option value="photography">Photography</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-3 gap-3">
             <div>
@@ -161,8 +374,18 @@ export default function CustomerSignupPage() {
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading
+              ? 'Creating Account...'
+              : accountType === 'vendor'
+              ? 'Start My Free Trial'
+              : 'Create Account'}
           </button>
+
+          {accountType === 'vendor' && (
+            <p className="text-xs text-gray-400 text-center">
+              14-day free trial. You&apos;ll select your plan next.
+            </p>
+          )}
         </form>
 
         <p className="text-center text-gray-500 text-sm mt-6">

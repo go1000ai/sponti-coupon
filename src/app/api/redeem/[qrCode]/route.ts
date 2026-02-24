@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 // POST /api/redeem/[qrCode] - Vendor redeems via QR code or 6-digit code
 export async function POST(
@@ -84,8 +84,8 @@ export async function POST(
     }, { status: 400 });
   }
 
-  // Check if deposit was confirmed (for sponti coupons)
-  if (!claim.deposit_confirmed) {
+  // Check if deposit was confirmed (for deals with deposits)
+  if (claim.deal?.deposit_amount && claim.deal.deposit_amount > 0 && !claim.deposit_confirmed) {
     return NextResponse.json({
       error: 'Deposit has not been confirmed for this claim',
       code: 'NO_DEPOSIT',
@@ -106,18 +106,121 @@ export async function POST(
   }
 
   // Create redemption record
-  await supabase.from('redemptions').insert({
-    claim_id: claim.id,
-    deal_id: claim.deal_id,
-    vendor_id: user.id,
-    customer_id: claim.customer_id,
-    scanned_by: user.id,
-  });
+  const { data: redemptionRecord } = await supabase
+    .from('redemptions')
+    .insert({
+      claim_id: claim.id,
+      deal_id: claim.deal_id,
+      vendor_id: user.id,
+      customer_id: claim.customer_id,
+      scanned_by: user.id,
+    })
+    .select()
+    .single();
 
   // Calculate remaining balance: deal price - deposit already paid
   const depositPaid = claim.deal?.deposit_amount || 0;
   const dealPrice = claim.deal?.deal_price || 0;
   const remainingBalance = Math.max(0, dealPrice - depositPaid);
+
+  // === LOYALTY AWARD (non-blocking — errors don't fail the redemption) ===
+  let loyaltyInfo: { program_type: string; program_name: string; earned: string; current: string } | null = null;
+  try {
+    const serviceClient = await createServiceRoleClient();
+
+    // Check if vendor has an active loyalty program
+    const { data: program } = await serviceClient
+      .from('loyalty_programs')
+      .select('*')
+      .eq('vendor_id', user.id)
+      .eq('is_active', true)
+      .single();
+
+    if (program) {
+      // Find or create loyalty card for this customer+vendor
+      let { data: card } = await serviceClient
+        .from('loyalty_cards')
+        .select('*')
+        .eq('customer_id', claim.customer_id)
+        .eq('vendor_id', user.id)
+        .single();
+
+      if (!card) {
+        const { data: newCard } = await serviceClient
+          .from('loyalty_cards')
+          .insert({
+            program_id: program.id,
+            customer_id: claim.customer_id,
+            vendor_id: user.id,
+          })
+          .select()
+          .single();
+        card = newCard;
+      }
+
+      if (card) {
+        if (program.program_type === 'punch_card') {
+          const newPunches = card.current_punches + 1;
+          await serviceClient
+            .from('loyalty_cards')
+            .update({
+              current_punches: newPunches,
+              total_punches_earned: card.total_punches_earned + 1,
+            })
+            .eq('id', card.id);
+
+          await serviceClient.from('loyalty_transactions').insert({
+            card_id: card.id,
+            customer_id: claim.customer_id,
+            vendor_id: user.id,
+            redemption_id: redemptionRecord?.id || null,
+            transaction_type: 'earn_punch',
+            punches_amount: 1,
+            description: `Earned 1 stamp from "${claim.deal?.title}"`,
+            deal_title: claim.deal?.title,
+          });
+
+          loyaltyInfo = {
+            program_type: 'punch_card',
+            program_name: program.name,
+            earned: '1 stamp',
+            current: `${newPunches}/${program.punches_required} stamps`,
+          };
+        } else if (program.program_type === 'points') {
+          const pointsEarned = Math.floor(dealPrice * (program.points_per_dollar || 1));
+          const newPoints = card.current_points + pointsEarned;
+
+          await serviceClient
+            .from('loyalty_cards')
+            .update({
+              current_points: newPoints,
+              total_points_earned: card.total_points_earned + pointsEarned,
+            })
+            .eq('id', card.id);
+
+          await serviceClient.from('loyalty_transactions').insert({
+            card_id: card.id,
+            customer_id: claim.customer_id,
+            vendor_id: user.id,
+            redemption_id: redemptionRecord?.id || null,
+            transaction_type: 'earn_points',
+            points_amount: pointsEarned,
+            description: `Earned ${pointsEarned} points from "${claim.deal?.title}"`,
+            deal_title: claim.deal?.title,
+          });
+
+          loyaltyInfo = {
+            program_type: 'points',
+            program_name: program.name,
+            earned: `${pointsEarned} points`,
+            current: `${newPoints} points`,
+          };
+        }
+      }
+    }
+  } catch (loyaltyError) {
+    console.error('Loyalty award error:', loyaltyError);
+  }
 
   return NextResponse.json({
     success: true,
@@ -135,6 +238,7 @@ export async function POST(
     },
     remaining_balance: remainingBalance,
     redeemed_at: new Date().toISOString(),
+    loyalty: loyaltyInfo,
   });
 }
 

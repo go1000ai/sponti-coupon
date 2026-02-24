@@ -14,10 +14,10 @@ export async function POST(request: NextRequest) {
 
   const { deal_id } = await request.json();
 
-  // Get the deal
+  // Get the deal with vendor info
   const { data: deal } = await supabase
     .from('deals')
-    .select('*, vendor:vendors(stripe_payment_link)')
+    .select('*, vendor:vendors(id, stripe_payment_link)')
     .eq('id', deal_id)
     .single();
 
@@ -105,8 +105,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: claimError.message }, { status: 500 });
   }
 
-  // Build vendor payment link with session token
-  const vendorPaymentLink = deal.vendor?.stripe_payment_link;
+  // Look up vendor's primary active payment method from the new table
+  let vendorPaymentLink: string | null = null;
+
+  if (deal.vendor?.id) {
+    const { data: primaryMethod } = await supabase
+      .from('vendor_payment_methods')
+      .select('payment_link')
+      .eq('vendor_id', deal.vendor.id)
+      .eq('is_primary', true)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    vendorPaymentLink = primaryMethod?.payment_link || null;
+  }
+
+  // Fallback to legacy stripe_payment_link if no new payment method found
+  if (!vendorPaymentLink) {
+    vendorPaymentLink = deal.vendor?.stripe_payment_link || null;
+  }
+
   const redirectUrl = vendorPaymentLink
     ? `${vendorPaymentLink}?client_reference_id=${sessionToken}`
     : null;
@@ -133,7 +151,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('claims')
-    .select('*, deal:deals(*, vendor:vendors(business_name, logo_url))')
+    .select('*, deal:deals(*, vendor:vendors(business_name, logo_url, address, city, state, zip, phone, email, website, description, business_hours))')
     .eq('customer_id', user.id)
     .order('created_at', { ascending: false });
 

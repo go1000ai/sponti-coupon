@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `${deal.title} — ${discountText}`;
     const description = deal.description
       ? `${deal.description.substring(0, 140)}${deal.description.length > 140 ? '...' : ''} Save ${discountText} at ${vendorName}${location ? ` in ${location}` : ''}.`
-      : `Save ${discountText} at ${vendorName}${location ? ` in ${location}` : ''}. ${isSponti ? '24-hour flash deal — claim before it expires!' : 'Verified local deal on SpontiCoupon.'}`;
+      : `Save ${discountText} at ${vendorName}${location ? ` in ${location}` : ''}. ${isSponti ? '24-hour Sponti Deal — claim before it expires!' : 'Verified local deal on SpontiCoupon.'}`;
 
     const ogImage = deal.image_url || `${BASE_URL}/og-image.png`;
 

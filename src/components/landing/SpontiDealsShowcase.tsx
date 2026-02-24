@@ -83,13 +83,15 @@ export function SpontiDealsShowcase() {
   }
 
   return (
-    <section className="relative py-10 sm:py-16 overflow-hidden">
+    <section className="relative py-10 sm:py-16 pb-16 sm:pb-24 overflow-hidden">
       {/* Parallax background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }}
       />
       <div className="absolute inset-0 bg-secondary-500/75 backdrop-blur-[2px]" />
+      {/* Bottom fade for smooth transition to next section */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-secondary-500/70 to-secondary-500 z-[1]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}

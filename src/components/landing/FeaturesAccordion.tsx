@@ -12,8 +12,8 @@ import {
 const features = [
   {
     icon: Zap,
-    title: '24-Hour Flash Deals',
-    description: 'Every Sponti Coupon is a time-limited flash deal available for just 24 hours. New deals drop daily from local businesses, creating exciting urgency and exclusive savings you won\'t find anywhere else.',
+    title: '24-Hour Sponti Deals',
+    description: 'Every Sponti Coupon is a time-limited Sponti Deal available for just 24 hours. New deals drop daily from local businesses, creating exciting urgency and exclusive savings you won\'t find anywhere else.',
     gradient: 'from-primary-500 to-orange-600',
   },
   {

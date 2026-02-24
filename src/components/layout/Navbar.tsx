@@ -3,16 +3,23 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { Menu, X, User, Store, LayoutDashboard, LogOut, ScanLine } from 'lucide-react';
+import { Menu, X, User, Store, LayoutDashboard, LogOut, ScanLine, Bell } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 export function Navbar() {
   const { user, role, loading, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Hide navbar on vendor, admin, and customer dashboard pages — they have their own sidebar navigation
+  if (pathname.startsWith('/vendor') || pathname.startsWith('/admin') || pathname.startsWith('/dashboard')) {
+    return null;
+  }
 
   return (
-    <nav className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-white border-b border-gray-100 sticky top-0 z-[60]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
           {/* Logo */}
@@ -30,12 +37,13 @@ export function Navbar() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-6">
             <Link href="/deals" className="relative inline-flex items-center gap-1.5 text-primary-500 font-bold pb-1 hover:text-primary-600 transition-colors group">
-              <SpontiIcon className="w-4 h-4 group-hover:animate-wiggle" />
+              <SpontiIcon className="w-5 h-5 group-hover:animate-wiggle" />
               Browse Deals
               <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500 rounded-full animate-pulse" />
             </Link>
 
-            {!loading && !user && (
+            {/* Show Sign In / Sign Up / For Businesses when no confirmed user */}
+            {!user && (
               <>
                 <Link href="/auth/login" className="nav-link-animated text-gray-600 hover:text-primary-500 transition-colors font-medium pb-1">
                   Sign In
@@ -43,7 +51,7 @@ export function Navbar() {
                 <Link href="/auth/signup" className="btn-primary text-sm py-2 px-4">
                   Sign Up Free
                 </Link>
-                <Link href="/auth/vendor-signup" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
+                <Link href="/pricing" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
                   For Businesses
                 </Link>
               </>
@@ -68,10 +76,21 @@ export function Navbar() {
 
             {!loading && user && role === 'customer' && (
               <>
-                <Link href="/my-deals" className="text-gray-600 hover:text-primary-500 transition-colors font-medium">
+                <Link href="/dashboard" className="flex items-center gap-1 text-gray-600 hover:text-primary-500 transition-colors font-medium">
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </Link>
+                <Link href="/dashboard/my-deals" className="flex items-center gap-1 text-gray-600 hover:text-primary-500 transition-colors font-medium">
                   My Deals
                 </Link>
-                <Link href="/account" className="flex items-center gap-1 text-gray-600 hover:text-primary-500 transition-colors font-medium">
+                <Link
+                  href="/dashboard/notifications"
+                  className="relative p-2 text-gray-500 hover:text-primary-500 transition-colors"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+                </Link>
+                <Link href="/dashboard/settings" className="flex items-center gap-1 text-gray-600 hover:text-primary-500 transition-colors font-medium">
                   <User className="w-4 h-4" /> Account
                 </Link>
                 <button onClick={signOut} className="flex items-center gap-1 text-gray-600 hover:text-red-500 transition-colors font-medium">
@@ -107,9 +126,9 @@ export function Navbar() {
       {mobileOpen && (
         <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-1">
           <Link href="/deals" className="block text-primary-500 font-bold py-3 inline-flex items-center gap-1.5 border-b-2 border-primary-500" onClick={() => setMobileOpen(false)}>
-            <SpontiIcon className="w-4 h-4" /> Browse Deals
+            <SpontiIcon className="w-5 h-5" /> Browse Deals
           </Link>
-          {!loading && !user && (
+          {!user && (
             <>
               <Link href="/auth/login" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>
                 Sign In
@@ -117,7 +136,7 @@ export function Navbar() {
               <Link href="/auth/signup" className="block btn-primary text-center text-sm py-3 mt-2" onClick={() => setMobileOpen(false)}>
                 Sign Up Free
               </Link>
-              <Link href="/auth/vendor-signup" className="block text-gray-400 hover:text-gray-600 text-center text-sm py-3 mt-1" onClick={() => setMobileOpen(false)}>
+              <Link href="/pricing" className="block text-gray-400 hover:text-gray-600 text-center text-sm py-3 mt-1" onClick={() => setMobileOpen(false)}>
                 For Businesses
               </Link>
             </>
@@ -132,8 +151,14 @@ export function Navbar() {
           )}
           {!loading && user && role === 'customer' && (
             <>
-              <Link href="/my-deals" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>My Deals</Link>
-              <Link href="/account" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>Account</Link>
+              <Link href="/dashboard" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+              <Link href="/dashboard/my-deals" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>My Deals</Link>
+              <Link href="/dashboard/notifications" className="flex items-center gap-2 text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>
+                <Bell className="w-4 h-4" />
+                Notifications
+                <span className="w-2 h-2 bg-red-500 rounded-full" />
+              </Link>
+              <Link href="/dashboard/settings" className="block text-gray-600 hover:text-primary-500 font-medium py-3" onClick={() => setMobileOpen(false)}>Account</Link>
               <button onClick={() => { signOut(); setMobileOpen(false); }} className="block text-red-500 font-medium py-3 w-full text-left">Sign Out</button>
             </>
           )}

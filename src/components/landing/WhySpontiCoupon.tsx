@@ -184,7 +184,7 @@ export function WhySpontiCoupon() {
                   </p>
                 </div>
                 <Link
-                  href="/auth/vendor-signup"
+                  href="/auth/signup?type=vendor"
                   className="btn-primary inline-flex items-center gap-2 hover:scale-105 transition-transform"
                 >
                   Start Free Trial <ArrowRight className="w-4 h-4" />
@@ -205,7 +205,7 @@ export function WhySpontiCoupon() {
             },
             {
               icon: Clock,
-              title: '24-Hour Flash Deals',
+              title: '24-Hour Sponti Deals',
               description: 'Create urgency with time-limited Sponti Coupons that drive immediate foot traffic.',
               gradient: 'from-primary-500 to-orange-600',
             },

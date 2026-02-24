@@ -4,36 +4,58 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { Plus, Tag, Pause, Play, Trash2 } from 'lucide-react';
+import { Plus, Tag, Pause, Play, Trash2, Pencil, TrendingUp, Lock, CalendarDays, List, Globe, MapPin } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 
 export default function VendorDealsPage() {
   const { user } = useAuth();
+  const { dealsPerMonth } = useVendorTier();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'paused'>('all');
   const [loading, setLoading] = useState(true);
+  const [dealsThisMonth, setDealsThisMonth] = useState(0);
 
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
 
     async function fetchDeals() {
-      let query = supabase
-        .from('deals')
-        .select('*')
-        .eq('vendor_id', user!.id)
-        .order('created_at', { ascending: false });
+      try {
+        let query = supabase
+          .from('deals')
+          .select('*')
+          .eq('vendor_id', user!.id)
+          .order('created_at', { ascending: false });
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter);
+        if (filter !== 'all') {
+          query = query.eq('status', filter);
+        }
+
+        // Also count deals created this month
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const [dealsRes, countRes] = await Promise.all([
+          query,
+          supabase
+            .from('deals')
+            .select('*', { count: 'exact', head: true })
+            .eq('vendor_id', user!.id)
+            .gte('created_at', startOfMonth.toISOString()),
+        ]);
+
+        setDeals(dealsRes.data || []);
+        setDealsThisMonth(countRes.count || 0);
+      } catch (err) {
+        console.error('[VendorDeals] Error fetching deals:', err);
+      } finally {
+        setLoading(false);
       }
-
-      const { data } = await query;
-      setDeals(data || []);
-      setLoading(false);
     }
 
     fetchDeals();
@@ -54,12 +76,59 @@ export default function VendorDealsPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-secondary-500">My Deals</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold text-secondary-500">My Deals</h1>
+          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-secondary-500 shadow-sm"
+              title="List View"
+            >
+              <List className="w-3.5 h-3.5" /> List
+            </button>
+            <Link
+              href="/vendor/deals/calendar"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-secondary-500 transition-colors"
+              title="Calendar View"
+            >
+              <CalendarDays className="w-3.5 h-3.5" /> Calendar
+            </Link>
+          </div>
+        </div>
         <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" /> New Deal
         </Link>
+      </div>
+
+      {/* Deal Usage Indicator */}
+      <div className="bg-gray-50 rounded-xl p-4 mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <TrendingUp className="w-5 h-5 text-primary-500" />
+          <div>
+            <p className="text-sm font-medium text-secondary-500">
+              {dealsPerMonth === -1
+                ? 'Unlimited deals this month'
+                : `${dealsThisMonth} of ${dealsPerMonth} deals used this month`}
+            </p>
+            {dealsPerMonth !== -1 && dealsThisMonth >= dealsPerMonth && (
+              <p className="text-xs text-red-500 mt-0.5">
+                You&apos;ve reached your limit.{' '}
+                <Link href="/vendor/subscription" className="underline font-medium">Upgrade</Link> for more deals.
+              </p>
+            )}
+          </div>
+        </div>
+        {dealsPerMonth !== -1 && (
+          <div className="w-32 bg-gray-200 rounded-full h-2">
+            <div
+              className={`h-2 rounded-full transition-all ${
+                dealsThisMonth >= dealsPerMonth ? 'bg-red-500' : 'bg-primary-500'
+              }`}
+              style={{ width: `${Math.min(100, (dealsThisMonth / dealsPerMonth) * 100)}%` }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -120,6 +189,15 @@ export default function VendorDealsPage() {
                       }`}>
                         {deal.status}
                       </span>
+                      {deal.website_url ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600 flex items-center gap-1">
+                          <Globe className="w-3 h-3" /> Online
+                        </span>
+                      ) : deal.location_ids && deal.location_ids.length > 0 ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {deal.location_ids.length} location{deal.location_ids.length !== 1 ? 's' : ''}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -149,6 +227,22 @@ export default function VendorDealsPage() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
+                    {deal.claims_count > 0 ? (
+                      <span
+                        className="p-2 text-gray-300 cursor-not-allowed"
+                        title="Deal is locked — has claims"
+                      >
+                        <Lock className="w-4 h-4" />
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/vendor/deals/edit?id=${deal.id}`}
+                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Link>
+                    )}
                     {deal.status === 'active' && (
                       <button
                         onClick={() => handleStatusChange(deal.id, 'paused')}

@@ -19,16 +19,16 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "SpontiCoupon — Flash Deals & Coupons Near You | Up to 70% Off Local Businesses",
+    default: "SpontiCoupon — Sponti Deals & Coupons Near You | Up to 70% Off Local Businesses",
     template: "%s | SpontiCoupon",
   },
-  description: "Save up to 70% with 24-hour flash deals from verified local businesses. Restaurants, spas, fitness, entertainment & more. Claim exclusive Sponti Coupons before they expire!",
+  description: "Save up to 70% with 24-hour Sponti Deals from verified local businesses. Restaurants, spas, fitness, entertainment & more. Claim exclusive Sponti Coupons before they expire!",
   keywords: [
-    "coupons near me", "flash deals", "local deals", "discount coupons",
+    "coupons near me", "sponti deals", "local deals", "discount coupons",
     "restaurant deals", "spa deals", "daily deals", "sponti coupon",
     "sponticoupon", "last minute deals", "deal of the day",
     "local business coupons", "Miami deals", "best deals near me",
-    "coupon app", "flash sale", "limited time offers",
+    "coupon app", "sponti sale", "limited time offers",
   ],
   authors: [{ name: "SpontiCoupon", url: BASE_URL }],
   creator: "Online Commerce Hub, LLC",
@@ -42,22 +42,22 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: BASE_URL,
     siteName: "SpontiCoupon",
-    title: "SpontiCoupon — Flash Deals & Coupons Near You | Up to 70% Off",
-    description: "Save up to 70% with 24-hour flash deals from verified local businesses. Restaurants, spas, fitness & more. Claim before they expire!",
+    title: "SpontiCoupon — Sponti Deals & Coupons Near You | Up to 70% Off",
+    description: "Save up to 70% with 24-hour Sponti Deals from verified local businesses. Restaurants, spas, fitness & more. Claim before they expire!",
     images: [
       {
         url: `${BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "SpontiCoupon — Flash Deals Near You",
+        alt: "SpontiCoupon — Sponti Deals Near You",
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SpontiCoupon — Flash Deals & Coupons Near You",
-    description: "Save up to 70% with 24-hour flash deals from verified local businesses. Claim exclusive Sponti Coupons before they expire!",
+    title: "SpontiCoupon — Sponti Deals & Coupons Near You",
+    description: "Save up to 70% with 24-hour Sponti Deals from verified local businesses. Claim exclusive Sponti Coupons before they expire!",
     images: [`${BASE_URL}/og-image.png`],
     creator: "@sponticoupon",
   },
@@ -82,6 +82,16 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "SpontiCoupon",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
   formatDetection: {
     telephone: false,
   },
@@ -104,7 +114,7 @@ export default function RootLayout({
     name: "SpontiCoupon",
     url: BASE_URL,
     logo: `${BASE_URL}/logo.png`,
-    description: "SpontiCoupon connects consumers with exclusive 24-hour flash deals from verified local businesses, offering up to 70% off restaurants, spas, fitness, entertainment and more.",
+    description: "SpontiCoupon connects consumers with exclusive 24-hour Sponti Deals from verified local businesses, offering up to 70% off restaurants, spas, fitness, entertainment and more.",
     foundingDate: "2025",
     founder: { "@type": "Organization", name: "Online Commerce Hub, LLC" },
     sameAs: [],
@@ -120,7 +130,7 @@ export default function RootLayout({
     "@type": "WebSite",
     name: "SpontiCoupon",
     url: BASE_URL,
-    description: "Discover 24-hour flash deals from verified local businesses. Save up to 70% on restaurants, spas, fitness, entertainment and more.",
+    description: "Discover 24-hour Sponti Deals from verified local businesses. Save up to 70% on restaurants, spas, fitness, entertainment and more.",
     potentialAction: {
       "@type": "SearchAction",
       target: {
@@ -140,7 +150,7 @@ export default function RootLayout({
         name: "What is SpontiCoupon?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "SpontiCoupon is a flash deal platform that connects consumers with exclusive 24-hour deals from verified local businesses. Vendors post time-limited Sponti Coupons with discounts of up to 70% off, which consumers can claim by paying a small deposit and redeeming with a QR code at the business.",
+          text: "SpontiCoupon is a Sponti Deal platform that connects consumers with exclusive 24-hour deals from verified local businesses. Vendors post time-limited Sponti Coupons with discounts of up to 70% off, which consumers can claim by paying a small deposit and redeeming with a QR code at the business.",
         },
       },
       {
@@ -148,7 +158,7 @@ export default function RootLayout({
         name: "How do Sponti Coupons work?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Browse available flash deals near you, claim a deal by paying a small deposit, receive a unique QR code, then visit the business and show your QR code to redeem the discount. Sponti Coupons expire within 24 hours, creating urgency and deeper discounts than regular deals.",
+          text: "Browse available Sponti Deals near you, claim a deal by paying a small deposit, receive a unique QR code, then visit the business and show your QR code to redeem the discount. Sponti Coupons expire within 24 hours, creating urgency and deeper discounts than regular deals.",
         },
       },
       {
@@ -164,7 +174,7 @@ export default function RootLayout({
         name: "How is SpontiCoupon different from Groupon?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Unlike Groupon, SpontiCoupon focuses on 24-hour flash deals (Sponti Coupons) that offer deeper discounts due to their time-limited nature. Vendors can post deals every 3 hours, and the shorter the redemption window, the higher the discount. All businesses are verified, and redemption is instant via QR code.",
+          text: "Unlike Groupon, SpontiCoupon focuses on 24-hour Sponti Deals (Sponti Coupons) that offer deeper discounts due to their time-limited nature. Vendors can post deals every 3 hours, and the shorter the redemption window, the higher the discount. All businesses are verified, and redemption is instant via QR code.",
         },
       },
       {
@@ -196,7 +206,7 @@ export default function RootLayout({
         name: "How do businesses list deals on SpontiCoupon?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Business owners can sign up as a vendor on SpontiCoupon, choose a subscription plan starting at $29/month, and start posting deals immediately. Create regular deals that last up to 30 days or flash Sponti Coupons that expire in 24 hours with deeper discounts to drive foot traffic.",
+          text: "Business owners can sign up as a vendor on SpontiCoupon, choose a subscription plan starting at $29/month, and start posting deals immediately. Create regular deals that last up to 30 days or Sponti Deals that expire in 24 hours with deeper discounts to drive foot traffic.",
         },
       },
       {
@@ -215,14 +225,14 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "How to Use SpontiCoupon to Save Money at Local Businesses",
-    description: "Save up to 70% with flash deals from verified local businesses in 4 simple steps.",
+    description: "Save up to 70% with Sponti Deals from verified local businesses in 4 simple steps.",
     totalTime: "PT5M",
     step: [
       {
         "@type": "HowToStep",
         position: 1,
         name: "Browse Deals Near You",
-        text: "Open SpontiCoupon and explore flash deals from verified local businesses in your area. Filter by category, distance, or discount percentage to find the perfect deal.",
+        text: "Open SpontiCoupon and explore Sponti Deals from verified local businesses in your area. Filter by category, distance, or discount percentage to find the perfect deal.",
         url: `${BASE_URL}/deals`,
       },
       {
@@ -249,7 +259,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         {/* JSON-LD Structured Data for SEO, AEO & GEO */}
         <script
           type="application/ld+json"

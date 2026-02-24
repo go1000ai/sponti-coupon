@@ -1,0 +1,148 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
+import Anthropic from '@anthropic-ai/sdk';
+import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
+import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
+
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply';
+
+const PROMPTS: Record<AssistType, string> = {
+  business_description: `You are a marketing copywriter helping local businesses write compelling business descriptions for their profile on a coupon/deal app. Write a warm, professional, and inviting description that highlights what makes the business special. Keep it under 500 characters. Return ONLY the description text, no quotes, no labels.`,
+  deal_title: `You are a marketing expert for local businesses. Write a short, catchy, attention-grabbing deal title (max 60 characters). Make it urgent and compelling. Return ONLY the title text, no quotes, no labels.`,
+  deal_description: `You are an expert marketing copywriter for local businesses. Write a vivid, specific 3-5 sentence deal description that makes customers want to act immediately. Use sensory language and concrete details about what the customer will experience, taste, or receive. Mention specific items, flavors, or services — NEVER be vague or generic. Include the actual savings when possible and end with a strong call-to-action. The description should read like a mini advertisement, not generic marketing fluff. Return ONLY the description text, no quotes, no labels.`,
+  review_reply: `You are a customer service expert helping a local business owner reply to a customer review. Write a professional, warm, and appreciative response. If the review is negative, be empathetic and constructive. Keep it concise (2-3 sentences). Return ONLY the reply text, no quotes, no labels.`,
+};
+
+// Tone-specific system prompts for review replies
+// Each tone MUST produce noticeably different wording, sentence structure, and vocabulary
+const TONE_PROMPTS: Record<AutoResponseTone, string> = {
+  professional: `You are a corporate communications specialist writing a business reply to a customer review. Use formal, polished language. Start with "Dear [customer name]" or "Thank you for your feedback". Use words like "appreciate", "valued", "ensure", "commitment". NO slang, NO exclamation marks, NO emojis. Sound like a Fortune 500 company's customer service team. If negative, offer specific resolution steps. Keep it 2-3 sentences. Return ONLY the reply text.`,
+  friendly: `You are a cheerful, outgoing small business owner replying to a customer review. Be WARM and PERSONAL — use their first name, add exclamation marks, sound genuinely excited! Use phrases like "So glad you loved it!", "You made our day!", "Can't wait to see you again!". Be upbeat and enthusiastic. If negative, be understanding but optimistic: "Oh no! We're so sorry about that — let's make it right!". Keep it 2-3 sentences. Return ONLY the reply text.`,
+  casual: `You are replying to a review like you're texting a friend. Keep it VERY short — 1-2 sentences max. Use lowercase-feeling language, contractions, and a laid-back vibe. Examples: "hey thanks! really appreciate you stopping by", "glad you had a good time!", "ah man, sorry about that — hit us up and we'll sort it out". NO formal language, NO "Dear customer", NO corporate speak. Sound like a real human being. Return ONLY the reply text.`,
+  grateful: `You are deeply moved and thankful when replying to this customer review. Express PROFOUND gratitude — almost emotional. Use phrases like "This means the world to us", "We're truly humbled", "Your support keeps us going", "We can't thank you enough". If negative, thank them even more: "We're so grateful you took the time to share this — it helps us grow". Be heartfelt and sincere, almost poetic. Keep it 2-3 sentences. Return ONLY the reply text.`,
+  empathetic: `You are an emotionally intelligent business owner replying to a customer review. LEAD with validating their feelings. Use phrases like "We completely understand how that feels", "Your experience matters deeply to us", "We hear you". Mirror their emotions back. If positive: "It fills our hearts knowing you felt that way". If negative: "We can only imagine how frustrating that must have been — and we take full responsibility". Focus on emotional connection over business talk. Keep it 2-3 sentences. Return ONLY the reply text.`,
+};
+
+// POST /api/vendor/ai-assist — General AI text assist (Business+ tier only)
+export async function POST(request: NextRequest) {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { type, context, tone, custom_instructions } = body as {
+    type: AssistType;
+    context: Record<string, string>;
+    tone?: AutoResponseTone;
+    custom_instructions?: string;
+  };
+
+  if (!type || !PROMPTS[type]) {
+    return NextResponse.json({ error: 'Invalid assist type' }, { status: 400 });
+  }
+
+  // Get vendor info for context + tier check
+  const { data: vendor } = await supabase
+    .from('vendors')
+    .select('business_name, category, city, state, subscription_tier')
+    .eq('id', user.id)
+    .single();
+
+  // Check tier access — AI features require Business plan or higher
+  const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
+  if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
+    return NextResponse.json(
+      { error: 'AI Assist requires a Business plan or higher. Upgrade at /vendor/subscription.' },
+      { status: 403 }
+    );
+  }
+
+  const businessName = vendor?.business_name || context?.business_name || 'My Business';
+  const category = vendor?.category || context?.category || '';
+  const location = vendor?.city && vendor?.state ? `${vendor.city}, ${vendor.state}` : '';
+
+  // Build user message with context
+  let userMessage = `Business: ${businessName}\nCategory: ${category}\nLocation: ${location}\n`;
+
+  if (type === 'business_description') {
+    userMessage += `\nWrite a compelling business profile description for this business.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current description (improve or rewrite it):\n${context.current_text}`;
+    }
+  } else if (type === 'deal_title') {
+    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (flash deal)' : 'Regular Deal'}`;
+    if (context?.description) userMessage += `\nDeal description: ${context.description}`;
+    userMessage += `\n\nWrite a catchy deal title.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current title (improve or rewrite it):\n${context.current_text}`;
+    }
+  } else if (type === 'deal_description') {
+    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (flash deal)' : 'Regular Deal'}`;
+    if (context?.title) userMessage += `\nDeal title: ${context.title}`;
+    if (context?.original_price) userMessage += `\nOriginal price: $${context.original_price}`;
+    if (context?.deal_price) userMessage += `\nDeal price: $${context.deal_price}`;
+    userMessage += `\n\nWrite a compelling deal description.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current description (improve or rewrite it):\n${context.current_text}`;
+    }
+  } else if (type === 'review_reply') {
+    userMessage += `\nCustomer rating: ${context?.rating || '?'} stars`;
+    userMessage += `\nCustomer review: ${context?.review_text || '(no text)'}`;
+    if (context?.customer_name) userMessage += `\nCustomer name: ${context.customer_name}`;
+    userMessage += `\n\nWrite a professional reply to this review.`;
+  }
+
+  const anthropicKey = process.env.SPONTI_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
+
+  if (anthropicKey) {
+    try {
+      // Use tone-specific prompt for review replies if tone is provided
+      let systemPrompt = type === 'review_reply' && tone && TONE_PROMPTS[tone]
+        ? TONE_PROMPTS[tone]
+        : PROMPTS[type];
+
+      // Append custom instructions if provided (for review replies)
+      if (custom_instructions && type === 'review_reply') {
+        systemPrompt += `\n\nAdditional business-specific instructions: ${custom_instructions}`;
+      }
+
+      const client = new Anthropic({ apiKey: anthropicKey });
+      const message = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: userMessage }],
+        system: systemPrompt,
+        temperature: 0.8,
+      });
+
+      const content = message.content[0];
+      if (content.type === 'text') {
+        return NextResponse.json({ text: content.text.trim(), source: 'ai' });
+      }
+    } catch (err) {
+      console.error('AI assist error, falling back to templates:', err);
+    }
+  }
+
+  // Fallback: simple templates when no API key
+  const fallbackText = getFallbackText(type, businessName, category);
+  return NextResponse.json({ text: fallbackText, source: 'template' });
+}
+
+function getFallbackText(type: AssistType, businessName: string, category: string): string {
+  switch (type) {
+    case 'business_description':
+      return `Welcome to ${businessName}! We're a local ${category || 'business'} dedicated to delivering an exceptional experience to every customer. Whether you're a first-time visitor or a loyal regular, we go above and beyond to make your visit memorable. Stop by today and discover why our community loves us!`;
+    case 'deal_title':
+      return `${businessName} — Exclusive Savings!`;
+    case 'deal_description':
+      return `Don't miss this incredible deal from ${businessName}! Enjoy premium ${category || 'products and services'} at an unbeatable price. This limited-time offer is exclusively available to SpontiCoupon users — grab it before it's gone!`;
+    case 'review_reply':
+      return `Thank you so much for your feedback! We truly appreciate you taking the time to share your experience with ${businessName}. Your satisfaction means the world to us, and we look forward to seeing you again soon!`;
+    default:
+      return '';
+  }
+}

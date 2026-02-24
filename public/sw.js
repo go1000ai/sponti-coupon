@@ -1,7 +1,5 @@
-const CACHE_NAME = 'sponticoupon-v1';
+const CACHE_NAME = 'sponticoupon-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/deals',
   '/manifest.json',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
@@ -25,43 +23,29 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static
+// Fetch: very conservative caching — only cache safe static assets
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET requests
+  // Only handle GET requests
   if (request.method !== 'GET') return;
 
-  // API calls: network-first with cache fallback
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
+  // NEVER intercept: auth, API, Supabase, Stripe, or non-http(s) requests
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname.startsWith('/auth/') ||
+    url.pathname.startsWith('/_next/') ||
+    url.hostname.includes('supabase') ||
+    url.hostname.includes('stripe') ||
+    url.protocol === 'chrome-extension:' ||
+    url.protocol !== 'https:' && url.protocol !== 'http:'
+  ) {
     return;
   }
 
-  // Static assets: cache-first
+  // For everything else: network-first, cache as fallback for offline only
   event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) {
-        // Update cache in background
-        fetch(request).then((response) => {
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, response));
-        });
-        return cached;
-      }
-      return fetch(request).then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        return response;
-      });
-    })
+    fetch(request).catch(() => caches.match(request))
   );
 });

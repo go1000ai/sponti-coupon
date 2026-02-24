@@ -11,12 +11,7 @@
   --amber: #F5A623;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* App is light-theme only — remove dark override so colors stay consistent */
 
 body {
   color: var(--foreground);
@@ -144,6 +139,45 @@ body {
   .nav-link-animated:hover::after {
     @apply w-full;
   }
+
+  /* Pricing card with hover elevation */
+  .pricing-card {
+    @apply relative bg-white rounded-2xl border border-gray-100 transition-all duration-500 ease-out;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .pricing-card:hover {
+    @apply -translate-y-2;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  }
+  .pricing-card::before {
+    content: '';
+    @apply absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 pointer-events-none;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 60%);
+  }
+  .pricing-card:hover::before {
+    @apply opacity-100;
+    animation: shimmerSlide 1.2s ease-in-out;
+  }
+
+  /* Featured pricing card (Most Popular) */
+  .pricing-card-featured {
+    @apply relative bg-white rounded-2xl transition-all duration-500 ease-out;
+    border: 2px solid #E8632B;
+    box-shadow: 0 20px 60px rgba(232, 99, 43, 0.15);
+  }
+  .pricing-card-featured:hover {
+    @apply -translate-y-3;
+    box-shadow: 0 30px 70px rgba(232, 99, 43, 0.2);
+  }
+  .pricing-card-featured::before {
+    content: '';
+    @apply absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 pointer-events-none;
+    background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 60%);
+  }
+  .pricing-card-featured:hover::before {
+    @apply opacity-100;
+    animation: shimmerSlide 1.2s ease-in-out;
+  }
 }
 
 /* Reduced motion accessibility */
@@ -183,4 +217,83 @@ body {
       0 0 56px rgba(232, 99, 43, 0.35),
       0 0 80px rgba(232, 99, 43, 0.15);
   }
+}
+
+/* ─── Deal Detail Modal Animations ─── */
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modalBackdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes codeDigitPop {
+  0%   { opacity: 0; transform: scale(0.3) rotateY(90deg); }
+  60%  { transform: scale(1.15) rotateY(-5deg); }
+  100% { opacity: 1; transform: scale(1) rotateY(0deg); }
+}
+
+@keyframes qrReveal {
+  from { opacity: 0; transform: scale(0.8) rotate(-3deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+@keyframes floatBadge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+
+.modal-backdrop {
+  animation: modalBackdrop 0.25s ease-out forwards;
+}
+
+.modal-content {
+  animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.code-digit {
+  animation: codeDigitPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+}
+
+.qr-reveal {
+  animation: qrReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s forwards;
+  opacity: 0;
+}
+
+.float-badge {
+  animation: floatBadge 3s ease-in-out infinite;
+}
+
+.deal-modal-shine {
+  position: relative;
+  overflow: hidden;
+}
+.deal-modal-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: shimmerSlide 4s ease-in-out infinite;
 }

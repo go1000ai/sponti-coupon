@@ -6,7 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 
 export const metadata: Metadata = {
   title: 'Terms of Service — SpontiCoupon',
-  description: 'SpontiCoupon Terms of Service. Read our terms governing the use of our flash deal platform for customers and vendors.',
+  description: 'SpontiCoupon Terms of Service. Read our terms governing the use of our Sponti Deal platform for customers and vendors.',
   alternates: { canonical: `${BASE_URL}/terms` },
 };
 
@@ -31,7 +31,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">2. Platform Description</h2>
           <p className="text-gray-600 leading-relaxed">
-            SpontiCoupon is a flash deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Regular Deals and Sponti Coupons (flash deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
+            SpontiCoupon is a Sponti Deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Regular Deals and Sponti Coupons (Sponti Deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
           </p>
         </section>
 
@@ -47,7 +47,7 @@ export default function TermsPage() {
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mt-4">
             <h3 className="font-bold text-amber-800 text-lg mb-3">Important — Time-Sensitive Deal Disclaimer</h3>
             <p className="text-amber-800 leading-relaxed">
-              Sponti Coupons are time-limited flash deals with a minimum duration of 4 hours and a maximum of 24 hours, as set by each Vendor. By claiming a Sponti Coupon, you acknowledge that you are accepting a time-sensitive offer and voluntarily choosing to redeem it within the specified timeframe.
+              Sponti Coupons are time-limited Sponti Deals with a minimum duration of 4 hours and a maximum of 24 hours, as set by each Vendor. By claiming a Sponti Coupon, you acknowledge that you are accepting a time-sensitive offer and voluntarily choosing to redeem it within the specified timeframe.
             </p>
             <p className="text-amber-800 leading-relaxed mt-3">
               <strong>SpontiCoupon, Online Commerce Hub, LLC, its officers, directors, employees, and affiliates are not liable for any accidents, injuries, property damage, or any other harm that may occur while traveling to or from a Vendor&apos;s location to redeem a deal.</strong> Users are solely responsible for their own safety and should never rush, drive recklessly, or violate any traffic laws to meet a deal&apos;s expiration time. No deal is worth risking your safety.

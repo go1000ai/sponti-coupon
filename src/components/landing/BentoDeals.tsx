@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, Clock, MapPin, Eye, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, Clock, MapPin, Eye, ShieldCheck, TrendingUp, Users, Star } from 'lucide-react';
 import { DealTypeBadge, DealTypeLegend } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -12,7 +12,7 @@ import { getDealImage } from '@/lib/constants';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
 
-type DealWithDistance = Deal & { distance?: number | null };
+type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
 export function BentoDeals() {
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
@@ -158,6 +158,11 @@ function HeroDealCard({ deal }: { deal: DealWithDistance }) {
           <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-lg w-fit">
             <ShieldCheck className="w-3 h-3" /> Verified Business
           </span>
+          {deal.is_featured && (
+            <span className="inline-flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-lg w-fit">
+              <Star className="w-3 h-3" /> Featured
+            </span>
+          )}
         </div>
         <div className="bg-white text-primary-500 font-bold text-xl sm:text-2xl px-4 py-2 rounded-2xl shadow-lg">
           {formatPercentage(deal.discount_percentage)} OFF
@@ -254,7 +259,14 @@ function SmallDealCard({ deal }: { deal: DealWithDistance }) {
 
       {/* Top badges */}
       <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-start z-10">
-        <DealTypeBadge type={deal.deal_type} size="sm" />
+        <div className="flex flex-col gap-1">
+          <DealTypeBadge type={deal.deal_type} size="sm" />
+          {deal.is_featured && (
+            <span className="inline-flex items-center gap-0.5 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md w-fit">
+              <Star className="w-2.5 h-2.5" /> Featured
+            </span>
+          )}
+        </div>
         <span className="bg-white text-primary-500 font-bold text-xs px-2 py-1 rounded-full shadow-md">
           {formatPercentage(deal.discount_percentage)}%
         </span>

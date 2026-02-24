@@ -14,10 +14,3 @@ export function getStripe(): Stripe {
 
 // Re-export for convenience
 export { Stripe };
-
-export const SUBSCRIPTION_PRICES: Record<string, { price: number; name: string }> = {
-  starter: { price: 4900, name: 'Starter' },
-  pro: { price: 9900, name: 'Pro' },
-  business: { price: 19900, name: 'Business' },
-  enterprise: { price: 49900, name: 'Enterprise' },
-};

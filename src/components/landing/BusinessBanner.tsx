@@ -20,7 +20,7 @@ export function BusinessBanner() {
                   Are You a Business Owner?
                 </h2>
                 <p className="text-gray-300 text-base sm:text-lg mb-6 max-w-xl">
-                  List your deals on SpontiCoupon with zero commission fees. Flat monthly pricing — deposits go directly to your Stripe account.
+                  List your deals on SpontiCoupon with zero commission fees. Flat monthly pricing — deposits go directly to your account.
                 </p>
 
                 <div className="flex flex-wrap gap-6 mb-8">
@@ -40,7 +40,7 @@ export function BusinessBanner() {
 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Link
-                    href="/auth/vendor-signup"
+                    href="/auth/signup?type=vendor"
                     className="btn-primary inline-flex items-center gap-2 hover:scale-105 transition-transform duration-200"
                   >
                     <Rocket className="w-4 h-4" /> Start Your Free Trial

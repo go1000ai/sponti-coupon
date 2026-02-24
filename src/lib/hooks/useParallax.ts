@@ -9,7 +9,11 @@ export function useParallax(speed: number = 0.5) {
     const element = ref.current;
     if (!element) return;
 
-    // Disable parallax on mobile
+    // Respect prefers-reduced-motion
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mediaQuery.matches) return;
+
+    // Disable parallax on mobile for performance
     if (window.innerWidth < 768) return;
 
     let ticking = false;
