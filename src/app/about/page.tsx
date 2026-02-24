@@ -12,7 +12,7 @@ export default function AboutPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-24 px-4">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative">
           <Image src="/logo.png" alt="SpontiCoupon" width={220} height={66} className="mx-auto mb-8 brightness-110" />
           <h1 className="text-3xl sm:text-5xl font-bold mb-6">
@@ -144,7 +144,7 @@ export default function AboutPage() {
 
       {/* CTA */}
       <section className="py-20 px-4 bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
         <div className="relative">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to get started?</h2>
           <p className="text-gray-300 mb-8 max-w-lg mx-auto">Whether you&apos;re looking for deals or listing your business, we&apos;re here for you.</p>

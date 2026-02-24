@@ -226,8 +226,8 @@ export default function DealsPage() {
       {/* Deals Grid — subtle parallax bg */}
       <div className="relative">
         {/* Soft gradient background so it's not plain white */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 via-white to-accent-50/30" />
-        <div className="absolute inset-0 dot-pattern opacity-[0.03]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 via-white to-accent-50/30 pointer-events-none" />
+        <div className="absolute inset-0 dot-pattern opacity-[0.03] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
           {loading ? (

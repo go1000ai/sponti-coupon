@@ -11,7 +11,7 @@ export default function HowItWorksPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-500 via-primary-600 to-accent-700 text-white py-24 px-4">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
         <div className="max-w-4xl mx-auto text-center relative">
           <h1 className="text-3xl sm:text-5xl font-bold mb-4">How SpontiCoupon Works</h1>
           <p className="text-lg text-white/80 max-w-2xl mx-auto">Save big on local businesses in just 3 simple steps</p>
@@ -86,7 +86,7 @@ export default function HowItWorksPage() {
 
       {/* CTA */}
       <section className="py-20 px-4 bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
         <div className="relative">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to start saving?</h2>
           <p className="text-gray-300 mb-6">Browse local deals and claim your first one today.</p>

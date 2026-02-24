@@ -14,7 +14,7 @@ export function Footer() {
 
   return (
     <footer className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-700 text-white relative overflow-hidden">
-      <div className="absolute inset-0 dot-pattern opacity-[0.03]" />
+      <div className="absolute inset-0 dot-pattern opacity-[0.03] pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>

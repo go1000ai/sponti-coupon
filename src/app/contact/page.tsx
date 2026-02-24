@@ -11,7 +11,7 @@ export default function ContactPage() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-20 px-4">
-        <div className="absolute inset-0 dot-pattern opacity-10" />
+        <div className="absolute inset-0 dot-pattern opacity-10 pointer-events-none" />
         <div className="max-w-3xl mx-auto text-center relative">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-orange-400 mb-6 shadow-lg shadow-primary-500/30">
             <MessageSquare className="w-7 h-7 text-white" />

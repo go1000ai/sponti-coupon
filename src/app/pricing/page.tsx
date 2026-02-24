@@ -167,7 +167,7 @@ export default function PricingPage() {
         <div ref={parallaxRef3} className="absolute bottom-10 left-[30%] w-56 h-56 bg-amber-500/10 rounded-full blur-3xl animate-pulse-soft" />
 
         {/* Decorative grid dots */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <ScrollReveal animation="fade-up">
@@ -528,7 +528,7 @@ export default function PricingPage() {
       {/* ─── SECTION 7: Final CTA with Guarantee ─── */}
       <section className="relative py-20 bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-800 overflow-hidden">
         {/* Background texture */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           <ScrollReveal animation="scale-up">
