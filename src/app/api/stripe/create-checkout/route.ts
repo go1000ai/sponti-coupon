@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
@@ -13,7 +13,20 @@ const TIER_NAMES: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the caller
+    const authClient = await createServerSupabaseClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { tier, vendorId, interval = 'month' } = await request.json();
+
+    // Verify the caller is the same vendor (prevent creating checkout for other vendors)
+    if (vendorId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: vendor mismatch' }, { status: 403 });
+    }
 
     if (!tier || !vendorId || !TIER_NAMES[tier]) {
       return NextResponse.json({ error: 'Invalid tier or vendor' }, { status: 400 });

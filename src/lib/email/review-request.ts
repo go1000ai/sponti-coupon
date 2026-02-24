@@ -18,7 +18,8 @@ interface ReviewRequestEmailParams {
 
 // Generate a signed unsubscribe token so users can't unsubscribe others
 function generateUnsubscribeToken(customerId: string): string {
-  const secret = process.env.CRON_SECRET || 'fallback-secret';
+  const secret = process.env.CRON_SECRET;
+  if (!secret) throw new Error('CRON_SECRET is not configured — cannot generate secure tokens');
   return crypto.createHmac('sha256', secret).update(customerId).digest('hex');
 }
 

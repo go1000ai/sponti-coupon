@@ -1,9 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
-// POST /api/notifications - Send notifications (internal use)
+// POST /api/notifications - Send notifications (authenticated vendors only)
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate the caller
+    const authClient = await createServerSupabaseClient();
+    const { data: { user } } = await authClient.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify vendor role
+    const { data: profile } = await authClient
+      .from('user_profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile || (profile.role !== 'vendor' && profile.role !== 'admin')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const { type, deal_id, customer_ids, channel } = await request.json();
     const supabase = await createServiceRoleClient();
 

@@ -429,9 +429,10 @@ export async function POST() {
       sponti_deals: spontiDeals.length,
     },
     test_accounts: {
-      customer: { email: 'customer@example.com', password: 'seedpassword123!' },
-      vendor: { email: 'bella@example.com', password: 'seedpassword123!', note: '6 vendor accounts total' },
-      admin: { email: 'admin@example.com', password: 'seedpassword123!' },
+      customer: { email: 'customer@example.com' },
+      vendor: { email: 'bella@example.com', note: '6 vendor accounts total' },
+      admin: { email: 'admin@example.com' },
+      note: 'Passwords are not disclosed in API responses',
     },
   });
 }

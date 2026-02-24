@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
-// GET /api/deals - Browse deals with filters
+// GET /api/deals - Browse deals with filters (public endpoint, uses anon client with RLS)
 export async function GET(request: NextRequest) {
-  const supabase = await createServiceRoleClient();
+  const supabase = await createServerSupabaseClient();
   const { searchParams } = new URL(request.url);
 
   const lat = searchParams.get('lat');

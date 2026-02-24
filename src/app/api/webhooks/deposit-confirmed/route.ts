@@ -45,24 +45,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No session token found in payload' }, { status: 400 });
     }
 
-    // Validate webhook signature if vendor has a webhook secret configured
-    if (vendorId && signature) {
-      const { data: vendor } = await supabase
-        .from('vendors')
-        .select('deposit_webhook_secret')
-        .eq('id', vendorId)
-        .single();
+    // Validate webhook signature — REQUIRED for all requests
+    if (!vendorId || !signature) {
+      return NextResponse.json(
+        { error: 'Missing required headers: x-vendor-id and stripe-signature' },
+        { status: 401 }
+      );
+    }
 
-      if (vendor?.deposit_webhook_secret) {
-        const expectedSignature = crypto
-          .createHmac('sha256', vendor.deposit_webhook_secret)
-          .update(body)
-          .digest('hex');
+    const { data: vendor } = await supabase
+      .from('vendors')
+      .select('deposit_webhook_secret')
+      .eq('id', vendorId)
+      .single();
 
-        if (signature !== `sha256=${expectedSignature}`) {
-          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-        }
-      }
+    if (!vendor?.deposit_webhook_secret) {
+      return NextResponse.json(
+        { error: 'Vendor webhook secret not configured' },
+        { status: 401 }
+      );
+    }
+
+    const expectedSignature = crypto
+      .createHmac('sha256', vendor.deposit_webhook_secret)
+      .update(body)
+      .digest('hex');
+
+    if (signature !== `sha256=${expectedSignature}`) {
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     // Find the pending claim with this session token

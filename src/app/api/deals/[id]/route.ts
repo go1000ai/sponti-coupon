@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 // GET /api/deals/[id] - Get a single deal
 export async function GET(
@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const supabase = await createServiceRoleClient();
+  const supabase = await createServerSupabaseClient();
 
   const { data: deal, error } = await supabase
     .from('deals')
