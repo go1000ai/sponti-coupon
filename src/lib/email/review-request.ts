@@ -1,7 +1,11 @@
 import { Resend } from 'resend';
 import crypto from 'crypto';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error('RESEND_API_KEY is not configured');
+  return new Resend(key);
+}
 
 interface ReviewRequestEmailParams {
   to: string;
@@ -35,7 +39,7 @@ export async function sendReviewRequestEmail({
 
   const html = buildEmailHtml({ customerName, businessName, dealTitle, reviewUrl, appUrl, unsubscribeUrl });
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResendClient().emails.send({
     from: `SpontiCoupon <${fromEmail}>`,
     to: [to],
     subject,
