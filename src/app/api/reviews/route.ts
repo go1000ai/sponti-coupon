@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Rating distribution
-    let distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     if (vendorId) {
       const { data: allReviews } = await supabase
         .from('reviews')

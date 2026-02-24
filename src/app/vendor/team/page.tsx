@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { UpgradePrompt } from '@/components/vendor/UpgradePrompt';
 import {
-  Users, Plus, Pencil, UserX, Loader2, Save, X,
+  Users, Pencil, UserX, Loader2, Save, X,
   Mail, Shield, MapPin, AlertCircle, CheckCircle2,
   UserPlus, Crown, Star,
 } from 'lucide-react';

@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     if (isUpgrade) {
       // UPGRADE: Immediate change, prorated charge
-      const updatedSub = await stripe.subscriptions.update(existingSub.stripe_subscription_id, {
+      await stripe.subscriptions.update(existingSub.stripe_subscription_id, {
         items: [{ id: subscriptionItemId, price: newPriceId }],
         proration_behavior: 'create_prorations',
         metadata: { tier: newTier, interval },

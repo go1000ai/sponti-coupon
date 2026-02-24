@@ -156,7 +156,7 @@ export async function GET() {
 
   // ── 4. Totals ──
   let total_saved = 0;
-  let total_claimed = claims.length;
+  const total_claimed = claims.length;
   let total_redeemed = 0;
   let total_expired = 0;
 

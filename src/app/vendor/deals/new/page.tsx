@@ -10,7 +10,7 @@ import { formatCurrency, formatPercentage, calculateDiscount } from '@/lib/utils
 import {
   Tag, AlertCircle, ArrowLeft, Info, Image as ImageIcon,
   Sparkles, Upload, X, Loader2, CheckCircle2, Link as LinkIcon,
-  Calendar, Clock, Lock, MapPin, Check, Globe, ChevronDown,
+  Calendar, Clock, Lock, MapPin, Globe, ChevronDown,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';

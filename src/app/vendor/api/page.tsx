@@ -6,7 +6,7 @@ import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { UpgradePrompt } from '@/components/vendor/UpgradePrompt';
 import {
   Key, Plus, Trash2, Loader2, Copy, Eye, EyeOff,
-  AlertCircle, CheckCircle2, Code, ExternalLink,
+  AlertCircle, CheckCircle2, Code,
 } from 'lucide-react';
 
 interface ApiKey {

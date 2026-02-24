@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Navigation, MapPin } from 'lucide-react';
+import { Navigation } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
 // Fix leaflet default icon
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 const spontiIcon = new L.Icon({

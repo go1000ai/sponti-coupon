@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/review-requests",
-      "schedule": "0 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/vendor/auto-respond",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 18 * * *"
     }
   ]
 }

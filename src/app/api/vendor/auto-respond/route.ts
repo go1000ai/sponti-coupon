@@ -17,7 +17,7 @@ const TONE_PROMPTS: Record<AutoResponseTone, string> = {
 const DEFAULT_PROMPT = `You are a customer service expert helping a local business owner reply to a customer review. Write a professional, warm, and appreciative response. If the review is negative, be empathetic and constructive. Keep it concise (2-3 sentences). Return ONLY the reply text, no quotes, no labels.`;
 
 // POST /api/vendor/auto-respond — Process pending auto-responses for a specific vendor
-export async function POST(request: NextRequest) {
+export async function POST() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
