@@ -276,22 +276,20 @@ export default function DealDetailPage() {
         </div>
 
         {/* Image Gallery */}
-        <div className="relative rounded-none overflow-hidden">
-          <DealImageGallery
-            mainImage={deal.image_url}
-            images={deal.image_urls || []}
-            videoUrls={deal.video_urls || []}
-            title={deal.title}
-            fallback={
-              <div className={`w-full h-72 sm:h-96 flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-purple-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
-                {isSponti ? <SpontiIcon className="w-24 h-24 text-white/20" /> : <Tag className="w-24 h-24 text-white/20" />}
-              </div>
-            }
-          />
-        </div>
+        <DealImageGallery
+          mainImage={deal.image_url}
+          images={deal.image_urls || []}
+          videoUrls={deal.video_urls || []}
+          title={deal.title}
+          fallback={
+            <div className={`w-full h-72 sm:h-96 flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-purple-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
+              {isSponti ? <SpontiIcon className="w-24 h-24 text-white/20" /> : <Tag className="w-24 h-24 text-white/20" />}
+            </div>
+          }
+        />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 relative">
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
           {/* ===== MAIN CONTENT (2 cols) ===== */}
           <div className="lg:col-span-2 space-y-6">

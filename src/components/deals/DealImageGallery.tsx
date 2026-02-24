@@ -152,13 +152,13 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
 
       {/* Thumbnails row */}
       {allMedia.length > 1 && (
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
+        <div className="flex gap-2 px-4 sm:px-6 py-3 overflow-x-auto bg-white border-b border-gray-100">
           {allMedia.map((media, i) => (
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
               className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
-                i === activeIndex ? 'border-primary-500 ring-1 ring-primary-300 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
+                i === activeIndex ? 'border-primary-500 ring-1 ring-primary-300 scale-105' : 'border-gray-200 opacity-60 hover:opacity-100'
               }`}
             >
               {media.type === 'image' ? (
