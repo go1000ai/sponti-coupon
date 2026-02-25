@@ -58,7 +58,9 @@ export async function PUT(
       }
     }
 
-    if (Object.keys(updates).length === 0) {
+    const hasNameUpdates = body.first_name !== undefined || body.last_name !== undefined;
+
+    if (Object.keys(updates).length === 0 && !hasNameUpdates) {
       return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
     }
 
@@ -67,12 +69,29 @@ export async function PUT(
     // Verify vendor exists
     const { data: existing, error: fetchError } = await serviceClient
       .from('vendors')
-      .select('id')
+      .select('*')
       .eq('id', id)
       .single();
 
     if (fetchError || !existing) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
+    }
+
+    // Handle first_name/last_name (stored in user_profiles, not vendors)
+    if (body.first_name !== undefined || body.last_name !== undefined) {
+      const nameUpdate: Record<string, string | null> = {};
+      if (body.first_name !== undefined) nameUpdate.first_name = body.first_name || null;
+      if (body.last_name !== undefined) nameUpdate.last_name = body.last_name || null;
+
+      const { error: nameError } = await serviceClient
+        .from('user_profiles')
+        .update(nameUpdate)
+        .eq('id', id);
+
+      if (nameError) {
+        console.error('[PUT /api/admin/vendors] Name update error:', nameError);
+        return NextResponse.json({ error: 'Failed to update name' }, { status: 500 });
+      }
     }
 
     // If email is being updated, also update the auth user email
@@ -90,17 +109,21 @@ export async function PUT(
       }
     }
 
-    // Update vendor record
-    const { data: vendor, error: updateError } = await serviceClient
-      .from('vendors')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
+    // Update vendor record (only if there are vendor-specific updates)
+    let vendor = existing;
+    if (Object.keys(updates).length > 0) {
+      const { data: updatedVendor, error: updateError } = await serviceClient
+        .from('vendors')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (updateError) {
-      console.error('[PUT /api/admin/vendors] Update error:', updateError);
-      return NextResponse.json({ error: 'Failed to update vendor' }, { status: 500 });
+      if (updateError) {
+        console.error('[PUT /api/admin/vendors] Update error:', updateError);
+        return NextResponse.json({ error: 'Failed to update vendor' }, { status: 500 });
+      }
+      vendor = updatedVendor;
     }
 
     return NextResponse.json({ vendor });

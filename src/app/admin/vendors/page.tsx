@@ -53,6 +53,8 @@ interface VendorFormData {
 }
 
 interface VendorEditData {
+  first_name: string;
+  last_name: string;
   business_name: string;
   email: string;
   phone: string;
@@ -136,6 +138,8 @@ export default function AdminVendorsPage() {
   // Form states
   const [createForm, setCreateForm] = useState<VendorFormData>(EMPTY_FORM);
   const [editForm, setEditForm] = useState<VendorEditData>({
+    first_name: '',
+    last_name: '',
     business_name: '',
     email: '',
     phone: '',
@@ -312,6 +316,8 @@ export default function AdminVendorsPage() {
       { open: string; close: string; closed: boolean }
     >;
     setEditForm({
+      first_name: (vendorAny.first_name as string) || '',
+      last_name: (vendorAny.last_name as string) || '',
       business_name: vendor.business_name || '',
       email: vendor.email || '',
       phone: vendor.phone || '',
@@ -411,6 +417,15 @@ export default function AdminVendorsPage() {
       );
       if (JSON.stringify(editForm.business_hours) !== currentHours) {
         updates.business_hours = editForm.business_hours;
+      }
+
+      // Profile-level name fields (stored in user_profiles, not vendors)
+      const vendorAny = selectedVendor as unknown as Record<string, unknown>;
+      if (editForm.first_name !== ((vendorAny.first_name as string) || '')) {
+        updates.first_name = editForm.first_name || null;
+      }
+      if (editForm.last_name !== ((vendorAny.last_name as string) || '')) {
+        updates.last_name = editForm.last_name || null;
       }
 
       if (Object.keys(updates).length === 0) {
@@ -787,6 +802,29 @@ export default function AdminVendorsPage() {
               {formError}
             </div>
           )}
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input
+                type="text"
+                value={editForm.first_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, first_name: e.target.value }))}
+                className="input-field"
+                placeholder="First name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input
+                type="text"
+                value={editForm.last_name}
+                onChange={(e) => setEditForm((f) => ({ ...f, last_name: e.target.value }))}
+                className="input-field"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
 
           <div className="grid sm:grid-cols-2 gap-4">
             <div>

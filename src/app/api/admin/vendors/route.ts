@@ -89,9 +89,22 @@ export async function GET(request: NextRequest) {
       if (vid) claimCounts[vid] = (claimCounts[vid] || 0) + 1;
     });
 
-    // Enrich vendors with stats
+    // Fetch first_name/last_name from user_profiles
+    const { data: profilesData } = await serviceClient
+      .from('user_profiles')
+      .select('id, first_name, last_name')
+      .in('id', vendorIds);
+
+    const profileMap: Record<string, { first_name: string | null; last_name: string | null }> = {};
+    (profilesData || []).forEach((p: { id: string; first_name: string | null; last_name: string | null }) => {
+      profileMap[p.id] = { first_name: p.first_name, last_name: p.last_name };
+    });
+
+    // Enrich vendors with stats and names
     const vendors = filtered.map((v) => ({
       ...v,
+      first_name: profileMap[v.id]?.first_name || null,
+      last_name: profileMap[v.id]?.last_name || null,
       deal_count: dealCounts[v.id] || 0,
       total_claims: claimCounts[v.id] || 0,
     }));
