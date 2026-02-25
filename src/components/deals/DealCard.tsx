@@ -6,7 +6,7 @@ import { Clock, MapPin, Tag, ShieldCheck, Users } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { formatCurrency, formatPercentage, formatDistance } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
 interface DealCardProps {
@@ -104,7 +104,7 @@ export function DealCard({ deal, distance }: DealCardProps) {
             {distance != null && (
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                {distance.toFixed(1)} mi
+                {formatDistance(distance)}
               </span>
             )}
             <span className="flex items-center gap-1">

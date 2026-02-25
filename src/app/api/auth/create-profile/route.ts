@@ -45,15 +45,40 @@ export async function POST(request: NextRequest) {
     });
 
     if (accountType === 'vendor') {
+      // Validate required address fields for vendors
+      if (!profileData.address || !profileData.city || !profileData.state || !profileData.zip) {
+        return NextResponse.json({ error: 'Business address is required (address, city, state, ZIP)' }, { status: 400 });
+      }
+
+      // Auto-geocode the vendor address
+      let lat: number | null = null;
+      let lng: number | null = null;
+      try {
+        const query = encodeURIComponent(`${profileData.address}, ${profileData.city}, ${profileData.state} ${profileData.zip}, USA`);
+        const geoRes = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+          { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
+        );
+        const geoData = await geoRes.json();
+        if (geoData && geoData.length > 0) {
+          lat = parseFloat(geoData[0].lat);
+          lng = parseFloat(geoData[0].lon);
+        }
+      } catch {
+        // Geocoding failed — vendor can update later from settings
+      }
+
       await adminClient.from('vendors').insert({
         id: user.id,
         business_name: profileData.businessName || 'My Business',
         email: user.email || '',
         phone: profileData.phone || null,
-        address: profileData.address || null,
-        city: profileData.city || null,
-        state: profileData.state || null,
-        zip: profileData.zip || null,
+        address: profileData.address,
+        city: profileData.city,
+        state: profileData.state,
+        zip: profileData.zip,
+        lat,
+        lng,
         category: profileData.category || null,
         subscription_tier: 'starter',
         subscription_status: 'incomplete',

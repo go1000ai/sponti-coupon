@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('deals')
-    .select('*, vendor:vendors(*)', { count: 'exact' })
+    .select('*, vendor:vendors(*)')
     .eq('status', 'active')
     .gte('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     query = query.or(`title.ilike.%${searchText}%,description.ilike.%${searchText}%`);
   }
 
-  const { data: deals, count, error } = await query;
+  const { data: deals, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -53,25 +53,30 @@ export async function GET(request: NextRequest) {
     const userLng = parseFloat(lng);
     const radiusMiles = parseFloat(radius);
 
-    filteredDeals = filteredDeals.filter(deal => {
-      if (!deal.vendor?.lat || !deal.vendor?.lng) return true;
-      const distance = getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng);
-      return distance <= radiusMiles;
-    }).map(deal => ({
-      ...deal,
-      distance: deal.vendor?.lat && deal.vendor?.lng
-        ? getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng)
-        : null,
-    }));
+    filteredDeals = filteredDeals
+      .filter(deal => {
+        // Exclude deals without vendor coordinates when location filtering is active
+        if (!deal.vendor?.lat || !deal.vendor?.lng) return false;
+        const distance = getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng);
+        return distance <= radiusMiles;
+      })
+      .map(deal => ({
+        ...deal,
+        distance: getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng),
+      }));
   }
 
-  // Featured on Homepage: Business & Enterprise vendors' deals sort first
+  // Featured on Homepage: Business & Enterprise vendors' deals sort first, then by distance (nearest first)
   const FEATURED_TIERS = ['business', 'enterprise'];
   filteredDeals.sort((a, b) => {
     const aFeatured = FEATURED_TIERS.includes(a.vendor?.subscription_tier || '') ? 1 : 0;
     const bFeatured = FEATURED_TIERS.includes(b.vendor?.subscription_tier || '') ? 1 : 0;
     if (bFeatured !== aFeatured) return bFeatured - aFeatured; // featured first
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // then newest
+    // Sort by distance if available (nearest first), then by newest
+    const aDist = (a as Record<string, unknown>).distance as number | undefined;
+    const bDist = (b as Record<string, unknown>).distance as number | undefined;
+    if (aDist != null && bDist != null) return aDist - bDist;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   // Tag featured deals so the frontend can show a badge
@@ -80,7 +85,7 @@ export async function GET(request: NextRequest) {
     is_featured: FEATURED_TIERS.includes(deal.vendor?.subscription_tier || ''),
   }));
 
-  return NextResponse.json({ deals: taggedDeals, total: count });
+  return NextResponse.json({ deals: taggedDeals, total: filteredDeals.length });
 }
 
 // POST /api/deals - Create a new deal (vendor only)
@@ -103,15 +108,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Only vendors can create deals' }, { status: 403 });
   }
 
-  // Check subscription status
+  // Check subscription status and location
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('subscription_tier, subscription_status')
+    .select('subscription_tier, subscription_status, lat, lng')
     .eq('id', user.id)
     .single();
 
   if (!vendor?.subscription_tier || vendor.subscription_status !== 'active') {
     return NextResponse.json({ error: 'Active subscription required to create deals' }, { status: 403 });
+  }
+
+  if (!vendor.lat || !vendor.lng) {
+    return NextResponse.json({
+      error: 'Please add your business address in Settings before creating deals. Your address is needed so customers can find your deals nearby.',
+    }, { status: 400 });
   }
 
   // Check deal limits for the month

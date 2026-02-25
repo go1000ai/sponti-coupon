@@ -26,6 +26,7 @@ export function BentoDeals() {
         if (lat && lng) {
           params.set('lat', String(lat));
           params.set('lng', String(lng));
+          params.set('radius', '25');
         }
         const res = await fetch(`/api/deals?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');

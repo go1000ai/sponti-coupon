@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { user_id, email, amount, description, action } = body;
+  const { user_id, email, amount, action } = body;
 
   // Must provide either user_id or email
   if (!user_id && !email) {
@@ -41,85 +41,55 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Look up user by email or user_id
-  let userProfile: { id: string; full_name: string | null; email: string | null } | null = null;
+  // Look up customer by email or user_id
+  let customer: { id: string; first_name: string; last_name: string; email: string } | null = null;
 
   if (email) {
-    // Look up by email in auth.users via user_profiles
-    const { data: profile, error: profileError } = await serviceClient
-      .from('user_profiles')
-      .select('id, full_name, email')
+    const { data: cust, error: custError } = await serviceClient
+      .from('customers')
+      .select('id, first_name, last_name, email')
       .ilike('email', String(email).trim())
       .single();
 
-    if (profileError || !profile) {
-      // Fallback: check auth.users table
-      const { data: authData } = await serviceClient.auth.admin.listUsers();
-      const authUser = authData?.users?.find(
-        (u) => u.email?.toLowerCase() === String(email).trim().toLowerCase()
-      );
-
-      if (authUser) {
-        // Get or create profile
-        const { data: existingProfile } = await serviceClient
-          .from('user_profiles')
-          .select('id, full_name, email')
-          .eq('id', authUser.id)
-          .single();
-
-        if (existingProfile) {
-          userProfile = existingProfile;
-        } else {
-          return NextResponse.json(
-            { error: `User with email "${email}" found in auth but has no profile` },
-            { status: 404 }
-          );
-        }
-      } else {
-        return NextResponse.json(
-          { error: `No user found with email "${email}"` },
-          { status: 404 }
-        );
-      }
-    } else {
-      userProfile = profile;
-    }
-  } else {
-    const { data: profile, error: profileError } = await serviceClient
-      .from('user_profiles')
-      .select('id, full_name, email')
-      .eq('id', user_id)
-      .single();
-
-    if (profileError || !profile) {
+    if (custError || !cust) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: `No customer found with email "${email}"` },
         { status: 404 }
       );
     }
-    userProfile = profile;
+    customer = cust;
+  } else {
+    const { data: cust, error: custError } = await serviceClient
+      .from('customers')
+      .select('id, first_name, last_name, email')
+      .eq('id', user_id)
+      .single();
+
+    if (custError || !cust) {
+      return NextResponse.json(
+        { error: 'Customer not found' },
+        { status: 404 }
+      );
+    }
+    customer = cust;
   }
 
-  if (!userProfile) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (!customer) {
+    return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
   }
 
-  // Determine type: 'bonus' for add, 'adjustment' for deduct
+  // Determine reason: 'bonus' for add, 'adjustment' for deduct
   const isDeduct = action === 'deduct';
-  const entryType = isDeduct ? 'adjustment' : 'bonus';
-  const entryAmount = isDeduct ? -numAmount : numAmount;
-  const defaultDesc = isDeduct
-    ? `Admin deduction: -${numAmount} points`
-    : `Admin bonus: ${numAmount} points`;
+  const entryReason = isDeduct ? 'adjustment' : 'bonus';
+  const entryPoints = isDeduct ? -numAmount : numAmount;
 
   // Insert into the ledger
   const { data: entry, error: insertError } = await serviceClient
-    .from('sponti_points_ledger')
+    .from('spontipoints_ledger')
     .insert({
-      user_id: userProfile.id,
-      amount: entryAmount,
-      type: entryType,
-      description: (description as string) || defaultDesc,
+      user_id: customer.id,
+      points: entryPoints,
+      reason: entryReason,
     })
     .select()
     .single();
@@ -130,7 +100,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     entry,
-    user: userProfile,
+    user: { full_name: `${customer.first_name} ${customer.last_name}`.trim(), email: customer.email },
     action: isDeduct ? 'deducted' : 'issued',
   }, { status: 201 });
 }

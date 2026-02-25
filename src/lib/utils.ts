@@ -85,3 +85,28 @@ export function slugify(text: string): string {
     .replace(/[^\w ]+/g, '')
     .replace(/ +/g, '-');
 }
+
+// Geocode a location query (address, city, ZIP) using OpenStreetMap Nominatim
+export async function geocodeAddress(query: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const encoded = encodeURIComponent(query.includes('USA') ? query : `${query}, USA`);
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
+    );
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function formatDistance(miles: number): string {
+  if (miles < 1) {
+    return `${Math.round(miles * 5280).toLocaleString()} ft`;
+  }
+  return `${miles.toFixed(1)} mi`;
+}

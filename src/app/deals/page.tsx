@@ -3,11 +3,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DealCard } from '@/components/deals/DealCard';
 import { DealsMap } from '@/components/deals/DealsMap';
-import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Map } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Map, ArrowUpDown, Navigation } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useGeolocation } from '@/lib/hooks/useGeolocation';
+import { geocodeAddress } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
 const RADIUS_OPTIONS = [5, 10, 25, 50];
+
+type SortOption = 'distance' | 'newest' | 'discount';
 
 export default function DealsPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -22,6 +26,18 @@ export default function DealsPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [sortBy, setSortBy] = useState<SortOption>('distance');
+  const [zipInput, setZipInput] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
+
+  const { lat, lng, loading: geoLoading, error: geoError } = useGeolocation();
+
+  // Set user location from geolocation hook
+  useEffect(() => {
+    if (lat && lng) {
+      setUserLocation({ lat, lng });
+    }
+  }, [lat, lng]);
 
   const fetchDeals = useCallback(async () => {
     setLoading(true);
@@ -40,27 +56,69 @@ export default function DealsPage() {
     params.set('limit', '100');
     const response = await fetch(`/api/deals?${params.toString()}`);
     const data = await response.json();
-    setDeals(data.deals || []);
-    setLoading(false);
-  }, [userLocation, filters]);
+    const fetchedDeals = data.deals || [];
 
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => {}
-      );
+    // Client-side sort
+    if (sortBy === 'newest') {
+      fetchedDeals.sort((a: Deal, b: Deal) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === 'discount') {
+      fetchedDeals.sort((a: Deal, b: Deal) => (b.discount_percentage || 0) - (a.discount_percentage || 0));
     }
-  }, []);
+    // 'distance' sort is already handled by the API
 
+    setDeals(fetchedDeals);
+    setLoading(false);
+  }, [userLocation, filters, sortBy]);
+
+  // Wait for geolocation to resolve before first fetch
   useEffect(() => {
+    if (geoLoading) return;
     fetchDeals();
-  }, [fetchDeals]);
+  }, [geoLoading, fetchDeals]);
+
+  const handleZipGeocode = async () => {
+    if (!zipInput.trim()) return;
+    setGeocoding(true);
+    const coords = await geocodeAddress(zipInput.trim());
+    if (coords) {
+      setUserLocation(coords);
+    }
+    setGeocoding(false);
+  };
 
   const spontiCount = deals.filter(d => d.deal_type === 'sponti_coupon').length;
+  const showLocationBanner = !geoLoading && !userLocation && geoError;
 
   return (
     <div className="min-h-screen">
+      {/* Location fallback banner */}
+      {showLocationBanner && (
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Navigation className="w-4 h-4" />
+              <span className="text-sm font-medium">Enter your ZIP code to find nearby deals</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                value={zipInput}
+                onChange={e => setZipInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleZipGeocode()}
+                className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/70 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 w-32"
+                placeholder="ZIP code"
+              />
+              <button
+                onClick={handleZipGeocode}
+                disabled={geocoding}
+                className="px-4 py-1.5 bg-white text-orange-600 font-semibold text-sm rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50"
+              >
+                {geocoding ? 'Finding...' : 'Go'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gradient hero header */}
       <div className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto animate-fade-up">
@@ -83,6 +141,20 @@ export default function DealsPage() {
                   {spontiCount} Sponti Live
                 </div>
               )}
+
+              {/* Sort dropdown */}
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as SortOption)}
+                  className="appearance-none bg-white/10 border border-white/20 rounded-lg pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+                >
+                  <option value="distance" className="text-secondary-500">Nearest</option>
+                  <option value="newest" className="text-secondary-500">Newest</option>
+                  <option value="discount" className="text-secondary-500">Best Discount</option>
+                </select>
+                <ArrowUpDown className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              </div>
 
               {/* View toggle: Grid / Map */}
               <div className="flex bg-white/10 rounded-lg p-0.5">
@@ -140,13 +212,22 @@ export default function DealsPage() {
                 />
               </div>
 
-              {/* City */}
+              {/* City / ZIP with geocode */}
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
                   value={filters.city}
                   onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && fetchDeals()}
+                  onKeyDown={async e => {
+                    if (e.key === 'Enter') {
+                      // Try to geocode the city/ZIP input for distance filtering
+                      if (filters.city.trim() && !userLocation) {
+                        const coords = await geocodeAddress(filters.city.trim());
+                        if (coords) setUserLocation(coords);
+                      }
+                      fetchDeals();
+                    }
+                  }}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   placeholder="City or ZIP"
                 />
@@ -167,7 +248,14 @@ export default function DealsPage() {
             {/* Search button below fields */}
             <div className="mt-3 flex justify-center sm:justify-end">
               <button
-                onClick={() => fetchDeals()}
+                onClick={async () => {
+                  // Geocode the city/ZIP input if no location yet
+                  if (filters.city.trim() && !userLocation) {
+                    const coords = await geocodeAddress(filters.city.trim());
+                    if (coords) setUserLocation(coords);
+                  }
+                  fetchDeals();
+                }}
                 className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-orange-600 transition-all shadow-lg shadow-primary-500/30 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2"
               >
                 <Search className="w-4 h-4" />

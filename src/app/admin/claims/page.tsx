@@ -552,7 +552,7 @@ export default function AdminClaimsPage() {
                       </p>
                       <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
                         claim.deal_type === 'sponti_coupon'
-                          ? 'bg-purple-50 text-purple-600'
+                          ? 'bg-orange-50 text-orange-600'
                           : 'bg-teal-50 text-teal-600'
                       }`}>
                         {claim.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal'}
@@ -877,7 +877,7 @@ export default function AdminClaimsPage() {
                     <p className="font-medium text-secondary-500 truncate">{editTarget.deal_title}</p>
                     <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
                       editTarget.deal_type === 'sponti_coupon'
-                        ? 'bg-purple-50 text-purple-600'
+                        ? 'bg-orange-50 text-orange-600'
                         : 'bg-teal-50 text-teal-600'
                     }`}>
                       {editTarget.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal'}

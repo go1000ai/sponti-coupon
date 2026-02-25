@@ -11,13 +11,11 @@ import {
   Wallet,
   Loader2,
   ArrowUpCircle,
-  ArrowDownCircle,
   Star,
   Wrench,
   Plus,
   Minus,
   Search,
-  Mail,
 } from 'lucide-react';
 
 // --- Inline Sub-Components ---
@@ -93,9 +91,8 @@ function SkeletonTableRow() {
 // --- Custom Tooltip for PieChart ---
 
 const DISTRIBUTION_COLORS: Record<string, string> = {
-  earned: '#22c55e',
+  earn_redemption: '#22c55e',
   bonus: '#eab308',
-  redeemed: '#ef4444',
   adjustment: '#3b82f6',
 };
 
@@ -130,36 +127,30 @@ interface PointsStats {
 interface LedgerEntry {
   id: string;
   user_id: string;
-  amount: number;
-  type: 'earned' | 'redeemed' | 'bonus' | 'adjustment';
-  description: string | null;
-  reference_id: string | null;
-  created_at: string;
-  user?: { full_name: string | null; email: string | null } | null;
-}
-
-interface Redemption {
-  id: string;
-  user_id: string;
-  reward_type: string | null;
-  points_spent: number;
+  vendor_id: string | null;
   deal_id: string | null;
+  redemption_id: string | null;
+  points: number;
+  reason: 'earn_redemption' | 'bonus' | 'adjustment';
+  expires_at: string | null;
   created_at: string;
-  user?: { full_name: string | null; email: string | null } | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  vendor_name: string | null;
 }
 
 interface PointsFormData {
-  email: string;
+  user_id: string;
+  customer_name: string;
+  customer_email: string;
   amount: string;
-  description: string;
   action: 'add' | 'deduct';
 }
 
 // --- Row border color helper ---
 
-const TYPE_BORDER_COLORS: Record<string, string> = {
-  earned: 'border-l-green-500',
-  redeemed: 'border-l-red-500',
+const REASON_BORDER_COLORS: Record<string, string> = {
+  earn_redemption: 'border-l-green-500',
   bonus: 'border-l-yellow-500',
   adjustment: 'border-l-blue-500',
 };
@@ -168,13 +159,13 @@ export default function AdminSpontiPointsPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<PointsStats>({ total_issued: 0, total_redeemed: 0, active_balance: 0 });
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
-  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  const [userBalances, setUserBalances] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [ledgerSearch, setLedgerSearch] = useState('');
 
   // Points modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pointsForm, setPointsForm] = useState<PointsFormData>({ email: '', amount: '', description: '', action: 'add' });
+  const [pointsForm, setPointsForm] = useState<PointsFormData>({ user_id: '', customer_name: '', customer_email: '', amount: '', action: 'add' });
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -186,7 +177,7 @@ export default function AdminSpontiPointsPage() {
       const data = await res.json();
       setStats(data.stats || { total_issued: 0, total_redeemed: 0, active_balance: 0 });
       setLedger(data.ledger || []);
-      setRedemptions(data.redemptions || []);
+      setUserBalances(data.user_balances || {});
     } catch {
       // Silent fail
     } finally {
@@ -201,12 +192,10 @@ export default function AdminSpontiPointsPage() {
 
   // --- Helpers ---
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'earned':
+  const getReasonIcon = (reason: string) => {
+    switch (reason) {
+      case 'earn_redemption':
         return <ArrowUpCircle className="w-4 h-4 text-green-500" />;
-      case 'redeemed':
-        return <ArrowDownCircle className="w-4 h-4 text-red-500" />;
       case 'bonus':
         return <Star className="w-4 h-4 text-yellow-500" />;
       case 'adjustment':
@@ -216,17 +205,25 @@ export default function AdminSpontiPointsPage() {
     }
   };
 
-  const getTypeBadge = (type: string) => {
+  const getReasonLabel = (reason: string) => {
+    const labels: Record<string, string> = {
+      earn_redemption: 'Earned',
+      bonus: 'Bonus',
+      adjustment: 'Adjustment',
+    };
+    return labels[reason] || reason;
+  };
+
+  const getReasonBadge = (reason: string) => {
     const styles: Record<string, string> = {
-      earned: 'bg-green-50 text-green-600',
-      redeemed: 'bg-red-50 text-red-600',
+      earn_redemption: 'bg-green-50 text-green-600',
       bonus: 'bg-yellow-50 text-yellow-600',
       adjustment: 'bg-blue-50 text-blue-600',
     };
     return (
-      <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium capitalize ${styles[type] || 'bg-gray-100 text-gray-500'}`}>
-        {getTypeIcon(type)}
-        {type}
+      <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${styles[reason] || 'bg-gray-100 text-gray-500'}`}>
+        {getReasonIcon(reason)}
+        {getReasonLabel(reason)}
       </span>
     );
   };
@@ -235,43 +232,41 @@ export default function AdminSpontiPointsPage() {
     return num.toLocaleString();
   };
 
-  const getUserDisplay = (entry: { user?: { full_name: string | null; email: string | null } | null }) => {
-    if (!entry.user) return '--';
-    if (entry.user.full_name && entry.user.email) {
-      return (
-        <div>
-          <p className="font-medium text-secondary-500">{entry.user.full_name}</p>
-          <p className="text-xs text-gray-400">{entry.user.email}</p>
-        </div>
-      );
-    }
-    return entry.user.full_name || entry.user.email || '--';
+  const getCustomerDisplay = (entry: LedgerEntry) => {
+    if (!entry.customer_name && !entry.customer_email) return '--';
+    return (
+      <div>
+        {entry.customer_name && <p className="font-medium text-secondary-500">{entry.customer_name}</p>}
+        {entry.customer_email && <p className="text-xs text-gray-400">{entry.customer_email}</p>}
+      </div>
+    );
   };
 
   // Filter ledger entries by search
   const filteredLedger = ledgerSearch
     ? ledger.filter((entry) => {
         const q = ledgerSearch.toLowerCase();
-        const name = (entry.user?.full_name || '').toLowerCase();
-        const email = (entry.user?.email || '').toLowerCase();
-        const desc = (entry.description || '').toLowerCase();
-        const type = (entry.type || '').toLowerCase();
-        return name.includes(q) || email.includes(q) || desc.includes(q) || type.includes(q);
+        const name = (entry.customer_name || '').toLowerCase();
+        const email = (entry.customer_email || '').toLowerCase();
+        const reason = getReasonLabel(entry.reason).toLowerCase();
+        const vendor = (entry.vendor_name || '').toLowerCase();
+        return name.includes(q) || email.includes(q) || reason.includes(q) || vendor.includes(q);
       })
     : ledger;
 
   // --- Compute points distribution from ledger ---
   const distributionData: DistributionEntry[] = (() => {
-    const counts: Record<string, number> = { earned: 0, bonus: 0, redeemed: 0, adjustment: 0 };
+    const counts: Record<string, number> = { earn_redemption: 0, bonus: 0, adjustment: 0 };
     ledger.forEach((entry) => {
-      if (counts[entry.type] !== undefined) {
-        counts[entry.type]++;
+      if (counts[entry.reason] !== undefined) {
+        counts[entry.reason]++;
       }
     });
+    const labels: Record<string, string> = { earn_redemption: 'Earned', bonus: 'Bonus', adjustment: 'Adjustment' };
     return Object.entries(counts)
       .filter(([, v]) => v > 0)
       .map(([key, value]) => ({
-        name: key,
+        name: labels[key] || key,
         value,
         color: DISTRIBUTION_COLORS[key],
       }));
@@ -284,8 +279,14 @@ export default function AdminSpontiPointsPage() {
 
   // --- Points Modal Handlers ---
 
-  const openModal = (action: 'add' | 'deduct') => {
-    setPointsForm({ email: '', amount: '', description: '', action });
+  const openCustomerModal = (entry: LedgerEntry) => {
+    setPointsForm({
+      user_id: entry.user_id,
+      customer_name: entry.customer_name || 'Unknown',
+      customer_email: entry.customer_email || '',
+      amount: '',
+      action: 'add',
+    });
     setFormError('');
     setFormSuccess('');
     setIsModalOpen(true);
@@ -297,16 +298,12 @@ export default function AdminSpontiPointsPage() {
     setFormSuccess('');
   };
 
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setPointsForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
-    if (!pointsForm.email.trim()) {
-      setFormError('Email address is required.');
-      return;
-    }
     if (!pointsForm.amount || Number(pointsForm.amount) <= 0) {
       setFormError('Amount must be a positive number.');
       return;
@@ -319,9 +316,8 @@ export default function AdminSpontiPointsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: pointsForm.email.trim(),
+          user_id: pointsForm.user_id,
           amount: Number(pointsForm.amount),
-          description: pointsForm.description || undefined,
           action: pointsForm.action === 'deduct' ? 'deduct' : undefined,
         }),
       });
@@ -329,11 +325,10 @@ export default function AdminSpontiPointsPage() {
       if (!res.ok) {
         throw new Error(data.error || 'Failed to process points');
       }
-      const userName = data.user?.full_name || data.user?.email || 'user';
-      const actionWord = pointsForm.action === 'deduct' ? 'deducted from' : 'issued to';
-      setFormSuccess(`Successfully ${actionWord} ${userName}: ${formatNumber(Number(pointsForm.amount))} points.`);
+      const actionWord = pointsForm.action === 'deduct' ? 'deducted from' : 'added to';
+      setFormSuccess(`Successfully ${actionWord} ${pointsForm.customer_name}: ${formatNumber(Number(pointsForm.amount))} points.`);
       fetchData();
-      setPointsForm((prev) => ({ ...prev, email: '', amount: '', description: '' }));
+      setPointsForm((prev) => ({ ...prev, amount: '' }));
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : 'Failed to process points');
     } finally {
@@ -347,17 +342,11 @@ export default function AdminSpontiPointsPage() {
     return (
       <div>
         {/* Header Skeleton */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
-            <div>
-              <div className="h-6 bg-gray-200 rounded w-36 mb-1 animate-pulse" />
-              <div className="h-3 bg-gray-100 rounded w-48 animate-pulse" />
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-9 w-28 bg-gray-200 rounded-lg animate-pulse" />
-            <div className="h-9 w-32 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-8 h-8 bg-gray-200 rounded-lg animate-pulse" />
+          <div>
+            <div className="h-6 bg-gray-200 rounded w-36 mb-1 animate-pulse" />
+            <div className="h-3 bg-gray-100 rounded w-48 animate-pulse" />
           </div>
         </div>
 
@@ -398,29 +387,11 @@ export default function AdminSpontiPointsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3">
-          <Coins className="w-8 h-8 text-primary-500" />
-          <div>
-            <h1 className="text-2xl font-bold text-secondary-500">SpontiPoints</h1>
-            <p className="text-sm text-gray-500">Platform-wide points management</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => openModal('add')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Add Points
-          </button>
-          <button
-            onClick={() => openModal('deduct')}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium"
-          >
-            <Minus className="w-4 h-4" />
-            Deduct Points
-          </button>
+      <div className="flex items-center gap-3 mb-8">
+        <Coins className="w-8 h-8 text-primary-500" />
+        <div>
+          <h1 className="text-2xl font-bold text-secondary-500">SpontiPoints</h1>
+          <p className="text-sm text-gray-500">Platform-wide points management &middot; Click any row to adjust points</p>
         </div>
       </div>
 
@@ -556,10 +527,10 @@ export default function AdminSpontiPointsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">User</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Customer</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Type</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-right">Amount</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Description</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-right">Points</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Date</th>
               </tr>
             </thead>
@@ -574,22 +545,23 @@ export default function AdminSpontiPointsPage() {
                 filteredLedger.map((entry, index) => (
                   <tr
                     key={entry.id}
-                    className={`hover:bg-gray-50 transition-colors border-l-4 ${TYPE_BORDER_COLORS[entry.type] || 'border-l-gray-200'} ${index < 20 ? 'animate-slide-up-fade opacity-0' : ''}`}
+                    onClick={() => openCustomerModal(entry)}
+                    className={`hover:bg-primary-50/50 transition-colors border-l-4 cursor-pointer ${REASON_BORDER_COLORS[entry.reason] || 'border-l-gray-200'} ${index < 20 ? 'animate-slide-up-fade opacity-0' : ''}`}
                     style={index < 20 ? { animationDelay: `${index * 30}ms`, animationFillMode: 'forwards' } : undefined}
                   >
                     <td className="p-4 text-sm">
-                      {getUserDisplay(entry)}
+                      {getCustomerDisplay(entry)}
                     </td>
                     <td className="p-4">
-                      {getTypeBadge(entry.type)}
+                      {getReasonBadge(entry.reason)}
                     </td>
                     <td className="p-4 text-sm text-right">
-                      <span className={`font-medium ${entry.amount < 0 ? 'text-red-500' : 'text-green-600'}`}>
-                        {entry.amount < 0 ? '' : '+'}{formatNumber(entry.amount)}
+                      <span className={`font-medium ${entry.points < 0 ? 'text-red-500' : 'text-green-600'}`}>
+                        {entry.points < 0 ? '' : '+'}{formatNumber(entry.points)}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-gray-500 truncate max-w-[250px]">
-                      {entry.description || '--'}
+                    <td className="p-4 text-sm text-gray-500 truncate max-w-[200px]">
+                      {entry.vendor_name || '--'}
                     </td>
                     <td className="p-4 text-sm text-gray-500">
                       {new Date(entry.created_at).toLocaleDateString()}
@@ -602,67 +574,11 @@ export default function AdminSpontiPointsPage() {
         </div>
       </div>
 
-      {/* Redemptions */}
-      <div className="card">
-        <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-secondary-500">Recent Redemptions</h2>
-          <p className="text-xs text-gray-400">Last 50 redemptions</p>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">User</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Reward Type</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-right">Points Spent</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Deal ID</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {redemptions.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-gray-400">
-                    No redemptions yet.
-                  </td>
-                </tr>
-              ) : (
-                redemptions.map((redemption, index) => (
-                  <tr
-                    key={redemption.id}
-                    className={`hover:bg-gray-50 transition-colors ${index < 20 ? 'animate-slide-up-fade opacity-0' : ''}`}
-                    style={index < 20 ? { animationDelay: `${index * 30}ms`, animationFillMode: 'forwards' } : undefined}
-                  >
-                    <td className="p-4 text-sm">
-                      {getUserDisplay(redemption)}
-                    </td>
-                    <td className="p-4 text-sm text-gray-500 capitalize">
-                      {redemption.reward_type || '--'}
-                    </td>
-                    <td className="p-4 text-sm text-right">
-                      <span className="font-medium text-red-500">
-                        -{formatNumber(redemption.points_spent)}
-                      </span>
-                    </td>
-                    <td className="p-4 text-sm text-gray-400 font-mono truncate max-w-[150px]">
-                      {redemption.deal_id ? redemption.deal_id.slice(0, 8) + '...' : '--'}
-                    </td>
-                    <td className="p-4 text-sm text-gray-500">
-                      {new Date(redemption.created_at).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Add/Deduct Points Modal */}
+      {/* Adjust Points Modal */}
       <AdminModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title={pointsForm.action === 'deduct' ? 'Deduct SpontiPoints' : 'Add SpontiPoints'}
+        title={`Adjust Points — ${pointsForm.customer_name}`}
         size="md"
       >
         <div className="space-y-4">
@@ -672,6 +588,22 @@ export default function AdminSpontiPointsPage() {
           {formSuccess && (
             <div className="p-3 bg-green-50 text-green-600 text-sm rounded-lg">{formSuccess}</div>
           )}
+
+          {/* Customer Info */}
+          <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
+            <div>
+              <p className="font-medium text-secondary-500">{pointsForm.customer_name}</p>
+              {pointsForm.customer_email && (
+                <p className="text-xs text-gray-400 mt-0.5">{pointsForm.customer_email}</p>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">Current Balance</p>
+              <p className="text-lg font-bold text-primary-500">
+                {formatNumber(userBalances[pointsForm.user_id] || 0)} <span className="text-xs font-normal text-gray-400">pts</span>
+              </p>
+            </div>
+          </div>
 
           {/* Action Toggle */}
           <div>
@@ -702,23 +634,6 @@ export default function AdminSpontiPointsPage() {
             </div>
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Customer Email *</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="email"
-                name="email"
-                value={pointsForm.email}
-                onChange={handleFormChange}
-                className="input-field pl-10"
-                placeholder="customer@example.com"
-              />
-            </div>
-            <p className="text-xs text-gray-400 mt-1">Enter the customer&apos;s email address</p>
-          </div>
-
           {/* Amount */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Points Amount *</label>
@@ -733,19 +648,6 @@ export default function AdminSpontiPointsPage() {
             />
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason / Description</label>
-            <textarea
-              name="description"
-              value={pointsForm.description}
-              onChange={handleFormChange}
-              rows={3}
-              className="input-field"
-              placeholder={pointsForm.action === 'deduct' ? 'Reason for deduction (optional)' : 'Reason for bonus (optional)'}
-            />
-          </div>
-
           {/* Submit */}
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
@@ -753,7 +655,7 @@ export default function AdminSpontiPointsPage() {
               disabled={formLoading}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              Close
+              Cancel
             </button>
             <button
               onClick={handleSubmit}

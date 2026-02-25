@@ -74,6 +74,10 @@ function SignupForm() {
       setError('Business name is required');
       return;
     }
+    if (accountType === 'vendor' && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
+      setError('Business address is required (street address, city, state, and ZIP code)');
+      return;
+    }
 
     setLoading(true);
     const supabase = createClient();
@@ -414,10 +418,10 @@ function SignupForm() {
           {accountType === 'vendor' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main St" />
+                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main St" required />
                 </div>
               </div>
               <div>
@@ -441,19 +445,19 @@ function SignupForm() {
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">City {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder="Miami" />
+                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder="Miami" required={accountType === 'vendor'} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder="FL" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">State {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder="FL" required={accountType === 'vendor'} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
-              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder="33101" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">ZIP {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder="33101" required={accountType === 'vendor'} />
             </div>
           </div>
 

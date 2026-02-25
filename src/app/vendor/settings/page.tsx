@@ -274,6 +274,13 @@ export default function VendorSettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Validate required address fields
+    if (!businessForm.address?.trim() || !businessForm.city?.trim() || !businessForm.state?.trim() || !businessForm.zip?.trim()) {
+      setMessage({ type: 'error', text: 'Business address is required (street address, city, state, and ZIP code).' });
+      return;
+    }
+
     setSaving(true);
     setMessage(null);
 
@@ -292,10 +299,10 @@ export default function VendorSettingsPage() {
         business_name: businessForm.business_name,
         email: businessForm.email,
         phone: businessForm.phone || null,
-        address: businessForm.address || null,
-        city: businessForm.city || null,
-        state: businessForm.state || null,
-        zip: businessForm.zip || null,
+        address: businessForm.address,
+        city: businessForm.city,
+        state: businessForm.state,
+        zip: businessForm.zip,
         category: businessForm.category || null,
         description: businessForm.description || null,
         website: businessForm.website || null,
@@ -311,6 +318,12 @@ export default function VendorSettingsPage() {
     if (error) {
       setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
     } else {
+      // Auto-geocode the address after saving
+      try {
+        await fetch('/api/vendor/geocode', { method: 'POST' });
+      } catch {
+        // Geocoding failure is non-blocking
+      }
       setMessage({ type: 'success', text: 'Settings saved successfully!' });
       setTimeout(() => setMessage(null), 4000);
     }
@@ -620,7 +633,7 @@ export default function VendorSettingsPage() {
 
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="w-4 h-4 inline mr-1" /> Address
+                  <MapPin className="w-4 h-4 inline mr-1" /> Address <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="address"
@@ -630,21 +643,22 @@ export default function VendorSettingsPage() {
                   onChange={handleBusinessChange}
                   className="input-field"
                   placeholder="123 Main St"
+                  required
                 />
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input id="city" name="city" type="text" value={businessForm.city} onChange={handleBusinessChange} className="input-field" />
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
+                  <input id="city" name="city" type="text" value={businessForm.city} onChange={handleBusinessChange} className="input-field" required />
                 </div>
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <input id="state" name="state" type="text" value={businessForm.state} onChange={handleBusinessChange} className="input-field" placeholder="FL" />
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">State <span className="text-red-500">*</span></label>
+                  <input id="state" name="state" type="text" value={businessForm.state} onChange={handleBusinessChange} className="input-field" placeholder="FL" required />
                 </div>
                 <div>
-                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
-                  <input id="zip" name="zip" type="text" value={businessForm.zip} onChange={handleBusinessChange} className="input-field" placeholder="33101" />
+                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">Zip Code <span className="text-red-500">*</span></label>
+                  <input id="zip" name="zip" type="text" value={businessForm.zip} onChange={handleBusinessChange} className="input-field" placeholder="33101" required />
                 </div>
               </div>
             </div>
