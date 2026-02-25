@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { v4 as uuidv4 } from 'uuid';
+import { generateRedemptionCode } from '@/lib/qr';
 
 /**
  * PUT /api/admin/claims/[id]
@@ -124,9 +126,72 @@ export async function PUT(
         return NextResponse.json({ success: true, message: 'Deposit confirmed successfully' });
       }
 
+      case 'edit': {
+        // Full admin edit — update any allowed fields
+        const allowedFields = ['deposit_confirmed', 'redeemed', 'redeemed_at', 'expires_at', 'deal_id', 'customer_id'];
+        const updateData: Record<string, unknown> = {};
+        for (const field of allowedFields) {
+          if (field in body && field !== 'action') {
+            updateData[field] = body[field];
+          }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+          return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+        }
+
+        const { error: updateError } = await serviceClient
+          .from('claims')
+          .update(updateData)
+          .eq('id', id);
+
+        if (updateError) {
+          console.error('[PUT /api/admin/claims] Edit error:', updateError);
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+
+        return NextResponse.json({ success: true, message: 'Claim updated successfully' });
+      }
+
+      case 'generate_codes': {
+        // Generate QR code and 6-digit redemption code for a claim that doesn't have them
+        const qrCode = uuidv4();
+        const redemptionCode = generateRedemptionCode();
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+        const { error: updateError } = await serviceClient
+          .from('claims')
+          .update({
+            qr_code: qrCode,
+            qr_code_url: `${appUrl}/redeem/${qrCode}`,
+            redemption_code: redemptionCode,
+            deposit_confirmed: true,
+            deposit_confirmed_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+
+        if (updateError) {
+          console.error('[PUT /api/admin/claims] Generate codes error:', updateError);
+          return NextResponse.json({ error: 'Failed to generate codes' }, { status: 500 });
+        }
+
+        // Increment claims_count if deposit wasn't previously confirmed
+        if (!claim.deposit_confirmed) {
+          await serviceClient.rpc('increment_claims_count', { deal_id_param: claim.deal_id });
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Codes generated successfully',
+          qr_code: qrCode,
+          redemption_code: redemptionCode,
+          qr_code_url: `${appUrl}/redeem/${qrCode}`,
+        });
+      }
+
       default:
         return NextResponse.json(
-          { error: `Unknown action: ${action}. Valid actions: cancel, redeem, extend, confirm_deposit` },
+          { error: `Unknown action: ${action}. Valid actions: cancel, redeem, extend, confirm_deposit, edit, generate_codes` },
           { status: 400 }
         );
     }

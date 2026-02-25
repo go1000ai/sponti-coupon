@@ -32,10 +32,57 @@ export async function GET(request: NextRequest) {
         expires_at,
         created_at,
         deal_id,
-        customer:customers(first_name, last_name),
+        customer_id,
+        qr_code,
+        qr_code_url,
+        redemption_code,
+        session_token,
+        customer:customers(first_name, last_name, email),
         deal:deals(title, claims_count, vendor:vendors(business_name))
       `)
       .order('created_at', { ascending: false });
+
+    // Fetch all redemption records to map who redeemed each claim
+    const { data: redemptions } = await serviceClient
+      .from('redemptions')
+      .select('claim_id, scanned_by, scanned_at, vendor_id');
+
+    // Get unique vendor IDs from redemptions to look up business names
+    const vendorIds = Array.from(new Set((redemptions || []).map((r: Record<string, unknown>) => r.vendor_id as string).filter(Boolean)));
+    const vendorNameMap: Record<string, string> = {};
+    if (vendorIds.length > 0) {
+      const { data: vendorRows } = await serviceClient
+        .from('vendors')
+        .select('id, business_name')
+        .in('id', vendorIds);
+      (vendorRows || []).forEach((v: { id: string; business_name: string }) => {
+        vendorNameMap[v.id] = v.business_name;
+      });
+    }
+
+    // Also look up scanned_by user profiles (the person who actually scanned)
+    const scannerIds = Array.from(new Set((redemptions || []).map((r: Record<string, unknown>) => r.scanned_by as string).filter(Boolean)));
+    const scannerNameMap: Record<string, string> = {};
+    if (scannerIds.length > 0) {
+      const { data: profileRows } = await serviceClient
+        .from('user_profiles')
+        .select('id, full_name, email')
+        .in('id', scannerIds);
+      (profileRows || []).forEach((p: { id: string; full_name: string | null; email: string | null }) => {
+        scannerNameMap[p.id] = p.full_name || p.email || 'Unknown';
+      });
+    }
+
+    // Build lookup: claim_id -> redemption info
+    const redemptionMap: Record<string, { scanned_by: string; scanned_by_name: string; scanned_at: string; vendor_name: string }> = {};
+    (redemptions || []).forEach((r: Record<string, unknown>) => {
+      redemptionMap[r.claim_id as string] = {
+        scanned_by: r.scanned_by as string,
+        scanned_by_name: scannerNameMap[r.scanned_by as string] || 'Unknown',
+        scanned_at: r.scanned_at as string,
+        vendor_name: vendorNameMap[r.vendor_id as string] || 'Unknown',
+      };
+    });
 
     if (claimsError) {
       console.error('[GET /api/admin/claims] Query error:', claimsError);
@@ -53,7 +100,9 @@ export async function GET(request: NextRequest) {
 
     interface ClaimRow {
       id: string;
+      customer_id: string;
       customer_name: string;
+      customer_email: string | null;
       deal_title: string;
       deal_id: string;
       vendor_name: string;
@@ -62,10 +111,18 @@ export async function GET(request: NextRequest) {
       created_at: string;
       redeemed_at: string | null;
       expires_at: string;
+      qr_code: string | null;
+      qr_code_url: string | null;
+      redemption_code: string | null;
+      session_token: string | null;
+      redeemed_by_vendor: string | null;
+      redeemed_by_name: string | null;
+      redeemed_by_id: string | null;
+      scanned_at: string | null;
     }
 
     const allClaims: ClaimRow[] = rawClaims.map((claim: Record<string, unknown>) => {
-      const customer = claim.customer as { first_name: string | null; last_name: string | null } | null;
+      const customer = claim.customer as { first_name: string | null; last_name: string | null; email: string | null } | null;
       const deal = claim.deal as { title: string; claims_count: number; vendor: { business_name: string } | null } | null;
 
       let claimStatus: ClaimStatus;
@@ -79,9 +136,13 @@ export async function GET(request: NextRequest) {
         claimStatus = 'active';
       }
 
+      const redemption = redemptionMap[claim.id as string] || null;
+
       return {
         id: claim.id as string,
+        customer_id: claim.customer_id as string,
         customer_name: `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim() || 'Unknown',
+        customer_email: customer?.email || null,
         deal_title: deal?.title || 'Unknown Deal',
         deal_id: claim.deal_id as string,
         vendor_name: deal?.vendor?.business_name || 'Unknown Vendor',
@@ -90,6 +151,14 @@ export async function GET(request: NextRequest) {
         created_at: claim.created_at as string,
         redeemed_at: claim.redeemed_at as string | null,
         expires_at: claim.expires_at as string,
+        qr_code: claim.qr_code as string | null,
+        qr_code_url: claim.qr_code_url as string | null,
+        redemption_code: claim.redemption_code as string | null,
+        session_token: claim.session_token as string | null,
+        redeemed_by_vendor: redemption?.vendor_name || null,
+        redeemed_by_name: redemption?.scanned_by_name || null,
+        redeemed_by_id: redemption?.scanned_by || null,
+        scanned_at: redemption?.scanned_at || null,
       };
     });
 

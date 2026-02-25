@@ -15,13 +15,21 @@ import {
   Trash2,
   CalendarPlus,
   RefreshCw,
+  Eye,
+  Pencil,
+  Copy,
+  KeyRound,
+  X,
+  Save,
 } from 'lucide-react';
 
 type ClaimStatus = 'active' | 'redeemed' | 'expired' | 'pending';
 
 interface ClaimRow {
   id: string;
+  customer_id: string;
   customer_name: string;
+  customer_email: string | null;
   deal_title: string;
   deal_id: string;
   vendor_name: string;
@@ -30,6 +38,14 @@ interface ClaimRow {
   created_at: string;
   redeemed_at: string | null;
   expires_at: string;
+  qr_code: string | null;
+  qr_code_url: string | null;
+  redemption_code: string | null;
+  session_token: string | null;
+  redeemed_by_vendor: string | null;
+  redeemed_by_name: string | null;
+  redeemed_by_id: string | null;
+  scanned_at: string | null;
 }
 
 const PAGE_SIZE = 20;
@@ -43,10 +59,10 @@ export default function AdminClaimsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Action loading state (tracks which claim ID is being acted on)
+  // Action loading state
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  // Status summary counts (fetched from unfiltered total)
+  // Status summary counts
   const [statusCounts, setStatusCounts] = useState({
     active: 0,
     redeemed: 0,
@@ -62,6 +78,22 @@ export default function AdminClaimsPage() {
   const [extendTarget, setExtendTarget] = useState<ClaimRow | null>(null);
   const [extendDate, setExtendDate] = useState('');
   const [extendLoading, setExtendLoading] = useState(false);
+
+  // View Code dialog
+  const [codeTarget, setCodeTarget] = useState<ClaimRow | null>(null);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  // Edit dialog
+  const [editTarget, setEditTarget] = useState<ClaimRow | null>(null);
+  const [editForm, setEditForm] = useState({
+    deposit_confirmed: false,
+    redeemed: false,
+    redeemed_at: '',
+    expires_at: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -94,7 +126,6 @@ export default function AdminClaimsPage() {
     }
   }, [page, searchQuery, statusFilter, showToast]);
 
-  // Fetch status counts (unfiltered) for the summary cards
   const fetchStatusCounts = useCallback(async () => {
     try {
       const statuses: ClaimStatus[] = ['active', 'redeemed', 'expired', 'pending'];
@@ -117,7 +148,7 @@ export default function AdminClaimsPage() {
         pending: counts.pending || 0,
       });
     } catch {
-      // Silently fail — cards will show 0
+      // Silently fail
     }
   }, []);
 
@@ -131,7 +162,6 @@ export default function AdminClaimsPage() {
     fetchStatusCounts();
   }, [user, fetchStatusCounts]);
 
-  // Reset to page 1 when search or filter changes
   useEffect(() => {
     setPage(1);
   }, [searchQuery, statusFilter]);
@@ -204,6 +234,28 @@ export default function AdminClaimsPage() {
     }
   };
 
+  const handleGenerateCodes = async (claim: ClaimRow) => {
+    setActionLoading(claim.id);
+    try {
+      const res = await fetch(`/api/admin/claims/${claim.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate_codes' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to generate codes');
+      }
+      showToast('QR code & redemption code generated', 'success');
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to generate codes', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleExtendSubmit = async () => {
     if (!extendTarget || !extendDate) return;
     setExtendLoading(true);
@@ -250,8 +302,82 @@ export default function AdminClaimsPage() {
     }
   };
 
+  // View Code
+  const openCodeDialog = async (claim: ClaimRow) => {
+    setCodeTarget(claim);
+    setQrDataUrl(null);
+    setCodeCopied(false);
+
+    if (claim.qr_code) {
+      setCodeLoading(true);
+      try {
+        const res = await fetch(`/api/admin/claims/qr-code?claim_id=${claim.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setQrDataUrl(data.qr_data_url);
+        }
+      } catch {
+        // QR image failed to load — still show codes
+      } finally {
+        setCodeLoading(false);
+      }
+    }
+  };
+
+  const copyCode = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  // Edit
+  const openEditDialog = (claim: ClaimRow) => {
+    setEditTarget(claim);
+    setEditForm({
+      deposit_confirmed: claim.deposit_confirmed,
+      redeemed: claim.status === 'redeemed',
+      redeemed_at: claim.redeemed_at ? claim.redeemed_at.split('T')[0] : '',
+      expires_at: claim.expires_at.split('T')[0],
+    });
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editTarget) return;
+    setEditLoading(true);
+    try {
+      const updateBody: Record<string, unknown> = {
+        action: 'edit',
+        deposit_confirmed: editForm.deposit_confirmed,
+        redeemed: editForm.redeemed,
+        expires_at: new Date(editForm.expires_at).toISOString(),
+      };
+      if (editForm.redeemed && editForm.redeemed_at) {
+        updateBody.redeemed_at = new Date(editForm.redeemed_at).toISOString();
+      } else if (!editForm.redeemed) {
+        updateBody.redeemed_at = null;
+      }
+
+      const res = await fetch(`/api/admin/claims/${editTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateBody),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update claim');
+      }
+      showToast('Claim updated successfully', 'success');
+      setEditTarget(null);
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update claim', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const openExtendDialog = (claim: ClaimRow) => {
-    // Default extend date: 7 days from current expiry or from now if already expired
     const baseDate = new Date(claim.expires_at) > new Date() ? new Date(claim.expires_at) : new Date();
     const defaultDate = new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
     setExtendDate(defaultDate.toISOString().split('T')[0]);
@@ -385,8 +511,9 @@ export default function AdminClaimsPage() {
                 <th className="p-4 font-semibold text-sm text-gray-500">Deal</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Code</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Redeemed By</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Claimed</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Redeemed</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Expires</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
               </tr>
@@ -394,7 +521,7 @@ export default function AdminClaimsPage() {
             <tbody className="divide-y divide-gray-50">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center">
+                  <td colSpan={9} className="p-8 text-center">
                     <div className="flex items-center justify-center gap-2 text-gray-400">
                       <RefreshCw className="w-4 h-4 animate-spin" />
                       Loading claims...
@@ -403,7 +530,7 @@ export default function AdminClaimsPage() {
                 </tr>
               ) : claims.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-400">
+                  <td colSpan={9} className="p-8 text-center text-gray-400">
                     No claims found matching your filters.
                   </td>
                 </tr>
@@ -411,7 +538,12 @@ export default function AdminClaimsPage() {
                 claims.map((claim) => (
                   <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">{claim.customer_name}</span>
+                      <div>
+                        <span className="font-medium text-secondary-500">{claim.customer_name}</span>
+                        {claim.customer_email && (
+                          <p className="text-xs text-gray-400 truncate max-w-[160px]">{claim.customer_email}</p>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       <p className="text-sm text-secondary-500 truncate max-w-[180px]">
@@ -427,19 +559,72 @@ export default function AdminClaimsPage() {
                         {claim.status}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-gray-500">
-                      {new Date(claim.created_at).toLocaleDateString()}
+                    <td className="p-4">
+                      {claim.redemption_code ? (
+                        <button
+                          onClick={() => openCodeDialog(claim)}
+                          className="inline-flex items-center gap-1.5 text-xs font-mono bg-gray-100 text-secondary-500 px-2.5 py-1.5 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          {claim.redemption_code}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleGenerateCodes(claim)}
+                          disabled={actionLoading === claim.id}
+                          className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-primary-500 px-2 py-1 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-50"
+                          title="Generate QR & redemption code"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          Generate
+                        </button>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {claim.status === 'redeemed' && claim.redeemed_by_name ? (
+                        <div>
+                          <p className="text-sm font-medium text-secondary-500">{claim.redeemed_by_name}</p>
+                          {claim.scanned_at && (
+                            <p className="text-xs text-gray-400">
+                              {new Date(claim.scanned_at).toLocaleDateString()}{' '}
+                              {new Date(claim.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          )}
+                        </div>
+                      ) : claim.status === 'redeemed' ? (
+                        <span className="text-xs text-gray-400">Admin / Unknown</span>
+                      ) : (
+                        <span className="text-xs text-gray-300">--</span>
+                      )}
                     </td>
                     <td className="p-4 text-sm text-gray-500">
-                      {claim.redeemed_at
-                        ? new Date(claim.redeemed_at).toLocaleDateString()
-                        : '--'}
+                      {new Date(claim.created_at).toLocaleDateString()}
                     </td>
                     <td className="p-4 text-sm text-gray-500">
                       {new Date(claim.expires_at).toLocaleDateString()}
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1">
+                        {/* View codes */}
+                        {claim.qr_code && (
+                          <button
+                            onClick={() => openCodeDialog(claim)}
+                            className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
+                            title="View QR Code"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Edit claim */}
+                        <button
+                          onClick={() => openEditDialog(claim)}
+                          className="text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                          title="Edit Claim"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+
                         {/* Active claims: Redeem, Cancel, Extend */}
                         {claim.status === 'active' && (
                           <>
@@ -470,16 +655,28 @@ export default function AdminClaimsPage() {
                           </>
                         )}
 
-                        {/* Pending claims: Confirm Deposit */}
+                        {/* Pending claims: Confirm Deposit + Generate Codes */}
                         {claim.status === 'pending' && (
-                          <button
-                            onClick={() => handleConfirmDeposit(claim)}
-                            disabled={actionLoading === claim.id}
-                            className="text-green-500 hover:bg-green-50 p-2 rounded-lg transition-colors disabled:opacity-50"
-                            title="Confirm Deposit"
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleConfirmDeposit(claim)}
+                              disabled={actionLoading === claim.id}
+                              className="text-green-500 hover:bg-green-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                              title="Confirm Deposit"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            {!claim.qr_code && (
+                              <button
+                                onClick={() => handleGenerateCodes(claim)}
+                                disabled={actionLoading === claim.id}
+                                className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                                title="Generate QR & Code"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
                         )}
 
                         {/* Expired claims: Extend */}
@@ -512,7 +709,6 @@ export default function AdminClaimsPage() {
           </table>
         </div>
 
-        {/* Pagination */}
         <AdminPagination
           currentPage={page}
           totalPages={totalPages}
@@ -521,6 +717,265 @@ export default function AdminClaimsPage() {
           onPageChange={setPage}
         />
       </div>
+
+      {/* ==================== View Code Modal ==================== */}
+      {codeTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => { setCodeTarget(null); setQrDataUrl(null); }}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-primary-500" />
+                  Claim Codes
+                </h3>
+                <button
+                  onClick={() => { setCodeTarget(null); setQrDataUrl(null); }}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="text-center mb-5">
+                <p className="text-sm text-gray-500 mb-1">{codeTarget.customer_name}</p>
+                <p className="text-sm font-medium text-secondary-500">{codeTarget.deal_title}</p>
+              </div>
+
+              {/* QR Code Image */}
+              <div className="flex justify-center mb-5">
+                {codeLoading ? (
+                  <div className="w-48 h-48 bg-gray-100 rounded-xl animate-pulse flex items-center justify-center">
+                    <QrCode className="w-10 h-10 text-gray-300" />
+                  </div>
+                ) : qrDataUrl ? (
+                  <img
+                    src={qrDataUrl}
+                    alt="QR Code"
+                    className="w-48 h-48 rounded-xl border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-48 h-48 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 text-sm">
+                    No QR code available
+                  </div>
+                )}
+              </div>
+
+              {/* 6-Digit Code */}
+              {codeTarget.redemption_code && (
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <p className="text-xs text-gray-500 mb-1 text-center">6-Digit Redemption Code</p>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="text-3xl font-mono font-bold tracking-[0.3em] text-secondary-500">
+                      {codeTarget.redemption_code}
+                    </span>
+                    <button
+                      onClick={() => copyCode(codeTarget.redemption_code!)}
+                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="Copy code"
+                    >
+                      <Copy className={`w-4 h-4 ${codeCopied ? 'text-green-500' : 'text-gray-400'}`} />
+                    </button>
+                  </div>
+                  {codeCopied && (
+                    <p className="text-xs text-green-500 text-center mt-1">Copied!</p>
+                  )}
+                </div>
+              )}
+
+              {/* QR URL */}
+              {codeTarget.qr_code_url && (
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-xs text-gray-500 mb-1">Redemption URL</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs text-gray-600 truncate flex-1">{codeTarget.qr_code_url}</code>
+                    <button
+                      onClick={() => copyCode(codeTarget.qr_code_url!)}
+                      className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
+                    >
+                      <Copy className="w-3.5 h-3.5 text-gray-400" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* No codes at all */}
+              {!codeTarget.redemption_code && !codeTarget.qr_code && (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-400 mb-3">This claim has no codes yet.</p>
+                  <button
+                    onClick={() => {
+                      setCodeTarget(null);
+                      handleGenerateCodes(codeTarget);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    Generate Codes
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== Edit Claim Modal ==================== */}
+      {editTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setEditTarget(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-primary-500" />
+                  Edit Claim
+                </h3>
+                <button
+                  onClick={() => setEditTarget(null)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              {/* Claim info summary */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-5">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-400">Customer</p>
+                    <p className="font-medium text-secondary-500">{editTarget.customer_name}</p>
+                    {editTarget.customer_email && (
+                      <p className="text-xs text-gray-400">{editTarget.customer_email}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Deal</p>
+                    <p className="font-medium text-secondary-500 truncate">{editTarget.deal_title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Vendor</p>
+                    <p className="text-gray-600">{editTarget.vendor_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Claim ID</p>
+                    <p className="font-mono text-xs text-gray-500 truncate">{editTarget.id}</p>
+                  </div>
+                  {editTarget.redeemed_by_name && (
+                    <div>
+                      <p className="text-xs text-gray-400">Redeemed By</p>
+                      <p className="font-medium text-green-600">{editTarget.redeemed_by_name}</p>
+                    </div>
+                  )}
+                  {editTarget.scanned_at && (
+                    <div>
+                      <p className="text-xs text-gray-400">Scanned At</p>
+                      <p className="text-gray-600">
+                        {new Date(editTarget.scanned_at).toLocaleDateString()}{' '}
+                        {new Date(editTarget.scanned_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Editable fields */}
+              <div className="space-y-4">
+                {/* Deposit Confirmed */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">Deposit Confirmed</label>
+                  <button
+                    onClick={() => setEditForm((f) => ({ ...f, deposit_confirmed: !f.deposit_confirmed }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      editForm.deposit_confirmed ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        editForm.deposit_confirmed ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Redeemed */}
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-gray-700">Redeemed</label>
+                  <button
+                    onClick={() => setEditForm((f) => ({
+                      ...f,
+                      redeemed: !f.redeemed,
+                      redeemed_at: !f.redeemed ? new Date().toISOString().split('T')[0] : '',
+                    }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      editForm.redeemed ? 'bg-green-500' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        editForm.redeemed ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Redeemed At (only visible if redeemed) */}
+                {editForm.redeemed && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Redeemed At</label>
+                    <input
+                      type="date"
+                      value={editForm.redeemed_at}
+                      onChange={(e) => setEditForm((f) => ({ ...f, redeemed_at: e.target.value }))}
+                      className="input-field w-full"
+                    />
+                  </div>
+                )}
+
+                {/* Expires At */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Expires At</label>
+                  <input
+                    type="date"
+                    value={editForm.expires_at}
+                    onChange={(e) => setEditForm((f) => ({ ...f, expires_at: e.target.value }))}
+                    className="input-field w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 mt-6">
+                <button
+                  onClick={() => setEditTarget(null)}
+                  disabled={editLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSubmit}
+                  disabled={editLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AdminConfirmDialog
