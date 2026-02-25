@@ -53,7 +53,7 @@ export async function GET() {
 
   // Get unique user_ids from ledger to fetch customer names
   const userIds = Array.from(new Set((recentLedger || []).map((e: Record<string, unknown>) => e.user_id as string)));
-  let customerMap: Record<string, { first_name: string; last_name: string; email: string }> = {};
+  const customerMap: Record<string, { first_name: string; last_name: string; email: string }> = {};
 
   if (userIds.length > 0) {
     const { data: customers } = await serviceClient
