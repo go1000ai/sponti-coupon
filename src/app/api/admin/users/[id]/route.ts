@@ -3,10 +3,116 @@ import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
 /**
+ * GET /api/admin/users/[id]
+ * Returns full user details for the admin user detail page.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const admin = await verifyAdmin();
+    if (!admin) return forbiddenResponse();
+
+    const { id } = await params;
+
+    if (!id) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    const serviceClient = await createServiceRoleClient();
+
+    // Fetch user profile
+    const { data: profile, error: profileError } = await serviceClient
+      .from('user_profiles')
+      .select('id, role')
+      .eq('id', id)
+      .single();
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Fetch auth user data
+    const { data: authData, error: authError } = await serviceClient.auth.admin.getUserById(id);
+
+    if (authError || !authData?.user) {
+      console.error('[GET /api/admin/users] Auth user fetch error:', authError);
+      return NextResponse.json({ error: 'Failed to fetch auth user data' }, { status: 500 });
+    }
+
+    const authUser = authData.user;
+    const disabled = !!authUser.banned_until && new Date(authUser.banned_until) > new Date();
+
+    // Fetch role-specific data, counts, and support tickets in parallel
+    const [vendorResult, customerResult, dealsCountResult, claimsCountResult, ticketsResult] =
+      await Promise.all([
+        // Vendor data (only if vendor)
+        profile.role === 'vendor'
+          ? serviceClient.from('vendors').select('*').eq('id', id).single()
+          : Promise.resolve({ data: null, error: null }),
+
+        // Customer data (only if customer)
+        profile.role === 'customer'
+          ? serviceClient.from('customers').select('*').eq('id', id).single()
+          : Promise.resolve({ data: null, error: null }),
+
+        // Deals count (for vendors)
+        profile.role === 'vendor'
+          ? serviceClient
+              .from('deals')
+              .select('id', { count: 'exact', head: true })
+              .eq('vendor_id', id)
+          : Promise.resolve({ count: 0, error: null }),
+
+        // Claims count (for customers)
+        profile.role === 'customer'
+          ? serviceClient
+              .from('claims')
+              .select('id', { count: 'exact', head: true })
+              .eq('customer_id', id)
+          : Promise.resolve({ count: 0, error: null }),
+
+        // Recent support tickets
+        serviceClient
+          .from('support_tickets')
+          .select('id, subject, status, created_at')
+          .eq('user_id', id)
+          .order('created_at', { ascending: false })
+          .limit(5),
+      ]);
+
+    // Build response
+    const user = {
+      id: profile.id,
+      email: authUser.email ?? null,
+      role: profile.role,
+      created_at: authUser.created_at,
+      last_sign_in_at: authUser.last_sign_in_at ?? null,
+      disabled,
+      phone: authUser.phone ?? null,
+      vendor_data: profile.role === 'vendor' ? vendorResult.data : null,
+      customer_data: profile.role === 'customer' ? customerResult.data : null,
+      deals_count: profile.role === 'vendor' ? (dealsCountResult.count ?? 0) : 0,
+      claims_count: profile.role === 'customer' ? (claimsCountResult.count ?? 0) : 0,
+      support_tickets: ticketsResult.data ?? [],
+    };
+
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('[GET /api/admin/users] Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+/**
  * PUT /api/admin/users/[id]
  * Update a user. Supports:
  *   - { role: 'vendor' | 'customer' | 'admin' } — changes role in user_profiles
  *   - { disabled: boolean } — enables/disables the user via supabase.auth.admin.updateUserById()
+ *   - { email: string } — updates auth email and vendor/customer table email
+ *   - { vendor_data: object } — updates fields in the vendors table (vendor users only)
+ *   - { customer_data: object } — updates fields in the customers table (customer users only)
  */
 export async function PUT(
   request: NextRequest,
@@ -44,7 +150,8 @@ export async function PUT(
       );
     }
 
-    const result: { role?: string; disabled?: boolean } = {};
+    const currentRole = existingProfile.role;
+    const result: Record<string, unknown> = {};
 
     // Handle role change
     if (body.role !== undefined) {
@@ -96,6 +203,78 @@ export async function PUT(
       }
 
       result.disabled = shouldDisable;
+    }
+
+    // Handle email update
+    if (body.email !== undefined) {
+      const email = body.email.trim();
+
+      if (!email) {
+        return NextResponse.json({ error: 'Email cannot be empty' }, { status: 400 });
+      }
+
+      // Update auth email
+      const { error: emailAuthError } = await serviceClient.auth.admin.updateUserById(id, {
+        email,
+      });
+
+      if (emailAuthError) {
+        console.error('[PUT /api/admin/users] Email auth update error:', emailAuthError);
+        return NextResponse.json({ error: 'Failed to update email' }, { status: 500 });
+      }
+
+      // Update email in the role-specific table
+      if (currentRole === 'vendor') {
+        const { error: vendorEmailError } = await serviceClient
+          .from('vendors')
+          .update({ email })
+          .eq('id', id);
+
+        if (vendorEmailError) {
+          console.error('[PUT /api/admin/users] Vendor email update error:', vendorEmailError);
+        }
+      } else if (currentRole === 'customer') {
+        const { error: customerEmailError } = await serviceClient
+          .from('customers')
+          .update({ email })
+          .eq('id', id);
+
+        if (customerEmailError) {
+          console.error('[PUT /api/admin/users] Customer email update error:', customerEmailError);
+        }
+      }
+
+      result.email = email;
+    }
+
+    // Handle vendor_data update
+    if (body.vendor_data !== undefined && currentRole === 'vendor') {
+      const { error: vendorUpdateError } = await serviceClient
+        .from('vendors')
+        .update(body.vendor_data)
+        .eq('id', id);
+
+      if (vendorUpdateError) {
+        console.error('[PUT /api/admin/users] Vendor data update error:', vendorUpdateError);
+        return NextResponse.json({ error: 'Failed to update vendor data' }, { status: 500 });
+      }
+
+      result.vendor_data = body.vendor_data;
+    }
+
+    // Handle customer_data update
+    if (body.customer_data !== undefined && currentRole === 'customer') {
+      const { error: customerUpdateError } = await serviceClient
+        .from('customers')
+        .update(body.customer_data)
+        .eq('id', id);
+
+      if (customerUpdateError) {
+        console.error('[PUT /api/admin/users] Customer data update error:', customerUpdateError);
+        return NextResponse.json({ error: 'Failed to update customer data' }, { status: 500 });
+      }
+
+      result.customer_data = body.customer_data;
     }
 
     if (Object.keys(result).length === 0) {

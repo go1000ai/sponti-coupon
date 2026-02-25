@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
@@ -15,6 +16,7 @@ import {
   CheckCircle,
   Calendar,
   Loader2,
+  Eye,
 } from 'lucide-react';
 import type { UserRole } from '@/lib/types/database';
 
@@ -30,6 +32,7 @@ interface UserRecord {
 const PAGE_SIZE = 15;
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -353,7 +356,11 @@ export default function AdminUsersPage() {
                 </tr>
               ) : (
                 paginatedUsers.map((userRecord) => (
-                  <tr key={userRecord.id} className="hover:bg-gray-50 transition-colors">
+                  <tr
+                    key={userRecord.id}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/admin/users/${userRecord.id}`)}
+                  >
                     <td className="p-4 text-sm text-secondary-500 font-medium">
                       {userRecord.email || '--'}
                     </td>
@@ -374,8 +381,15 @@ export default function AdminUsersPage() {
                           : '--'}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => router.push(`/admin/users/${userRecord.id}`)}
+                          className="text-gray-500 hover:text-primary-500 hover:bg-primary-50 p-2 rounded-lg transition-colors"
+                          title="View & Edit Profile"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={() => openRoleModal(userRecord)}
                           className="text-gray-500 hover:text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"

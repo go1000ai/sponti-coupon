@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { Ban, CreditCard } from 'lucide-react';
 
-export default function VendorLayout({ children }: { children: React.ReactNode }) {
+function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, role, loading, signOut } = useAuth();
   const { status: subscriptionStatus, loading: tierLoading } = useVendorTier();
   const router = useRouter();
@@ -119,5 +119,19 @@ export default function VendorLayout({ children }: { children: React.ReactNode }
         </div>
       </main>
     </div>
+  );
+}
+
+export default function VendorLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
+        </div>
+      }
+    >
+      <VendorLayoutInner>{children}</VendorLayoutInner>
+    </Suspense>
   );
 }
