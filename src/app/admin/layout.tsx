@@ -5,7 +5,7 @@ import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Ban } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { role, loading, signOut } = useAuth();
+  const { user, role, loading, signOut, firstName, lastName } = useAuth();
 
   if (loading) {
     return (
@@ -29,7 +29,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminSidebar onSignOut={signOut} />
+      <AdminSidebar
+        onSignOut={signOut}
+        userName={[firstName, lastName].filter(Boolean).join(' ') || null}
+        userEmail={user?.email || null}
+      />
       <main className="lg:ml-64 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
           {children}

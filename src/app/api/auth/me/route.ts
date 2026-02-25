@@ -10,14 +10,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Get role from user_profiles
+    // Get role and name from user_profiles
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, first_name, last_name')
       .eq('id', user.id)
       .single();
 
     let role = profile?.role || null;
+    const firstName = profile?.first_name || null;
+    const lastName = profile?.last_name || null;
 
     // Fallback: check vendors table
     if (!role) {
@@ -70,6 +72,8 @@ export async function GET() {
       id: user.id,
       email: user.email,
       role,
+      first_name: firstName,
+      last_name: lastName,
       subscription_status,
       subscription_tier,
     });

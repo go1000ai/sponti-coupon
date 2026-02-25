@@ -65,6 +65,26 @@ export async function GET(request: NextRequest) {
     dealsQuery = dealsQuery.gte('created_at', rangeStart);
   }
 
+  // Sparkline queries — fetch created_at timestamps for grouping by day
+  let vendorsTimeQuery = supabase
+    .from('vendors')
+    .select('created_at')
+    .order('created_at', { ascending: true });
+  let customersTimeQuery = supabase
+    .from('customers')
+    .select('created_at')
+    .order('created_at', { ascending: true });
+  let claimsTimeQuery = supabase
+    .from('claims')
+    .select('created_at')
+    .order('created_at', { ascending: true });
+
+  if (rangeStart) {
+    vendorsTimeQuery = vendorsTimeQuery.gte('created_at', rangeStart);
+    customersTimeQuery = customersTimeQuery.gte('created_at', rangeStart);
+    claimsTimeQuery = claimsTimeQuery.gte('created_at', rangeStart);
+  }
+
   const [
     vendorsRes,
     customersRes,
@@ -88,6 +108,10 @@ export async function GET(request: NextRequest) {
     // System health
     expiredUnclearedRes,
     pendingDepositsRes,
+    // Sparkline time-series
+    vendorsTimeRes,
+    customersTimeRes,
+    claimsTimeRes,
   ] = await Promise.all([
     vendorsQuery,
     customersQuery,
@@ -150,6 +174,10 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('deposit_confirmed', false)
       .eq('redeemed', false),
+    // Sparkline time-series
+    vendorsTimeQuery,
+    customersTimeQuery,
+    claimsTimeQuery,
   ]);
 
   // Compute MRR and tier breakdown
@@ -214,6 +242,36 @@ export async function GET(request: NextRequest) {
 
   activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+  // Group sparkline data by day
+  function groupByDay(rows: { created_at: string }[]): { date: string; count: number }[] {
+    const byDay: Record<string, number> = {};
+    rows.forEach((r) => {
+      const day = new Date(r.created_at).toISOString().split('T')[0];
+      byDay[day] = (byDay[day] || 0) + 1;
+    });
+    return Object.entries(byDay)
+      .map(([date, count]) => ({ date, count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  const vendorsOverTime = groupByDay((vendorsTimeRes.data || []) as { created_at: string }[]);
+  const customersOverTime = groupByDay((customersTimeRes.data || []) as { created_at: string }[]);
+  const claimsOverTime = groupByDay((claimsTimeRes.data || []) as { created_at: string }[]);
+
+  // Build cumulative MRR over time from subscriptions
+  const allSubs = (subsRes.data || []) as Subscription[];
+  const subsByDay: Record<string, number> = {};
+  allSubs.forEach((sub) => {
+    const day = new Date(sub.created_at).toISOString().split('T')[0];
+    subsByDay[day] = (subsByDay[day] || 0) + (TIER_PRICES[sub.tier] || 0);
+  });
+  const sortedSubDays = Object.keys(subsByDay).sort();
+  let cumulativeMrr = 0;
+  const mrrOverTime = sortedSubDays.map((date) => {
+    cumulativeMrr += subsByDay[date];
+    return { date, mrr: cumulativeMrr };
+  });
+
   return NextResponse.json({
     totalVendors: vendorsRes.count || 0,
     totalCustomers: customersRes.count || 0,
@@ -235,6 +293,12 @@ export async function GET(request: NextRequest) {
     systemHealth: {
       expiredUncleared: expiredUnclearedRes.count || 0,
       pendingDeposits: pendingDepositsRes.count || 0,
+    },
+    sparklines: {
+      vendors: vendorsOverTime,
+      customers: customersOverTime,
+      claims: claimsOverTime,
+      mrr: mrrOverTime,
     },
   });
 }

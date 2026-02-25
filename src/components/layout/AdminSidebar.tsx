@@ -25,7 +25,7 @@ import {
   UserCog,
   Settings,
 } from 'lucide-react';
-import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import Image from 'next/image';
 
 interface NavItem {
   label: string;
@@ -90,9 +90,11 @@ const navGroups: NavGroup[] = [
 
 interface AdminSidebarProps {
   onSignOut: () => void;
+  userName?: string | null;
+  userEmail?: string | null;
 }
 
-export default function AdminSidebar({ onSignOut }: AdminSidebarProps) {
+export default function AdminSidebar({ onSignOut, userName, userEmail }: AdminSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -105,14 +107,18 @@ export default function AdminSidebar({ onSignOut }: AdminSidebarProps) {
     <div className="flex flex-col h-full">
       {/* Branding */}
       <div className="p-6 border-b border-secondary-400/30">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center p-1.5">
-            <SpontiIcon className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-white">SpontiCoupon</h1>
-            <p className="text-xs text-secondary-200">Admin Portal</p>
-          </div>
+        <div className="flex flex-col items-center justify-center gap-2 w-full text-center">
+          <Image
+            src="/logo.png"
+            alt="SpontiCoupon"
+            width={160}
+            height={120}
+            className="w-40 h-auto mx-auto"
+            priority
+          />
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-secondary-300 block w-full text-center">
+            Admin Portal
+          </span>
         </div>
       </div>
 
@@ -147,8 +153,27 @@ export default function AdminSidebar({ onSignOut }: AdminSidebarProps) {
         ))}
       </nav>
 
-      {/* Sign Out */}
+      {/* User Info + Sign Out */}
       <div className="p-4 border-t border-secondary-400/30">
+        {(userName || userEmail) && (
+          <div className="px-4 py-3 mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-primary-400">
+                  {userName ? userName.charAt(0).toUpperCase() : userEmail?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0">
+                {userName && (
+                  <p className="text-sm font-medium text-white truncate">{userName}</p>
+                )}
+                {userEmail && (
+                  <p className="text-xs text-secondary-300 truncate">{userEmail}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-secondary-200 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"

@@ -9,6 +9,8 @@ interface AuthState {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 /**
@@ -17,20 +19,20 @@ interface AuthState {
  * deadlock if called from inside onAuthStateChange (because data queries
  * call getSession() which awaits initializePromise).
  */
-async function fetchRoleFromServer(): Promise<{ id: string; email: string; role: UserRole | null } | null> {
+async function fetchRoleFromServer(): Promise<{ id: string; email: string; role: UserRole | null; first_name: string | null; last_name: string | null } | null> {
   try {
     const res = await fetch('/api/auth/me');
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.id) return null;
-    return { id: data.id, email: data.email, role: data.role as UserRole | null };
+    return { id: data.id, email: data.email, role: data.role as UserRole | null, first_name: data.first_name || null, last_name: data.last_name || null };
   } catch {
     return null;
   }
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({ user: null, role: null, loading: true });
+  const [state, setState] = useState<AuthState>({ user: null, role: null, loading: true, firstName: null, lastName: null });
   const supabaseRef = useRef(createClient());
   const resolvedRef = useRef(false);
 
@@ -46,7 +48,7 @@ export function useAuth() {
 
       if (event === 'SIGNED_OUT') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
         return;
       }
 
@@ -59,10 +61,12 @@ export function useAuth() {
           user: session.user,
           role: profile?.role ?? null,
           loading: false,
+          firstName: profile?.first_name ?? null,
+          lastName: profile?.last_name ?? null,
         });
       } else if (event === 'INITIAL_SESSION') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
       }
     });
 
@@ -80,9 +84,11 @@ export function useAuth() {
           user: { id: profile.id, email: profile.email } as User,
           role: profile.role,
           loading: false,
+          firstName: profile.first_name,
+          lastName: profile.last_name,
         });
       } else {
-        setState({ user: null, role: null, loading: false });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
       }
     }, 2000);
 
@@ -101,7 +107,7 @@ export function useAuth() {
       // Fallback: try browser client signout
       try { await supabaseRef.current.auth.signOut(); } catch { /* ignore */ }
     }
-    setState({ user: null, role: null, loading: false });
+    setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
     window.location.href = '/';
   };
 

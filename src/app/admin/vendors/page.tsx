@@ -1351,7 +1351,19 @@ function VendorRow({
         <td className="p-4 font-medium text-secondary-500">{vendor.business_name}</td>
         <td className="p-4 text-sm text-gray-500">{vendor.email}</td>
         <td className="p-4">
-          <span className="text-xs px-2 py-1 rounded-full bg-primary-50 text-primary-600 font-medium capitalize">
+          <span
+            className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
+              vendor.subscription_tier === 'enterprise'
+                ? 'bg-purple-50 text-purple-700'
+                : vendor.subscription_tier === 'business'
+                ? 'bg-blue-50 text-blue-700'
+                : vendor.subscription_tier === 'pro'
+                ? 'bg-primary-50 text-primary-600'
+                : vendor.subscription_tier === 'starter'
+                ? 'bg-green-50 text-green-700'
+                : 'bg-gray-100 text-gray-500'
+            }`}
+          >
             {vendor.subscription_tier || 'none'}
           </span>
         </td>

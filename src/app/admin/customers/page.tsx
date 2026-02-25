@@ -33,6 +33,8 @@ interface EditFormData {
   city: string;
   state: string;
   zip: string;
+  email_digest_opt_in: boolean;
+  review_email_opt_out: boolean;
 }
 
 const PAGE_SIZE = 20;
@@ -55,6 +57,8 @@ export default function AdminCustomersPage() {
     city: '',
     state: '',
     zip: '',
+    email_digest_opt_in: true,
+    review_email_opt_out: false,
   });
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
@@ -119,6 +123,8 @@ export default function AdminCustomersPage() {
       city: customer.city || '',
       state: customer.state || '',
       zip: customer.zip || '',
+      email_digest_opt_in: customer.email_digest_opt_in ?? true,
+      review_email_opt_out: customer.review_email_opt_out ?? false,
     });
     setEditError('');
     setEditModalOpen(true);
@@ -153,6 +159,8 @@ export default function AdminCustomersPage() {
           city: editForm.city || null,
           state: editForm.state || null,
           zip: editForm.zip || null,
+          email_digest_opt_in: editForm.email_digest_opt_in,
+          review_email_opt_out: editForm.review_email_opt_out,
         }),
       });
 
@@ -482,6 +490,35 @@ export default function AdminCustomersPage() {
                 maxLength={10}
               />
             </div>
+          </div>
+
+          {/* Email Preferences */}
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Preferences</label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editForm.email_digest_opt_in}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, email_digest_opt_in: e.target.checked }))}
+                className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <div>
+                <span className="text-sm text-gray-700">Email Digest Opt In</span>
+                <p className="text-xs text-gray-400">Receives weekly email digest of deals</p>
+              </div>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={editForm.review_email_opt_out}
+                onChange={(e) => setEditForm((prev) => ({ ...prev, review_email_opt_out: e.target.checked }))}
+                className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <div>
+                <span className="text-sm text-gray-700">Review Email Opt Out</span>
+                <p className="text-xs text-gray-400">Opted out of review request emails</p>
+              </div>
+            </label>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">

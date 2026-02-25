@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
-const ALLOWED_BUCKETS = ['deal-images', 'vendor-assets', 'support-attachments'] as const;
+const ALLOWED_BUCKETS = ['deal-images', 'deal-videos', 'vendor-assets', 'support-attachments'] as const;
 type AllowedBucket = typeof ALLOWED_BUCKETS[number];
 
-// POST /api/admin/upload — Admin image upload (any bucket)
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'];
+const IMAGE_MAX_SIZE = 5 * 1024 * 1024; // 5MB
+const VIDEO_MAX_SIZE = 100 * 1024 * 1024; // 100MB
+
+// POST /api/admin/upload — Admin file upload (images + videos)
 export async function POST(request: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return forbiddenResponse();
@@ -24,16 +29,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
+  // Determine if this is a video or image upload
+  const isVideo = bucket === 'deal-videos' || VIDEO_TYPES.includes(file.type);
+  const allowedTypes = isVideo ? VIDEO_TYPES : IMAGE_TYPES;
+  const maxSize = isVideo ? VIDEO_MAX_SIZE : IMAGE_MAX_SIZE;
+
   // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: 'Invalid file type. Please upload JPG, PNG, WebP, or GIF.' }, { status: 400 });
+    const typeLabel = isVideo ? 'MP4, WebM, MOV, or AVI' : 'JPG, PNG, WebP, or GIF';
+    return NextResponse.json({ error: `Invalid file type. Please upload ${typeLabel}.` }, { status: 400 });
   }
 
-  // Validate file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024;
+  // Validate file size
   if (file.size > maxSize) {
-    return NextResponse.json({ error: 'File too large. Maximum size is 5MB.' }, { status: 400 });
+    const sizeLabel = isVideo ? '100MB' : '5MB';
+    return NextResponse.json({ error: `File too large. Maximum size is ${sizeLabel}.` }, { status: 400 });
   }
 
   const serviceClient = await createServiceRoleClient();
@@ -51,7 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Generate unique filename scoped to target user
-  const ext = file.name.split('.').pop() || 'jpg';
+  const ext = file.name.split('.').pop() || (isVideo ? 'mp4' : 'jpg');
   const filename = `${targetUserId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
@@ -65,7 +75,7 @@ export async function POST(request: NextRequest) {
 
   if (uploadError) {
     console.error('[Admin Upload] Error:', uploadError);
-    return NextResponse.json({ error: 'Failed to upload image. Please try again.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to upload file. Please try again.' }, { status: 500 });
   }
 
   const { data: urlData } = serviceClient.storage

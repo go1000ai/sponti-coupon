@@ -33,6 +33,8 @@ import {
   Loader2,
   ImageIcon,
   Clock,
+  Video,
+  Plus,
 } from 'lucide-react';
 
 // ---------- Types ----------
@@ -229,6 +231,8 @@ export default function AdminDealDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [toast, setToast] = useState('');
   const [copiedId, setCopiedId] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
@@ -347,6 +351,64 @@ export default function AdminDealDetailPage() {
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  // ---------- Gallery image upload ----------
+  const handleGalleryImageUpload = async (file: File) => {
+    if (!deal) return;
+    setUploadingGallery(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'deal-images');
+      fd.append('user_id', deal.vendor_id);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      const currentUrls = (formData.image_urls as string[]) || [];
+      updateField('image_urls', [...currentUrls, data.url]);
+      setToast('Gallery image added');
+    } catch {
+      setToast('Failed to upload gallery image');
+    } finally {
+      setUploadingGallery(false);
+    }
+  };
+
+  // ---------- Remove gallery image ----------
+  const removeGalleryImage = (index: number) => {
+    const currentUrls = [...(formData.image_urls as string[])];
+    currentUrls.splice(index, 1);
+    updateField('image_urls', currentUrls);
+  };
+
+  // ---------- Video upload ----------
+  const handleVideoUpload = async (file: File) => {
+    if (!deal) return;
+    setUploadingVideo(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'deal-videos');
+      fd.append('user_id', deal.vendor_id);
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      if (!res.ok) throw new Error('Upload failed');
+      const data = await res.json();
+      const currentUrls = (formData.video_urls as string[]) || [];
+      updateField('video_urls', [...currentUrls, data.url]);
+      setToast('Video uploaded successfully');
+    } catch {
+      setToast('Failed to upload video');
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  // ---------- Remove video ----------
+  const removeVideo = (index: number) => {
+    const currentUrls = [...(formData.video_urls as string[])];
+    currentUrls.splice(index, 1);
+    updateField('video_urls', currentUrls);
   };
 
   // ---------- Save ----------
@@ -604,21 +666,55 @@ export default function AdminDealDetailPage() {
               )}
             </div>
 
-            {/* Gallery thumbnails */}
-            {(formData.image_urls as string[]).length > 0 && (
-              <div className="p-4 border-t border-gray-100">
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {(formData.image_urls as string[]).map((url, i) => (
+            {/* Gallery images */}
+            <div className="p-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gallery Images</span>
+                <span className="text-xs text-gray-400">({(formData.image_urls as string[]).length})</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {(formData.image_urls as string[]).map((url, i) => (
+                  <div key={i} className="relative group">
                     <img
-                      key={i}
                       src={url}
                       alt={`Gallery ${i + 1}`}
-                      className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border-2 border-gray-100 hover:border-primary-400 transition-colors cursor-pointer"
+                      className="w-20 h-20 rounded-lg object-cover border-2 border-gray-100 group-hover:border-primary-400 transition-colors"
                     />
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => removeGalleryImage(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {/* Upload button */}
+                <label className="cursor-pointer">
+                  <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors">
+                    {uploadingGallery ? (
+                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                    ) : (
+                      <>
+                        <Plus className="w-5 h-5 text-gray-400" />
+                        <span className="text-[10px] text-gray-400">Add</span>
+                      </>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    disabled={uploadingGallery}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleGalleryImageUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
               </div>
-            )}
+            </div>
           </div>
 
           {/* 2. Title & Description Card */}
@@ -738,14 +834,51 @@ export default function AdminDealDetailPage() {
                   />
                 </div>
 
-                {/* Video URLs */}
+                {/* Videos */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Video URLs</label>
-                  <ArrayEditor
-                    items={formData.video_urls as string[]}
-                    onChange={(items) => updateField('video_urls', items)}
-                    placeholder="https://youtube.com/..."
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Videos</label>
+                  <div className="space-y-2">
+                    {(formData.video_urls as string[]).map((url, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group">
+                        <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <span className="text-sm text-gray-600 truncate flex-1" title={url}>
+                          {url.split('/').pop() || url}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeVideo(i)}
+                          className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
+                      {uploadingVideo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Uploading video...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          Upload Video
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                        className="hidden"
+                        disabled={uploadingVideo}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
+                  </div>
                 </div>
               </div>
             )}
