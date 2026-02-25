@@ -123,6 +123,32 @@ export async function GET(request: NextRequest) {
         customerId: customer.id,
       });
 
+      // Insert in-app review request + thank-you notifications
+      const { error: notifError } = await serviceClient
+        .from('notifications')
+        .insert([
+          {
+            customer_id: customer.id,
+            type: 'review_request',
+            title: `How was your experience at ${businessName}?`,
+            message: `We'd love to hear about your experience with "${deal.title}". Leave a review to help other customers!`,
+            channel: 'in_app',
+            read: false,
+          },
+          {
+            customer_id: customer.id,
+            type: 'welcome',
+            title: `Thank you for visiting ${businessName}!`,
+            message: `Thanks for redeeming "${deal.title}". We appreciate your business and hope to see you again soon!`,
+            channel: 'in_app',
+            read: false,
+          },
+        ]);
+
+      if (notifError) {
+        console.warn(`[cron/review-requests] Failed to insert notifications for claim ${claim.id}:`, notifError.message);
+      }
+
       // Mark review request as sent
       await serviceClient
         .from('claims')

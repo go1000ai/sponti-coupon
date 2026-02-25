@@ -114,6 +114,7 @@ export async function GET(
  *   - { role: 'vendor' | 'customer' | 'admin' } — changes role in user_profiles
  *   - { disabled: boolean } — enables/disables the user via supabase.auth.admin.updateUserById()
  *   - { email: string } — updates auth email and vendor/customer table email
+ *   - { password: string } — resets user password via supabase.auth.admin
  *   - { first_name: string } — updates first_name in user_profiles
  *   - { last_name: string } — updates last_name in user_profiles
  *   - { vendor_data: object } — updates fields in the vendors table (vendor users only)
@@ -250,6 +251,26 @@ export async function PUT(
       }
 
       result.email = email;
+    }
+
+    // Handle password reset
+    if (body.password !== undefined) {
+      const password = body.password;
+
+      if (!password || password.length < 6) {
+        return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+      }
+
+      const { error: passwordError } = await serviceClient.auth.admin.updateUserById(id, {
+        password,
+      });
+
+      if (passwordError) {
+        console.error('[PUT /api/admin/users] Password update error:', passwordError);
+        return NextResponse.json({ error: 'Failed to update password' }, { status: 500 });
+      }
+
+      result.password_updated = true;
     }
 
     // Handle vendor_data update

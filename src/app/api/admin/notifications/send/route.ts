@@ -21,8 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const { customer_id, type, title, message, channel } = body as {
+    const { customer_id, customer_ids, type, title, message, channel } = body as {
       customer_id?: string;
+      customer_ids?: string[];
       type: string;
       title: string;
       message: string;
@@ -47,27 +48,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `Invalid channel. Must be one of: ${validChannels.join(', ')}` }, { status: 400 });
     }
 
-    if (customer_id) {
-      // Send to a single customer
-      const { data: notification, error } = await serviceClient
+    // Determine target customer IDs
+    const targetIds: string[] = customer_ids && customer_ids.length > 0
+      ? customer_ids
+      : customer_id
+        ? [customer_id]
+        : [];
+
+    if (targetIds.length > 0) {
+      // Send to specific customers
+      const rows = targetIds.map((id) => ({
+        customer_id: id,
+        type,
+        title,
+        message,
+        channel,
+        read: false,
+      }));
+
+      const { error } = await serviceClient
         .from('notifications')
-        .insert({
-          customer_id,
-          type,
-          title,
-          message,
-          channel,
-          read: false,
-        })
-        .select('*')
-        .single();
+        .insert(rows);
 
       if (error) {
         console.error('[POST /api/admin/notifications/send] Insert error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      return NextResponse.json({ success: true, count: 1, notification });
+      return NextResponse.json({ success: true, count: targetIds.length });
     } else {
       // Broadcast to all customers
       const { data: customers, error: fetchError } = await serviceClient

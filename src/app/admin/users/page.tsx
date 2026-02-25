@@ -17,6 +17,8 @@ import {
   Calendar,
   Loader2,
   Eye,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import type { UserRole } from '@/lib/types/database';
 
@@ -45,14 +47,28 @@ export default function AdminUsersPage() {
   // Modal states
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showToggleDialog, setShowToggleDialog] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Selected user and form state
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [newRole, setNewRole] = useState<UserRole>('customer');
 
+  // Add user form
+  const [addForm, setAddForm] = useState({
+    email: '',
+    password: '',
+    role: 'customer' as UserRole,
+    first_name: '',
+    last_name: '',
+    business_name: '',
+  });
+  const [addingUser, setAddingUser] = useState(false);
+
   // Loading states for mutations
   const [updatingRole, setUpdatingRole] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [deletingUser, setDeletingUser] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
@@ -204,6 +220,95 @@ export default function AdminUsersPage() {
     }
   };
 
+  // --- Add User ---
+  const openAddModal = () => {
+    setAddForm({ email: '', password: '', role: 'customer', first_name: '', last_name: '', business_name: '' });
+    setFormError(null);
+    setShowAddModal(true);
+  };
+
+  const handleAddUser = async () => {
+    if (!addForm.email || !addForm.password) {
+      setFormError('Email and password are required');
+      return;
+    }
+    if (addForm.password.length < 6) {
+      setFormError('Password must be at least 6 characters');
+      return;
+    }
+    if (addForm.role === 'vendor' && !addForm.business_name.trim()) {
+      setFormError('Business name is required for vendor accounts');
+      return;
+    }
+
+    setFormError(null);
+    setAddingUser(true);
+
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: addForm.email,
+          password: addForm.password,
+          role: addForm.role,
+          first_name: addForm.first_name || undefined,
+          last_name: addForm.last_name || undefined,
+          business_name: addForm.role === 'vendor' ? addForm.business_name : undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setFormError(data.error || 'Failed to create user');
+        return;
+      }
+
+      setShowAddModal(false);
+      fetchUsers();
+    } catch {
+      setFormError('An unexpected error occurred');
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  // --- Delete User ---
+  const openDeleteDialog = (userRecord: UserRecord) => {
+    setSelectedUser(userRecord);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUser) return;
+    setDeletingUser(true);
+
+    try {
+      const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Delete user failed:', data.error);
+        setDeletingUser(false);
+        setShowDeleteDialog(false);
+        setSelectedUser(null);
+        return;
+      }
+
+      setUsers((prev) => prev.filter((u) => u.id !== selectedUser.id));
+      setShowDeleteDialog(false);
+      setSelectedUser(null);
+    } catch (err) {
+      console.error('Delete user error:', err);
+    } finally {
+      setDeletingUser(false);
+    }
+  };
+
   // --- Role badge helper ---
   const getRoleBadge = (role: UserRole) => {
     switch (role) {
@@ -267,12 +372,21 @@ export default function AdminUsersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Users className="w-8 h-8 text-primary-500" />
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-500">Users &amp; Roles</h1>
-          <p className="text-sm text-gray-500">Manage user accounts and role assignments</p>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <Users className="w-8 h-8 text-primary-500" />
+          <div>
+            <h1 className="text-2xl font-bold text-secondary-500">Users &amp; Roles</h1>
+            <p className="text-sm text-gray-500">Manage user accounts and role assignments</p>
+          </div>
         </div>
+        <button
+          onClick={openAddModal}
+          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Add User
+        </button>
       </div>
 
       {/* Summary Cards */}
@@ -422,6 +536,13 @@ export default function AdminUsersPage() {
                             <Ban className="w-4 h-4" />
                           </button>
                         )}
+                        <button
+                          onClick={() => openDeleteDialog(userRecord)}
+                          className="text-gray-500 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                          title="Delete User"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -522,6 +643,133 @@ export default function AdminUsersPage() {
         variant={selectedUser?.disabled ? 'warning' : 'danger'}
         loading={togglingStatus}
       />
+
+      {/* Delete User Confirm Dialog */}
+      <AdminConfirmDialog
+        isOpen={showDeleteDialog}
+        onConfirm={handleDeleteUser}
+        onCancel={() => {
+          setShowDeleteDialog(false);
+          setSelectedUser(null);
+        }}
+        title="Delete User"
+        message={`Are you sure you want to permanently delete "${selectedUser?.email}"? This will remove the user account and all associated data. This action cannot be undone.`}
+        confirmLabel="Delete User"
+        variant="danger"
+        loading={deletingUser}
+      />
+
+      {/* Add User Modal */}
+      <AdminModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Add New User"
+        size="md"
+      >
+        <div className="space-y-4">
+          {formError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+              {formError}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={addForm.email}
+              onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+              className="input-field"
+              placeholder="user@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              value={addForm.password}
+              onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
+              className="input-field"
+              placeholder="Min. 6 characters"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <select
+              value={addForm.role}
+              onChange={(e) => setAddForm({ ...addForm, role: e.target.value as UserRole })}
+              className="input-field"
+            >
+              <option value="customer">Customer</option>
+              <option value="vendor">Vendor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          {addForm.role === 'admin' && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
+              This user will have full admin access to the platform.
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input
+                type="text"
+                value={addForm.first_name}
+                onChange={(e) => setAddForm({ ...addForm, first_name: e.target.value })}
+                className="input-field"
+                placeholder="First name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input
+                type="text"
+                value={addForm.last_name}
+                onChange={(e) => setAddForm({ ...addForm, last_name: e.target.value })}
+                className="input-field"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+
+          {addForm.role === 'vendor' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+              <input
+                type="text"
+                value={addForm.business_name}
+                onChange={(e) => setAddForm({ ...addForm, business_name: e.target.value })}
+                className="input-field"
+                placeholder="Business name (required for vendors)"
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleAddUser}
+              disabled={addingUser}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
+            >
+              {addingUser && <Loader2 className="w-4 h-4 animate-spin" />}
+              {addingUser ? 'Creating...' : 'Create User'}
+            </button>
+          </div>
+        </div>
+      </AdminModal>
     </div>
   );
 }

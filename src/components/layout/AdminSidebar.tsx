@@ -92,9 +92,10 @@ interface AdminSidebarProps {
   onSignOut: () => void;
   userName?: string | null;
   userEmail?: string | null;
+  userAvatar?: string | null;
 }
 
-export default function AdminSidebar({ onSignOut, userName, userEmail }: AdminSidebarProps) {
+export default function AdminSidebar({ onSignOut, userName, userEmail, userAvatar }: AdminSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -160,11 +161,19 @@ export default function AdminSidebar({ onSignOut, userName, userEmail }: AdminSi
         {(userName || userEmail) && (
           <div className="px-4 py-3 mb-2">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-bold text-primary-400">
-                  {userName ? userName.charAt(0).toUpperCase() : userEmail?.charAt(0).toUpperCase()}
-                </span>
-              </div>
+              {userAvatar ? (
+                <img
+                  src={userAvatar}
+                  alt={userName || 'User'}
+                  className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-primary-500/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-bold text-primary-400">
+                    {userName ? userName.charAt(0).toUpperCase() : userEmail?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
               <div className="min-w-0">
                 {userName && (
                   <p className="text-sm font-medium text-white truncate">{userName}</p>

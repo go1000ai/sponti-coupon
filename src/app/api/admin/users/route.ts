@@ -163,3 +163,126 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+/**
+ * POST /api/admin/users
+ * Create a new user account with email, password, role, and optional name.
+ * Body: { email, password, role, first_name?, last_name?, business_name? }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const admin = await verifyAdmin();
+    if (!admin) return forbiddenResponse();
+
+    const serviceClient = await createServiceRoleClient();
+
+    let body: Record<string, unknown>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { email, password, role, first_name, last_name, business_name } = body as {
+      email: string;
+      password: string;
+      role: string;
+      first_name?: string;
+      last_name?: string;
+      business_name?: string;
+    };
+
+    if (!email || !password || !role) {
+      return NextResponse.json({ error: 'email, password, and role are required' }, { status: 400 });
+    }
+
+    const validRoles = ['vendor', 'customer', 'admin'];
+    if (!validRoles.includes(role)) {
+      return NextResponse.json({ error: 'Invalid role. Must be one of: vendor, customer, admin' }, { status: 400 });
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+    }
+
+    if (role === 'vendor' && !business_name) {
+      return NextResponse.json({ error: 'business_name is required for vendor accounts' }, { status: 400 });
+    }
+
+    // Create the auth user
+    const { data: authData, error: authError } = await serviceClient.auth.admin.createUser({
+      email: email.trim(),
+      password,
+      email_confirm: true,
+    });
+
+    if (authError) {
+      console.error('[POST /api/admin/users] Auth create error:', authError);
+      const msg = authError.message?.includes('already been registered')
+        ? 'A user with this email already exists'
+        : authError.message || 'Failed to create user';
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    const userId = authData.user.id;
+
+    // Create user_profiles record
+    const { error: profileError } = await serviceClient
+      .from('user_profiles')
+      .insert({
+        id: userId,
+        role,
+        first_name: first_name?.trim() || null,
+        last_name: last_name?.trim() || null,
+      });
+
+    if (profileError) {
+      console.error('[POST /api/admin/users] Profile insert error:', profileError);
+      // Clean up: delete the auth user since profile creation failed
+      await serviceClient.auth.admin.deleteUser(userId);
+      return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
+    }
+
+    // Create role-specific record
+    if (role === 'vendor') {
+      const { error: vendorError } = await serviceClient
+        .from('vendors')
+        .insert({
+          id: userId,
+          email: email.trim(),
+          business_name: business_name!.trim(),
+        });
+
+      if (vendorError) {
+        console.error('[POST /api/admin/users] Vendor insert error:', vendorError);
+      }
+    } else if (role === 'customer') {
+      const { error: customerError } = await serviceClient
+        .from('customers')
+        .insert({
+          id: userId,
+          email: email.trim(),
+          first_name: first_name?.trim() || null,
+          last_name: last_name?.trim() || null,
+        });
+
+      if (customerError) {
+        console.error('[POST /api/admin/users] Customer insert error:', customerError);
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: userId,
+        email: email.trim(),
+        role,
+        first_name: first_name?.trim() || '',
+        last_name: last_name?.trim() || '',
+      },
+    }, { status: 201 });
+  } catch (error) {
+    console.error('[POST /api/admin/users] Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

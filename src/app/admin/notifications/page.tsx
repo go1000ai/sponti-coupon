@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
@@ -13,6 +13,8 @@ import {
   CheckCircle,
   Clock,
   Loader2,
+  Search,
+  X,
 } from 'lucide-react';
 
 interface Notification {
@@ -90,8 +92,11 @@ export default function AdminNotificationsPage() {
   const [broadcastAll, setBroadcastAll] = useState(false);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [customersLoading, setCustomersLoading] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [selectedCustomers, setSelectedCustomers] = useState<CustomerOption[]>([]);
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const customerSearchRef = useRef<HTMLDivElement>(null);
   const [sendForm, setSendForm] = useState({
-    customer_id: '',
     type: 'welcome',
     title: '',
     message: '',
@@ -149,11 +154,44 @@ export default function AdminNotificationsPage() {
     }
   }, []);
 
+  // Filter customers by search term and exclude already-selected
+  const selectedIds = new Set(selectedCustomers.map((c) => c.id));
+  const filteredCustomers = customers.filter((c) => {
+    if (selectedIds.has(c.id)) return false;
+    if (!customerSearch.trim()) return true;
+    const searchLower = customerSearch.toLowerCase();
+    const fullName = [c.first_name, c.last_name].filter(Boolean).join(' ').toLowerCase();
+    return fullName.includes(searchLower) || c.email.toLowerCase().includes(searchLower);
+  });
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (customerSearchRef.current && !customerSearchRef.current.contains(e.target as Node)) {
+        setShowCustomerDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function selectCustomer(customer: CustomerOption) {
+    setSelectedCustomers((prev) => [...prev, customer]);
+    setCustomerSearch('');
+  }
+
+  function removeSelectedCustomer(customerId: string) {
+    setSelectedCustomers((prev) => prev.filter((c) => c.id !== customerId));
+  }
+
   function openSendModal() {
-    setSendForm({ customer_id: '', type: 'welcome', title: '', message: '', channel: 'in_app' });
+    setSendForm({ type: 'welcome', title: '', message: '', channel: 'in_app' });
     setSendError('');
     setSendSuccess('');
     setBroadcastAll(false);
+    setCustomerSearch('');
+    setSelectedCustomers([]);
+    setShowCustomerDropdown(false);
     setSendModalOpen(true);
     fetchCustomers();
   }
@@ -171,19 +209,19 @@ export default function AdminNotificationsPage() {
     setSendSuccess('');
 
     try {
-      const payload: Record<string, string> = {
+      const payload: Record<string, unknown> = {
         type: sendForm.type,
         title: sendForm.title,
         message: sendForm.message,
         channel: sendForm.channel,
       };
 
-      if (!broadcastAll && sendForm.customer_id) {
-        payload.customer_id = sendForm.customer_id;
+      if (!broadcastAll && selectedCustomers.length > 0) {
+        payload.customer_ids = selectedCustomers.map((c) => c.id);
       }
 
-      if (!broadcastAll && !sendForm.customer_id) {
-        setSendError('Please select a customer or check "Send to All Customers"');
+      if (!broadcastAll && selectedCustomers.length === 0) {
+        setSendError('Please select at least one customer or check "Send to All Customers"');
         setSendLoading(false);
         return;
       }
@@ -452,25 +490,87 @@ export default function AdminNotificationsPage() {
           {/* Customer selector */}
           {!broadcastAll && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Customers
+                {selectedCustomers.length > 0 && (
+                  <span className="ml-2 text-xs text-primary-500 font-normal">
+                    {selectedCustomers.length} selected
+                  </span>
+                )}
+              </label>
               {customersLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Loading customers...
                 </div>
               ) : (
-                <select
-                  value={sendForm.customer_id}
-                  onChange={(e) => setSendForm((prev) => ({ ...prev, customer_id: e.target.value }))}
-                  className="input-field"
-                >
-                  <option value="">Select a customer...</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email}
-                    </option>
-                  ))}
-                </select>
+                <div ref={customerSearchRef} className="relative">
+                  {/* Selected customer chips */}
+                  {selectedCustomers.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedCustomers.map((c) => {
+                        const name = [c.first_name, c.last_name].filter(Boolean).join(' ') || c.email;
+                        return (
+                          <span
+                            key={c.id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-primary-50 text-primary-700 rounded-full"
+                          >
+                            {name}
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedCustomer(c.id)}
+                              className="hover:text-primary-900 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* Search input */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      value={customerSearch}
+                      onChange={(e) => {
+                        setCustomerSearch(e.target.value);
+                        setShowCustomerDropdown(true);
+                      }}
+                      onFocus={() => setShowCustomerDropdown(true)}
+                      className="input-field pl-9"
+                      placeholder="Search by name or email..."
+                    />
+                  </div>
+                  {/* Dropdown results */}
+                  {showCustomerDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCustomers.length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-gray-500">
+                          {customerSearch.trim() ? 'No customers found' : 'All customers selected'}
+                        </div>
+                      ) : (
+                        filteredCustomers.map((c) => {
+                          const displayName = [c.first_name, c.last_name].filter(Boolean).join(' ');
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => selectCustomer(c)}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-primary-50 transition-colors text-gray-700"
+                            >
+                              <div className="font-medium">{displayName || c.email}</div>
+                              {displayName && (
+                                <div className="text-xs text-gray-400">{c.email}</div>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -551,7 +651,7 @@ export default function AdminNotificationsPage() {
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  {broadcastAll ? 'Broadcast to All' : 'Send Notification'}
+                  {broadcastAll ? 'Broadcast to All' : `Send to ${selectedCustomers.length} Customer${selectedCustomers.length !== 1 ? 's' : ''}`}
                 </>
               )}
             </button>

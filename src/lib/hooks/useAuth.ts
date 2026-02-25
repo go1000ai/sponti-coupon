@@ -11,6 +11,7 @@ interface AuthState {
   loading: boolean;
   firstName: string | null;
   lastName: string | null;
+  avatarUrl: string | null;
 }
 
 /**
@@ -19,22 +20,39 @@ interface AuthState {
  * deadlock if called from inside onAuthStateChange (because data queries
  * call getSession() which awaits initializePromise).
  */
-async function fetchRoleFromServer(): Promise<{ id: string; email: string; role: UserRole | null; first_name: string | null; last_name: string | null } | null> {
+async function fetchRoleFromServer(): Promise<{ id: string; email: string; role: UserRole | null; first_name: string | null; last_name: string | null; avatar_url: string | null } | null> {
   try {
     const res = await fetch('/api/auth/me');
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.id) return null;
-    return { id: data.id, email: data.email, role: data.role as UserRole | null, first_name: data.first_name || null, last_name: data.last_name || null };
+    return { id: data.id, email: data.email, role: data.role as UserRole | null, first_name: data.first_name || null, last_name: data.last_name || null, avatar_url: data.avatar_url || null };
   } catch {
     return null;
   }
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({ user: null, role: null, loading: true, firstName: null, lastName: null });
+  const [state, setState] = useState<AuthState>({ user: null, role: null, loading: true, firstName: null, lastName: null, avatarUrl: null });
   const supabaseRef = useRef(createClient());
   const resolvedRef = useRef(false);
+
+  // Allow components to update the avatar URL immediately (e.g. after upload).
+  // Dispatches a custom event so ALL useAuth instances (e.g. sidebar) update too.
+  const setAvatarUrl = (url: string | null) => {
+    setState((prev) => ({ ...prev, avatarUrl: url }));
+    window.dispatchEvent(new CustomEvent('avatar-updated', { detail: url }));
+  };
+
+  // Listen for avatar updates from other useAuth instances
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const url = (e as CustomEvent).detail as string | null;
+      setState((prev) => ({ ...prev, avatarUrl: url }));
+    };
+    window.addEventListener('avatar-updated', handler);
+    return () => window.removeEventListener('avatar-updated', handler);
+  }, []);
 
   useEffect(() => {
     const supabase = supabaseRef.current;
@@ -48,7 +66,7 @@ export function useAuth() {
 
       if (event === 'SIGNED_OUT') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
         return;
       }
 
@@ -63,10 +81,11 @@ export function useAuth() {
           loading: false,
           firstName: profile?.first_name ?? null,
           lastName: profile?.last_name ?? null,
+          avatarUrl: profile?.avatar_url ?? null,
         });
       } else if (event === 'INITIAL_SESSION') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
       }
     });
 
@@ -86,9 +105,10 @@ export function useAuth() {
           loading: false,
           firstName: profile.first_name,
           lastName: profile.last_name,
+          avatarUrl: profile.avatar_url,
         });
       } else {
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
+        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
       }
     }, 2000);
 
@@ -107,9 +127,9 @@ export function useAuth() {
       // Fallback: try browser client signout
       try { await supabaseRef.current.auth.signOut(); } catch { /* ignore */ }
     }
-    setState({ user: null, role: null, loading: false, firstName: null, lastName: null });
+    setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
     window.location.href = '/';
   };
 
-  return { ...state, signOut };
+  return { ...state, signOut, setAvatarUrl };
 }

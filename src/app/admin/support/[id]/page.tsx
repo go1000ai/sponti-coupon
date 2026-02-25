@@ -22,6 +22,7 @@ import {
   Download,
   ToggleLeft,
   ToggleRight,
+  Sparkles,
 } from 'lucide-react';
 
 /* ── Types ──────────────────────────── */
@@ -124,6 +125,9 @@ export default function AdminSupportDetailPage() {
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editMessageText, setEditMessageText] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+
+  // AI draft
+  const [aiDrafting, setAiDrafting] = useState(false);
 
   // Control updates
   const [controlSaving, setControlSaving] = useState(false);
@@ -268,6 +272,35 @@ export default function AdminSupportDetailPage() {
       showToast('error', 'Failed to send reply');
     } finally {
       setReplySending(false);
+    }
+  };
+
+  // --- AI Draft ---
+
+  const handleAiDraft = async () => {
+    setAiDrafting(true);
+    try {
+      const payload: Record<string, unknown> = { ticket_id: id, draft_only: true };
+      if (replyText.trim()) {
+        payload.admin_draft = replyText.trim();
+      }
+      const res = await fetch('/api/support/ai-reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to generate AI draft');
+      const data = await res.json();
+      if (data.draft) {
+        setReplyText(data.draft);
+        showToast('success', replyText.trim() ? 'AI improved your draft' : 'AI draft generated — review and edit before sending');
+      } else {
+        showToast('error', 'AI could not generate a draft');
+      }
+    } catch {
+      showToast('error', 'Failed to generate AI draft');
+    } finally {
+      setAiDrafting(false);
     }
   };
 
@@ -569,8 +602,8 @@ export default function AdminSupportDetailPage() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     placeholder="Type your reply..."
-                    className="input-field resize-none"
-                    rows={3}
+                    className="input-field resize-y"
+                    rows={6}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
@@ -588,6 +621,14 @@ export default function AdminSupportDetailPage() {
                     className="hidden"
                     multiple
                   />
+                  <button
+                    onClick={handleAiDraft}
+                    disabled={aiDrafting}
+                    className="p-2.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                    title="AI Assist — draft a response"
+                  >
+                    {aiDrafting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                  </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}

@@ -38,6 +38,9 @@ import {
   CreditCard,
   ToggleLeft,
   ToggleRight,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 // ---------- Types ----------
@@ -242,6 +245,11 @@ export default function AdminUserDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+
+  // Password reset state
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
   // ---------- Build form data from user ----------
   const buildFormData = useCallback((u: UserDetail): FormState => {
@@ -474,6 +482,36 @@ export default function AdminUserDetailPage() {
   const toggleDisabled = () => {
     if (!formData) return;
     updateField('disabled', !formData.disabled);
+  };
+
+  // ---------- Reset Password ----------
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      setToast({ message: 'Password must be at least 6 characters', type: 'error' });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to reset password');
+      }
+
+      setNewPassword('');
+      setShowPassword(false);
+      setToast({ message: 'Password updated successfully', type: 'success' });
+    } catch (err: unknown) {
+      setToast({ message: err instanceof Error ? err.message : 'Failed to reset password', type: 'error' });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   // ---------- Loading / Error / Auth States ----------
@@ -1114,7 +1152,44 @@ export default function AdminUserDetailPage() {
             </div>
           </div>
 
-          {/* 5. Stats Card */}
+          {/* 5. Reset Password Card */}
+          <div
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300"
+            style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.2s forwards' }}
+          >
+            <SectionHeader label="Reset Password" color="from-amber-500 to-amber-300" />
+
+            <div className="space-y-3">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="New password (min. 6 chars)"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={savingPassword || !newPassword || newPassword.length < 6}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                {savingPassword ? 'Updating...' : 'Reset Password'}
+              </button>
+            </div>
+          </div>
+
+          {/* 6. Stats Card */}
           <div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300"
             style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.25s forwards' }}
