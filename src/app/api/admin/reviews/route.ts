@@ -28,12 +28,14 @@ export async function GET(request: NextRequest) {
         claim_id,
         rating,
         comment,
-        reply,
+        vendor_reply,
+        vendor_replied_at,
         auto_response_scheduled_at,
         auto_response_sent_at,
-        verified,
+        is_verified,
+        is_auto_response,
         created_at,
-        customer:customers(first_name, last_name),
+        customer:customers(first_name, last_name, email),
         vendor:vendors(business_name),
         deal:deals(title)
       `)
@@ -63,22 +65,25 @@ export async function GET(request: NextRequest) {
       id: string;
       vendor_id: string;
       customer_id: string;
-      deal_id: string;
+      deal_id: string | null;
       claim_id: string | null;
       rating: number;
       comment: string | null;
-      reply: string | null;
+      vendor_reply: string | null;
+      vendor_replied_at: string | null;
       auto_response_scheduled_at: string | null;
       auto_response_sent_at: string | null;
-      verified: boolean;
+      is_verified: boolean;
+      is_auto_response: boolean;
       created_at: string;
       customer_name: string;
+      customer_email: string | null;
       vendor_name: string;
       deal_title: string;
     }
 
     let reviews: ReviewRow[] = rawReviews.map((review: Record<string, unknown>) => {
-      const customer = review.customer as { first_name: string | null; last_name: string | null } | null;
+      const customer = review.customer as { first_name: string | null; last_name: string | null; email: string | null } | null;
       const vendor = review.vendor as { business_name: string } | null;
       const deal = review.deal as { title: string } | null;
 
@@ -86,18 +91,21 @@ export async function GET(request: NextRequest) {
         id: review.id as string,
         vendor_id: review.vendor_id as string,
         customer_id: review.customer_id as string,
-        deal_id: review.deal_id as string,
+        deal_id: review.deal_id as string | null,
         claim_id: review.claim_id as string | null,
         rating: review.rating as number,
         comment: review.comment as string | null,
-        reply: review.reply as string | null,
+        vendor_reply: review.vendor_reply as string | null,
+        vendor_replied_at: review.vendor_replied_at as string | null,
         auto_response_scheduled_at: review.auto_response_scheduled_at as string | null,
         auto_response_sent_at: review.auto_response_sent_at as string | null,
-        verified: review.verified as boolean,
+        is_verified: review.is_verified as boolean,
+        is_auto_response: review.is_auto_response as boolean,
         created_at: review.created_at as string,
         customer_name: `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim() || 'Unknown',
+        customer_email: customer?.email || null,
         vendor_name: vendor?.business_name || 'Unknown Vendor',
-        deal_title: deal?.title || 'Unknown Deal',
+        deal_title: deal?.title || 'No Deal',
       };
     });
 

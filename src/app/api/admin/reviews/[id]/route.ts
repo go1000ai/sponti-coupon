@@ -27,12 +27,12 @@ export async function PUT(
     // Build update object from allowed fields
     const updateData: Record<string, unknown> = {};
 
-    if ('reply' in body) {
-      updateData.reply = body.reply || null;
+    if ('vendor_reply' in body) {
+      updateData.vendor_reply = body.vendor_reply || null;
     }
 
-    if ('verified' in body) {
-      updateData.verified = Boolean(body.verified);
+    if ('is_verified' in body) {
+      updateData.is_verified = Boolean(body.is_verified);
     }
 
     if ('comment' in body) {
