@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency } from '@/lib/utils';
+import AdminModal from '@/components/admin/AdminModal';
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
+import AdminPagination from '@/components/admin/AdminPagination';
 import {
   Users,
   Search,
@@ -12,6 +14,8 @@ import {
   QrCode,
   CheckCircle,
   DollarSign,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import type { Customer } from '@/lib/types/database';
 
@@ -21,79 +25,197 @@ interface CustomerWithStats extends Customer {
   total_saved: number;
 }
 
+interface EditFormData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+const PAGE_SIZE = 20;
+
 export default function AdminCustomersPage() {
   const { user } = useAuth();
   const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<CustomerWithStats | null>(null);
+  const [editForm, setEditForm] = useState<EditFormData>({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    city: '',
+    state: '',
+    zip: '',
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  // Delete confirm state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState<CustomerWithStats | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/customers');
+      if (!res.ok) throw new Error('Failed to fetch customers');
+      const data = await res.json();
+      setCustomers(data.customers || []);
+    } catch {
+      console.error('Error fetching customers');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
-    const supabase = createClient();
-
-    async function fetchCustomers() {
-      const { data: customersData } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!customersData) {
-        setLoading(false);
-        return;
-      }
-
-      const customerIds = customersData.map(c => c.id);
-
-      // Fetch claims for these customers with deal info for savings calculation
-      const { data: claimsData } = await supabase
-        .from('claims')
-        .select('customer_id, redeemed, deal:deals(original_price, deal_price)')
-        .in('customer_id', customerIds);
-
-      const statsMap: Record<string, { total_claims: number; total_redeemed: number; total_saved: number }> = {};
-
-      (claimsData || []).forEach((claim: Record<string, unknown>) => {
-        const customerId = claim.customer_id as string;
-        const redeemed = claim.redeemed as boolean;
-        const dealRaw = claim.deal as { original_price: number; deal_price: number } | { original_price: number; deal_price: number }[] | null;
-        const deal = Array.isArray(dealRaw) ? dealRaw[0] : dealRaw;
-
-        if (!statsMap[customerId]) {
-          statsMap[customerId] = { total_claims: 0, total_redeemed: 0, total_saved: 0 };
-        }
-        statsMap[customerId].total_claims += 1;
-        if (redeemed) {
-          statsMap[customerId].total_redeemed += 1;
-          if (deal) {
-            statsMap[customerId].total_saved += (deal.original_price - deal.deal_price);
-          }
-        }
-      });
-
-      const enriched: CustomerWithStats[] = customersData.map(c => ({
-        ...c,
-        total_claims: statsMap[c.id]?.total_claims || 0,
-        total_redeemed: statsMap[c.id]?.total_redeemed || 0,
-        total_saved: statsMap[c.id]?.total_saved || 0,
-      }));
-
-      setCustomers(enriched);
-      setLoading(false);
-    }
-
     fetchCustomers();
-  }, [user]);
+  }, [user, fetchCustomers]);
 
+  // Filtered customers based on search query (client-side for responsiveness)
   const filteredCustomers = useMemo(() => {
     if (searchQuery === '') return customers;
     const q = searchQuery.toLowerCase();
-    return customers.filter(c =>
-      (c.first_name && c.first_name.toLowerCase().includes(q)) ||
-      (c.last_name && c.last_name.toLowerCase().includes(q)) ||
-      c.email.toLowerCase().includes(q) ||
-      (c.city && c.city.toLowerCase().includes(q))
+    return customers.filter(
+      (c) =>
+        (c.first_name && c.first_name.toLowerCase().includes(q)) ||
+        (c.last_name && c.last_name.toLowerCase().includes(q)) ||
+        c.email.toLowerCase().includes(q) ||
+        (c.city && c.city.toLowerCase().includes(q))
     );
   }, [customers, searchQuery]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredCustomers.length / PAGE_SIZE);
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredCustomers.slice(start, start + PAGE_SIZE);
+  }, [filteredCustomers, currentPage]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // --- Edit handlers ---
+
+  function openEditModal(customer: CustomerWithStats) {
+    setEditingCustomer(customer);
+    setEditForm({
+      first_name: customer.first_name || '',
+      last_name: customer.last_name || '',
+      email: customer.email,
+      phone: customer.phone || '',
+      city: customer.city || '',
+      state: customer.state || '',
+      zip: customer.zip || '',
+    });
+    setEditError('');
+    setEditModalOpen(true);
+  }
+
+  function closeEditModal() {
+    setEditModalOpen(false);
+    setEditingCustomer(null);
+    setEditError('');
+  }
+
+  function handleEditChange(field: keyof EditFormData, value: string) {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingCustomer) return;
+
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      const res = await fetch(`/api/admin/customers/${editingCustomer.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: editForm.first_name || null,
+          last_name: editForm.last_name || null,
+          email: editForm.email,
+          phone: editForm.phone || null,
+          city: editForm.city || null,
+          state: editForm.state || null,
+          zip: editForm.zip || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update customer');
+      }
+
+      const data = await res.json();
+      // Update local state with the returned customer data
+      setCustomers((prev) =>
+        prev.map((c) =>
+          c.id === editingCustomer.id
+            ? { ...c, ...data.customer }
+            : c
+        )
+      );
+      closeEditModal();
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update customer');
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  // --- Delete handlers ---
+
+  function openDeleteDialog(customer: CustomerWithStats) {
+    setDeletingCustomer(customer);
+    setDeleteDialogOpen(true);
+  }
+
+  function closeDeleteDialog() {
+    setDeleteDialogOpen(false);
+    setDeletingCustomer(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deletingCustomer) return;
+
+    setDeleteLoading(true);
+
+    try {
+      const res = await fetch(`/api/admin/customers/${deletingCustomer.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete customer');
+      }
+
+      // Remove from local state
+      setCustomers((prev) => prev.filter((c) => c.id !== deletingCustomer.id));
+      closeDeleteDialog();
+    } catch (err) {
+      console.error('Delete error:', err);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
+  // --- Render ---
 
   if (loading) {
     return (
@@ -181,17 +303,18 @@ export default function AdminCustomersPage() {
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Redeemed</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-right">Total Saved</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Joined</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredCustomers.length === 0 ? (
+              {paginatedCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-400">
+                  <td colSpan={8} className="p-8 text-center text-gray-400">
                     No customers found matching your search.
                   </td>
                 </tr>
               ) : (
-                filteredCustomers.map((customer) => (
+                paginatedCustomers.map((customer) => (
                   <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -236,13 +359,168 @@ export default function AdminCustomersPage() {
                     <td className="p-4 text-sm text-gray-500">
                       {new Date(customer.created_at).toLocaleDateString()}
                     </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEditModal(customer)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit customer"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openDeleteDialog(customer)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete customer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredCustomers.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setCurrentPage}
+        />
       </div>
+
+      {/* Edit Modal */}
+      <AdminModal isOpen={editModalOpen} onClose={closeEditModal} title="Edit Customer" size="md">
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          {editError && (
+            <div className="p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
+              {editError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input
+                type="text"
+                value={editForm.first_name}
+                onChange={(e) => handleEditChange('first_name', e.target.value)}
+                className="input-field"
+                placeholder="First name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input
+                type="text"
+                value={editForm.last_name}
+                onChange={(e) => handleEditChange('last_name', e.target.value)}
+                className="input-field"
+                placeholder="Last name"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={editForm.email}
+              onChange={(e) => handleEditChange('email', e.target.value)}
+              className="input-field"
+              placeholder="Email address"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input
+              type="tel"
+              value={editForm.phone}
+              onChange={(e) => handleEditChange('phone', e.target.value)}
+              className="input-field"
+              placeholder="Phone number"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+              <input
+                type="text"
+                value={editForm.city}
+                onChange={(e) => handleEditChange('city', e.target.value)}
+                className="input-field"
+                placeholder="City"
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+              <input
+                type="text"
+                value={editForm.state}
+                onChange={(e) => handleEditChange('state', e.target.value)}
+                className="input-field"
+                placeholder="State"
+                maxLength={2}
+              />
+            </div>
+            <div className="col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
+              <input
+                type="text"
+                value={editForm.zip}
+                onChange={(e) => handleEditChange('zip', e.target.value)}
+                className="input-field"
+                placeholder="ZIP code"
+                maxLength={10}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={closeEditModal}
+              disabled={editLoading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={editLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
+            >
+              {editLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </AdminModal>
+
+      {/* Delete Confirm Dialog */}
+      <AdminConfirmDialog
+        isOpen={deleteDialogOpen}
+        onConfirm={handleDeleteConfirm}
+        onCancel={closeDeleteDialog}
+        title="Delete Customer"
+        message={
+          deletingCustomer
+            ? `Are you sure you want to delete "${
+                [deletingCustomer.first_name, deletingCustomer.last_name].filter(Boolean).join(' ') || deletingCustomer.email
+              }"? This will permanently remove the customer and all associated data including claims, reviews, and loyalty cards. This action cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete Customer"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

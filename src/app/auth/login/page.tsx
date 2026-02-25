@@ -22,6 +22,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+  const reason = searchParams.get('reason');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +80,12 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleLogin} className="card p-8 space-y-5">
+          {reason === 'inactivity' && (
+            <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg border border-amber-200">
+              You were signed out due to inactivity. Please sign in again.
+            </div>
+          )}
+
           {error && (
             <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200">
               {error}

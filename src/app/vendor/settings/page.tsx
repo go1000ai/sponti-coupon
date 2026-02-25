@@ -242,21 +242,21 @@ export default function VendorSettingsPage() {
     setter(true);
 
     try {
-      const supabase = createClient();
-      const ext = file.name.split('.').pop();
-      const path = `${user.id}/${type}_${Date.now()}.${ext}`;
+      // Upload via server API to bypass RLS storage policies
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'vendor-assets');
 
-      const { error: uploadError } = await supabase.storage
-        .from('vendor-assets')
-        .upload(path, file, { upsert: true });
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
 
-      if (uploadError) throw uploadError;
+      if (!res.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('vendor-assets')
-        .getPublicUrl(path);
-
+      const publicUrl = data.url;
       const updateField = type === 'logo' ? 'logo_url' : 'cover_url';
+      const supabase = createClient();
       await supabase
         .from('vendors')
         .update({ [updateField]: publicUrl })

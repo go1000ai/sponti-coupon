@@ -11,6 +11,14 @@ const TIER_NAMES: Record<string, string> = {
   enterprise: 'Enterprise',
 };
 
+/* ─── Founders Launch Config ─── */
+const FOUNDERS_LAUNCH = {
+  active: new Date() <= new Date('2026-04-30T23:59:59-04:00'), // Expires end of April 30, 2026 ET
+  freeTrialDays: 60,                  // 2 months free
+  couponId: 'FOUNDERS20',             // 20% off forever — create this in Stripe Dashboard
+  eligiblePlans: ['pro', 'business'], // only these plans get the founders deal
+};
+
 export async function POST(request: NextRequest) {
   try {
     // Authenticate the caller
@@ -21,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { tier, vendorId, interval = 'month' } = await request.json();
+    const { tier, vendorId, interval = 'month', promo } = await request.json();
 
     // Verify the caller is the same vendor (prevent creating checkout for other vendors)
     if (vendorId !== user.id) {
@@ -73,7 +81,19 @@ export async function POST(request: NextRequest) {
         .eq('id', vendorId);
     }
 
-    const session = await getStripe().checkout.sessions.create({
+    // ─── Determine trial & discount ───
+    const isFoundersEligible =
+      FOUNDERS_LAUNCH.active &&
+      promo === 'founders' &&
+      FOUNDERS_LAUNCH.eligiblePlans.includes(tier);
+
+    const trialDays = isFoundersEligible
+      ? FOUNDERS_LAUNCH.freeTrialDays  // 60 days (2 months free)
+      : 14;                            // standard 14-day trial
+
+    // Build the checkout session config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sessionConfig: any = {
       customer: customerId,
       mode: 'subscription',
       line_items: [
@@ -82,13 +102,27 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
+      allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 14,
+        trial_period_days: trialDays,
+        metadata: {
+          vendor_id: vendorId,
+          tier,
+          interval,
+          ...(isFoundersEligible ? { promo: 'founders' } : {}),
+        },
       },
-      metadata: { vendor_id: vendorId, tier, interval },
+      metadata: {
+        vendor_id: vendorId,
+        tier,
+        interval,
+        ...(isFoundersEligible ? { promo: 'founders' } : {}),
+      },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/dashboard?subscription=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?subscription=canceled`,
-    });
+    };
+
+    const session = await getStripe().checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });
   } catch (error: unknown) {

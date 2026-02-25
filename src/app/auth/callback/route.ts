@@ -5,7 +5,9 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const accountType = searchParams.get('type') || 'customer';
+
+  console.log('[AUTH CALLBACK] Full URL:', request.url);
+  console.log('[AUTH CALLBACK] Params:', Object.fromEntries(searchParams.entries()));
 
   if (code) {
     const supabase = await createServerSupabaseClient();
@@ -14,6 +16,12 @@ export async function GET(request: Request) {
     if (!error && sessionData.user) {
       const userId = sessionData.user.id;
       const email = sessionData.user.email || '';
+      const meta = sessionData.user.user_metadata || {};
+
+      console.log('[AUTH CALLBACK] User metadata:', JSON.stringify(meta));
+
+      // Resolve params from URL first, fall back to user metadata
+      const accountType = searchParams.get('type') || meta.account_type || 'customer';
 
       // Use service role client to bypass RLS for profile creation
       const adminClient = await createServiceRoleClient();
@@ -33,13 +41,13 @@ export async function GET(request: Request) {
         });
 
         if (accountType === 'vendor') {
-          const businessName = searchParams.get('businessName') || 'My Business';
-          const phone = searchParams.get('phone') || null;
-          const address = searchParams.get('address') || null;
-          const city = searchParams.get('city') || null;
-          const state = searchParams.get('state') || null;
-          const zip = searchParams.get('zip') || null;
-          const category = searchParams.get('category') || null;
+          const businessName = searchParams.get('businessName') || meta.business_name || 'My Business';
+          const phone = searchParams.get('phone') || meta.phone || null;
+          const address = searchParams.get('address') || meta.address || null;
+          const city = searchParams.get('city') || meta.city || null;
+          const state = searchParams.get('state') || meta.state || null;
+          const zip = searchParams.get('zip') || meta.zip || null;
+          const category = searchParams.get('category') || meta.category || null;
 
           await adminClient.from('vendors').insert({
             id: userId,
@@ -52,15 +60,15 @@ export async function GET(request: Request) {
             zip,
             category,
             subscription_tier: 'starter',
-            subscription_status: 'trialing',
+            subscription_status: 'incomplete',
           });
         } else {
-          const firstName = searchParams.get('firstName') || null;
-          const lastName = searchParams.get('lastName') || null;
-          const phone = searchParams.get('phone') || null;
-          const city = searchParams.get('city') || null;
-          const state = searchParams.get('state') || null;
-          const zip = searchParams.get('zip') || null;
+          const firstName = searchParams.get('firstName') || meta.first_name || null;
+          const lastName = searchParams.get('lastName') || meta.last_name || null;
+          const phone = searchParams.get('phone') || meta.phone || null;
+          const city = searchParams.get('city') || meta.city || null;
+          const state = searchParams.get('state') || meta.state || null;
+          const zip = searchParams.get('zip') || meta.zip || null;
 
           await adminClient.from('customers').insert({
             id: userId,
@@ -77,18 +85,18 @@ export async function GET(request: Request) {
 
       // Redirect based on account type
       if (accountType === 'vendor') {
-        // Check if a plan was selected — redirect to Stripe checkout
-        const plan = searchParams.get('plan');
-        const interval = searchParams.get('interval') || 'month';
+        const plan = searchParams.get('plan') || meta.plan || null;
+        const interval = searchParams.get('interval') || meta.interval || 'month';
+        const promo = searchParams.get('promo') || meta.promo || '';
+
+        console.log('[AUTH CALLBACK] Vendor redirect — Plan:', plan, 'Interval:', interval, 'Promo:', promo);
 
         if (plan && plan !== 'starter') {
-          // Redirect to an intermediate page that will create the Stripe checkout
-          const checkoutParams = new URLSearchParams({
-            tier: plan,
-            interval,
-          });
+          // Redirect to the subscribe page which handles Stripe checkout client-side
+          const subscribeParams = new URLSearchParams({ plan, interval });
+          if (promo) subscribeParams.set('promo', promo);
           return NextResponse.redirect(
-            `${origin}/vendor/dashboard?checkout=${checkoutParams.toString()}`
+            `${origin}/subscribe?${subscribeParams.toString()}`
           );
         }
 

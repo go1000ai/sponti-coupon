@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        bebas: ['var(--font-bebas)', 'Impact', 'sans-serif'],
+        instrument: ['var(--font-instrument)', 'Georgia', 'serif'],
+      },
       colors: {
         primary: {
           50: "#FEF0EA",

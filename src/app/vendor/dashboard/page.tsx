@@ -72,11 +72,12 @@ function VendorDashboard() {
     const params = new URLSearchParams(checkoutParam);
     const tier = params.get('tier');
     const interval = params.get('interval') || 'month';
+    const promo = params.get('promo') || '';
     if (tier) {
       fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier, vendorId: user.id, interval }),
+        body: JSON.stringify({ tier, vendorId: user.id, interval, ...(promo ? { promo } : {}) }),
       })
         .then(res => res.json())
         .then(data => { if (data.url) window.location.href = data.url; })

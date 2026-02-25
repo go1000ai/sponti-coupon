@@ -1,19 +1,28 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import {
-  Check, Sparkles, Zap, Shield, ArrowRight, ChevronDown,
+  Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
-  Music, ShoppingBag, Car, Heart, Camera, Coffee,
+  Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift, Clock,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { useParallax } from '@/lib/hooks/useParallax';
 import { useCountUp } from '@/lib/hooks/useCountUp';
 import { CompetitorComparison } from '@/components/landing/CompetitorComparison';
+import { WhyChooseUs } from '@/components/sections/WhyChooseUs';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
+
+/* ─────── Founders Launch Promo ─────── */
+const FOUNDERS_LAUNCH_STATIC = {
+  active: new Date() <= new Date('2026-04-30T23:59:59-04:00'), // Expires end of April 30, 2026 ET
+  freeMonths: 2,
+  totalSpots: 200,
+  eligiblePlans: ['pro', 'business'] as string[],
+  founderDiscount: 20,             // permanent % off after free period
+};
 
 /* ─────── Plan Config ─────── */
 const PLANS = [
@@ -73,8 +82,8 @@ const ENTERPRISE = {
 /* ─────── FAQ Data ─────── */
 const FAQ_ITEMS = [
   {
-    q: 'Is there a free trial?',
-    a: 'Yes! Every plan comes with a 14-day free trial. Enter your card at sign-up and you won\'t be charged until the trial ends. Cancel anytime during the trial — no charge at all.',
+    q: 'How does the Founders Launch work?',
+    a: 'The first 200 vendors to sign up for a Pro or Business plan get 2 full months completely free. After the free period, you lock in our permanent Founders Rate — 20% off for life. Credit card is required at sign-up but you won\'t be charged until month 3. Cancel anytime.',
   },
   {
     q: 'Can I cancel anytime?',
@@ -146,6 +155,43 @@ export default function PricingPage() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [spotsTaken, setSpotsTaken] = useState(0);
+
+  // Fetch real founder spots count from DB
+  useEffect(() => {
+    fetch('/api/founders')
+      .then((r) => r.json())
+      .then((data) => setSpotsTaken(data.spots_taken || 0))
+      .catch(() => {});
+  }, []);
+
+  const FOUNDERS_LAUNCH = { ...FOUNDERS_LAUNCH_STATIC, spotsTaken };
+
+  const handleCheckout = async (tier: string) => {
+    setLoadingPlan(tier);
+    try {
+      const isPromo = FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(tier);
+      const res = await fetch('/api/stripe/create-guest-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tier,
+          interval: isAnnual ? 'year' : 'month',
+          ...(isPromo ? { promo: 'founders' } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      console.error('No checkout URL returned:', data.error);
+    } catch (err) {
+      console.error('Checkout error:', err);
+    }
+    setLoadingPlan(null);
+  };
 
   const parallaxRef1 = useParallax(0.15);
   const parallaxRef2 = useParallax(0.25);
@@ -173,6 +219,31 @@ export default function PricingPage() {
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+          {/* ── Founders Launch Banner ── */}
+          {FOUNDERS_LAUNCH.active && (
+            <ScrollReveal animation="scale-up">
+              <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-primary-500/20 to-amber-500/20 backdrop-blur-sm rounded-2xl px-6 py-3.5 mb-8 border border-primary-400/30">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-primary-400 animate-bounce" />
+                  <span className="text-sm font-bold text-white">Founders Launch</span>
+                </div>
+                <span className="hidden sm:block w-px h-5 bg-white/20" />
+                <span className="text-sm text-primary-200">
+                  First <span className="font-bold text-white">{FOUNDERS_LAUNCH.totalSpots}</span> vendors get{' '}
+                  <span className="font-bold text-primary-300">{FOUNDERS_LAUNCH.freeMonths} months free</span>
+                  {' '}+ {FOUNDERS_LAUNCH.founderDiscount}% off forever
+                </span>
+                <span className="hidden sm:block w-px h-5 bg-white/20" />
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-xs font-semibold text-amber-300">
+                    {FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken} spots left
+                  </span>
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
+
           <ScrollReveal animation="fade-up">
             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/10">
               <Sparkles className="w-4 h-4 text-primary-400 animate-sparkle" />
@@ -192,180 +263,33 @@ export default function PricingPage() {
 
           <ScrollReveal animation="fade-up" delay={200}>
             <p className="text-lg sm:text-xl text-gray-300 mt-5 max-w-2xl mx-auto">
-              14-day free trial. Zero commission. Zero transaction fees.
-              <br />
-              <span className="text-white/80 font-medium">Customer deposits go directly to you.</span>
+              {FOUNDERS_LAUNCH.active ? (
+                <>
+                  <span className="text-white font-semibold">2 months free</span> on Pro &amp; Business plans. Zero commission. Zero transaction fees.
+                  <br />
+                  <span className="text-white/80 font-medium">Credit card required — cancel anytime.</span>
+                </>
+              ) : (
+                <>
+                  14-day free trial. Zero commission. Zero transaction fees.
+                  <br />
+                  <span className="text-white/80 font-medium">Customer deposits go directly to you.</span>
+                </>
+              )}
             </p>
           </ScrollReveal>
 
-          {/* Monthly / Annual Toggle */}
-          <ScrollReveal animation="fade-up" delay={300}>
-            <div className="mt-10 inline-flex items-center gap-1 bg-white/10 backdrop-blur-sm rounded-full p-1.5 border border-white/10">
-              <button
-                onClick={() => setIsAnnual(false)}
-                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
-                  !isAnnual
-                    ? 'bg-white text-secondary-500 shadow-lg'
-                    : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setIsAnnual(true)}
-                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
-                  isAnnual
-                    ? 'bg-white text-secondary-500 shadow-lg'
-                    : 'text-white/70 hover:text-white'
-                }`}
-              >
-                Annual
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${
-                  isAnnual ? 'bg-green-500 text-white' : 'bg-green-500/30 text-green-300'
-                }`}>
-                  SAVE 20%
-                </span>
-              </button>
-            </div>
-          </ScrollReveal>
         </div>
 
         {/* Curved bottom edge */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gray-50" style={{ clipPath: 'ellipse(75% 100% at 50% 100%)' }} />
       </section>
 
-      {/* ─── SECTION 2: Pricing Cards ─── */}
-      <section className="relative bg-gray-50 pb-20 -mt-16">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-start">
-            {PLANS.map((plan, index) => {
-              const tier = SUBSCRIPTION_TIERS[plan.key];
-              const price = getPrice(plan.key);
-              const isFeatured = plan.key === 'business';
-              const IconComp = plan.icon;
+      {/* ─── SECTION 2: Competitor Comparison (value before price) ─── */}
+      <CompetitorComparison />
 
-              return (
-                <ScrollReveal key={plan.key} animation="fade-up" delay={index * 150}>
-                  <div className={`relative ${isFeatured ? 'md:-mt-6' : 'md:mt-2'}`}>
-                    {/* Popular badge */}
-                    {plan.badge && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
-                        <div className="bg-gradient-to-r from-primary-500 to-orange-500 text-white text-[11px] font-bold px-5 py-1.5 rounded-full shadow-lg shadow-primary-200/50 flex items-center gap-1.5 whitespace-nowrap">
-                          <Sparkles className="w-3.5 h-3.5" />
-                          {plan.badge}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className={isFeatured ? 'pricing-card-featured p-8 lg:p-10' : 'pricing-card p-8'}>
-                      {/* Icon + Name */}
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`bg-gradient-to-br ${plan.gradient} rounded-xl p-2.5 shadow-md`}>
-                          <IconComp className="w-5 h-5 text-white" strokeWidth={2} />
-                        </div>
-                        <h3 className="text-xl font-bold text-secondary-500">{tier.name}</h3>
-                      </div>
-                      <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
-
-                      {/* Price */}
-                      <div className="mb-6">
-                        <div className="flex items-baseline gap-1.5">
-                          <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
-                            {formatCurrency(price)}
-                          </span>
-                          <span className="text-gray-400 text-base font-medium">/mo</span>
-                        </div>
-                        {isAnnual && (
-                          <p className="text-xs text-green-600 font-medium mt-1.5">
-                            {formatCurrency(price * 12)}/year &middot; Save {formatCurrency(tier.price * 12 - price * 12)}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Divider */}
-                      <div className={`h-px mb-6 ${isFeatured ? 'bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200' : 'bg-gray-100'}`} />
-
-                      {/* Features */}
-                      <ul className="space-y-3 mb-8">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="flex items-start gap-2.5 text-sm text-gray-600">
-                            <div className={`rounded-full p-0.5 mt-0.5 shrink-0 ${
-                              isFeatured ? 'bg-gradient-to-br from-primary-500 to-orange-500' : 'bg-green-100'
-                            }`}>
-                              <Check className={`w-3 h-3 ${isFeatured ? 'text-white' : 'text-green-600'}`} />
-                            </div>
-                            <span className={isFeatured ? 'text-secondary-500 font-medium' : ''}>
-                              {feature}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      {/* CTA */}
-                      <Link
-                        href={`/auth/signup?type=vendor&plan=${plan.key}&interval=${isAnnual ? 'year' : 'month'}`}
-                        className={`group flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${
-                          isFeatured
-                            ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-200/50 hover:shadow-xl hover:shadow-primary-300/50 hover:scale-[1.02]'
-                            : 'bg-gray-100 text-secondary-500 hover:bg-gray-200 hover:scale-[1.01]'
-                        }`}
-                      >
-                        Start My Free Trial
-                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                      </Link>
-
-                      <p className="text-[11px] text-gray-400 text-center mt-3">
-                        14-day free trial. Cancel anytime.
-                      </p>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              );
-            })}
-          </div>
-
-          {/* Enterprise Callout */}
-          <ScrollReveal animation="fade-up" delay={500}>
-            <div className="mt-12 bg-gradient-to-r from-secondary-500 to-secondary-700 rounded-2xl p-8 sm:p-10">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-amber-500/20 rounded-xl p-3">
-                    <ENTERPRISE.icon className="w-7 h-7 text-amber-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-white">Enterprise</h3>
-                    <p className="text-gray-300 text-sm mt-0.5">
-                      For regional chains, franchises &amp; multi-location businesses
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-gray-400">/mo</span></span>
-                  <Link
-                    href={`/auth/signup?type=vendor&plan=enterprise&interval=${isAnnual ? 'year' : 'month'}`}
-                    className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap"
-                  >
-                    Contact Sales
-                  </Link>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[
-                  { label: 'Unlimited Deals', desc: 'Sponti + Regular, no limits' },
-                  { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
-                  { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
-                  { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
-                ].map(item => (
-                  <div key={item.label} className="bg-white/10 rounded-xl p-4">
-                    <p className="font-semibold text-white text-sm">{item.label}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
-        </div>
-      </section>
+      {/* ─── WHY CHOOSE US ─── */}
+      <WhyChooseUs />
 
       {/* ─── SECTION 3: Social Proof Strip ─── */}
       <section className="py-16 bg-white">
@@ -422,16 +346,282 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* ─── SECTION 4: Competitor Comparison ─── */}
-      <CompetitorComparison />
+      {/* ─── SECTION 5: Pricing Cards ─── */}
+      <section className="relative bg-gray-50 py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-      {/* ─── SECTION 5: Feature Comparison Table ─── */}
-      <section className="py-20 bg-white">
+          {/* Monthly / Annual Toggle */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-1 bg-gray-200 rounded-full p-1.5">
+              <button
+                onClick={() => setIsAnnual(false)}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  !isAnnual
+                    ? 'bg-white text-secondary-500 shadow-lg'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setIsAnnual(true)}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                  isAnnual
+                    ? 'bg-white text-secondary-500 shadow-lg'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Annual
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${
+                  isAnnual ? 'bg-green-500 text-white' : 'bg-green-500/30 text-green-600'
+                }`}>
+                  SAVE 20%
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Founders Rate callout above cards */}
+          {FOUNDERS_LAUNCH.active && (
+            <div className="text-center mb-12 max-w-2xl mx-auto">
+              <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-5 py-2 mb-4">
+                <Gift className="w-4 h-4 text-primary-500" />
+                <span className="text-sm font-bold text-primary-600">Founders Launch — Limited Offer</span>
+              </div>
+              <p className="text-gray-600 leading-relaxed">
+                The first <span className="font-bold text-secondary-500">{FOUNDERS_LAUNCH.totalSpots} vendors</span> to sign up
+                for a Pro or Business plan get{' '}
+                <span className="font-bold text-primary-500">{FOUNDERS_LAUNCH.freeMonths} months completely free</span>,
+                then lock in a permanent{' '}
+                <span className="font-bold text-green-600">{FOUNDERS_LAUNCH.founderDiscount}% Founders Rate for life</span>.
+                {' '}Credit card required at sign-up — you won&apos;t be charged until month 3. Cancel anytime.
+              </p>
+              <p className="text-sm text-gray-400 mt-2">
+                {FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken} of {FOUNDERS_LAUNCH.totalSpots} founding spots remaining
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+            {PLANS.map((plan) => {
+              const tier = SUBSCRIPTION_TIERS[plan.key];
+              const price = getPrice(plan.key);
+              const isFeatured = plan.key === 'business';
+              const IconComp = plan.icon;
+
+              return (
+                <div key={plan.key} className="flex flex-col">
+                  <div className="relative flex flex-col flex-1">
+                    {/* Founders Launch badge (Pro & Business) */}
+                    {FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key) && !plan.badge && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                        <div className="bg-gradient-to-r from-primary-500 to-amber-500 text-white text-[11px] font-bold px-5 py-1.5 rounded-full shadow-lg shadow-primary-200/50 flex items-center gap-1.5 whitespace-nowrap animate-pulse">
+                          <Gift className="w-3.5 h-3.5" />
+                          2 MONTHS FREE
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Popular badge (Business) */}
+                    {plan.badge && (
+                      <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                        <div className={`text-white text-[11px] font-bold px-5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 whitespace-nowrap ${
+                          FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key)
+                            ? 'bg-gradient-to-r from-primary-500 to-amber-500 shadow-primary-200/50 animate-pulse'
+                            : 'bg-gradient-to-r from-primary-500 to-orange-500 shadow-primary-200/50'
+                        }`}>
+                          {FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key) ? (
+                            <>
+                              <Gift className="w-3.5 h-3.5" />
+                              2 MONTHS FREE &middot; {plan.badge}
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              {plan.badge}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={`flex flex-col flex-1 ${isFeatured ? 'pricing-card-featured p-8 lg:p-10' : 'pricing-card p-8'}`}>
+                      {/* Icon + Name */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`bg-gradient-to-br ${plan.gradient} rounded-xl p-2.5 shadow-md`}>
+                          <IconComp className="w-5 h-5 text-white" strokeWidth={2} />
+                        </div>
+                        <h3 className="text-xl font-bold text-secondary-500">{tier.name}</h3>
+                      </div>
+                      <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
+
+                      {/* Price */}
+                      <div className="mb-6">
+                        {FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key) ? (
+                          <>
+                            {/* Promo: 2 months free + founders rate */}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="bg-gradient-to-r from-primary-500 to-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
+                                2 Months Free
+                              </span>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                              <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
+                                $0
+                              </span>
+                              <span className="text-gray-400 text-base font-medium">/mo</span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1.5">
+                              <span className="line-through">{formatCurrency(price)}/mo</span>
+                              {' '}&rarr;{' '}
+                              <span className="text-green-600 font-semibold">
+                                {formatCurrency(Math.round(price * (1 - FOUNDERS_LAUNCH.founderDiscount / 100)))}/mo after
+                              </span>
+                              {' '}(Founders Rate — {FOUNDERS_LAUNCH.founderDiscount}% off forever)
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
+                                {formatCurrency(price)}
+                              </span>
+                              <span className="text-gray-400 text-base font-medium">/mo</span>
+                            </div>
+                            {isAnnual && (
+                              <p className="text-xs text-green-600 font-medium mt-1.5">
+                                {formatCurrency(price * 12)}/year &middot; Save {formatCurrency(tier.price * 12 - price * 12)}
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Divider */}
+                      <div className={`h-px mb-6 ${isFeatured ? 'bg-gradient-to-r from-primary-200 via-primary-400 to-primary-200' : 'bg-gray-100'}`} />
+
+                      {/* Features — flex-1 pushes the CTA to the bottom */}
+                      <ul className="space-y-3 mb-8 flex-1">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-start gap-2.5 text-sm text-gray-600">
+                            <div className={`rounded-full p-0.5 mt-0.5 shrink-0 ${
+                              isFeatured ? 'bg-gradient-to-br from-primary-500 to-orange-500' : 'bg-green-100'
+                            }`}>
+                              <Check className={`w-3 h-3 ${isFeatured ? 'text-white' : 'text-green-600'}`} />
+                            </div>
+                            <span className={isFeatured ? 'text-secondary-500 font-medium' : ''}>
+                              {feature}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      {/* CTA — pinned to bottom via flex */}
+                      <div className="mt-auto">
+                        {(() => {
+                          const isPromo = FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key);
+                          const isLoading = loadingPlan === plan.key;
+                          return (
+                            <>
+                              <button
+                                onClick={() => handleCheckout(plan.key)}
+                                disabled={loadingPlan !== null}
+                                className={`group flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-bold text-sm transition-all duration-300 ${
+                                  isFeatured
+                                    ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-200/50 hover:shadow-xl hover:shadow-primary-300/50 hover:scale-[1.02]'
+                                    : isPromo
+                                      ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-md shadow-primary-200/30 hover:shadow-lg hover:scale-[1.02]'
+                                      : 'bg-gray-100 text-secondary-500 hover:bg-gray-200 hover:scale-[1.01]'
+                                } ${loadingPlan !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
+                              >
+                                {isLoading ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Loading...
+                                  </>
+                                ) : (
+                                  <>
+                                    {isPromo ? 'Start 2 Months Free' : 'Start My Free Trial'}
+                                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                                  </>
+                                )}
+                              </button>
+                              <p className="text-[11px] text-gray-400 text-center mt-3">
+                                {isPromo
+                                  ? 'Credit card required. Cancel anytime.'
+                                  : '14-day free trial. Cancel anytime.'
+                                }
+                              </p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Enterprise Callout */}
+          <div>
+            <div className="mt-12 bg-gradient-to-r from-secondary-500 to-secondary-700 rounded-2xl p-6 sm:p-8 md:p-10">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center justify-between gap-6 mb-6 text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <div className="bg-amber-500/20 rounded-xl p-3">
+                    <ENTERPRISE.icon className="w-7 h-7 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">Enterprise</h3>
+                    <p className="text-gray-300 text-sm mt-0.5">
+                      For regional chains, franchises &amp; multi-location businesses
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-gray-400">/mo</span></span>
+                  <button
+                    onClick={() => handleCheckout('enterprise')}
+                    disabled={loadingPlan !== null}
+                    className={`bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors whitespace-nowrap w-full sm:w-auto text-center flex items-center justify-center gap-2 ${loadingPlan !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
+                  >
+                    {loadingPlan === 'enterprise' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : (
+                      'Contact Sales'
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                {[
+                  { label: 'Unlimited Deals', desc: 'Sponti + Regular, no limits' },
+                  { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
+                  { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
+                  { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
+                ].map(item => (
+                  <div key={item.label} className="bg-white/10 rounded-xl p-3 sm:p-4 text-center sm:text-left">
+                    <p className="font-semibold text-white text-sm">{item.label}</p>
+                    <p className="text-gray-400 text-xs mt-0.5">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SECTION 6: Feature Comparison Table ─── */}
+      <section className="py-16 sm:py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-secondary-500">Compare Plans</h2>
               <p className="text-gray-500 mt-2">See what&apos;s included in each plan</p>
+              <p className="text-xs text-gray-400 mt-1 sm:hidden">← Scroll to compare →</p>
             </div>
           </ScrollReveal>
 
@@ -492,7 +682,7 @@ export default function PricingPage() {
       </section>
 
       {/* ─── SECTION 6: FAQ Accordion ─── */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
@@ -529,7 +719,7 @@ export default function PricingPage() {
       </section>
 
       {/* ─── SECTION 7: Final CTA with Guarantee ─── */}
-      <section className="relative py-20 bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-800 overflow-hidden">
+      <section className="relative py-16 sm:py-20 bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-800 overflow-hidden">
         {/* Background texture */}
         <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
 
@@ -540,29 +730,50 @@ export default function PricingPage() {
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Try SpontiCoupon Free for 14 Days
+              {FOUNDERS_LAUNCH.active
+                ? 'Join the Founders Launch — 2 Months Free'
+                : 'Try SpontiCoupon Free for 14 Days'
+              }
             </h2>
             <p className="text-lg text-gray-300 mb-8 max-w-xl mx-auto">
-              Join 500+ local businesses already using SpontiCoupon. Start your free trial today — cancel anytime.
+              {FOUNDERS_LAUNCH.active ? (
+                <>
+                  Be one of the first {FOUNDERS_LAUNCH.totalSpots} vendors and lock in{' '}
+                  <span className="text-white font-semibold">{FOUNDERS_LAUNCH.founderDiscount}% off forever</span>.
+                  {' '}Zero commission. Customer deposits go directly to you.
+                </>
+              ) : (
+                'Join 500+ local businesses already using SpontiCoupon. Start your free trial today — cancel anytime.'
+              )}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-              <Link
-                href="/auth/signup?type=vendor"
-                className="group btn-primary px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300"
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 px-4 sm:px-0">
+              <button
+                onClick={() => handleCheckout('business')}
+                disabled={loadingPlan !== null}
+                className={`group btn-primary w-full sm:w-auto px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300 text-center ${loadingPlan !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
-                <span className="flex items-center gap-2">
-                  Start My Free Trial
-                  <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                <span className="flex items-center justify-center gap-2">
+                  {loadingPlan === 'business' ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      {FOUNDERS_LAUNCH.active ? 'Claim My Founders Spot' : 'Start My Free Trial'}
+                      <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                    </>
+                  )}
                 </span>
-              </Link>
+              </button>
             </div>
 
             {/* Trust badges */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-gray-400 text-xs">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-gray-400 text-xs">
               <div className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-green-400" />
-                <span>14-day free trial</span>
+                <Gift className="w-4 h-4 text-primary-400" />
+                <span>{FOUNDERS_LAUNCH.active ? '2 months free' : '14-day free trial'}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-green-400" />

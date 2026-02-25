@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         zip: profileData.zip || null,
         category: profileData.category || null,
         subscription_tier: 'starter',
-        subscription_status: 'trialing',
+        subscription_status: 'incomplete',
       });
     } else {
       await adminClient.from('customers').insert({

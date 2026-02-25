@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Mail, Lock, User, Phone, MapPin, Store, Building2, CheckCircle } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin, Store, Building2, CheckCircle, ArrowRight, Gift, Sparkles } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 export default function SignupPage() {
@@ -20,6 +20,18 @@ function SignupForm() {
   const initialType = searchParams.get('type') === 'vendor' ? 'vendor' : 'customer';
   const selectedPlan = searchParams.get('plan') || 'starter';
   const selectedInterval = searchParams.get('interval') || 'month';
+  const selectedPromo = searchParams.get('promo') || '';
+
+  // Vendor has a plan selected from pricing page (not just the default 'starter')
+  const hasPlanFromPricing = searchParams.get('plan') !== null;
+
+  const planDisplayNames: Record<string, string> = {
+    starter: 'Starter',
+    pro: 'Pro',
+    business: 'Business',
+    enterprise: 'Enterprise',
+  };
+  const planDisplayName = planDisplayNames[selectedPlan] || 'Starter';
 
   const [accountType, setAccountType] = useState<'customer' | 'vendor'>(initialType);
   const [form, setForm] = useState({
@@ -72,6 +84,7 @@ function SignupForm() {
     if (accountType === 'vendor') {
       callbackParams.set('plan', selectedPlan);
       callbackParams.set('interval', selectedInterval);
+      if (selectedPromo) callbackParams.set('promo', selectedPromo);
       callbackParams.set('businessName', form.businessName);
       callbackParams.set('phone', form.phone);
       callbackParams.set('address', form.address);
@@ -95,6 +108,28 @@ function SignupForm() {
       password: form.password,
       options: {
         emailRedirectTo: redirectTo,
+        data: {
+          account_type: accountType,
+          ...(accountType === 'vendor' ? {
+            plan: selectedPlan,
+            interval: selectedInterval,
+            promo: selectedPromo || undefined,
+            business_name: form.businessName,
+            phone: form.phone,
+            address: form.address,
+            city: form.city,
+            state: form.state,
+            zip: form.zip,
+            category: form.category,
+          } : {
+            first_name: form.firstName,
+            last_name: form.lastName,
+            phone: form.phone,
+            city: form.city,
+            state: form.state,
+            zip: form.zip,
+          }),
+        },
       },
     });
 
@@ -163,6 +198,7 @@ function SignupForm() {
             tier: selectedPlan,
             vendorId: userId,
             interval: selectedInterval,
+            ...(selectedPromo ? { promo: selectedPromo } : {}),
           }),
         });
         const checkoutData = await response.json();
@@ -179,8 +215,11 @@ function SignupForm() {
     }
   };
 
-  // Show email confirmation screen
+  // Show email confirmation screen — scroll to top so message is visible
   if (showConfirmation) {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md text-center">
@@ -223,7 +262,9 @@ function SignupForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">Create Account</h1>
+          <h1 className="text-3xl font-bold text-secondary-500">
+            {accountType === 'vendor' && hasPlanFromPricing ? 'Create Your Business Account' : 'Create Account'}
+          </h1>
           <p className="text-gray-500 mt-2">
             {accountType === 'vendor'
               ? 'Start growing your business with Sponti Deals'
@@ -258,6 +299,65 @@ function SignupForm() {
             Business
           </button>
         </div>
+
+        {/* Vendor selected but no plan from pricing → show "Go to Pricing" prompt */}
+        {accountType === 'vendor' && !hasPlanFromPricing && (
+          <div className="card p-8 text-center">
+            <div className="inline-flex bg-primary-50 rounded-full p-4 mb-5">
+              <Store className="w-10 h-10 text-primary-500" />
+            </div>
+            <h2 className="text-xl font-bold text-secondary-500 mb-2">Choose Your Plan First</h2>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              Pick the plan that fits your business on our pricing page.
+              {' '}You&apos;ll come right back here to complete your sign-up.
+            </p>
+            <Link
+              href="/pricing"
+              className="group btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base font-bold"
+            >
+              <Sparkles className="w-5 h-5" />
+              Go to Pricing Page
+              <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+            <p className="text-xs text-gray-400 mt-4">
+              2 months free on Pro &amp; Business plans for founding vendors
+            </p>
+          </div>
+        )}
+
+        {/* Show form: customer always, vendor only when plan is selected */}
+        {(accountType === 'customer' || (accountType === 'vendor' && hasPlanFromPricing)) && (
+        <>
+        {/* Plan indicator banner for vendors */}
+        {accountType === 'vendor' && hasPlanFromPricing && (
+          <div className="bg-gradient-to-r from-primary-50 to-orange-50 border border-primary-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-primary-500 rounded-lg p-2">
+                  <Gift className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-secondary-500">
+                    {planDisplayName} Plan
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {selectedPromo === 'founders'
+                      ? '2 Months Free + 20% Off Forever (Founders Rate)'
+                      : selectedInterval === 'year'
+                      ? 'Annual billing — save 20%'
+                      : 'Monthly billing'}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/pricing"
+                className="text-xs text-primary-500 hover:underline font-semibold whitespace-nowrap"
+              >
+                Change plan
+              </Link>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSignup} className="card p-8 space-y-4">
           {error && (
@@ -377,16 +477,20 @@ function SignupForm() {
             {loading
               ? 'Creating Account...'
               : accountType === 'vendor'
-              ? 'Start My Free Trial'
+              ? (selectedPromo === 'founders' ? 'Start 2 Months Free' : 'Start My Free Trial')
               : 'Create Account'}
           </button>
 
           {accountType === 'vendor' && (
             <p className="text-xs text-gray-400 text-center">
-              14-day free trial. You&apos;ll select your plan next.
+              {selectedPromo === 'founders'
+                ? 'Credit card required. 2 months free, then Founders Rate. Cancel anytime.'
+                : '14-day free trial. Cancel anytime.'}
             </p>
           )}
         </form>
+        </>
+        )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
           Already have an account?{' '}

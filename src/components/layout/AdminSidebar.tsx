@@ -13,8 +13,19 @@ import {
   LogOut,
   Menu,
   X,
-  Shield,
+  MessageSquare,
+  Headphones,
+  Gift,
+  Coins,
+  Grid3X3,
+  Star,
+  CreditCard,
+  Bell,
+  BarChart3,
+  UserCog,
+  Settings,
 } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 interface NavItem {
   label: string;
@@ -22,13 +33,59 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Overview', href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { label: 'Vendors', href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
-  { label: 'Customers', href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
-  { label: 'Deals', href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
-  { label: 'Claims', href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
-  { label: 'Revenue', href: '/admin/revenue', icon: <DollarSign className="w-5 h-5" /> },
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+const navGroups: NavGroup[] = [
+  {
+    label: 'Main',
+    items: [
+      { label: 'Overview', href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'Marketplace',
+    items: [
+      { label: 'Vendors', href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
+      { label: 'Customers', href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
+      { label: 'Deals', href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
+      { label: 'Claims', href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
+      { label: 'Reviews', href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'Loyalty',
+    items: [
+      { label: 'Loyalty Programs', href: '/admin/loyalty', icon: <Gift className="w-5 h-5" /> },
+      { label: 'SpontiPoints', href: '/admin/spontipoints', icon: <Coins className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { label: 'Categories', href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5" /> },
+      { label: 'Featured Deals', href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
+      { label: 'Subscriptions', href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+      { label: 'Notifications', href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
+      { label: 'Support', href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'Analytics',
+    items: [
+      { label: 'Revenue', href: '/admin/revenue', icon: <DollarSign className="w-5 h-5" /> },
+      { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Users & Roles', href: '/admin/users', icon: <UserCog className="w-5 h-5" /> },
+      { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
+    ],
+  },
 ];
 
 interface AdminSidebarProps {
@@ -49,8 +106,8 @@ export default function AdminSidebar({ onSignOut }: AdminSidebarProps) {
       {/* Branding */}
       <div className="p-6 border-b border-secondary-400/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-            <Shield className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center p-1.5">
+            <SpontiIcon className="w-7 h-7" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-white">SpontiCoupon</h1>
@@ -60,25 +117,34 @@ export default function AdminSidebar({ onSignOut }: AdminSidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                active
-                  ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                  : 'text-secondary-200 hover:bg-secondary-400/20 hover:text-white'
-              }`}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
+        {navGroups.map((group) => (
+          <div key={group.label} className="mb-4">
+            <p className="px-4 mb-1 text-[10px] font-semibold uppercase tracking-wider text-secondary-300">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                        : 'text-secondary-200 hover:bg-secondary-400/20 hover:text-white'
+                    }`}
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Sign Out */}

@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   User,
+  Headphones,
 } from 'lucide-react';
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift },
   { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { label: 'Support', href: '/dashboard/support', icon: Headphones },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 

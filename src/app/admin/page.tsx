@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency } from '@/lib/utils';
+import Link from 'next/link';
 import {
   LayoutDashboard,
   Users,
@@ -11,171 +11,83 @@ import {
   Tag,
   DollarSign,
   TrendingUp,
+  TrendingDown,
   QrCode,
   UserPlus,
   Clock,
+  Zap,
+  AlertTriangle,
+  ArrowUpRight,
+  Plus,
+  Star,
+  ClipboardList,
+  Grid3X3,
 } from 'lucide-react';
-import type { Subscription } from '@/lib/types/database';
 
-interface AdminStats {
+type DateRange = 'today' | '7d' | '30d' | 'all';
+
+interface OverviewData {
   totalVendors: number;
   totalCustomers: number;
   activeDeals: number;
   mrr: number;
   tierBreakdown: Record<string, number>;
-}
-
-interface TodayActivity {
-  claimsToday: number;
-  signupsToday: number;
-  dealsCreatedToday: number;
-}
-
-interface RecentActivityItem {
-  id: string;
-  type: 'claim' | 'redemption' | 'signup' | 'deal';
-  description: string;
-  timestamp: string;
+  todayActivity: {
+    claims: number;
+    signups: number;
+    dealsCreated: number;
+  };
+  recentActivity: {
+    id: string;
+    type: 'claim' | 'redemption' | 'signup' | 'deal';
+    description: string;
+    timestamp: string;
+  }[];
+  growthMetrics: {
+    vendorsThisWeek: number;
+    vendorsLastWeek: number;
+    customersThisWeek: number;
+    customersLastWeek: number;
+  };
+  systemHealth: {
+    expiredUncleared: number;
+    pendingDeposits: number;
+  };
 }
 
 export default function AdminOverviewPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [todayActivity, setTodayActivity] = useState<TodayActivity | null>(null);
-  const [recentActivity, setRecentActivity] = useState<RecentActivityItem[]>([]);
+  const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<DateRange>('30d');
+
+  const fetchData = useCallback(async (selectedRange: DateRange) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/overview?range=${selectedRange}`);
+      if (!res.ok) throw new Error('Failed to fetch overview data');
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error('Error fetching overview:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
-    const supabase = createClient();
+    fetchData(range);
+  }, [user, range, fetchData]);
 
-    async function fetchOverviewData() {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayISO = todayStart.toISOString();
+  const handleRangeChange = (newRange: DateRange) => {
+    setRange(newRange);
+  };
 
-      const [
-        vendorsRes,
-        customersRes,
-        dealsRes,
-        subsRes,
-        claimsTodayRes,
-        signupsTodayRes,
-        dealsCreatedTodayRes,
-        recentClaimsRes,
-        recentRedemptionsRes,
-        recentCustomersRes,
-        recentDealsRes,
-      ] = await Promise.all([
-        supabase.from('vendors').select('*', { count: 'exact', head: true }),
-        supabase.from('customers').select('*', { count: 'exact', head: true }),
-        supabase.from('deals').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('subscriptions').select('*').eq('status', 'active'),
-        supabase.from('claims').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
-        supabase.from('customers').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
-        supabase.from('deals').select('*', { count: 'exact', head: true }).gte('created_at', todayISO),
-        supabase
-          .from('claims')
-          .select('id, created_at, customer:customers(first_name, last_name), deal:deals(title)')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase
-          .from('redemptions')
-          .select('id, scanned_at, customer:customers(first_name, last_name), deal:deals(title)')
-          .order('scanned_at', { ascending: false })
-          .limit(5),
-        supabase
-          .from('customers')
-          .select('id, first_name, last_name, created_at')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase
-          .from('deals')
-          .select('id, title, created_at, vendor:vendors(business_name)')
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ]);
-
-      const subs = subsRes.data || [];
-      const tierBreakdown: Record<string, number> = {};
-      let mrr = 0;
-      const tierPrices: Record<string, number> = {
-        starter: 49,
-        pro: 99,
-        business: 199,
-        enterprise: 499,
-      };
-
-      subs.forEach((sub: Subscription) => {
-        tierBreakdown[sub.tier] = (tierBreakdown[sub.tier] || 0) + 1;
-        mrr += tierPrices[sub.tier] || 0;
-      });
-
-      setStats({
-        totalVendors: vendorsRes.count || 0,
-        totalCustomers: customersRes.count || 0,
-        activeDeals: dealsRes.count || 0,
-        mrr,
-        tierBreakdown,
-      });
-
-      setTodayActivity({
-        claimsToday: claimsTodayRes.count || 0,
-        signupsToday: signupsTodayRes.count || 0,
-        dealsCreatedToday: dealsCreatedTodayRes.count || 0,
-      });
-
-      // Build recent activity feed
-      const activity: RecentActivityItem[] = [];
-
-      (recentClaimsRes.data || []).forEach((claim: Record<string, unknown>) => {
-        const customer = claim.customer as { first_name: string | null; last_name: string | null } | null;
-        const deal = claim.deal as { title: string } | null;
-        activity.push({
-          id: `claim-${claim.id}`,
-          type: 'claim',
-          description: `${customer?.first_name || 'A customer'} ${customer?.last_name || ''} claimed "${deal?.title || 'a deal'}"`,
-          timestamp: claim.created_at as string,
-        });
-      });
-
-      (recentRedemptionsRes.data || []).forEach((redemption: Record<string, unknown>) => {
-        const customer = redemption.customer as { first_name: string | null; last_name: string | null } | null;
-        const deal = redemption.deal as { title: string } | null;
-        activity.push({
-          id: `redemption-${redemption.id}`,
-          type: 'redemption',
-          description: `${customer?.first_name || 'A customer'} ${customer?.last_name || ''} redeemed "${deal?.title || 'a deal'}"`,
-          timestamp: redemption.scanned_at as string,
-        });
-      });
-
-      (recentCustomersRes.data || []).forEach((cust: Record<string, unknown>) => {
-        activity.push({
-          id: `signup-${cust.id}`,
-          type: 'signup',
-          description: `${cust.first_name || 'New customer'} ${cust.last_name || ''} signed up`,
-          timestamp: cust.created_at as string,
-        });
-      });
-
-      (recentDealsRes.data || []).forEach((deal: Record<string, unknown>) => {
-        const vendor = deal.vendor as { business_name: string } | null;
-        activity.push({
-          id: `deal-${deal.id}`,
-          type: 'deal',
-          description: `${vendor?.business_name || 'A vendor'} created "${deal.title}"`,
-          timestamp: deal.created_at as string,
-        });
-      });
-
-      activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      setRecentActivity(activity.slice(0, 10));
-      setLoading(false);
-    }
-
-    fetchOverviewData();
-  }, [user]);
+  const getGrowthPercent = (current: number, previous: number): number => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -212,7 +124,10 @@ export default function AdminOverviewPage() {
     return date.toLocaleDateString();
   };
 
-  if (loading) {
+  const vendorGrowth = data ? getGrowthPercent(data.growthMetrics.vendorsThisWeek, data.growthMetrics.vendorsLastWeek) : 0;
+  const customerGrowth = data ? getGrowthPercent(data.growthMetrics.customersThisWeek, data.growthMetrics.customersLastWeek) : 0;
+
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
@@ -222,12 +137,34 @@ export default function AdminOverviewPage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <LayoutDashboard className="w-8 h-8 text-primary-500" />
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-500">Dashboard Overview</h1>
-          <p className="text-sm text-gray-500">Platform performance at a glance</p>
+      {/* Header with Date Range Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <LayoutDashboard className="w-8 h-8 text-primary-500" />
+          <div>
+            <h1 className="text-2xl font-bold text-secondary-500">Dashboard Overview</h1>
+            <p className="text-sm text-gray-500">Platform performance at a glance</p>
+          </div>
+        </div>
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          {([
+            { key: 'today', label: 'Today' },
+            { key: '7d', label: '7 Days' },
+            { key: '30d', label: '30 Days' },
+            { key: 'all', label: 'All Time' },
+          ] as { key: DateRange; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => handleRangeChange(key)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                range === key
+                  ? 'bg-white text-secondary-500 shadow-sm'
+                  : 'text-gray-500 hover:text-secondary-500'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -238,29 +175,71 @@ export default function AdminOverviewPage() {
             <DollarSign className="w-6 h-6 text-green-500" />
             <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">MRR</span>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(stats?.mrr || 0)}</p>
+          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(data?.mrr || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Monthly Recurring Revenue</p>
         </div>
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
             <Store className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{stats?.totalVendors || 0}</p>
+          <p className="text-3xl font-bold text-secondary-500">{data?.totalVendors || 0}</p>
           <p className="text-sm text-gray-500 mt-1">Total Vendors</p>
         </div>
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
             <Users className="w-6 h-6 text-purple-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{stats?.totalCustomers || 0}</p>
+          <p className="text-3xl font-bold text-secondary-500">{data?.totalCustomers || 0}</p>
           <p className="text-sm text-gray-500 mt-1">Total Customers</p>
         </div>
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
             <Tag className="w-6 h-6 text-primary-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{stats?.activeDeals || 0}</p>
+          <p className="text-3xl font-bold text-secondary-500">{data?.activeDeals || 0}</p>
           <p className="text-sm text-gray-500 mt-1">Active Deals</p>
+        </div>
+      </div>
+
+      {/* Growth Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-500">Vendor Signups (Week-over-Week)</h3>
+            <div className={`flex items-center gap-1 text-sm font-medium ${vendorGrowth >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {vendorGrowth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              {vendorGrowth >= 0 ? '+' : ''}{vendorGrowth.toFixed(1)}%
+            </div>
+          </div>
+          <div className="flex items-end gap-4">
+            <div>
+              <p className="text-2xl font-bold text-secondary-500">{data?.growthMetrics.vendorsThisWeek || 0}</p>
+              <p className="text-xs text-gray-400">This week</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg text-gray-400">{data?.growthMetrics.vendorsLastWeek || 0}</p>
+              <p className="text-xs text-gray-400">Last week</p>
+            </div>
+          </div>
+        </div>
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-gray-500">Customer Signups (Week-over-Week)</h3>
+            <div className={`flex items-center gap-1 text-sm font-medium ${customerGrowth >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {customerGrowth >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+              {customerGrowth >= 0 ? '+' : ''}{customerGrowth.toFixed(1)}%
+            </div>
+          </div>
+          <div className="flex items-end gap-4">
+            <div>
+              <p className="text-2xl font-bold text-secondary-500">{data?.growthMetrics.customersThisWeek || 0}</p>
+              <p className="text-xs text-gray-400">This week</p>
+            </div>
+            <div className="text-right">
+              <p className="text-lg text-gray-400">{data?.growthMetrics.customersLastWeek || 0}</p>
+              <p className="text-xs text-gray-400">Last week</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -277,21 +256,21 @@ export default function AdminOverviewPage() {
                 <QrCode className="w-5 h-5 text-blue-500" />
                 <span className="text-sm font-medium text-gray-700">Claims</span>
               </div>
-              <span className="text-xl font-bold text-secondary-500">{todayActivity?.claimsToday || 0}</span>
+              <span className="text-xl font-bold text-secondary-500">{data?.todayActivity.claims || 0}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <UserPlus className="w-5 h-5 text-purple-500" />
                 <span className="text-sm font-medium text-gray-700">New Signups</span>
               </div>
-              <span className="text-xl font-bold text-secondary-500">{todayActivity?.signupsToday || 0}</span>
+              <span className="text-xl font-bold text-secondary-500">{data?.todayActivity.signups || 0}</span>
             </div>
             <div className="flex items-center justify-between p-3 bg-primary-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Tag className="w-5 h-5 text-primary-500" />
                 <span className="text-sm font-medium text-gray-700">Deals Created</span>
               </div>
-              <span className="text-xl font-bold text-secondary-500">{todayActivity?.dealsCreatedToday || 0}</span>
+              <span className="text-xl font-bold text-secondary-500">{data?.todayActivity.dealsCreated || 0}</span>
             </div>
           </div>
         </div>
@@ -308,7 +287,7 @@ export default function AdminOverviewPage() {
             ].map(({ tier, color, price }) => (
               <div key={tier} className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-3xl font-bold text-secondary-500">
-                  {stats?.tierBreakdown[tier] || 0}
+                  {data?.tierBreakdown[tier] || 0}
                 </p>
                 <p className={`text-xs font-medium px-2 py-1 rounded-full inline-block mt-2 capitalize ${color}`}>
                   {tier}
@@ -320,17 +299,136 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
+      {/* Quick Actions + System Health */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {/* Quick Actions */}
+        <div className="card p-6">
+          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-primary-500" />
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Link
+              href="/admin/deals"
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-primary-50 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center group-hover:bg-primary-200 transition-colors">
+                <Plus className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-secondary-500">Create Deal</p>
+                <p className="text-xs text-gray-400">New deal listing</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-gray-300 ml-auto group-hover:text-primary-500 transition-colors" />
+            </Link>
+            <Link
+              href="/admin/featured"
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-primary-50 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                <Star className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-secondary-500">Manage Featured</p>
+                <p className="text-xs text-gray-400">Featured deals</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-gray-300 ml-auto group-hover:text-primary-500 transition-colors" />
+            </Link>
+            <Link
+              href="/admin/claims?status=pending"
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-primary-50 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                <ClipboardList className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-secondary-500">Pending Claims</p>
+                <p className="text-xs text-gray-400">Review claims</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-gray-300 ml-auto group-hover:text-primary-500 transition-colors" />
+            </Link>
+            <Link
+              href="/admin/categories"
+              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-primary-50 transition-colors group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                <Grid3X3 className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-secondary-500">Manage Categories</p>
+                <p className="text-xs text-gray-400">Deal categories</p>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-gray-300 ml-auto group-hover:text-primary-500 transition-colors" />
+            </Link>
+          </div>
+        </div>
+
+        {/* System Health */}
+        <div className="card p-6">
+          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-primary-500" />
+            System Health
+          </h2>
+          <div className="space-y-4">
+            <div className={`flex items-center justify-between p-4 rounded-lg ${
+              (data?.systemHealth.expiredUncleared || 0) > 0 ? 'bg-red-50' : 'bg-green-50'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  (data?.systemHealth.expiredUncleared || 0) > 0 ? 'bg-red-100' : 'bg-green-100'
+                }`}>
+                  <Clock className={`w-5 h-5 ${
+                    (data?.systemHealth.expiredUncleared || 0) > 0 ? 'text-red-500' : 'text-green-500'
+                  }`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-secondary-500">Expired Deals Needing Cleanup</p>
+                  <p className="text-xs text-gray-400">Active deals past expiration date</p>
+                </div>
+              </div>
+              <span className={`text-2xl font-bold ${
+                (data?.systemHealth.expiredUncleared || 0) > 0 ? 'text-red-600' : 'text-green-600'
+              }`}>
+                {data?.systemHealth.expiredUncleared || 0}
+              </span>
+            </div>
+            <div className={`flex items-center justify-between p-4 rounded-lg ${
+              (data?.systemHealth.pendingDeposits || 0) > 5 ? 'bg-amber-50' : 'bg-green-50'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  (data?.systemHealth.pendingDeposits || 0) > 5 ? 'bg-amber-100' : 'bg-green-100'
+                }`}>
+                  <DollarSign className={`w-5 h-5 ${
+                    (data?.systemHealth.pendingDeposits || 0) > 5 ? 'text-amber-500' : 'text-green-500'
+                  }`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-secondary-500">Pending Deposits</p>
+                  <p className="text-xs text-gray-400">Unconfirmed claim deposits</p>
+                </div>
+              </div>
+              <span className={`text-2xl font-bold ${
+                (data?.systemHealth.pendingDeposits || 0) > 5 ? 'text-amber-600' : 'text-green-600'
+              }`}>
+                {data?.systemHealth.pendingDeposits || 0}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Recent Activity Feed */}
       <div className="card p-6">
         <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary-500" />
           Recent Activity
         </h2>
-        {recentActivity.length === 0 ? (
+        {(data?.recentActivity || []).length === 0 ? (
           <p className="text-gray-400 text-center py-8">No recent activity to show.</p>
         ) : (
           <div className="space-y-3">
-            {recentActivity.map((item) => (
+            {(data?.recentActivity || []).map((item) => (
               <div
                 key={item.id}
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"

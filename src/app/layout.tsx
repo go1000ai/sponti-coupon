@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Bebas_Neue, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { InactivityGuard } from "@/components/auth/InactivityGuard";
 
 const inter = Inter({ subsets: ["latin"] });
+const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
+const instrumentSerif = Instrument_Serif({ weight: "400", style: ["normal", "italic"], subsets: ["latin"], variable: "--font-instrument" });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -278,10 +281,11 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }}
         />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} ${bebasNeue.variable} ${instrumentSerif.variable} antialiased`}>
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
+        <InactivityGuard />
         <ServiceWorkerRegistration />
       </body>
     </html>

@@ -3,7 +3,7 @@ export type DealStatus = 'draft' | 'active' | 'expired' | 'paused';
 export type NotificationType = 'new_deal' | 'deal_expiring' | 'redemption_confirmed' | 'digest';
 export type NotificationChannel = 'push' | 'email';
 export type SubscriptionTier = 'starter' | 'pro' | 'business' | 'enterprise';
-export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing';
+export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete';
 export type UserRole = 'vendor' | 'customer' | 'admin';
 export type PaymentProcessorType = 'stripe' | 'square' | 'paypal' | 'venmo' | 'zelle' | 'cashapp';
 export type LoyaltyProgramType = 'punch_card' | 'points';
@@ -144,6 +144,7 @@ export interface Deal {
   how_it_works: string | null;
   highlights: string[];
   fine_print: string | null;
+  category_id: string | null;
   created_at: string;
   // Joined fields
   vendor?: Vendor;
@@ -459,3 +460,42 @@ export const TIER_ORDER: SubscriptionTier[] = ['starter', 'pro', 'business', 'en
 
 // Feature flag keys (excluding non-boolean fields)
 export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'stripe_price_id' | 'stripe_annual_price_id'>;
+
+// Support Ticket System
+export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+export type SupportTicketPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type SupportTicketCategory = 'billing' | 'technical' | 'account' | 'general';
+export type SupportMessageSenderType = 'user' | 'admin' | 'ai';
+
+export interface SupportAttachment {
+  url: string;
+  filename: string;
+  size: number;
+}
+
+export interface SupportTicket {
+  id: string;
+  user_id: string;
+  user_email: string;
+  user_role: 'vendor' | 'customer';
+  subject: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  priority: SupportTicketPriority;
+  ai_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  messages?: SupportMessage[];
+  last_message?: SupportMessage;
+}
+
+export interface SupportMessage {
+  id: string;
+  ticket_id: string;
+  sender_type: SupportMessageSenderType;
+  sender_id: string | null;
+  message: string;
+  attachments: SupportAttachment[];
+  created_at: string;
+}

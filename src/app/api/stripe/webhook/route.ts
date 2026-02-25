@@ -30,7 +30,58 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session;
       const vendorId = session.metadata?.vendor_id;
       const tier = session.metadata?.tier;
+      const flowType = session.metadata?.flow_type;
 
+      // Guest signup flow: the /auth/complete-signup page creates all records.
+      // The webhook may fire before or after the user completes signup.
+      // If vendor doesn't exist yet, skip — the complete-signup endpoint handles it.
+      if (flowType === 'guest_signup') {
+        if (vendorId && tier && session.subscription) {
+          // Vendor already completed signup — sync subscription data
+          const subscriptionResponse = await getStripe().subscriptions.retrieve(
+            session.subscription as string
+          );
+          const subscription = subscriptionResponse as unknown as {
+            id: string;
+            current_period_start: number;
+            current_period_end: number;
+            status: string;
+          };
+
+          const dbStatus = subscription.status === 'trialing' || subscription.status === 'active'
+            ? 'active'
+            : subscription.status;
+
+          const { data: existingSub } = await supabase
+            .from('subscriptions')
+            .select('id')
+            .eq('stripe_subscription_id', subscription.id)
+            .single();
+
+          if (!existingSub) {
+            await supabase.from('subscriptions').insert({
+              vendor_id: vendorId,
+              stripe_subscription_id: subscription.id,
+              tier,
+              status: dbStatus,
+              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            });
+          }
+
+          await supabase
+            .from('vendors')
+            .update({
+              subscription_tier: tier,
+              subscription_status: dbStatus,
+            })
+            .eq('id', vendorId);
+        }
+        // If no vendorId, the user hasn't completed signup yet — nothing to do
+        break;
+      }
+
+      // Standard flow (authenticated checkout): vendor_id is always present
       if (vendorId && tier && session.subscription) {
         const subscriptionResponse = await getStripe().subscriptions.retrieve(
           session.subscription as string

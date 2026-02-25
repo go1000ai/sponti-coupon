@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -12,9 +11,20 @@ import {
   Store,
   CreditCard,
   BarChart3,
+  UserMinus,
 } from 'lucide-react';
-import type { Subscription } from '@/lib/types/database';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
+type DateRange = '30d' | '90d' | '12m' | 'all';
 
 interface TierRevenue {
   tier: string;
@@ -30,140 +40,51 @@ interface TopVendor {
   tier_revenue: number;
 }
 
+interface RevenueData {
+  totalMRR: number;
+  lastMonthMRR: number;
+  depositRevenue: number;
+  tierRevenue: TierRevenue[];
+  topVendors: TopVendor[];
+  mrrTrend: { month: string; mrr: number }[];
+  churnCount: number;
+}
+
 export default function AdminRevenuePage() {
   const { user } = useAuth();
-  const [tierRevenue, setTierRevenue] = useState<TierRevenue[]>([]);
-  const [totalMRR, setTotalMRR] = useState(0);
-  const [depositRevenue, setDepositRevenue] = useState(0);
-  const [lastMonthMRR, setLastMonthMRR] = useState(0);
-  const [topVendors, setTopVendors] = useState<TopVendor[]>([]);
+  const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<DateRange>('30d');
+
+  const fetchData = useCallback(async (selectedRange: DateRange) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/revenue?range=${selectedRange}`);
+      if (!res.ok) throw new Error('Failed to fetch revenue data');
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error('Error fetching revenue:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
-    const supabase = createClient();
+    fetchData(range);
+  }, [user, range, fetchData]);
 
-    async function fetchRevenue() {
-      const tierPrices: Record<string, number> = {
-        starter: SUBSCRIPTION_TIERS.starter.price,
-        pro: SUBSCRIPTION_TIERS.pro.price,
-        business: SUBSCRIPTION_TIERS.business.price,
-        enterprise: SUBSCRIPTION_TIERS.enterprise.price,
-      };
+  const handleRangeChange = (newRange: DateRange) => {
+    setRange(newRange);
+  };
 
-      // Current active subscriptions
-      const { data: activeSubs } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('status', 'active');
-
-      const subs = activeSubs || [];
-
-      // Tier breakdown
-      const tierCounts: Record<string, number> = {};
-      let mrr = 0;
-      subs.forEach((sub: Subscription) => {
-        tierCounts[sub.tier] = (tierCounts[sub.tier] || 0) + 1;
-        mrr += tierPrices[sub.tier] || 0;
-      });
-
-      const tierData: TierRevenue[] = ['starter', 'pro', 'business', 'enterprise'].map(tier => ({
-        tier,
-        count: tierCounts[tier] || 0,
-        price: tierPrices[tier],
-        total: (tierCounts[tier] || 0) * tierPrices[tier],
-      }));
-
-      setTierRevenue(tierData);
-      setTotalMRR(mrr);
-
-      // Deposit revenue - sum of deposit_amount from confirmed claims
-      const { data: confirmedClaims } = await supabase
-        .from('claims')
-        .select('deal:deals(deposit_amount)')
-        .eq('deposit_confirmed', true);
-
-      let totalDeposits = 0;
-      (confirmedClaims || []).forEach((claim: Record<string, unknown>) => {
-        const dealRaw = claim.deal as { deposit_amount: number | null } | { deposit_amount: number | null }[] | null;
-        const deal = Array.isArray(dealRaw) ? dealRaw[0] : dealRaw;
-        if (deal?.deposit_amount) {
-          totalDeposits += deal.deposit_amount;
-        }
-      });
-      setDepositRevenue(totalDeposits);
-
-      // Estimate last month's MRR (use current month count minus any new subs this month)
-      const thisMonthStart = new Date();
-      thisMonthStart.setDate(1);
-      thisMonthStart.setHours(0, 0, 0, 0);
-
-      const { data: newSubsThisMonth } = await supabase
-        .from('subscriptions')
-        .select('tier')
-        .eq('status', 'active')
-        .gte('created_at', thisMonthStart.toISOString());
-
-      let newMRR = 0;
-      (newSubsThisMonth || []).forEach((sub: { tier: string }) => {
-        newMRR += tierPrices[sub.tier] || 0;
-      });
-      setLastMonthMRR(mrr - newMRR);
-
-      // Top vendors by claims
-      const { data: vendorsData } = await supabase
-        .from('vendors')
-        .select('business_name, subscription_tier')
-        .order('created_at', { ascending: false });
-
-      if (vendorsData) {
-        const vendorIds: string[] = [];
-        const vendorMap: Record<string, { business_name: string; tier: string | null }> = {};
-
-        // We need to get vendor IDs first
-        const { data: vendorsFull } = await supabase
-          .from('vendors')
-          .select('id, business_name, subscription_tier');
-
-        (vendorsFull || []).forEach((v: { id: string; business_name: string; subscription_tier: string | null }) => {
-          vendorIds.push(v.id);
-          vendorMap[v.id] = { business_name: v.business_name, tier: v.subscription_tier };
-        });
-
-        // Get deal claims count per vendor
-        const { data: dealsWithClaims } = await supabase
-          .from('deals')
-          .select('vendor_id, claims_count')
-          .in('vendor_id', vendorIds);
-
-        const vendorClaims: Record<string, number> = {};
-        (dealsWithClaims || []).forEach((d: { vendor_id: string; claims_count: number }) => {
-          vendorClaims[d.vendor_id] = (vendorClaims[d.vendor_id] || 0) + d.claims_count;
-        });
-
-        const topVendorsList: TopVendor[] = Object.entries(vendorClaims)
-          .map(([vendorId, claimsCount]) => ({
-            business_name: vendorMap[vendorId]?.business_name || 'Unknown',
-            tier: vendorMap[vendorId]?.tier || null,
-            claims_count: claimsCount,
-            tier_revenue: tierPrices[vendorMap[vendorId]?.tier || ''] || 0,
-          }))
-          .sort((a, b) => b.claims_count - a.claims_count)
-          .slice(0, 10);
-
-        setTopVendors(topVendorsList);
-      }
-
-      setLoading(false);
-    }
-
-    fetchRevenue();
-  }, [user]);
-
+  const totalMRR = data?.totalMRR || 0;
+  const lastMonthMRR = data?.lastMonthMRR || 0;
   const mrrChange = totalMRR - lastMonthMRR;
   const mrrChangePercent = lastMonthMRR > 0 ? ((mrrChange / lastMonthMRR) * 100) : 0;
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
@@ -173,17 +94,39 @@ export default function AdminRevenuePage() {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <DollarSign className="w-8 h-8 text-primary-500" />
-        <div>
-          <h1 className="text-2xl font-bold text-secondary-500">Revenue Dashboard</h1>
-          <p className="text-sm text-gray-500">Subscription and deposit revenue overview</p>
+      {/* Header with Date Range Selector */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex items-center gap-3">
+          <DollarSign className="w-8 h-8 text-primary-500" />
+          <div>
+            <h1 className="text-2xl font-bold text-secondary-500">Revenue Dashboard</h1>
+            <p className="text-sm text-gray-500">Subscription and deposit revenue overview</p>
+          </div>
+        </div>
+        <div className="flex bg-gray-100 rounded-lg p-1">
+          {([
+            { key: '30d', label: '30 Days' },
+            { key: '90d', label: '90 Days' },
+            { key: '12m', label: '12 Months' },
+            { key: 'all', label: 'All Time' },
+          ] as { key: DateRange; label: string }[]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => handleRangeChange(key)}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                range === key
+                  ? 'bg-white text-secondary-500 shadow-sm'
+                  : 'text-gray-500 hover:text-secondary-500'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Top Revenue Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
             <CreditCard className="w-6 h-6 text-green-500" />
@@ -207,8 +150,8 @@ export default function AdminRevenuePage() {
           <div className="flex items-center justify-between mb-3">
             <DollarSign className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(depositRevenue)}</p>
-          <p className="text-sm text-gray-500 mt-1">Total Deposit Revenue</p>
+          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(data?.depositRevenue || 0)}</p>
+          <p className="text-sm text-gray-500 mt-1">Deposit Revenue</p>
           <p className="text-xs text-gray-400 mt-3">From confirmed deal claims</p>
         </div>
 
@@ -220,6 +163,64 @@ export default function AdminRevenuePage() {
           <p className="text-sm text-gray-500 mt-1">Projected Annual Revenue</p>
           <p className="text-xs text-gray-400 mt-3">Based on current MRR</p>
         </div>
+
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-3">
+            <UserMinus className="w-6 h-6 text-red-400" />
+          </div>
+          <p className="text-3xl font-bold text-secondary-500">{data?.churnCount || 0}</p>
+          <p className="text-sm text-gray-500 mt-1">Churned Subscriptions</p>
+          <p className="text-xs text-gray-400 mt-3">Canceled in selected period</p>
+        </div>
+      </div>
+
+      {/* MRR Trend Chart */}
+      <div className="card p-6 mb-8">
+        <h2 className="text-lg font-bold text-secondary-500 mb-4">MRR Trend</h2>
+        {(data?.mrrTrend || []).length > 0 ? (
+          <div className="w-full h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={data?.mrrTrend || []}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#e5e7eb' }}
+                  tickFormatter={(value: number) => `$${(value / 1000).toFixed(value >= 1000 ? 1 : 0)}${value >= 1000 ? 'k' : ''}`}
+                />
+                <Tooltip
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={((value: any) => [formatCurrency(Number(value)), 'MRR']) as any}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  }}
+                  labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="mrr"
+                  stroke="#f97316"
+                  strokeWidth={2.5}
+                  dot={{ fill: '#f97316', strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: '#f97316', stroke: '#fff', strokeWidth: 2 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <p className="text-gray-400 text-center py-12">No trend data available yet.</p>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
@@ -227,7 +228,7 @@ export default function AdminRevenuePage() {
         <div className="card p-6">
           <h2 className="text-lg font-bold text-secondary-500 mb-4">MRR by Tier</h2>
           <div className="space-y-4">
-            {tierRevenue.map(({ tier, count, price, total }) => {
+            {(data?.tierRevenue || []).map(({ tier, count, price, total }) => {
               const percentage = totalMRR > 0 ? (total / totalMRR) * 100 : 0;
               return (
                 <div key={tier}>
@@ -295,7 +296,7 @@ export default function AdminRevenuePage() {
           <Store className="w-5 h-5 text-primary-500" />
           Top Vendors by Claims
         </h2>
-        {topVendors.length === 0 ? (
+        {(data?.topVendors || []).length === 0 ? (
           <p className="text-gray-400 text-center py-8">No vendor data available yet.</p>
         ) : (
           <div className="overflow-x-auto">
@@ -310,7 +311,7 @@ export default function AdminRevenuePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {topVendors.map((vendor, idx) => (
+                {(data?.topVendors || []).map((vendor, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="p-3 text-sm text-gray-400 font-medium">{idx + 1}</td>
                     <td className="p-3 font-medium text-secondary-500">{vendor.business_name}</td>

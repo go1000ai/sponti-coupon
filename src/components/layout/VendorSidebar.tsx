@@ -24,6 +24,7 @@ import {
   Key,
   Palette,
   Gift,
+  Headphones,
 } from 'lucide-react';
 
 interface NavChild {
@@ -57,16 +58,19 @@ const navItems: NavItem[] = [
   { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" /> },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Payment Methods', href: '/vendor/payments', icon: <Wallet className="w-5 h-5" /> },
+  { label: 'Support', href: '/vendor/support', icon: <Headphones className="w-5 h-5" /> },
   { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 interface VendorSidebarProps {
   onSignOut: () => void;
   userName: string;
+  personalName: string;
   userEmail: string;
+  logoUrl?: string | null;
 }
 
-export default function VendorSidebar({ onSignOut, userName, userEmail }: VendorSidebarProps) {
+export default function VendorSidebar({ onSignOut, userName, personalName, userEmail, logoUrl }: VendorSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -191,12 +195,18 @@ export default function VendorSidebar({ onSignOut, userName, userEmail }: Vendor
       <div className="border-t border-secondary-400/30">
         {/* User profile info */}
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-secondary-400/40 flex items-center justify-center flex-shrink-0">
-            <User className="w-4 h-4 text-secondary-200" />
+          <div className="w-9 h-9 rounded-full bg-secondary-400/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-4 h-4 text-secondary-200" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-white truncate">{userName}</p>
-            <p className="text-[11px] text-secondary-300 truncate">{userEmail}</p>
+            <p className="text-[11px] text-secondary-300 truncate">{personalName}</p>
+            <p className="text-[10px] text-secondary-400 truncate">{userEmail}</p>
           </div>
         </div>
         {/* Sign Out button */}

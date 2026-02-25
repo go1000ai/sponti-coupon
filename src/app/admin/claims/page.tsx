@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import AdminPagination from '@/components/admin/AdminPagination';
+import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import {
   QrCode,
   Search,
@@ -11,6 +12,9 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Trash2,
+  CalendarPlus,
+  RefreshCw,
 } from 'lucide-react';
 
 type ClaimStatus = 'active' | 'redeemed' | 'expired' | 'pending';
@@ -19,6 +23,7 @@ interface ClaimRow {
   id: string;
   customer_name: string;
   deal_title: string;
+  deal_id: string;
   vendor_name: string;
   status: ClaimStatus;
   deposit_confirmed: boolean;
@@ -27,88 +32,233 @@ interface ClaimRow {
   expires_at: string;
 }
 
+const PAGE_SIZE = 20;
+
 export default function AdminClaimsPage() {
   const { user } = useAuth();
   const [claims, setClaims] = useState<ClaimRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  useEffect(() => {
-    if (!user) return;
-    const supabase = createClient();
+  // Action loading state (tracks which claim ID is being acted on)
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    async function fetchClaims() {
-      const { data } = await supabase
-        .from('claims')
-        .select(`
-          id,
-          deposit_confirmed,
-          redeemed,
-          redeemed_at,
-          expires_at,
-          created_at,
-          customer:customers(first_name, last_name),
-          deal:deals(title, vendor:vendors(business_name))
-        `)
-        .order('created_at', { ascending: false })
-        .limit(200);
+  // Status summary counts (fetched from unfiltered total)
+  const [statusCounts, setStatusCounts] = useState({
+    active: 0,
+    redeemed: 0,
+    expired: 0,
+    pending: 0,
+  });
 
-      if (!data) {
-        setLoading(false);
-        return;
-      }
+  // Delete confirmation dialog
+  const [deleteTarget, setDeleteTarget] = useState<ClaimRow | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-      const now = new Date();
-      const rows: ClaimRow[] = data.map((claim: Record<string, unknown>) => {
-        const customer = claim.customer as { first_name: string | null; last_name: string | null } | null;
-        const deal = claim.deal as { title: string; vendor: { business_name: string } | null } | null;
+  // Extend expiry dialog
+  const [extendTarget, setExtendTarget] = useState<ClaimRow | null>(null);
+  const [extendDate, setExtendDate] = useState('');
+  const [extendLoading, setExtendLoading] = useState(false);
 
-        let status: ClaimStatus;
-        if (claim.redeemed) {
-          status = 'redeemed';
-        } else if (!claim.deposit_confirmed) {
-          status = 'pending';
-        } else if (new Date(claim.expires_at as string) < now) {
-          status = 'expired';
-        } else {
-          status = 'active';
-        }
+  // Toast notification
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-        return {
-          id: claim.id as string,
-          customer_name: `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim() || 'Unknown',
-          deal_title: deal?.title || 'Unknown Deal',
-          vendor_name: deal?.vendor?.business_name || 'Unknown Vendor',
-          status,
-          deposit_confirmed: claim.deposit_confirmed as boolean,
-          created_at: claim.created_at as string,
-          redeemed_at: claim.redeemed_at as string | null,
-          expires_at: claim.expires_at as string,
-        };
+  const showToast = useCallback((message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const fetchClaims = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: PAGE_SIZE.toString(),
       });
+      if (searchQuery) params.set('search', searchQuery);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
 
-      setClaims(rows);
+      const res = await fetch(`/api/admin/claims?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch claims');
+
+      const data = await res.json();
+      setClaims(data.claims || []);
+      setTotal(data.total || 0);
+    } catch {
+      showToast('Failed to load claims', 'error');
+    } finally {
       setLoading(false);
     }
+  }, [page, searchQuery, statusFilter, showToast]);
 
+  // Fetch status counts (unfiltered) for the summary cards
+  const fetchStatusCounts = useCallback(async () => {
+    try {
+      const statuses: ClaimStatus[] = ['active', 'redeemed', 'expired', 'pending'];
+      const counts: Record<string, number> = {};
+
+      await Promise.all(
+        statuses.map(async (s) => {
+          const res = await fetch(`/api/admin/claims?status=${s}&page=1&pageSize=1`);
+          if (res.ok) {
+            const data = await res.json();
+            counts[s] = data.total || 0;
+          }
+        })
+      );
+
+      setStatusCounts({
+        active: counts.active || 0,
+        redeemed: counts.redeemed || 0,
+        expired: counts.expired || 0,
+        pending: counts.pending || 0,
+      });
+    } catch {
+      // Silently fail — cards will show 0
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
     fetchClaims();
-  }, [user]);
+  }, [user, fetchClaims]);
 
-  const filteredClaims = useMemo(() => {
-    return claims.filter(c => {
-      const matchesSearch =
-        searchQuery === '' ||
-        c.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.deal_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.vendor_name.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    if (!user) return;
+    fetchStatusCounts();
+  }, [user, fetchStatusCounts]);
 
-      const matchesStatus =
-        statusFilter === 'all' || c.status === statusFilter;
+  // Reset to page 1 when search or filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, statusFilter]);
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [claims, searchQuery, statusFilter]);
+  // ==================== Action Handlers ====================
+
+  const handleRedeem = async (claim: ClaimRow) => {
+    setActionLoading(claim.id);
+    try {
+      const res = await fetch(`/api/admin/claims/${claim.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'redeem' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to redeem claim');
+      }
+      showToast('Claim redeemed successfully', 'success');
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to redeem claim', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleCancel = async (claim: ClaimRow) => {
+    setActionLoading(claim.id);
+    try {
+      const res = await fetch(`/api/admin/claims/${claim.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to cancel claim');
+      }
+      showToast('Claim cancelled successfully', 'success');
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to cancel claim', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmDeposit = async (claim: ClaimRow) => {
+    setActionLoading(claim.id);
+    try {
+      const res = await fetch(`/api/admin/claims/${claim.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_deposit' }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to confirm deposit');
+      }
+      showToast('Deposit confirmed successfully', 'success');
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to confirm deposit', 'error');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleExtendSubmit = async () => {
+    if (!extendTarget || !extendDate) return;
+    setExtendLoading(true);
+    try {
+      const res = await fetch(`/api/admin/claims/${extendTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'extend', expires_at: new Date(extendDate).toISOString() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to extend claim');
+      }
+      showToast('Claim expiry extended successfully', 'success');
+      setExtendTarget(null);
+      setExtendDate('');
+      fetchClaims();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to extend claim', 'error');
+    } finally {
+      setExtendLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/claims/${deleteTarget.id}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to delete claim');
+      }
+      showToast('Claim deleted successfully', 'success');
+      setDeleteTarget(null);
+      fetchClaims();
+      fetchStatusCounts();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete claim', 'error');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const openExtendDialog = (claim: ClaimRow) => {
+    // Default extend date: 7 days from current expiry or from now if already expired
+    const baseDate = new Date(claim.expires_at) > new Date() ? new Date(claim.expires_at) : new Date();
+    const defaultDate = new Date(baseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+    setExtendDate(defaultDate.toISOString().split('T')[0]);
+    setExtendTarget(claim);
+  };
+
+  // ==================== Helpers ====================
 
   const getStatusIcon = (status: ClaimStatus) => {
     switch (status) {
@@ -128,15 +278,10 @@ export default function AdminClaimsPage() {
     }
   };
 
-  // Stats
-  const statusCounts = {
-    active: claims.filter(c => c.status === 'active').length,
-    redeemed: claims.filter(c => c.status === 'redeemed').length,
-    expired: claims.filter(c => c.status === 'expired').length,
-    pending: claims.filter(c => c.status === 'pending').length,
-  };
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalAll = statusCounts.active + statusCounts.redeemed + statusCounts.expired + statusCounts.pending;
 
-  if (loading) {
+  if (loading && claims.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
@@ -146,18 +291,37 @@ export default function AdminClaimsPage() {
 
   return (
     <div>
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-4 right-4 z-[60] px-4 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-all ${
+            toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+          }`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <QrCode className="w-8 h-8 text-primary-500" />
           <div>
             <h1 className="text-2xl font-bold text-secondary-500">Claims Management</h1>
-            <p className="text-sm text-gray-500">{claims.length} total claims</p>
+            <p className="text-sm text-gray-500">{totalAll} total claims</p>
           </div>
         </div>
+        <button
+          onClick={() => { fetchClaims(); fetchStatusCounts(); }}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
       </div>
 
-      {/* Status Summary */}
+      {/* Status Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Active', count: statusCounts.active, color: 'text-blue-500', bg: 'bg-blue-50', icon: <Clock className="w-5 h-5" /> },
@@ -224,17 +388,27 @@ export default function AdminClaimsPage() {
                 <th className="p-4 font-semibold text-sm text-gray-500">Claimed</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Redeemed</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Expires</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredClaims.length === 0 ? (
+              {loading ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-gray-400">
+                  <td colSpan={8} className="p-8 text-center">
+                    <div className="flex items-center justify-center gap-2 text-gray-400">
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Loading claims...
+                    </div>
+                  </td>
+                </tr>
+              ) : claims.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-8 text-center text-gray-400">
                     No claims found matching your filters.
                   </td>
                 </tr>
               ) : (
-                filteredClaims.map((claim) => (
+                claims.map((claim) => (
                   <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <span className="font-medium text-secondary-500">{claim.customer_name}</span>
@@ -264,13 +438,157 @@ export default function AdminClaimsPage() {
                     <td className="p-4 text-sm text-gray-500">
                       {new Date(claim.expires_at).toLocaleDateString()}
                     </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-1">
+                        {/* Active claims: Redeem, Cancel, Extend */}
+                        {claim.status === 'active' && (
+                          <>
+                            <button
+                              onClick={() => handleRedeem(claim)}
+                              disabled={actionLoading === claim.id}
+                              className="text-green-500 hover:bg-green-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                              title="Redeem"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleCancel(claim)}
+                              disabled={actionLoading === claim.id}
+                              className="text-orange-500 hover:bg-orange-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                              title="Cancel"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => openExtendDialog(claim)}
+                              disabled={actionLoading === claim.id}
+                              className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                              title="Extend Expiry"
+                            >
+                              <CalendarPlus className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+
+                        {/* Pending claims: Confirm Deposit */}
+                        {claim.status === 'pending' && (
+                          <button
+                            onClick={() => handleConfirmDeposit(claim)}
+                            disabled={actionLoading === claim.id}
+                            className="text-green-500 hover:bg-green-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                            title="Confirm Deposit"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* Expired claims: Extend */}
+                        {claim.status === 'expired' && (
+                          <button
+                            onClick={() => openExtendDialog(claim)}
+                            disabled={actionLoading === claim.id}
+                            className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                            title="Extend Expiry"
+                          >
+                            <CalendarPlus className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {/* All claims: Delete */}
+                        <button
+                          onClick={() => setDeleteTarget(claim)}
+                          disabled={actionLoading === claim.id}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        <AdminPagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={total}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AdminConfirmDialog
+        isOpen={!!deleteTarget}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+        title="Delete Claim"
+        message={
+          deleteTarget
+            ? `Are you sure you want to permanently delete the claim by "${deleteTarget.customer_name}" for "${deleteTarget.deal_title}"? This action cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete Claim"
+        variant="danger"
+        loading={deleteLoading}
+      />
+
+      {/* Extend Expiry Dialog */}
+      {extendTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => { setExtendTarget(null); setExtendDate(''); }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50">
+                  <CalendarPlus className="w-5 h-5 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-bold text-secondary-500">Extend Expiry</h3>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">
+                Extend the claim by <strong>{extendTarget.customer_name}</strong> for &quot;{extendTarget.deal_title}&quot;.
+              </p>
+              <p className="text-xs text-gray-400 mb-4">
+                Current expiry: {new Date(extendTarget.expires_at).toLocaleDateString()}
+              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">New Expiry Date</label>
+              <input
+                type="date"
+                value={extendDate}
+                onChange={(e) => setExtendDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="input-field w-full mb-6"
+              />
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => { setExtendTarget(null); setExtendDate(''); }}
+                  disabled={extendLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleExtendSubmit}
+                  disabled={extendLoading || !extendDate}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  {extendLoading ? 'Extending...' : 'Extend Expiry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
