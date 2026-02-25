@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         redemption_code,
         session_token,
         customer:customers(first_name, last_name, email),
-        deal:deals(title, claims_count, vendor:vendors(business_name))
+        deal:deals(title, deal_type, claims_count, vendor:vendors(business_name))
       `)
       .order('created_at', { ascending: false });
 
@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
       customer_name: string;
       customer_email: string | null;
       deal_title: string;
+      deal_type: string;
       deal_id: string;
       vendor_name: string;
       status: ClaimStatus;
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest) {
 
     const allClaims: ClaimRow[] = rawClaims.map((claim: Record<string, unknown>) => {
       const customer = claim.customer as { first_name: string | null; last_name: string | null; email: string | null } | null;
-      const deal = claim.deal as { title: string; claims_count: number; vendor: { business_name: string } | null } | null;
+      const deal = claim.deal as { title: string; deal_type: string; claims_count: number; vendor: { business_name: string } | null } | null;
 
       let claimStatus: ClaimStatus;
       if (claim.redeemed) {
@@ -144,6 +145,7 @@ export async function GET(request: NextRequest) {
         customer_name: `${customer?.first_name || ''} ${customer?.last_name || ''}`.trim() || 'Unknown',
         customer_email: customer?.email || null,
         deal_title: deal?.title || 'Unknown Deal',
+        deal_type: deal?.deal_type || 'regular',
         deal_id: claim.deal_id as string,
         vendor_name: deal?.vendor?.business_name || 'Unknown Vendor',
         status: claimStatus,

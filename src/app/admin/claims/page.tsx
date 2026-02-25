@@ -31,6 +31,7 @@ interface ClaimRow {
   customer_name: string;
   customer_email: string | null;
   deal_title: string;
+  deal_type: string;
   deal_id: string;
   vendor_name: string;
   status: ClaimStatus;
@@ -549,6 +550,13 @@ export default function AdminClaimsPage() {
                       <p className="text-sm text-secondary-500 truncate max-w-[180px]">
                         {claim.deal_title}
                       </p>
+                      <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
+                        claim.deal_type === 'sponti_coupon'
+                          ? 'bg-purple-50 text-purple-600'
+                          : 'bg-teal-50 text-teal-600'
+                      }`}>
+                        {claim.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal'}
+                      </span>
                     </td>
                     <td className="p-4 text-sm text-gray-500">{claim.vendor_name}</td>
                     <td className="p-4">
@@ -600,8 +608,13 @@ export default function AdminClaimsPage() {
                     <td className="p-4 text-sm text-gray-500">
                       {new Date(claim.created_at).toLocaleDateString()}
                     </td>
-                    <td className="p-4 text-sm text-gray-500">
-                      {new Date(claim.expires_at).toLocaleDateString()}
+                    <td className="p-4">
+                      <p className="text-sm text-gray-500">
+                        {new Date(claim.expires_at).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {new Date(claim.expires_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1">
@@ -862,6 +875,13 @@ export default function AdminClaimsPage() {
                   <div>
                     <p className="text-xs text-gray-400">Deal</p>
                     <p className="font-medium text-secondary-500 truncate">{editTarget.deal_title}</p>
+                    <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
+                      editTarget.deal_type === 'sponti_coupon'
+                        ? 'bg-purple-50 text-purple-600'
+                        : 'bg-teal-50 text-teal-600'
+                    }`}>
+                      {editTarget.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal'}
+                    </span>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Vendor</p>
