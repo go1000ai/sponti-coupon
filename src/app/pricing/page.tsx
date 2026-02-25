@@ -347,7 +347,7 @@ export default function PricingPage() {
       </section>
 
       {/* ─── SECTION 5: Pricing Cards ─── */}
-      <section className="relative bg-gray-50 py-20">
+      <section id="plans" className="relative bg-gray-50 py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Monthly / Annual Toggle */}
@@ -749,22 +749,12 @@ export default function PricingPage() {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 px-4 sm:px-0">
               <button
-                onClick={() => handleCheckout('business')}
-                disabled={loadingPlan !== null}
-                className={`group btn-primary w-full sm:w-auto px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300 text-center ${loadingPlan !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
+                onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
+                className="group btn-primary w-full sm:w-auto px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300 text-center"
               >
                 <span className="flex items-center justify-center gap-2">
-                  {loadingPlan === 'business' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      {FOUNDERS_LAUNCH.active ? 'Claim My Founders Spot' : 'Start My Free Trial'}
-                      <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
-                    </>
-                  )}
+                  {FOUNDERS_LAUNCH.active ? 'Claim My Founders Spot' : 'Start My Free Trial'}
+                  <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </button>
             </div>

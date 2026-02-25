@@ -15,7 +15,9 @@ import {
   Award,
   Hash,
   TrendingUp,
+  CheckCircle,
 } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface LoyaltyProgram {
   id: string;
@@ -41,6 +43,148 @@ interface EditFormData {
 
 const PAGE_SIZE = 15;
 
+// --- Inline Sub-Components ---
+
+function AnimatedValue({
+  value,
+  prefix = '',
+  suffix = '',
+  decimals = 0,
+}: {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+}) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const duration = 700;
+    const steps = 35;
+    const increment = value / steps;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setDisplay(value);
+        clearInterval(timer);
+      } else {
+        setDisplay(
+          decimals > 0
+            ? parseFloat(current.toFixed(decimals))
+            : Math.round(current)
+        );
+      }
+    }, duration / steps);
+    return () => clearInterval(timer);
+  }, [value, decimals]);
+  return (
+    <>
+      {prefix}
+      {decimals > 0
+        ? display.toLocaleString(undefined, {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+          })
+        : display.toLocaleString()}
+      {suffix}
+    </>
+  );
+}
+
+function ChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; payload: { fill: string } }>;
+}) {
+  if (!active || !payload || !payload[0]) return null;
+  const item = payload[0];
+  return (
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
+      <div className="flex items-center gap-2 mb-1">
+        <div
+          className="w-3 h-3 rounded-full"
+          style={{ backgroundColor: item.payload.fill }}
+        />
+        <p className="font-semibold text-secondary-500 capitalize">
+          {item.name}
+        </p>
+      </div>
+      <p className="text-sm text-gray-500">
+        {item.value} program{item.value !== 1 ? 's' : ''}
+      </p>
+    </div>
+  );
+}
+
+function SkeletonLoyalty() {
+  return (
+    <div className="animate-pulse">
+      {/* Header skeleton */}
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 bg-gray-200 rounded-xl" />
+        <div>
+          <div className="h-6 w-48 bg-gray-200 rounded" />
+          <div className="h-4 w-64 bg-gray-200 rounded mt-1" />
+        </div>
+      </div>
+
+      {/* Stats cards skeleton */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="card p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-gray-200 rounded-xl" />
+              <div className="h-4 w-20 bg-gray-200 rounded" />
+            </div>
+            <div className="h-8 w-16 bg-gray-200 rounded" />
+          </div>
+        ))}
+      </div>
+
+      {/* Charts skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="card p-6">
+            <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
+            <div className="flex items-center justify-center">
+              <div className="w-[160px] h-[160px] bg-gray-200 rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search skeleton */}
+      <div className="card p-4 mb-6">
+        <div className="h-10 w-full bg-gray-200 rounded-lg" />
+      </div>
+
+      {/* Table skeleton */}
+      <div className="card">
+        <div className="p-4 border-b border-gray-100">
+          <div className="flex gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="h-4 w-20 bg-gray-200 rounded flex-1" />
+            ))}
+          </div>
+        </div>
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="p-4 border-b border-gray-50">
+            <div className="flex gap-4">
+              {[...Array(8)].map((_, j) => (
+                <div key={j} className="h-4 bg-gray-200 rounded flex-1" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Main Page ---
+
 export default function AdminLoyaltyPage() {
   const { user } = useAuth();
   const [programs, setPrograms] = useState<LoyaltyProgram[]>([]);
@@ -63,7 +207,9 @@ export default function AdminLoyaltyPage() {
   const [formError, setFormError] = useState('');
 
   // Delete dialog state
-  const [deleteProgram, setDeleteProgram] = useState<LoyaltyProgram | null>(null);
+  const [deleteProgram, setDeleteProgram] = useState<LoyaltyProgram | null>(
+    null
+  );
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchPrograms = useCallback(async () => {
@@ -143,8 +289,12 @@ export default function AdminLoyaltyPage() {
     setFormData({
       name: program.name,
       type: program.type,
-      punch_target: program.punch_target != null ? String(program.punch_target) : '',
-      points_per_dollar: program.points_per_dollar != null ? String(program.points_per_dollar) : '',
+      punch_target:
+        program.punch_target != null ? String(program.punch_target) : '',
+      points_per_dollar:
+        program.points_per_dollar != null
+          ? String(program.points_per_dollar)
+          : '',
       is_active: program.is_active,
     });
     setFormError('');
@@ -197,13 +347,19 @@ export default function AdminLoyaltyPage() {
       setPrograms((prev) =>
         prev.map((p) =>
           p.id === editProgram.id
-            ? { ...program, rewards_count: p.rewards_count, cards_count: p.cards_count }
+            ? {
+                ...program,
+                rewards_count: p.rewards_count,
+                cards_count: p.cards_count,
+              }
             : p
         )
       );
       closeEditModal();
     } catch (err: unknown) {
-      setFormError(err instanceof Error ? err.message : 'Failed to update program');
+      setFormError(
+        err instanceof Error ? err.message : 'Failed to update program'
+      );
     } finally {
       setFormLoading(false);
     }
@@ -215,7 +371,9 @@ export default function AdminLoyaltyPage() {
     if (!deleteProgram) return;
     setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/admin/loyalty/${deleteProgram.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/loyalty/${deleteProgram.id}`, {
+        method: 'DELETE',
+      });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to delete program');
@@ -232,37 +390,285 @@ export default function AdminLoyaltyPage() {
   // --- Stats ---
 
   const activeCount = programs.filter((p) => p.is_active).length;
-  const punchCardCount = programs.filter((p) => p.type === 'punch_card').length;
+  const inactiveCount = programs.length - activeCount;
+  const punchCardCount = programs.filter(
+    (p) => p.type === 'punch_card'
+  ).length;
   const pointsCount = programs.filter((p) => p.type === 'points').length;
   const totalEnrollments = programs.reduce((sum, p) => sum + p.cards_count, 0);
+
+  // --- Chart Data ---
+
+  const typeChartData = [
+    { name: 'Punch Card', value: punchCardCount },
+    { name: 'Points', value: pointsCount },
+  ];
+  const typeColors = ['#a855f7', '#3b82f6'];
+
+  const statusChartData = [
+    { name: 'Active', value: activeCount },
+    { name: 'Inactive', value: inactiveCount },
+  ];
+  const statusColors = ['#22c55e', '#9ca3af'];
+
+  // --- Stat Cards Config ---
+
+  const statCards = [
+    {
+      label: 'Total Programs',
+      value: programs.length,
+      icon: <Gift className="w-5 h-5" />,
+      iconBg: 'bg-primary-100 text-primary-600',
+    },
+    {
+      label: 'Active Programs',
+      value: activeCount,
+      icon: <CheckCircle className="w-5 h-5" />,
+      iconBg: 'bg-green-100 text-green-600',
+    },
+    {
+      label: 'Punch Card Programs',
+      value: punchCardCount,
+      icon: <Hash className="w-5 h-5" />,
+      iconBg: 'bg-purple-100 text-purple-600',
+    },
+    {
+      label: 'Points Programs',
+      value: pointsCount,
+      icon: <TrendingUp className="w-5 h-5" />,
+      iconBg: 'bg-blue-100 text-blue-600',
+    },
+    {
+      label: 'Total Enrollments',
+      value: totalEnrollments,
+      icon: <Users className="w-5 h-5" />,
+      iconBg: 'bg-amber-100 text-amber-600',
+    },
+  ];
 
   // --- Render ---
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
-      </div>
-    );
+    return <SkeletonLoyalty />;
   }
 
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Gift className="w-8 h-8 text-primary-500" />
-          <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Loyalty Programs</h1>
-            <p className="text-sm text-gray-500">
-              {programs.length} total &middot; {activeCount} active &middot; {punchCardCount} punch cards &middot; {pointsCount} points &middot; {totalEnrollments} enrollments
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 rounded-xl bg-primary-100 flex items-center justify-center">
+          <Gift className="w-6 h-6 text-primary-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-secondary-500">
+            Loyalty Programs
+          </h1>
+          <p className="text-sm text-gray-500">
+            Manage all vendor loyalty programs
+          </p>
+        </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {statCards.map((card, index) => (
+          <div
+            key={card.label}
+            className="card p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-default animate-card-pop"
+            style={{
+              animationDelay: `${index * 100}ms`,
+              animationFillMode: 'both',
+            }}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.iconBg}`}
+              >
+                {card.icon}
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-secondary-500 mb-1">
+              <AnimatedValue value={card.value} />
             </p>
+            <p className="text-xs text-gray-500">{card.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Donut Charts Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        {/* Type Breakdown Donut */}
+        <div
+          className="card p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-card-pop"
+          style={{ animationDelay: '500ms', animationFillMode: 'both' }}
+        >
+          <h2 className="text-sm font-semibold text-secondary-500 mb-1">
+            Program Types
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Punch Card vs Points breakdown
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="flex-shrink-0">
+              {punchCardCount + pointsCount > 0 ? (
+                <ResponsiveContainer width={160} height={160}>
+                  <PieChart>
+                    <Pie
+                      data={typeChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={70}
+                      dataKey="value"
+                      nameKey="name"
+                      paddingAngle={3}
+                      animationDuration={1000}
+                      animationBegin={600}
+                    >
+                      {typeChartData.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={typeColors[index]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-[160px] h-[160px] flex items-center justify-center">
+                  <p className="text-sm text-gray-400">No data</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
+              {[
+                {
+                  label: 'Punch Card',
+                  value: punchCardCount,
+                  color: '#a855f7',
+                  icon: <Hash className="w-4 h-4 text-purple-500" />,
+                },
+                {
+                  label: 'Points',
+                  value: pointsCount,
+                  color: '#3b82f6',
+                  icon: <TrendingUp className="w-4 h-4 text-blue-500" />,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between group cursor-default"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    {item.icon}
+                    <span className="text-sm font-medium text-secondary-500 group-hover:text-primary-500 transition-colors">
+                      {item.label}
+                    </span>
+                  </div>
+                  <span className="text-lg font-bold text-secondary-500">
+                    <AnimatedValue value={item.value} />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Status Breakdown Donut */}
+        <div
+          className="card p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-card-pop"
+          style={{ animationDelay: '600ms', animationFillMode: 'both' }}
+        >
+          <h2 className="text-sm font-semibold text-secondary-500 mb-1">
+            Program Status
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Active vs Inactive breakdown
+          </p>
+          <div className="flex items-center gap-6">
+            <div className="flex-shrink-0">
+              {activeCount + inactiveCount > 0 ? (
+                <ResponsiveContainer width={160} height={160}>
+                  <PieChart>
+                    <Pie
+                      data={statusChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={70}
+                      dataKey="value"
+                      nameKey="name"
+                      paddingAngle={3}
+                      animationDuration={1000}
+                      animationBegin={700}
+                    >
+                      {statusChartData.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={statusColors[index]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-[160px] h-[160px] flex items-center justify-center">
+                  <p className="text-sm text-gray-400">No data</p>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
+              {[
+                {
+                  label: 'Active',
+                  value: activeCount,
+                  color: '#22c55e',
+                  icon: <CheckCircle className="w-4 h-4 text-green-500" />,
+                },
+                {
+                  label: 'Inactive',
+                  value: inactiveCount,
+                  color: '#9ca3af',
+                  icon: (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-400" />
+                  ),
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between group cursor-default"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    {item.icon}
+                    <span className="text-sm font-medium text-secondary-500 group-hover:text-primary-500 transition-colors">
+                      {item.label}
+                    </span>
+                  </div>
+                  <span className="text-lg font-bold text-secondary-500">
+                    <AnimatedValue value={item.value} />
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Search */}
-      <div className="card p-4 mb-6">
+      <div
+        className="card p-4 mb-6 animate-card-pop"
+        style={{ animationDelay: '700ms', animationFillMode: 'both' }}
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -276,31 +682,68 @@ export default function AdminLoyaltyPage() {
       </div>
 
       {/* Table */}
-      <div className="card">
+      <div
+        className="card animate-card-pop"
+        style={{ animationDelay: '800ms', animationFillMode: 'both' }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Program Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Type</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Rewards</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Enrollments</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Created</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Program Name
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Vendor
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Type
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">
+                  Rewards
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">
+                  Enrollments
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Status
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Created
+                </th>
+                <th className="p-4 font-semibold text-sm text-gray-500">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paginatedPrograms.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-400">
+                  <td
+                    colSpan={8}
+                    className="p-8 text-center text-gray-400"
+                  >
                     No loyalty programs found.
                   </td>
                 </tr>
               ) : (
-                paginatedPrograms.map((program) => (
-                  <tr key={program.id} className="hover:bg-gray-50 transition-colors">
+                paginatedPrograms.map((program, index) => (
+                  <tr
+                    key={program.id}
+                    className={`hover:bg-gray-50 transition-all duration-200 border-l-4 ${
+                      program.type === 'punch_card'
+                        ? 'border-l-purple-400'
+                        : 'border-l-blue-400'
+                    } ${index < 15 ? 'animate-slide-up-fade' : ''}`}
+                    style={
+                      index < 15
+                        ? {
+                            animationDelay: `${900 + index * 50}ms`,
+                            animationFillMode: 'both',
+                          }
+                        : undefined
+                    }
+                  >
                     <td className="p-4">
                       <p className="font-medium text-secondary-500 truncate max-w-[200px]">
                         {program.name}
@@ -309,9 +752,7 @@ export default function AdminLoyaltyPage() {
                     <td className="p-4 text-sm text-gray-500">
                       {program.vendor?.business_name || '--'}
                     </td>
-                    <td className="p-4">
-                      {getTypeBadge(program.type)}
-                    </td>
+                    <td className="p-4">{getTypeBadge(program.type)}</td>
                     <td className="p-4 text-sm text-secondary-500 font-medium text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Award className="w-3.5 h-3.5 text-gray-400" />
@@ -373,12 +814,16 @@ export default function AdminLoyaltyPage() {
       >
         <div className="space-y-4">
           {formError && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{formError}</div>
+            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">
+              {formError}
+            </div>
           )}
 
           {/* Program Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Program Name *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Program Name *
+            </label>
             <input
               type="text"
               name="name"
@@ -391,7 +836,9 @@ export default function AdminLoyaltyPage() {
 
           {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Type
+            </label>
             <select
               name="type"
               value={formData.type}
@@ -406,7 +853,9 @@ export default function AdminLoyaltyPage() {
           {/* Punch Target (shown when type is punch_card) */}
           {formData.type === 'punch_card' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Punch Target</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Punch Target
+              </label>
               <input
                 type="number"
                 name="punch_target"
@@ -416,14 +865,18 @@ export default function AdminLoyaltyPage() {
                 placeholder="e.g. 10"
                 min="1"
               />
-              <p className="text-xs text-gray-400 mt-1">Number of punches needed to earn a reward</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Number of punches needed to earn a reward
+              </p>
             </div>
           )}
 
           {/* Points Per Dollar (shown when type is points) */}
           {formData.type === 'points' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Points Per Dollar</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Points Per Dollar
+              </label>
               <input
                 type="number"
                 name="points_per_dollar"
@@ -434,7 +887,9 @@ export default function AdminLoyaltyPage() {
                 step="0.01"
                 min="0"
               />
-              <p className="text-xs text-gray-400 mt-1">Points earned per dollar spent</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Points earned per dollar spent
+              </p>
             </div>
           )}
 
@@ -448,7 +903,10 @@ export default function AdminLoyaltyPage() {
               onChange={handleFormChange}
               className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
             />
-            <label htmlFor="is_active" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="is_active"
+              className="text-sm font-medium text-gray-700"
+            >
               Active
             </label>
           </div>

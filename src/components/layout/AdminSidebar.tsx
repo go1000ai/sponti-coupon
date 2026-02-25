@@ -108,14 +108,16 @@ export default function AdminSidebar({ onSignOut, userName, userEmail }: AdminSi
       {/* Branding */}
       <div className="p-6 border-b border-secondary-400/30">
         <div className="flex flex-col items-center justify-center gap-2 w-full text-center">
-          <Image
-            src="/logo.png"
-            alt="SpontiCoupon"
-            width={160}
-            height={120}
-            className="w-40 h-auto mx-auto"
-            priority
-          />
+          <a href="/" target="_blank" rel="noopener noreferrer">
+            <Image
+              src="/logo.png"
+              alt="SpontiCoupon"
+              width={160}
+              height={120}
+              className="w-40 h-auto mx-auto hover:opacity-80 transition-opacity"
+              priority
+            />
+          </a>
           <span className="text-[11px] font-semibold uppercase tracking-widest text-secondary-300 block w-full text-center">
             Admin Portal
           </span>

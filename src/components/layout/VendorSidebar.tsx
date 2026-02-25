@@ -114,15 +114,15 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
     <div className="flex flex-col h-full">
       {/* Branding — Actual Logo */}
       <div className="p-5 border-b border-secondary-400/30">
-        <Link href="/vendor/dashboard" className="block">
+        <a href="/" target="_blank" rel="noopener noreferrer" className="block">
           <Image
             src="/logo.png"
             alt="SpontiCoupon"
             width={180}
             height={54}
-            className="h-11 w-auto brightness-110"
+            className="h-11 w-auto brightness-110 hover:opacity-80 transition-opacity"
           />
-        </Link>
+        </a>
         <p className="text-[11px] text-secondary-300 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Vendor Portal</p>
       </div>
 
