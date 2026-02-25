@@ -31,6 +31,10 @@ export async function PUT(
       updateData.vendor_reply = body.vendor_reply || null;
     }
 
+    if ('vendor_replied_at' in body) {
+      updateData.vendor_replied_at = body.vendor_replied_at || null;
+    }
+
     if ('is_verified' in body) {
       updateData.is_verified = Boolean(body.is_verified);
     }

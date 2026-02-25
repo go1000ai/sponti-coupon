@@ -16,6 +16,8 @@ import {
   Reply,
   ShieldCheck,
   Bot,
+  Pencil,
+  Save,
 } from 'lucide-react';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 
@@ -53,6 +55,16 @@ export default function AdminReviewsPage() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState<ReviewRow | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Edit modal
+  const [editTarget, setEditTarget] = useState<ReviewRow | null>(null);
+  const [editForm, setEditForm] = useState({ rating: 5, comment: '' });
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Reply modal
+  const [replyTarget, setReplyTarget] = useState<ReviewRow | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replyLoading, setReplyLoading] = useState(false);
 
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -122,6 +134,67 @@ export default function AdminReviewsPage() {
       fetchReviews();
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to update review', 'error');
+    }
+  };
+
+  // Edit review
+  const openEditDialog = (review: ReviewRow) => {
+    setEditTarget(review);
+    setEditForm({ rating: review.rating, comment: review.comment || '' });
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editTarget) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reviews/${editTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: editForm.rating, comment: editForm.comment || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update review');
+      }
+      showToast('Review updated successfully', 'success');
+      setEditTarget(null);
+      fetchReviews();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update review', 'error');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Reply on behalf of vendor
+  const openReplyDialog = (review: ReviewRow) => {
+    setReplyTarget(review);
+    setReplyText(review.vendor_reply || '');
+  };
+
+  const handleReplySubmit = async () => {
+    if (!replyTarget) return;
+    setReplyLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reviews/${replyTarget.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor_reply: replyText.trim() || null,
+          vendor_replied_at: replyText.trim() ? new Date().toISOString() : null,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save reply');
+      }
+      showToast(replyText.trim() ? 'Reply saved successfully' : 'Reply removed', 'success');
+      setReplyTarget(null);
+      fetchReviews();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save reply', 'error');
+    } finally {
+      setReplyLoading(false);
     }
   };
 
@@ -352,6 +425,24 @@ export default function AdminReviewsPage() {
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => openEditDialog(review)}
+                          className="text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                          title="Edit Review"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openReplyDialog(review)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            review.vendor_reply
+                              ? 'text-blue-500 hover:bg-blue-50'
+                              : 'text-gray-400 hover:bg-gray-100'
+                          }`}
+                          title={review.vendor_reply ? 'Edit Reply' : 'Reply as Vendor'}
+                        >
+                          <Reply className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={() => handleToggleVerified(review)}
                           className={`p-2 rounded-lg transition-colors ${
                             review.is_verified
@@ -478,6 +569,191 @@ export default function AdminReviewsPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== Edit Review Modal ==================== */}
+      {editTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setEditTarget(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                  <Pencil className="w-5 h-5 text-primary-500" />
+                  Edit Review
+                </h3>
+                <button
+                  onClick={() => setEditTarget(null)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              {/* Review info */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-5">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-400">Customer</p>
+                    <p className="font-medium text-secondary-500">{editTarget.customer_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Vendor</p>
+                    <p className="font-medium text-secondary-500">{editTarget.vendor_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Deal</p>
+                    <p className="text-gray-600 truncate">{editTarget.deal_title}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Date</p>
+                    <p className="text-gray-600">{new Date(editTarget.created_at).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Rating picker */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      onClick={() => setEditForm((f) => ({ ...f, rating: i }))}
+                      className="p-1 hover:scale-110 transition-transform"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          i <= editForm.rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-200 hover:text-yellow-200'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-gray-500">{editForm.rating}/5</span>
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Comment</label>
+                <textarea
+                  value={editForm.comment}
+                  onChange={(e) => setEditForm((f) => ({ ...f, comment: e.target.value }))}
+                  rows={4}
+                  className="input-field w-full resize-none"
+                  placeholder="Customer comment..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setEditTarget(null)}
+                  disabled={editLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditSubmit}
+                  disabled={editLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {editLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== Reply Modal ==================== */}
+      {replyTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setReplyTarget(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                  <Reply className="w-5 h-5 text-primary-500" />
+                  {replyTarget.vendor_reply ? 'Edit Vendor Reply' : 'Reply as Vendor'}
+                </h3>
+                <button
+                  onClick={() => setReplyTarget(null)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              </div>
+
+              {/* Original review */}
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-medium text-secondary-500 text-sm">{replyTarget.customer_name}</p>
+                  {renderStars(replyTarget.rating)}
+                </div>
+                <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {replyTarget.comment || 'No comment provided.'}
+                </p>
+                <p className="text-xs text-gray-400 mt-2">
+                  For: {replyTarget.vendor_name} — {replyTarget.deal_title}
+                </p>
+              </div>
+
+              {/* Reply text */}
+              <div className="mb-5">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vendor Reply
+                  <span className="text-xs text-gray-400 ml-1">(will appear as from {replyTarget.vendor_name})</span>
+                </label>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={4}
+                  className="input-field w-full resize-none"
+                  placeholder="Write a reply on behalf of the vendor..."
+                />
+                {replyTarget.vendor_reply && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Clear the text and save to remove the reply.
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  onClick={() => setReplyTarget(null)}
+                  disabled={replyLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReplySubmit}
+                  disabled={replyLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  <Reply className="w-4 h-4" />
+                  {replyLoading ? 'Saving...' : replyText.trim() ? 'Save Reply' : 'Remove Reply'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
