@@ -24,6 +24,8 @@ interface UserRecord {
   id: string;
   email: string;
   role: UserRole;
+  first_name: string;
+  last_name: string;
   associated_name: string;
   disabled: boolean;
   created_at: string;
@@ -88,6 +90,8 @@ export default function AdminUsersPage() {
     return users.filter(
       (u) =>
         u.email.toLowerCase().includes(q) ||
+        u.first_name.toLowerCase().includes(q) ||
+        u.last_name.toLowerCase().includes(q) ||
         u.associated_name.toLowerCase().includes(q) ||
         u.role.toLowerCase().includes(q)
     );
@@ -340,8 +344,9 @@ export default function AdminUsersPage() {
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="p-4 font-semibold text-sm text-gray-500">Email</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">First Name</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Last Name</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Role</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Associated Name</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Created At</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
@@ -350,7 +355,7 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-gray-50">
               {paginatedUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-400">
+                  <td colSpan={7} className="p-8 text-center text-gray-400">
                     No users found matching your filters.
                   </td>
                 </tr>
@@ -364,11 +369,14 @@ export default function AdminUsersPage() {
                     <td className="p-4 text-sm text-secondary-500 font-medium">
                       {userRecord.email || '--'}
                     </td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {userRecord.first_name || '--'}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {userRecord.last_name || '--'}
+                    </td>
                     <td className="p-4">
                       {getRoleBadge(userRecord.role)}
-                    </td>
-                    <td className="p-4 text-sm text-gray-500">
-                      {userRecord.associated_name || '--'}
                     </td>
                     <td className="p-4">
                       {getStatusBadge(userRecord.disabled)}

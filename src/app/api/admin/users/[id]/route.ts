@@ -25,7 +25,7 @@ export async function GET(
     // Fetch user profile
     const { data: profile, error: profileError } = await serviceClient
       .from('user_profiles')
-      .select('id, role')
+      .select('id, role, first_name, last_name')
       .eq('id', id)
       .single();
 
@@ -83,10 +83,13 @@ export async function GET(
       ]);
 
     // Build response
+    const profileRaw = profile as unknown as Record<string, unknown>;
     const user = {
       id: profile.id,
       email: authUser.email ?? null,
       role: profile.role,
+      first_name: (profileRaw.first_name as string) || null,
+      last_name: (profileRaw.last_name as string) || null,
       created_at: authUser.created_at,
       last_sign_in_at: authUser.last_sign_in_at ?? null,
       disabled,
@@ -111,6 +114,8 @@ export async function GET(
  *   - { role: 'vendor' | 'customer' | 'admin' } — changes role in user_profiles
  *   - { disabled: boolean } — enables/disables the user via supabase.auth.admin.updateUserById()
  *   - { email: string } — updates auth email and vendor/customer table email
+ *   - { first_name: string } — updates first_name in user_profiles
+ *   - { last_name: string } — updates last_name in user_profiles
  *   - { vendor_data: object } — updates fields in the vendors table (vendor users only)
  *   - { customer_data: object } — updates fields in the customers table (customer users only)
  */
@@ -260,6 +265,26 @@ export async function PUT(
       }
 
       result.vendor_data = body.vendor_data;
+    }
+
+    // Handle first_name / last_name update (stored in user_profiles for all roles)
+    if (body.first_name !== undefined || body.last_name !== undefined) {
+      const nameUpdate: Record<string, string | null> = {};
+      if (body.first_name !== undefined) nameUpdate.first_name = body.first_name || null;
+      if (body.last_name !== undefined) nameUpdate.last_name = body.last_name || null;
+
+      const { error: nameError } = await serviceClient
+        .from('user_profiles')
+        .update(nameUpdate)
+        .eq('id', id);
+
+      if (nameError) {
+        console.error('[PUT /api/admin/users] Name update error:', nameError);
+        return NextResponse.json({ error: 'Failed to update name' }, { status: 500 });
+      }
+
+      if (body.first_name !== undefined) result.first_name = body.first_name;
+      if (body.last_name !== undefined) result.last_name = body.last_name;
     }
 
     // Handle customer_data update

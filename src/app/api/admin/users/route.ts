@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const roleFilter = searchParams.get('role') || 'all';
 
-    // Step 1: Fetch user profiles
+    // Step 1: Fetch user profiles (with first_name, last_name)
     let profilesQuery = serviceClient
       .from('user_profiles')
-      .select('id, role')
+      .select('id, role, first_name, last_name')
       .order('id');
 
     if (roleFilter !== 'all') {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Step 2: Fetch all auth users (paginated — Supabase returns max 1000 per page)
-    const emailMap: Record<string, { email: string; created_at: string; disabled: boolean }> = {};
+    const emailMap: Record<string, { email: string; created_at: string; disabled: boolean; full_name: string }> = {};
     let page = 1;
     const perPage = 1000;
     let hasMore = true;
@@ -62,6 +62,7 @@ export async function GET(request: NextRequest) {
             created_at: u.created_at,
             disabled: u.user_metadata?.disabled === true ||
               (u.banned_until !== null && u.banned_until !== undefined),
+            full_name: u.user_metadata?.full_name || '',
           };
         }
         // If we got fewer than perPage, we've reached the end
@@ -89,31 +90,59 @@ export async function GET(request: NextRequest) {
         .in('id', profileIds),
     ]);
 
-    const vendorNameMap: Record<string, string> = {};
+    const vendorMap: Record<string, { business_name: string }> = {};
     (vendorsRes.data || []).forEach((v: { id: string; business_name: string }) => {
-      vendorNameMap[v.id] = v.business_name;
+      vendorMap[v.id] = { business_name: v.business_name };
     });
 
-    const customerNameMap: Record<string, string> = {};
+    const customerMap: Record<string, { first_name: string; last_name: string }> = {};
     (customersRes.data || []).forEach((c: { id: string; first_name: string | null; last_name: string | null }) => {
-      const parts = [c.first_name, c.last_name].filter(Boolean);
-      customerNameMap[c.id] = parts.length > 0 ? parts.join(' ') : '';
+      customerMap[c.id] = {
+        first_name: c.first_name || '',
+        last_name: c.last_name || '',
+      };
     });
 
     // Step 4: Build enriched user list
     const users = profiles.map((profile) => {
       const authInfo = emailMap[profile.id];
+      const profileRaw = profile as unknown as Record<string, unknown>;
+
+      // Primary: use user_profiles.first_name/last_name (works for all roles)
+      let firstName = (profileRaw.first_name as string) || '';
+      let lastName = (profileRaw.last_name as string) || '';
+
+      // Fallback: role-specific sources if user_profiles doesn't have names
+      if (!firstName && !lastName) {
+        if (profile.role === 'customer') {
+          const customer = customerMap[profile.id];
+          firstName = customer?.first_name || '';
+          lastName = customer?.last_name || '';
+        } else {
+          // Vendor/Admin — fallback to auth metadata
+          const fullName = authInfo?.full_name || '';
+          if (fullName) {
+            const parts = fullName.split(' ');
+            firstName = parts[0] || '';
+            lastName = parts.slice(1).join(' ') || '';
+          }
+        }
+      }
+
+      // Associated name: business name for vendors, full name for customers
       let associatedName = '';
       if (profile.role === 'vendor') {
-        associatedName = vendorNameMap[profile.id] || '';
+        associatedName = vendorMap[profile.id]?.business_name || '';
       } else if (profile.role === 'customer') {
-        associatedName = customerNameMap[profile.id] || '';
+        associatedName = [firstName, lastName].filter(Boolean).join(' ');
       }
 
       return {
         id: profile.id,
         email: authInfo?.email || '',
         role: profile.role,
+        first_name: firstName,
+        last_name: lastName,
         associated_name: associatedName,
         disabled: authInfo?.disabled || false,
         created_at: authInfo?.created_at || '',

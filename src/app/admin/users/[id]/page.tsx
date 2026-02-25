@@ -53,6 +53,8 @@ interface UserDetail {
   id: string;
   email: string;
   role: UserRole;
+  first_name: string | null;
+  last_name: string | null;
   created_at: string;
   last_sign_in_at: string | null;
   disabled: boolean;
@@ -68,6 +70,9 @@ interface FormState {
   email: string;
   role: UserRole;
   disabled: boolean;
+  // Profile-level name (all roles)
+  profile_first_name: string;
+  profile_last_name: string;
   // Vendor fields
   business_name: string;
   vendor_phone: string;
@@ -244,6 +249,9 @@ export default function AdminUserDetailPage() {
       email: u.email,
       role: u.role,
       disabled: u.disabled,
+      // Profile-level name (all roles)
+      profile_first_name: u.first_name || '',
+      profile_last_name: u.last_name || '',
       // Vendor fields
       business_name: u.vendor_data?.business_name || '',
       vendor_phone: u.vendor_data?.phone || '',
@@ -339,6 +347,14 @@ export default function AdminUserDetailPage() {
       }
       if (formData.disabled !== originalFormData.disabled) {
         payload.disabled = formData.disabled;
+      }
+
+      // Profile-level names (all roles)
+      if (formData.profile_first_name !== originalFormData.profile_first_name) {
+        payload.first_name = formData.profile_first_name;
+      }
+      if (formData.profile_last_name !== originalFormData.profile_last_name) {
+        payload.last_name = formData.profile_last_name;
       }
 
       // Vendor data (only if role is vendor)
@@ -589,6 +605,32 @@ export default function AdminUserDetailPage() {
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
                     placeholder="user@example.com"
+                  />
+                </div>
+              </div>
+
+              {/* First Name & Last Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>First Name</FieldLabel>
+                  <input
+                    type="text"
+                    name="profile_first_name"
+                    value={formData.profile_first_name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                    placeholder="First name"
+                  />
+                </div>
+                <div>
+                  <FieldLabel>Last Name</FieldLabel>
+                  <input
+                    type="text"
+                    name="profile_last_name"
+                    value={formData.profile_last_name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                    placeholder="Last name"
                   />
                 </div>
               </div>
