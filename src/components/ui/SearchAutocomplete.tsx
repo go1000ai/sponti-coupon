@@ -85,7 +85,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
               onFocus={() => results.length > 0 && setShowDropdown(true)}
               placeholder="Search deals, restaurants, spas..."
               className={`w-full pl-10 pr-3 py-3 rounded-xl text-secondary-500 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 ${
-                isHero ? 'text-sm' : 'text-sm'
+                isHero ? 'text-base sm:text-sm' : 'text-base sm:text-sm'
               }`}
             />
           </div>
@@ -96,7 +96,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
               value={cityQuery}
               onChange={e => setCityQuery(e.target.value)}
               placeholder="City or ZIP"
-              className="w-full pl-10 pr-3 py-3 rounded-xl text-secondary-500 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-sm"
+              className="w-full pl-10 pr-3 py-3 rounded-xl text-secondary-500 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-base sm:text-sm"
             />
           </div>
           <button

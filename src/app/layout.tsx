@@ -14,7 +14,7 @@ const instrumentSerif = Instrument_Serif({ weight: "400", style: ["normal", "ita
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
+  maximumScale: 1,
   themeColor: "#E8632B",
 };
 
