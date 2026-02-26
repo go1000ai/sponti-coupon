@@ -2,12 +2,51 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, X, ImageOff } from 'lucide-react';
 
 interface MediaItem {
   type: 'image' | 'video';
   url: string;
   thumbnail?: string;
+}
+
+function SafeImage({ src, alt, fill, className, priority, onError }: {
+  src: string; alt: string; fill?: boolean; className?: string; priority?: boolean;
+  onError?: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div className={`bg-gray-100 flex items-center justify-center ${fill ? 'absolute inset-0' : 'w-full h-full'}`}>
+        <ImageOff className="w-8 h-8 text-gray-300" />
+      </div>
+    );
+  }
+
+  // Use regular img for /media/ paths to avoid Next.js image optimization issues
+  if (src.startsWith('/media/')) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={alt}
+        className={`${className || ''} ${fill ? 'absolute inset-0 w-full h-full' : ''}`}
+        onError={() => { setFailed(true); onError?.(); }}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill={fill}
+      className={className}
+      priority={priority}
+      onError={() => { setFailed(true); onError?.(); }}
+    />
+  );
 }
 
 interface DealImageGalleryProps {
@@ -76,7 +115,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
   if (allMedia.length === 1 && allMedia[0].type === 'image') {
     return (
       <div className="relative h-72 sm:h-96">
-        <Image src={allMedia[0].url} alt={title} fill className="object-cover" priority />
+        <SafeImage src={allMedia[0].url} alt={title} fill className="object-cover" priority />
       </div>
     );
   }
@@ -90,7 +129,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
         onTouchEnd={handleTouchEnd}
       >
         {current.type === 'image' ? (
-          <Image
+          <SafeImage
             src={current.url}
             alt={`${title} - Image ${activeIndex + 1}`}
             fill
@@ -103,7 +142,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
             onClick={() => setShowVideoModal(true)}
           >
             {current.thumbnail ? (
-              <Image src={current.thumbnail} alt={`${title} - Video`} fill className="object-cover" />
+              <SafeImage src={current.thumbnail} alt={`${title} - Video`} fill className="object-cover" />
             ) : (
               <div className="w-full h-full bg-gray-900 flex items-center justify-center">
                 <Play className="w-16 h-16 text-white/60" />
@@ -162,10 +201,10 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
               }`}
             >
               {media.type === 'image' ? (
-                <Image src={media.url} alt={`${title} thumbnail ${i + 1}`} fill className="object-cover" />
+                <SafeImage src={media.url} alt={`${title} thumbnail ${i + 1}`} fill className="object-cover" />
               ) : media.thumbnail ? (
                 <>
-                  <Image src={media.thumbnail} alt="Video thumbnail" fill className="object-cover" />
+                  <SafeImage src={media.thumbnail} alt="Video thumbnail" fill className="object-cover" />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                     <Play className="w-4 h-4 text-white" fill="white" />
                   </div>

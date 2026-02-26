@@ -10,7 +10,7 @@ import { formatPercentage, formatCurrency, calculateDiscount } from '@/lib/utils
 import {
   ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
-  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause,
+  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause, Calendar, Clock,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -139,6 +139,8 @@ function EditDealPageInner() {
     terms_and_conditions: '',
     how_it_works: '',
     fine_print: '',
+    starts_at: '',
+    expires_at: '',
   });
 
   useEffect(() => {
@@ -171,6 +173,8 @@ function EditDealPageInner() {
         terms_and_conditions: data.terms_and_conditions || '',
         how_it_works: data.how_it_works || '',
         fine_print: data.fine_print || '',
+        starts_at: data.starts_at ? new Date(data.starts_at).toISOString().slice(0, 16) : '',
+        expires_at: data.expires_at ? new Date(data.expires_at).toISOString().slice(0, 16) : '',
       });
 
       setAdditionalImages(data.image_urls || []);
@@ -345,6 +349,8 @@ function EditDealPageInner() {
       search_tags: searchTags,
       location_ids: locationIds,
       website_url: locationMode === 'website' && websiteUrl ? websiteUrl : null,
+      ...(form.starts_at ? { starts_at: new Date(form.starts_at).toISOString() } : {}),
+      ...(form.expires_at ? { expires_at: new Date(form.expires_at).toISOString() } : {}),
     };
 
     const { error: updateError } = await supabase.from('deals').update(updates).eq('id', deal.id).eq('vendor_id', user.id);
@@ -416,6 +422,29 @@ function EditDealPageInner() {
   const termsSummary = [form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 0
     ? `${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length} section${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 1 ? 's' : ''} filled`
     : 'Add terms, how it works, fine print';
+
+  // Scheduling summary + duration
+  const scheduleSummary = (() => {
+    if (!form.starts_at && !form.expires_at) return 'Set start and end dates';
+    const parts: string[] = [];
+    if (form.starts_at) parts.push(`Starts ${new Date(form.starts_at).toLocaleDateString()}`);
+    if (form.expires_at) parts.push(`Ends ${new Date(form.expires_at).toLocaleDateString()}`);
+    return parts.join(' — ');
+  })();
+
+  const dealDuration = (() => {
+    if (!form.starts_at || !form.expires_at) return null;
+    const start = new Date(form.starts_at);
+    const end = new Date(form.expires_at);
+    const diffMs = end.getTime() - start.getTime();
+    if (diffMs <= 0) return 'Invalid dates';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    if (days > 0 && remainingHours > 0) return `${days} day${days > 1 ? 's' : ''} ${remainingHours}h`;
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''}`;
+    return `${hours} hour${hours > 1 ? 's' : ''}`;
+  })();
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -829,6 +858,41 @@ function EditDealPageInner() {
             )}
           </BentoCard>
 
+          {/* Scheduling */}
+          <BentoCard icon={<Calendar className="w-5 h-5" />} title="Scheduling" summary={scheduleSummary} color="orange"
+            open={!!openSections.schedule} onToggle={() => toggleSection('schedule')}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Start Date & Time
+                </label>
+                <input name="starts_at" type="datetime-local" value={form.starts_at} onChange={handleChange}
+                  className="input-field text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> End Date & Time
+                </label>
+                <input name="expires_at" type="datetime-local" value={form.expires_at} onChange={handleChange}
+                  className="input-field text-sm" />
+              </div>
+            </div>
+            {dealDuration && (
+              <div className={`border rounded-lg p-3 flex items-center justify-between ${dealDuration === 'Invalid dates' ? 'bg-red-50 border-red-200' : 'bg-primary-50 border-primary-200'}`}>
+                <span className="text-xs font-medium text-gray-600">Deal is good for:</span>
+                <span className={`text-sm font-bold ${dealDuration === 'Invalid dates' ? 'text-red-600' : 'text-primary-600'}`}>{dealDuration}</span>
+              </div>
+            )}
+            {deal.deal_type === 'sponti_coupon' && (
+              <p className="text-[10px] text-amber-600 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> Sponti Coupons must last 4–24 hours
+              </p>
+            )}
+            {deal.deal_type === 'regular' && (
+              <p className="text-[10px] text-gray-500">Steady deals can last up to 30 days</p>
+            )}
+          </BentoCard>
+
           {/* Terms & Legal */}
           <BentoCard icon={<ClipboardList className="w-5 h-5" />} title="Terms & Legal" summary={termsSummary} color="gray"
             open={!!openSections.terms} onToggle={() => toggleSection('terms')}>
@@ -852,7 +916,7 @@ function EditDealPageInner() {
 
         {/* Info note */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-600 mb-6">
-          <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) and expiration cannot be changed. Claims: {deal.claims_count}
+          <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) cannot be changed. Claims: {deal.claims_count}
         </div>
 
         {/* Save + Publish/Pause buttons */}

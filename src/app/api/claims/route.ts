@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
 import { generateRedemptionCode } from '@/lib/qr';
 
@@ -13,6 +13,21 @@ export async function POST(request: NextRequest) {
   }
 
   const { deal_id } = await request.json();
+
+  // Ensure customer record exists (FK requirement: claims.customer_id -> customers.id)
+  const serviceClient = await createServiceRoleClient();
+  const { data: existingCustomer } = await serviceClient
+    .from('customers')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (!existingCustomer) {
+    await serviceClient.from('customers').insert({
+      id: user.id,
+      email: user.email || '',
+    });
+  }
 
   // Get the deal with vendor info
   const { data: deal } = await supabase

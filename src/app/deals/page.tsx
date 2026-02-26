@@ -9,7 +9,7 @@ import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import { geocodeAddress } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
-const RADIUS_OPTIONS = [5, 10, 25, 50];
+const RADIUS_OPTIONS = [10, 25, 50, 100, 0]; // 0 = no limit
 
 type SortOption = 'distance' | 'newest' | 'discount';
 
@@ -18,7 +18,7 @@ export default function DealsPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     type: '' as '' | 'regular' | 'sponti_coupon',
-    radius: 25,
+    radius: 0,
     search: '',
     city: '',
   });
@@ -46,7 +46,7 @@ export default function DealsPage() {
     setLoading(true);
     const params = new URLSearchParams();
 
-    if (userLocation) {
+    if (userLocation && filters.radius > 0) {
       params.set('lat', String(userLocation.lat));
       params.set('lng', String(userLocation.lng));
       params.set('radius', String(filters.radius));
@@ -55,7 +55,7 @@ export default function DealsPage() {
     if (filters.city) params.set('city', filters.city);
     if (filters.search) params.set('search', filters.search);
 
-    params.set('limit', '100');
+    params.set('limit', '50');
     const response = await fetch(`/api/deals?${params.toString()}`);
     const data = await response.json();
     const fetchedDeals = data.deals || [];
@@ -72,11 +72,11 @@ export default function DealsPage() {
     setLoading(false);
   }, [userLocation, filters, sortBy]);
 
-  // Wait for geolocation to resolve before first fetch
+  // Fetch deals immediately (no location needed when radius=All)
   useEffect(() => {
-    if (geoLoading) return;
+    if (filters.radius > 0 && geoLoading) return; // only wait for geo when radius is set
     fetchDeals();
-  }, [geoLoading, fetchDeals]);
+  }, [geoLoading, fetchDeals, filters.radius]);
 
   const handleLocationSearch = async () => {
     if (!filters.city.trim()) return;
@@ -245,7 +245,7 @@ export default function DealsPage() {
                 className="w-full py-3 px-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
                 {RADIUS_OPTIONS.map(r => (
-                  <option key={r} value={r} className="text-secondary-500">{r} miles</option>
+                  <option key={r} value={r} className="text-secondary-500">{r === 0 ? 'All — No limit' : `${r} miles`}</option>
                 ))}
               </select>
             </div>

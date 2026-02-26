@@ -10,6 +10,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'sponticoupon.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.sponticoupon.com',
+      },
     ],
   },
   async headers() {
