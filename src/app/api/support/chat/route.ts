@@ -18,7 +18,7 @@ WHAT IS SPONTICOUPON:
 SpontiCoupon is a deal/coupon marketplace connecting local businesses (vendors) with customers. Vendors create deals, customers browse, claim, and redeem them at the business.
 
 TWO DEAL TYPES:
-1. Sponti Deals — flash/impulse deals, time-limited, often with deposits. Like a spontaneous offer.
+1. Sponti Deals — spontaneous, time-limited deals (4-24 hours), often with deposits. Like a spontaneous offer.
 2. Steady Deals (Regular) — standard coupons/promotions, longer running, traditional discounts.
 
 SUBSCRIPTION TIERS (monthly, ~20% off annually):

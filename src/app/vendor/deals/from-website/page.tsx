@@ -261,7 +261,7 @@ export default function ImportFromWebsitePage() {
 Description: ${deal.description}
 Original Price: $${deal.original_price}
 Deal Price: $${deal.deal_price} (${deal.discount_percentage}% off)
-Type: ${deal.deal_type === 'sponti_coupon' ? 'Flash Deal' : 'Steady Deal'}
+Type: ${deal.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal'}
 ${deal.highlights?.length ? `Highlights: ${deal.highlights.join(', ')}` : ''}
 ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
     navigator.clipboard.writeText(text);
@@ -530,7 +530,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                             : 'bg-blue-100 text-blue-700'
                         }`}>
                           {deal.deal_type === 'sponti_coupon' ? (
-                            <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Flash Deal</span>
+                            <span className="flex items-center gap-1"><Zap className="w-3 h-3" /> Sponti Deal</span>
                           ) : 'Steady Deal'}
                         </span>
                         <span className="text-xs text-green-600 font-bold">{deal.discount_percentage}% OFF</span>

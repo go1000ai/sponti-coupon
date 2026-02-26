@@ -61,7 +61,7 @@ export default function HowItWorksPage() {
                 <h3 className="text-xl font-bold text-primary-600">Sponti Coupons</h3>
               </div>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li className="flex items-start gap-2"><Zap className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" /> Flash deals lasting 4-24 hours</li>
+                <li className="flex items-start gap-2"><Zap className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" /> Sponti deals lasting 4-24 hours</li>
                 <li className="flex items-start gap-2"><Zap className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" /> Deeper discounts than Steady Deals</li>
                 <li className="flex items-start gap-2"><Zap className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" /> Vendor sets the terms (deposit, prepay, or free)</li>
                 <li className="flex items-start gap-2"><Zap className="w-4 h-4 text-primary-400 mt-0.5 flex-shrink-0" /> Limited-time urgency creates excitement</li>

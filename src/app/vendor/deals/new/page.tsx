@@ -843,7 +843,7 @@ export default function NewDealPage() {
             </div>
             <h3 className="font-bold text-primary-500">Sponti Coupon</h3>
           </div>
-          <p className="text-sm text-gray-500">Flash deal up to 24 hours. Requires deposit. Must beat your Steady Deal by 10%+.</p>
+          <p className="text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Must beat your Steady Deal by 10%+.</p>
         </button>
       </div>
 

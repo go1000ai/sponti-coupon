@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
       const { data: competitorDeals } = await competitorQuery;
       if (competitorDeals && competitorDeals.length > 0) {
         competitorInfo = `\n\nTOP COMPETITOR DEALS ON SPONTICOUPON (same category):\n${competitorDeals.map((d, i) =>
-          `${i + 1}. "${d.title}" — $${d.original_price} → $${d.deal_price} (${d.discount_percentage}% off, ${d.deal_type === 'sponti_coupon' ? 'Flash' : 'Steady'})`
+          `${i + 1}. "${d.title}" — $${d.original_price} → $${d.deal_price} (${d.discount_percentage}% off, ${d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'})`
         ).join('\n')}`;
       }
     }

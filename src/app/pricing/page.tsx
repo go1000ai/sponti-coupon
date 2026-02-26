@@ -330,7 +330,7 @@ export default function PricingPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
               {[
                 { value: '$0', label: 'Transaction fees', sublabel: 'You keep 100% of every sale' },
-                { value: '24hr', label: 'Sponti Coupons', sublabel: 'Same-day flash deals' },
+                { value: '24hr', label: 'Sponti Coupons', sublabel: 'Same-day sponti deals' },
                 { value: '5min', label: 'Setup time', sublabel: 'Post your first deal today' },
               ].map((stat) => (
                 <div key={stat.label} className="text-center p-6 rounded-xl bg-gray-50 border border-gray-100">

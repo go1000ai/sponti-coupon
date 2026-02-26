@@ -79,7 +79,7 @@ export default function AboutPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             {[
-              { icon: <Zap className="w-5 h-5 text-primary-500" />, color: 'primary', title: 'Sponti Coupons', desc: 'Flash deals that last 4-24 hours, creating urgency and excitement. Vendors control deposit requirements.' },
+              { icon: <Zap className="w-5 h-5 text-primary-500" />, color: 'primary', title: 'Sponti Coupons', desc: 'Sponti deals that last 4-24 hours, creating urgency and excitement. Vendors control deposit requirements.' },
               { icon: <Shield className="w-5 h-5 text-green-500" />, color: 'green', title: 'Verified Reviews', desc: 'Only customers who actually redeemed a deal can leave reviews — no fake reviews, ever.' },
               { icon: <Store className="w-5 h-5 text-accent-500" />, color: 'accent', title: 'Vendor First', desc: 'Flat-rate pricing, instant payouts, and analytics to help vendors grow — not just survive.' },
               { icon: <Heart className="w-5 h-5 text-red-500" />, color: 'red', title: 'Loyalty Built In', desc: 'Punch cards and points programs that reward repeat customers automatically.' },

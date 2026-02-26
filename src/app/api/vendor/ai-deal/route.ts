@@ -132,9 +132,9 @@ function generateTemplateSuggestion(
   const templates: Record<string, { titles: string[]; descriptions: string[]; priceRange: [number, number]; discountRange: [number, number] }> = {
     restaurant: {
       titles: [
-        `${businessName} — ${isSponti ? 'Flash' : 'Half Price'} Dining`,
+        `${businessName} — ${isSponti ? 'Sponti' : 'Half Price'} Dining`,
         `${isSponti ? 'Tonight Only!' : 'This Week:'} ${businessName} Feast`,
-        `${businessName} — BOGO Entrees ${isSponti ? 'Flash' : 'Special'}`,
+        `${businessName} — BOGO Entrees ${isSponti ? 'Sponti' : 'Special'}`,
       ],
       descriptions: [
         `Enjoy an incredible dining experience at ${businessName}! Our chef has prepared a special menu just for this deal. Don't miss out on these amazing savings.`,
@@ -146,7 +146,7 @@ function generateTemplateSuggestion(
     },
     cafe: {
       titles: [
-        `${businessName} — ${isSponti ? 'Flash' : 'Weekly'} Café Special`,
+        `${businessName} — ${isSponti ? 'Sponti' : 'Weekly'} Café Special`,
         `${isSponti ? 'Now!' : 'Save:'} ${businessName} Brunch Deal`,
       ],
       descriptions: [
@@ -158,7 +158,7 @@ function generateTemplateSuggestion(
     },
     retail: {
       titles: [
-        `${businessName} — ${isSponti ? 'Flash Sale!' : 'Mega Savings'}`,
+        `${businessName} — ${isSponti ? 'Sponti Sale!' : 'Mega Savings'}`,
         `${isSponti ? 'Limited:' : 'Shop:'} ${businessName} Exclusive`,
       ],
       descriptions: [
@@ -170,7 +170,7 @@ function generateTemplateSuggestion(
     },
     beauty: {
       titles: [
-        `${businessName} — ${isSponti ? 'Flash' : 'Beauty'} Special`,
+        `${businessName} — ${isSponti ? 'Sponti' : 'Beauty'} Special`,
         `${isSponti ? 'Today:' : 'Save:'} ${businessName} Pamper Package`,
       ],
       descriptions: [
@@ -182,7 +182,7 @@ function generateTemplateSuggestion(
     },
     fitness: {
       titles: [
-        `${businessName} — ${isSponti ? 'Flash' : 'Monthly'} Fitness Pass`,
+        `${businessName} — ${isSponti ? 'Sponti' : 'Monthly'} Fitness Pass`,
         `${isSponti ? 'Now!' : 'Join:'} ${businessName} Special`,
       ],
       descriptions: [

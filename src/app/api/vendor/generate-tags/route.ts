@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 Deal info:
 - Title: ${title}
 - Description: ${description || 'N/A'}
-- Type: ${deal_type === 'sponti_coupon' ? 'Flash deal (time-limited)' : 'Steady deal'}
+- Type: ${deal_type === 'sponti_coupon' ? 'Sponti deal (time-limited)' : 'Steady deal'}
 - Business: ${vendor?.business_name || 'N/A'}
 - Category: ${vendor?.category || 'N/A'}
 - Business description: ${vendor?.description || 'N/A'}
