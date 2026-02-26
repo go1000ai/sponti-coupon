@@ -17,14 +17,12 @@ import {
   ChevronDown,
   Wallet,
   BarChart3,
-  Sparkles,
   MessageSquare,
   MapPin,
   Users,
   Key,
   Palette,
   Gift,
-  Headphones,
   ImagePlus,
   Globe,
 } from 'lucide-react';
@@ -50,7 +48,7 @@ const navItems: NavItem[] = [
     icon: <LayoutDashboard className="w-5 h-5" />,
   },
   { label: 'Analytics', href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
-  { label: 'AI Insights', href: '/vendor/insights', icon: <Sparkles className="w-5 h-5" /> },
+  { label: 'Ava Insights', href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> },
   { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
   { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
   { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
@@ -63,7 +61,7 @@ const navItems: NavItem[] = [
   { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Payment Methods', href: '/vendor/payments', icon: <Wallet className="w-5 h-5" /> },
-  { label: 'Support', href: '/vendor/support', icon: <Headphones className="w-5 h-5" />, dataTour: 'vendor-nav-support' },
+  { label: 'Support', href: '/vendor/support', icon: <img src="/mia.png" alt="Mia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
   { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
 ];
 

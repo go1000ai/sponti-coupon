@@ -7,7 +7,7 @@ import {
   Settings, Save, Loader2, Building2, Globe, Clock, Bell,
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
-  ExternalLink, Bot, AlertTriangle, Info, Navigation, RotateCcw, Play,
+  ExternalLink, AlertTriangle, Info, Navigation, RotateCcw, Play,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -577,7 +577,7 @@ export default function VendorSettingsPage() {
                     type="business_description"
                     context={{ current_text: businessForm.description }}
                     onResult={(text) => setBusinessForm(prev => ({ ...prev, description: text }))}
-                    label="Write with AI"
+                    label="Ava Write"
                   />
                 </div>
                 <textarea
@@ -945,10 +945,11 @@ export default function VendorSettingsPage() {
             className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <Bot className="w-5 h-5 text-purple-500" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/ava.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-sm" />
               <div className="text-left">
-                <h2 className="text-lg font-bold text-secondary-500">AI Auto-Response</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Automatically reply to customer reviews with AI</p>
+                <h2 className="text-lg font-bold text-secondary-500">Ava Auto-Response</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Let Ava automatically reply to customer reviews</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -961,13 +962,13 @@ export default function VendorSettingsPage() {
 
           {expandedSection === 'auto_response' && (
             <div className="px-6 pb-6 border-t border-gray-100 pt-4">
-              <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Auto-Response" description="Let AI automatically respond to customer reviews. Available on Business plan and above.">
+              <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Ava Auto-Response" description="Let Ava automatically respond to customer reviews. Available on Business plan and above.">
                 <div className="space-y-6">
                   {/* Enable Toggle */}
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div>
                       <p className="font-medium text-secondary-500">Enable Auto-Response</p>
-                      <p className="text-sm text-gray-500 mt-0.5">AI will automatically reply to new reviews after a delay</p>
+                      <p className="text-sm text-gray-500 mt-0.5">Ava will automatically reply to new reviews after a delay</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -1054,7 +1055,7 @@ export default function VendorSettingsPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Custom Instructions <span className="text-gray-400 font-normal">(optional)</span>
                     </label>
-                    <p className="text-xs text-gray-400 mb-2">Add business-specific instructions for the AI (e.g., &quot;Always mention our loyalty program&quot;)</p>
+                    <p className="text-xs text-gray-400 mb-2">Add business-specific instructions for Ava (e.g., &quot;Always mention our loyalty program&quot;)</p>
                     <textarea
                       value={autoResponseForm.custom_instructions || ''}
                       onChange={(e) => setAutoResponseForm(prev => ({ ...prev, custom_instructions: e.target.value }))}
@@ -1074,8 +1075,8 @@ export default function VendorSettingsPage() {
                       <ul className="list-disc list-inside space-y-1 text-xs text-blue-600">
                         <li>When a new review comes in, a timer starts based on your delay setting</li>
                         <li>If you reply manually before the timer, the auto-response is cancelled</li>
-                        <li>AI generates a reply using your chosen tone and custom instructions</li>
-                        <li>Auto-replies are marked with a badge so you can see which are AI-generated</li>
+                        <li>Ava generates a reply using your chosen tone and custom instructions</li>
+                        <li>Auto-replies are marked with a badge so you can see which are Ava-generated</li>
                       </ul>
                     </div>
                   </div>

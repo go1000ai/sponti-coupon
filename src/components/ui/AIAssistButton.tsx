@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import type { AutoResponseTone } from '@/lib/types/database';
 
 type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name';
@@ -19,7 +19,7 @@ export function AIAssistButton({
   type,
   context = {},
   onResult,
-  label = 'AI Assist',
+  label = 'Ava Assist',
   className = '',
   tone,
 }: AIAssistButtonProps) {
@@ -54,7 +54,7 @@ export function AIAssistButton({
         onResultRef.current(data.text);
       }
     } catch {
-      alert('AI assist is unavailable. Please try again later.');
+      alert('Ava is unavailable right now. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -67,14 +67,15 @@ export function AIAssistButton({
       disabled={loading}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
         loading
-          ? 'bg-purple-100 text-purple-400 cursor-wait'
-          : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 hover:shadow-md hover:shadow-purple-200/50 active:scale-95'
+          ? 'bg-emerald-100 text-emerald-400 cursor-wait'
+          : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 hover:shadow-md hover:shadow-emerald-200/50 active:scale-95'
       } ${className}`}
     >
       {loading ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
       ) : (
-        <Sparkles className="w-3.5 h-3.5" />
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" />
       )}
       {loading ? 'Writing...' : label}
     </button>

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { formatPercentage } from '@/lib/utils';
 import {
-  Sparkles, TrendingUp, Target, Users, ArrowRight,
+  TrendingUp, Target, Users, ArrowRight,
   AlertTriangle, CheckCircle, Info, Zap, Crown,
   BarChart3, ShieldCheck, Lightbulb,
 } from 'lucide-react';
@@ -84,8 +84,8 @@ export default function VendorInsightsPage() {
       <UpgradePrompt
         mode="full-page"
         requiredTier="pro"
-        featureName="AI Insights"
-        description="Unlock AI-powered performance scoring, personalized recommendations, and competitor benchmarking to grow your business faster."
+        featureName="Ava Insights"
+        description="Unlock Ava's performance scoring, personalized recommendations, and competitor benchmarking to grow your business faster."
       />
     );
   }
@@ -126,12 +126,13 @@ export default function VendorInsightsPage() {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-xl p-3">
-          <Sparkles className="w-7 h-7 text-white" />
+        <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500">AI Insights</h1>
-          <p className="text-gray-500 text-sm mt-1">Smart recommendations to optimize your deals and beat the competition</p>
+          <h1 className="text-3xl font-bold text-secondary-500">Ava&apos;s Insights</h1>
+          <p className="text-gray-500 text-sm mt-1">Smart recommendations to optimize your deals and maximize results</p>
         </div>
       </div>
 

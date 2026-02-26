@@ -68,8 +68,8 @@ const PAIN_POINTS = [
     emoji: '📊',
     title: 'Limited Insights',
     bad: 'Basic or no analytics',
-    good: 'AI insights, ROI dashboard & more',
-    explain: 'Most platforms give you a basic redemption count and nothing else. SpontiCoupon provides an AI-powered ROI dashboard with customer tracking, repeat rates, revenue estimates, and actionable insights.',
+    good: 'Ava insights, ROI dashboard & more',
+    explain: 'Most platforms give you a basic redemption count and nothing else. SpontiCoupon provides Ava-powered insights with an ROI dashboard, customer tracking, repeat rates, revenue estimates, and actionable recommendations.',
   },
 ];
 

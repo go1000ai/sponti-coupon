@@ -227,7 +227,7 @@ function EditDealPageInner() {
                 description: form.description,
               }}
               onResult={(text) => setForm(prev => ({ ...prev, title: text }))}
-              label="AI Title"
+              label="Ava Rewrite"
             />
           </div>
           <input
@@ -252,7 +252,7 @@ function EditDealPageInner() {
                 deal_price: form.deal_price,
               }}
               onResult={(text) => setForm(prev => ({ ...prev, description: text }))}
-              label="AI Description"
+              label="Ava Rewrite"
             />
           </div>
           <textarea

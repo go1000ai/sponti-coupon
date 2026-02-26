@@ -476,11 +476,12 @@ function VendorDashboard() {
         </Link>
 
         <Link href="/vendor/insights" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card animate-fade-up" style={{ animationDelay: '780ms' }}>
-          <div className="bg-gradient-to-br from-primary-500 to-amber-400 rounded-xl p-3 text-white shadow-lg shadow-primary-200 group-hover:scale-110 transition-transform">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-secondary-500 group-hover:text-primary-500 transition-colors">AI Insights</h3>
+            <h3 className="font-bold text-secondary-500 group-hover:text-primary-500 transition-colors">Ava&apos;s Insights</h3>
             <p className="text-xs text-gray-500">Smart recommendations</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />

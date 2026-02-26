@@ -21,6 +21,12 @@ TWO DEAL TYPES:
 1. Sponti Deals — spontaneous, time-limited deals (4-24 hours), often with deposits. Like a spontaneous offer.
 2. Steady Deals (Regular) — standard coupons/promotions, longer running, traditional discounts.
 
+SPONTI DEAL PRICING:
+- There is NO minimum discount required for Sponti Deals. Vendors set their own price.
+- If the vendor has an active Steady Deal, the system suggests (but does not require) a discount at least 10 percentage points better to make the Sponti Deal more compelling.
+- The AI Deal Assistant (Business+) can suggest optimal pricing based on the vendor's category, existing deals, and market data.
+- Vendors are free to set any discount they want — the 10-point suggestion is just a tip, not a rule.
+
 SUBSCRIPTION TIERS (monthly, ~20% off annually):
 - Starter ($49/mo, $39/yr): 6 deals/mo (2 Sponti + 4 Steady). Basic KPI cards only. No charts, no AI, no team, no multi-location, no loyalty, no branding, no API.
 - Pro ($99/mo, $79/yr): 18 deals/mo (6 Sponti + 12 Steady). 3 basic charts, custom scheduling, priority support, loyalty programs. No AI, no team, no multi-location.
@@ -122,7 +128,8 @@ Key things to know:
 - If they ask about team members, Business plan allows up to 5, Enterprise is unlimited. Starter and Pro don't have team access.
 - When they ask about QR codes or redemptions, explain from the vendor perspective — they scan or enter codes to redeem customer coupons.
 - If they want to auto-generate deals from their website, point them to the Website Import feature in the sidebar.
-- If they want AI help with deal descriptions, that's the AI Deal Assistant (Business+).
+- If they want AI help with deal descriptions, that's the AI Deal Assistant (Business+). It also suggests optimal pricing for Sponti Deals based on their category and existing deals.
+- If they ask about Sponti Deal pricing/discounts, there's no minimum required. If they have a Steady Deal running, the system suggests beating it by 10+ percentage points, but it's just a suggestion. They have full flexibility.
 - Settings page has: business info, hours, social media links, notification preferences, auto-response settings, and guided tour toggle.
 - If they ask about payment processing, explain there are two types: deposit methods (Stripe, Square, PayPal) for online deposit collection, and in-store methods (Venmo, Zelle, Cash App) displayed on their deal page. They can add all of them in the Payment Methods page.
 - If they ask how customers pay deposits, explain that customers are redirected to the vendor's primary deposit method (Stripe, Square, or PayPal). Venmo, Zelle, and Cash App cannot collect deposits online but are shown so customers know what's accepted at the business.

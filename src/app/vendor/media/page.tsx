@@ -195,7 +195,8 @@ export default function MediaLibraryPage() {
             onClick={() => setShowGenerate(!showGenerate)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-violet-500/25 transition-all"
           >
-            <Wand2 className="w-4 h-4" /> AI Generate
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full" /> Ava Generate
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -217,22 +218,23 @@ export default function MediaLibraryPage() {
 
       {/* AI Generate Panel */}
       {showGenerate && (
-        <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Image Generation" description="Generate images with AI. Upgrade to Business.">
-        <div className="card p-6 mb-6 bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
-          <h3 className="font-bold text-violet-800 mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" /> Generate Image with AI
+        <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Ava's Image Studio" description="Let Ava generate images for your deals. Upgrade to Business.">
+        <div className="card p-6 mb-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
+          <h3 className="font-bold text-emerald-800 mb-3 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full" /> Ava&apos;s Image Studio
           </h3>
           <div className="space-y-3">
             <input
               value={imageTitle}
               onChange={e => setImageTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-violet-200 bg-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Image title (e.g., 'Sushi Platter Special')"
             />
             <textarea
               value={customPrompt}
               onChange={e => setCustomPrompt(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-violet-200 bg-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
               rows={2}
               placeholder="Describe the image you want (e.g., 'A cozy Italian restaurant with warm lighting, a table set for two with pasta and wine')"
             />
@@ -240,9 +242,9 @@ export default function MediaLibraryPage() {
               <button
                 onClick={handleAiGenerate}
                 disabled={generating || (!customPrompt.trim() && !imageTitle.trim())}
-                className="flex items-center gap-2 px-6 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-medium text-sm disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium text-sm disabled:opacity-50 transition-all"
               >
-                {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : <><Sparkles className="w-4 h-4" /> Generate</>}
+                {generating ? <><Loader2 className="w-4 h-4 animate-spin" /> Ava is generating...</> : <><Sparkles className="w-4 h-4" /> Generate</>}
               </button>
               <button onClick={() => setShowGenerate(false)} className="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
             </div>
@@ -287,7 +289,7 @@ export default function MediaLibraryPage() {
         <div className="card p-12 text-center">
           <FolderOpen className="w-16 h-16 text-gray-200 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 mb-2">No media yet</h3>
-          <p className="text-sm text-gray-400 mb-6">Upload images or generate them with AI to build your library.</p>
+          <p className="text-sm text-gray-400 mb-6">Upload images or let Ava generate them to build your library.</p>
           <div className="flex justify-center gap-3">
             <button
               onClick={() => fileInputRef.current?.click()}
@@ -299,7 +301,7 @@ export default function MediaLibraryPage() {
               onClick={() => setShowGenerate(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium text-sm"
             >
-              <Wand2 className="w-4 h-4" /> AI Generate
+              <Wand2 className="w-4 h-4" /> Ava Generate
             </button>
           </div>
         </div>

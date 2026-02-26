@@ -48,6 +48,25 @@ export async function POST(request: NextRequest) {
   const location = vendor?.city && vendor?.state ? `${vendor.city}, ${vendor.state}` : '';
   const isSponti = deal_type === 'sponti_coupon';
 
+  // Fetch active Steady Deals to inform AI pricing for Sponti deals
+  let steadyDealContext = '';
+  if (isSponti) {
+    const { data: steadyDeals } = await supabase
+      .from('deals')
+      .select('title, original_price, deal_price, discount_percentage')
+      .eq('vendor_id', user.id)
+      .eq('deal_type', 'regular')
+      .eq('status', 'active')
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (steadyDeals && steadyDeals.length > 0) {
+      steadyDealContext = `\n\nVENDOR'S ACTIVE STEADY DEALS (use these to inform Sponti pricing — aim for at least 10 percentage points better discount than these):
+${steadyDeals.map(d => `- "${d.title}": $${d.original_price} → $${d.deal_price} (${d.discount_percentage}% off)`).join('\n')}`;
+    }
+  }
+
   // Try Anthropic Claude first, fall back to smart templates
   const anthropicKey = process.env.SPONTI_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
 
@@ -90,10 +109,10 @@ For fine_print: Brief, standard disclaimers.`;
       const userPrompt = `Business: ${businessName}
 Category: ${category}
 Location: ${location}
-Deal Type: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours, needs deposit)' : 'Steady Deal (steady savings, 1-30 days)'}
+Deal Type: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours, needs deposit)' : 'Steady Deal (steady savings, 1-30 days)'}${steadyDealContext}
 ${prompt ? `\nVENDOR'S DEAL IDEA (THIS IS THE MOST IMPORTANT INPUT — base the title, description, pricing, and all details on this):\n"${prompt}"` : ''}
 
-Generate a specific, compelling deal based on the vendor's idea above. The description must be detailed and vivid — describe what the customer will actually experience, taste, or receive. Do NOT write generic marketing fluff.`;
+Generate a specific, compelling deal based on the vendor's idea above. The description must be detailed and vivid — describe what the customer will actually experience, taste, or receive. Do NOT write generic marketing fluff.${isSponti ? ' For Sponti deals, price aggressively — these are time-limited impulse deals that should feel like an amazing, can\'t-miss opportunity.' : ''}`;
 
       const message = await client.messages.create({
         model: 'claude-sonnet-4-20250514',

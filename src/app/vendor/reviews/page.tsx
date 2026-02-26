@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
   Star, MessageSquare, Send, Loader2, ChevronLeft, ChevronRight,
-  Filter, ThumbsUp, CheckCircle2, Clock, TrendingUp, Bot,
+  Filter, ThumbsUp, CheckCircle2, Clock, TrendingUp,
   XCircle, ChevronDown, Sparkles,
 } from 'lucide-react';
 import type { Review, AutoResponseTone } from '@/lib/types/database';
@@ -170,8 +170,8 @@ export default function VendorReviewsPage() {
     const scheduled = new Date(review.auto_response_scheduled_at).getTime();
     const elapsed = Date.now() - scheduled;
     const hoursElapsed = Math.floor(elapsed / (1000 * 60 * 60));
-    if (hoursElapsed < 1) return 'AI reply pending';
-    return `AI reply pending (${hoursElapsed}h ago)`;
+    if (hoursElapsed < 1) return 'Ava reply pending';
+    return `Ava reply pending (${hoursElapsed}h ago)`;
   };
 
   const filteredReviews = data?.reviews.filter(r => !filter || r.rating === filter) || [];
@@ -376,8 +376,9 @@ export default function VendorReviewsPage() {
                   {!review.vendor_reply && review.auto_response_scheduled_at && !review.auto_response_sent_at && (
                     <div className="mt-3 flex flex-col sm:flex-row items-start sm:items-center gap-2">
                       <span className="inline-flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-700 px-3 py-1.5 rounded-full border border-amber-200">
-                        <Bot className="w-3.5 h-3.5 flex-shrink-0" />
-                        {getAutoResponseCountdown(review) || 'AI reply scheduled'}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full flex-shrink-0 object-cover" />
+                        {getAutoResponseCountdown(review) || 'Ava reply scheduled'}
                       </span>
                       <button
                         onClick={() => handleCancelAutoResponse(review.id)}
@@ -389,7 +390,7 @@ export default function VendorReviewsPage() {
                         ) : (
                           <XCircle className="w-3.5 h-3.5" />
                         )}
-                        Cancel AI Reply
+                        Cancel Ava Reply
                       </button>
                     </div>
                   )}
@@ -405,9 +406,10 @@ export default function VendorReviewsPage() {
                         <span className="text-sm font-semibold text-secondary-500">Your Reply</span>
                         <div className="flex items-center gap-2 flex-wrap">
                           {review.is_auto_response && (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                              <Bot className="w-3 h-3" />
-                              AI Auto-Reply{review.auto_response_tone ? ` · ${TONE_LABELS[review.auto_response_tone as AutoResponseTone] || review.auto_response_tone}` : ''}
+                            <span className="inline-flex items-center gap-1 text-xs font-medium bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src="/ava.png" alt="Ava" className="w-3 h-3 rounded-full object-cover" />
+                              Ava Auto-Reply{review.auto_response_tone ? ` · ${TONE_LABELS[review.auto_response_tone as AutoResponseTone] || review.auto_response_tone}` : ''}
                             </span>
                           )}
                           {review.vendor_replied_at && (
@@ -490,17 +492,18 @@ export default function VendorReviewsPage() {
                             {generatingTone ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <Sparkles className="w-3.5 h-3.5" />
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" />
                             )}
-                            <span className="hidden sm:inline">{generatingTone ? 'Writing...' : 'AI Reply'}</span>
-                            <span className="sm:hidden">{generatingTone ? '...' : 'AI'}</span>
+                            <span className="hidden sm:inline">{generatingTone ? 'Writing...' : 'Ava Reply'}</span>
+                            <span className="sm:hidden">{generatingTone ? '...' : 'Ava'}</span>
                           </button>
                         </div>
                       </div>
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        placeholder={generatingTone ? 'Generating AI reply...' : 'Write a thoughtful reply...'}
+                        placeholder={generatingTone ? 'Ava is writing a reply...' : 'Write a thoughtful reply...'}
                         className="input-field min-h-[80px] resize-y text-sm w-full"
                         rows={3}
                         autoFocus

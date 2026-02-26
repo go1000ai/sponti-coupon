@@ -8,9 +8,9 @@ import MediaPicker from '@/components/vendor/MediaPicker';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  Globe, Loader2, Sparkles, ArrowRight, Tag, Download, Save,
+  Globe, Loader2, ArrowRight, Tag, Download, Save,
   Image as ImageIcon, ChevronUp, Upload, LinkIcon, FolderOpen,
-  AlertCircle, Zap, CheckCircle2, Copy, Wand2, ChevronDown,
+  AlertCircle, Zap, CheckCircle2, Copy, ChevronDown,
 } from 'lucide-react';
 
 interface ExtractedInfo {
@@ -274,17 +274,18 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-secondary-500 flex items-center gap-3">
-          <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-            <Globe className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
           Import from Website
         </h1>
         <p className="text-gray-500 mt-1">
-          AI will analyze your website, learn about your business, and suggest ready-to-publish deals.
+          Ava will analyze your website, learn about your business, and suggest ready-to-publish deals.
         </p>
       </div>
 
-      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Website Import" description="Let AI create deals from your website. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Website Import" description="Let Ava create deals from your website. Upgrade to Business.">
 
       {/* URL Input */}
       <div className="card p-6 mb-6">
@@ -307,9 +308,12 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50"
           >
             {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing...</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> Ava is analyzing...</>
             ) : (
-              <><Sparkles className="w-4 h-4" /> Analyze & Generate</>
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> Analyze & Generate
+              </>
             )}
           </button>
         </div>
@@ -378,12 +382,13 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
       {/* Loading State */}
       {loading && (
         <div className="card p-12 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl mb-4">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl overflow-hidden mb-4 shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-300 ring-offset-2 animate-pulse">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Analyzing your website...</h3>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Ava is analyzing your website...</h3>
           <p className="text-sm text-gray-500 max-w-md mx-auto">
-            AI is reading your website, understanding your products and services, checking competitor deals, and crafting personalized suggestions. This may take 15-30 seconds.
+            Ava is reading your website, understanding your products and services, checking competitor deals, and crafting personalized suggestions. This may take 15-30 seconds.
           </p>
         </div>
       )}
@@ -668,7 +673,8 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                                     imageTab[idx] === 'ai' ? 'border-violet-500 text-violet-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
                                   }`}
                                 >
-                                  <Wand2 className="w-3 h-3" /> AI Generate
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" /> Ava Generate
                                 </button>
                               )}
                             </div>
@@ -760,12 +766,15 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                                   <button
                                     onClick={() => handleGenerateImage(idx, deal.suggested_image_prompt!)}
                                     disabled={generatingImage !== null}
-                                    className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg text-xs font-medium hover:bg-violet-700 transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-all disabled:opacity-50"
                                   >
                                     {generatingImage === idx ? (
-                                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
+                                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is generating...</>
                                     ) : (
-                                      <><Wand2 className="w-3.5 h-3.5" /> Generate AI Image</>
+                                      <>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" /> Ava Generate Image
+                                      </>
                                     )}
                                   </button>
                                 </div>

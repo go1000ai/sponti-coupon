@@ -17,6 +17,7 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
 import type { Deal, VendorLocation } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
+import DealAdvisor from '@/components/vendor/DealAdvisor';
 
 export default function NewDealPage() {
   const { user } = useAuth();
@@ -163,7 +164,7 @@ export default function NewDealPage() {
         let generatedDescription = '';
 
         // Step 1: Generate deal text (title, description, pricing)
-        setAiPipelineStep('Generating deal details...');
+        setAiPipelineStep('Ava is crafting your deal details...');
         setAiLoading(true);
         try {
           const res = await fetch('/api/vendor/ai-deal', {
@@ -198,7 +199,7 @@ export default function NewDealPage() {
         if (!generatedTitle) { setAiPipelineStep(null); return; }
 
         // Step 2: Generate image from the deal title/description
-        setAiPipelineStep('Creating AI image...');
+        setAiPipelineStep('Ava is creating your image...');
         setAiImageLoading(true);
         try {
           const res = await fetch('/api/vendor/generate-image', {
@@ -215,7 +216,7 @@ export default function NewDealPage() {
         setAiImageLoading(false);
 
         // Step 3: Generate search tags
-        setAiPipelineStep('Generating search tags...');
+        setAiPipelineStep('Ava is picking search tags...');
         setGeneratingTags(true);
         try {
           const res = await fetch('/api/vendor/generate-tags', {
@@ -250,11 +251,9 @@ export default function NewDealPage() {
     ? calculateDiscount(regularDeal.original_price, regularDeal.deal_price)
     : 0;
 
-  const meetsMinDiscount = dealType === 'sponti_coupon'
-    ? discount - regularDiscount >= 10
-    : true;
-
-  const requiredMinDiscount = regularDiscount + 10;
+  // Soft benchmark: if a Steady Deal exists, suggest 10+ points better
+  const beatsSteadyDeal = regularDeal ? discount - regularDiscount >= 10 : true;
+  const suggestedMinDiscount = regularDeal ? regularDiscount + 10 : 0;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -276,7 +275,7 @@ export default function NewDealPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'AI assist failed');
+        setError(data.error || 'Ava couldn\'t generate that — try again!');
         setAiLoading(false);
         return;
       }
@@ -298,7 +297,7 @@ export default function NewDealPage() {
       if (s.amenities) setAmenities(s.amenities);
       setAiSource(data.source);
     } catch {
-      setError('Failed to get AI suggestions. Please try again.');
+      setError('Ava had trouble generating suggestions. Please try again.');
     }
     setAiLoading(false);
   };
@@ -402,7 +401,7 @@ export default function NewDealPage() {
   // ── AI Image Generation ──────────────────────────────────
   const handleAiImageGenerate = async () => {
     if (!form.title) {
-      setError('Please enter a deal title first so AI can generate a relevant image.');
+      setError('Please enter a deal title first so Ava can generate a relevant image.');
       return;
     }
     setAiImageLoading(true);
@@ -434,7 +433,7 @@ export default function NewDealPage() {
   const handleAiVideoGenerate = async () => {
     const imageUrl = form.image_url;
     if (!imageUrl) {
-      setError('Please add a deal image first so AI can generate a video from it.');
+      setError('Please add a deal image first so Ava can generate a video from it.');
       return;
     }
     setAiVideoLoading(true);
@@ -465,7 +464,7 @@ export default function NewDealPage() {
   // ── AI Search Tags ────────────────────────────────────────
   const generateSearchTags = async () => {
     if (!form.title.trim()) {
-      setError('Enter a deal title first so AI can generate search tags.');
+      setError('Enter a deal title first so Ava can generate search tags.');
       return;
     }
     setGeneratingTags(true);
@@ -805,13 +804,16 @@ export default function NewDealPage() {
 
       {/* ═══════════════ NEW DEAL TAB ═══════════════ */}
       {activeTab === 'new' && <>
-      {/* AI Pipeline Progress Banner */}
+      {/* Ava Pipeline Progress Banner */}
       {aiPipelineStep && (
-        <div className="mb-6 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4 flex items-center gap-3">
-          <Loader2 className="w-5 h-5 text-violet-600 animate-spin flex-shrink-0" />
+        <div className="mb-6 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-300 ring-offset-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
+          </div>
           <div>
-            <p className="text-sm font-semibold text-violet-700">AI is building your deal...</p>
-            <p className="text-xs text-violet-500">{aiPipelineStep}</p>
+            <p className="text-sm font-semibold text-emerald-700">Ava is building your deal...</p>
+            <p className="text-xs text-emerald-500">{aiPipelineStep}</p>
           </div>
         </div>
       )}
@@ -843,50 +845,58 @@ export default function NewDealPage() {
             </div>
             <h3 className="font-bold text-primary-500">Sponti Coupon</h3>
           </div>
-          <p className="text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Must beat your Steady Deal by 10%+.</p>
+          <p className="text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Set your own discount — Ava can help!</p>
         </button>
       </div>
 
-      {/* Sponti Coupon Warning */}
-      {dealType === 'sponti_coupon' && !regularDeal && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-amber-700">Active Steady Deal Required</p>
-            <p className="text-sm text-amber-600 mt-1">
-              You must have an active Steady Deal before posting a Sponti Coupon.
-              <Link href="/vendor/deals/new" className="underline ml-1" onClick={() => setDealType('regular')}>
-                Create a Steady Deal first
-              </Link>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Benchmark Info for Sponti */}
+      {/* Benchmark Info for Sponti (soft suggestion, not a blocker) */}
       {dealType === 'sponti_coupon' && regularDeal && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-          <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <div className={`${beatsSteadyDeal ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'} border rounded-lg p-4 mb-6 flex items-start gap-3`}>
+          <Info className={`w-5 h-5 ${beatsSteadyDeal ? 'text-blue-500' : 'text-amber-500'} flex-shrink-0 mt-0.5`} />
           <div>
-            <p className="font-semibold text-blue-700">Benchmark: {regularDeal.title}</p>
-            <p className="text-sm text-blue-600 mt-1">
-              Your Steady Deal is {formatPercentage(regularDiscount)} off.
-              Your Sponti Coupon must offer at least {formatPercentage(requiredMinDiscount)} off (10+ points better).
+            <p className={`font-semibold ${beatsSteadyDeal ? 'text-blue-700' : 'text-amber-700'}`}>
+              {beatsSteadyDeal ? 'Great pricing!' : 'Pricing tip'}
+            </p>
+            <p className={`text-sm ${beatsSteadyDeal ? 'text-blue-600' : 'text-amber-600'} mt-1`}>
+              Your Steady Deal &quot;{regularDeal.title}&quot; is {formatPercentage(regularDiscount)} off.
+              {beatsSteadyDeal
+                ? ' Your Sponti Coupon beats it — customers will love the urgency!'
+                : ` For maximum impact, consider offering ${formatPercentage(suggestedMinDiscount)}+ off (10+ points better than your Steady Deal).`
+              }
             </p>
           </div>
         </div>
       )}
 
-      {/* ── AI Assist Panel ───────────────────────────────────── */}
-      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Deal Assistant" description="Let AI create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
-      <div className="card p-6 mb-6 bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="bg-violet-100 rounded-lg p-2">
-            <Sparkles className="w-5 h-5 text-violet-600" />
+      {/* Ava Pricing Tip for Sponti deals without a benchmark */}
+      {dealType === 'sponti_coupon' && !regularDeal && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 shadow-md shadow-emerald-500/20">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
           <div>
-            <h3 className="font-bold text-violet-800">AI Deal Assistant</h3>
-            <p className="text-xs text-violet-500">Let AI create compelling deal content for you</p>
+            <p className="font-semibold text-emerald-700">Set your own price!</p>
+            <p className="text-sm text-emerald-600 mt-1">
+              No minimum discount required. Ask <strong>Ava</strong> below to get a smart pricing suggestion based on your category and market.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Ava — Deal Content Generator ──────────────────────── */}
+      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Ava — AI Deal Strategist" description="Let Ava create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
+      <div className="card p-6 mb-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-10 h-10 rounded-full overflow-hidden shadow-md shadow-emerald-500/20 flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h3 className="font-bold text-emerald-800 flex items-center gap-1.5">
+              Ava <span className="text-[10px] font-normal text-emerald-500 bg-emerald-100 px-1.5 py-0.5 rounded-full">Deal Generator</span>
+            </h3>
+            <p className="text-xs text-emerald-500">Tell me your deal idea and I&apos;ll write compelling content for you</p>
           </div>
         </div>
 
@@ -895,14 +905,14 @@ export default function NewDealPage() {
             value={aiPrompt}
             onChange={e => setAiPrompt(e.target.value)}
             className="input-field flex-1 bg-white/80 text-sm"
-            placeholder="Optional: describe your deal idea (e.g., 'lunch special for office workers')"
+            placeholder="Describe your deal idea (e.g., 'lunch special for office workers')"
             onKeyDown={e => e.key === 'Enter' && !aiLoading && handleAiAssist()}
           />
           <button
             type="button"
             onClick={handleAiAssist}
             disabled={aiLoading}
-            className="bg-violet-600 hover:bg-violet-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2 disabled:opacity-50 whitespace-nowrap"
           >
             {aiLoading ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
@@ -916,7 +926,7 @@ export default function NewDealPage() {
           <div className="mt-2 flex items-center gap-1.5 text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
             <span className="text-green-700">
-              {aiSource === 'ai' ? 'Generated by SpontiCoupon' : 'Generated from smart templates'} — fields auto-filled below
+              {aiSource === 'ai' ? 'Generated by Ava' : 'Generated from smart templates'} — fields auto-filled below
             </span>
           </div>
         )}
@@ -985,10 +995,11 @@ export default function NewDealPage() {
                 type="button"
                 onClick={() => setImageMode('ai')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  imageMode === 'ai' ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-sm' : 'text-violet-500 hover:text-violet-700'
+                  imageMode === 'ai' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' : 'text-emerald-600 hover:text-emerald-700'
                 }`}
               >
-                <Wand2 className="w-3.5 h-3.5" /> AI Generate
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full" /> Ava Generate
               </button>
             )}
             <button
@@ -1051,7 +1062,7 @@ export default function NewDealPage() {
             <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center bg-blue-50/30">
               <ImageIcon className="w-10 h-10 text-blue-400 mx-auto mb-2" />
               <h4 className="font-semibold text-blue-800 mb-1">Pick from Library</h4>
-              <p className="text-sm text-blue-600 mb-4">Select from your previously uploaded or AI-generated images</p>
+              <p className="text-sm text-blue-600 mb-4">Select from your previously uploaded or Ava-generated images</p>
               <button
                 type="button"
                 onClick={() => setShowMediaPicker(true)}
@@ -1061,21 +1072,22 @@ export default function NewDealPage() {
               </button>
             </div>
           ) : (
-            /* AI Generate mode */
-            <div className="border-2 border-dashed border-violet-200 rounded-xl p-6 text-center bg-gradient-to-br from-violet-50/50 to-purple-50/50">
+            /* Ava Image Generate mode */
+            <div className="border-2 border-dashed border-emerald-200 rounded-xl p-6 text-center bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
               {!displayImage ? (
                 <>
-                  <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-3">
-                    <Wand2 className="w-7 h-7 text-violet-500" />
+                  <div className="w-14 h-14 rounded-full overflow-hidden mx-auto mb-3 shadow-lg shadow-emerald-500/20">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
                   </div>
-                  <h4 className="font-semibold text-violet-800 mb-1">AI Image Generation</h4>
-                  <p className="text-sm text-violet-600 mb-3">
-                    Generate a professional image using AI. Describe what you want or use your deal title.
+                  <h4 className="font-semibold text-emerald-800 mb-1">Ava&apos;s Image Studio</h4>
+                  <p className="text-sm text-emerald-600 mb-3">
+                    Tell me what you want and I&apos;ll generate a professional image for your deal.
                   </p>
                   <input
                     value={customImagePrompt}
                     onChange={e => setCustomImagePrompt(e.target.value)}
-                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-violet-200 bg-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 mb-4"
+                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-4"
                     placeholder="Describe the image (e.g., 'a cozy Italian restaurant with warm lighting')"
                   />
                   {!form.title && !customImagePrompt && (
@@ -1115,24 +1127,24 @@ export default function NewDealPage() {
                       }
                     }}
                     disabled={aiImageLoading || (!form.title && !customImagePrompt)}
-                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-violet-500/25"
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-emerald-500/25"
                   >
                     {aiImageLoading ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Generating Image...</>
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Ava is creating your image...</>
                     ) : (
-                      <><Wand2 className="w-5 h-5" /> Generate Image with AI</>
+                      <><Wand2 className="w-5 h-5" /> Generate Image</>
                     )}
                   </button>
                   {aiImageLoading && (
-                    <p className="text-xs text-violet-500 mt-3 animate-pulse">
+                    <p className="text-xs text-emerald-500 mt-3 animate-pulse">
                       This may take 10-15 seconds...
                     </p>
                   )}
                 </>
               ) : (
-                <div className="flex items-center gap-2 text-sm text-violet-700">
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>AI image generated! You can see the preview below.</span>
+                  <span>Ava created your image! You can see the preview below.</span>
                 </div>
               )}
             </div>
@@ -1264,39 +1276,40 @@ export default function NewDealPage() {
           </div>
           <p className="text-xs text-gray-400 mt-1.5">Add YouTube or Vimeo links to show off your product or service</p>
 
-          {/* AI Video Generation */}
+          {/* Ava Video Generation */}
           {canAccess('ai_deal_assistant') && (
-            <div className="mt-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-4">
+            <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-2">
-                <div className="bg-indigo-100 rounded-lg p-1.5">
-                  <Video className="w-4 h-4 text-indigo-600" />
+                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm shadow-emerald-500/20">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-indigo-800">AI Video Generation</h4>
-                  <p className="text-xs text-indigo-500">Generate a promo video from your deal image using SpontiCoupon</p>
+                  <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
+                  <p className="text-xs text-emerald-500">I&apos;ll turn your deal image into an eye-catching promo video</p>
                 </div>
               </div>
               {!form.image_url ? (
                 <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Add a deal image first to generate a video from it
+                  <AlertCircle className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
                 </p>
               ) : (
                 <button
                   type="button"
                   onClick={handleAiVideoGenerate}
                   disabled={aiVideoLoading}
-                  className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-500/20"
+                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20"
                 >
                   {aiVideoLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating Video...</>
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
                   ) : (
                     <><Video className="w-4 h-4" /> Generate Video from Image</>
                   )}
                 </button>
               )}
               {aiVideoLoading && (
-                <p className="text-xs text-indigo-500 mt-2 animate-pulse">
-                  Video generation takes 1-3 minutes. Please wait...
+                <p className="text-xs text-emerald-500 mt-2 animate-pulse">
+                  Ava is working on your video — this takes 1-3 minutes...
                 </p>
               )}
             </div>
@@ -1402,17 +1415,20 @@ export default function NewDealPage() {
               type="button"
               onClick={generateSearchTags}
               disabled={generatingTags || !form.title.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-medium rounded-lg hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium rounded-lg hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 transition-all"
             >
               {generatingTags ? (
-                <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</>
+                <><Loader2 className="w-3 h-3 animate-spin" /> Ava is thinking...</>
               ) : (
-                <><Sparkles className="w-3 h-3" /> AI Generate Tags</>
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full" /> Ava Generate Tags
+                </>
               )}
             </button>
           </div>
           <p className="text-xs text-gray-500 mb-2">
-            These tags help customers discover your deal when searching. AI will suggest tags based on your deal — you can add or remove any.
+            These tags help customers discover your deal when searching. Ava will suggest tags based on your deal — you can add or remove any.
           </p>
           {searchTags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
@@ -1457,6 +1473,27 @@ export default function NewDealPage() {
           </div>
         </div>
 
+        {/* ── Ava — AI Deal Strategist ──────────────────────── */}
+        {canAccess('ai_deal_assistant') && (
+          <DealAdvisor
+            dealType={dealType}
+            currentPricing={{
+              original_price: form.original_price ? parseFloat(form.original_price) : undefined,
+              deal_price: form.deal_price ? parseFloat(form.deal_price) : undefined,
+              deposit_amount: form.deposit_amount ? parseFloat(form.deposit_amount) : undefined,
+              title: form.title || undefined,
+            }}
+            onApplyPricing={(pricing) => {
+              setForm(prev => ({
+                ...prev,
+                ...(pricing.original_price !== undefined ? { original_price: pricing.original_price.toString() } : {}),
+                ...(pricing.deal_price !== undefined ? { deal_price: pricing.deal_price.toString() } : {}),
+                ...(pricing.deposit_amount !== undefined ? { deposit_amount: pricing.deposit_amount.toString() } : {}),
+              }));
+            }}
+          />
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Original Price *</label>
@@ -1497,23 +1534,23 @@ export default function NewDealPage() {
         {/* Discount Preview */}
         {discount > 0 && (
           <div className={`p-4 rounded-lg ${
-            dealType === 'sponti_coupon' && !meetsMinDiscount
-              ? 'bg-red-50 border border-red-200'
+            dealType === 'sponti_coupon' && !beatsSteadyDeal
+              ? 'bg-amber-50 border border-amber-200'
               : 'bg-green-50 border border-green-200'
           }`}>
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Calculated Discount:</span>
               <span className={`text-2xl font-bold ${
-                dealType === 'sponti_coupon' && !meetsMinDiscount
-                  ? 'text-red-500'
+                dealType === 'sponti_coupon' && !beatsSteadyDeal
+                  ? 'text-amber-600'
                   : 'text-green-600'
               }`}>
                 {formatPercentage(discount)} OFF
               </span>
             </div>
-            {dealType === 'sponti_coupon' && !meetsMinDiscount && (
-              <p className="text-sm text-red-600 mt-2">
-                Need at least {formatPercentage(requiredMinDiscount)} off.
+            {dealType === 'sponti_coupon' && !beatsSteadyDeal && regularDeal && (
+              <p className="text-sm text-amber-600 mt-2">
+                Tip: {formatPercentage(suggestedMinDiscount)}+ off would beat your Steady Deal by 10+ points.
                 Savings: {formatCurrency(parseFloat(form.original_price) - parseFloat(form.deal_price))}
               </p>
             )}
@@ -1808,7 +1845,7 @@ export default function NewDealPage() {
           </button>
           <button
             type="submit"
-            disabled={loading || savingDraft || (dealType === 'sponti_coupon' && (!regularDeal || !meetsMinDiscount))}
+            disabled={loading || savingDraft}
             className={`flex-1 text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 ${
               dealType === 'sponti_coupon'
                 ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'

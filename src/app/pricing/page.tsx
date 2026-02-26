@@ -65,7 +65,7 @@ const PLANS = [
       '25 Sponti + 50 Steady deals/mo',
       'Everything in Pro, plus:',
       'Featured on homepage + more exposure',
-      'AI Deal Assistant & Insights',
+      'Ava — Deal Assistant & Insights',
       'Advanced analytics (8+ charts)',
       'Competitor benchmarking',
       'Loyalty rewards program',
@@ -107,7 +107,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Do I need technical skills to use SpontiCoupon?',
-    a: 'Not at all. Our platform is designed for local business owners. You can create deals, manage customers, and track analytics through our simple dashboard. We also have AI-powered deal creation to help you get started.',
+    a: 'Not at all. Our platform is designed for local business owners. You can create deals, manage customers, and track analytics through our simple dashboard. Ava, our AI deal strategist, also helps you create deals and optimize pricing.',
   },
 ];
 
@@ -133,9 +133,9 @@ const FEATURE_MATRIX = [
   { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true },
   { feature: 'Basic charts (3 charts)', starter: false, pro: true, business: true },
   { feature: 'Advanced analytics (8+ charts + table)', starter: false, pro: false, business: true },
-  { feature: 'AI Deal Assistant', starter: false, pro: false, business: true },
-  { feature: 'AI Insights & scoring', starter: false, pro: false, business: true },
-  { feature: 'AI Deal Advisor', starter: false, pro: false, business: true },
+  { feature: 'Ava Deal Assistant', starter: false, pro: false, business: true },
+  { feature: 'Ava Insights & scoring', starter: false, pro: false, business: true },
+  { feature: 'Ava Deal Advisor', starter: false, pro: false, business: true },
   { feature: 'Competitor benchmarking', starter: false, pro: false, business: true },
   { feature: 'Custom scheduling', starter: false, pro: true, business: true },
   { feature: 'Loyalty rewards program', starter: false, pro: true, business: true },

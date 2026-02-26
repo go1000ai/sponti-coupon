@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import {
   BarChart3, Users, QrCode, DollarSign, Tag, TrendingUp,
-  ArrowUpRight, ArrowDownRight, Calendar, Clock, Sparkles, Brain,
+  ArrowUpRight, ArrowDownRight, Calendar, Clock, Sparkles,
   ChevronDown, ChevronUp, Zap, Target, PieChart as PieChartIcon,
   Activity, Lightbulb, CheckCircle2, ArrowRight, RefreshCw,
   Table as TableIcon,
@@ -353,7 +353,7 @@ export default function VendorAnalyticsPage() {
       const data = await res.json();
       setAiInsights(data);
     } catch {
-      setAiError('Unable to load AI insights. We\'ll show local analysis instead.');
+      setAiError('Unable to load Ava\'s insights. We\'ll show local analysis instead.');
     } finally {
       setAiLoading(false);
     }
@@ -734,7 +734,7 @@ export default function VendorAnalyticsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-[#1A1A2E]">Analytics</h1>
-              <p className="text-gray-500 text-sm">Performance insights and AI-powered recommendations</p>
+              <p className="text-gray-500 text-sm">Performance insights and Ava&apos;s recommendations</p>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
@@ -1135,7 +1135,7 @@ export default function VendorAnalyticsPage() {
       </GatedSection>
 
       {/* ─── AI Deal Advisor Section ──────────────────────────────────────── */}
-      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_advisor')} requiredTier="business" featureName="AI Deal Advisor" description="Get AI-powered insights, competitor analysis, and personalized deal recommendations. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_advisor')} requiredTier="business" featureName="Ava — Deal Advisor" description="Get Ava's insights, competitor analysis, and personalized deal recommendations. Upgrade to Business.">
       <div className="mb-10">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1A2E] via-[#2D2D4A] to-[#1A1A2E] p-[1px]">
           <div className="absolute inset-0 bg-gradient-to-r from-[#E8632B]/20 via-transparent to-[#8B5CF6]/20 animate-pulse" style={{ animationDuration: '4s' }} />
@@ -1143,17 +1143,13 @@ export default function VendorAnalyticsPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="p-3 rounded-2xl bg-gradient-to-br from-[#E8632B] to-[#F4945E] shadow-lg shadow-orange-500/20">
-                    <Brain className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1">
-                    <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-                  </div>
+                <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/30 flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">AI Deal Advisor</h2>
-                  <p className="text-sm text-gray-400">Powered by data analysis of your deal performance</p>
+                  <h2 className="text-2xl font-bold text-white">Ava&apos;s Deal Advisor</h2>
+                  <p className="text-sm text-gray-400">Powered by Ava&apos;s analysis of your deal performance</p>
                 </div>
               </div>
               <button
@@ -1237,7 +1233,7 @@ export default function VendorAnalyticsPage() {
                     ))
                   ) : aiError ? (
                     <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                      <p className="text-xs text-amber-400 mb-1">Could not load AI recommendations</p>
+                      <p className="text-xs text-amber-400 mb-1">Could not load Ava&apos;s recommendations</p>
                       <p className="text-xs text-gray-500">Check your local insights for data-driven suggestions.</p>
                     </div>
                   ) : (
