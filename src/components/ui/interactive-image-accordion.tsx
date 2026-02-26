@@ -41,11 +41,8 @@ function AccordionItem({
 }) {
   return (
     <div
-      className={`
-        relative h-[450px] rounded-2xl overflow-hidden cursor-pointer
-        transition-all duration-700 ease-in-out
-        ${isActive ? 'w-[400px]' : 'w-[60px]'}
-      `}
+      className="relative h-[450px] rounded-2xl overflow-hidden cursor-pointer transition-[flex] duration-700 ease-in-out"
+      style={{ flex: isActive ? 6 : 1 }}
       onMouseEnter={onMouseEnter}
     >
       <img
@@ -76,7 +73,7 @@ export function LandingAccordionItem() {
 
   return (
     <div className="w-full">
-      <div className="flex flex-row items-center justify-center gap-4 overflow-x-auto p-4">
+      <div className="flex flex-row items-center gap-4 p-4">
         {accordionItems.map((item, index) => (
           <AccordionItem
             key={item.id}
