@@ -113,17 +113,19 @@ export async function POST(request: NextRequest) {
 
     const video = generatedVideos[0].video;
 
-    // Download the video data using the file API
-    // The video object has a uri we can fetch
+    // Download the video data from Gemini Files API
     const videoUri = video.uri;
     if (!videoUri) {
       return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
     }
 
-    // Fetch the video content from Gemini's file API
-    const videoFetchUrl = `${videoUri}?key=${geminiKey}`;
-    const videoResponse = await fetch(videoFetchUrl);
+    // Google Files API requires API key in header, not query param
+    const videoResponse = await fetch(videoUri, {
+      headers: { 'x-goog-api-key': geminiKey },
+      redirect: 'follow',
+    });
     if (!videoResponse.ok) {
+      console.error('Video download failed:', videoResponse.status, await videoResponse.text().catch(() => ''));
       return NextResponse.json({ error: 'Failed to download generated video' }, { status: 500 });
     }
 
