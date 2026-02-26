@@ -35,12 +35,25 @@ export function MiaFloatingWidget() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [handleEscape]);
 
-  // Lock body scroll on mobile when panel is open
+  // Lock body scroll on mobile when panel is open (iOS-safe)
   useEffect(() => {
-    if (isOpen && window.innerWidth < 640) {
-      document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = ''; };
-    }
+    if (!isOpen) return;
+    const scrollY = window.scrollY;
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      window.scrollTo(0, scrollY);
+    };
   }, [isOpen]);
 
   // Don't render on non-allowed pages
@@ -79,12 +92,12 @@ export function MiaFloatingWidget() {
 
       {/* Chat Panel */}
       <div
-        className={`fixed z-[55] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right
+        className={`fixed z-[55] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right overscroll-contain
           ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
-          bottom-0 right-0 left-0 top-16
+          top-20 bottom-0 left-0 right-0 w-full
           sm:bottom-6 sm:right-6 sm:left-auto sm:top-auto
           sm:w-[380px] sm:h-[540px]
-          bg-white sm:rounded-2xl rounded-t-2xl
+          bg-white sm:rounded-2xl
           shadow-2xl border border-gray-200`}
         role="dialog"
         aria-label="Chat with Mia, SpontiCoupon assistant"

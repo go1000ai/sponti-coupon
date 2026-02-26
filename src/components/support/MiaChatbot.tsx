@@ -227,7 +227,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
       {/* Messages */}
       <div
         ref={messagesContainerRef}
-        className={`overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50 ${
+        className={`overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4 bg-gray-50 ${
           isFloating ? 'flex-1' : 'h-[400px] sm:h-[450px]'
         }`}
       >
