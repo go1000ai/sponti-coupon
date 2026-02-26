@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import type { SubscriptionTier, AutoResponseSettings } from '@/lib/types/database';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
+import { sanitizeText } from '@/lib/sanitize';
 
 // GET /api/reviews?vendor_id=...&deal_id=...&page=1&limit=10
 export async function GET(request: NextRequest) {
@@ -172,7 +173,7 @@ export async function POST(request: NextRequest) {
         deal_id: deal_id || null,
         claim_id: claim_id || null,
         rating,
-        comment: comment?.trim() || null,
+        comment: sanitizeText(comment),
         is_verified: true, // They redeemed a deal, so it's verified
       })
       .select('*, customer:customers(first_name, last_name, email), deal:deals(title)')
@@ -256,8 +257,8 @@ export async function PATCH(request: NextRequest) {
       const { data: updated, error: updateError } = await supabase
         .from('reviews')
         .update({
-          vendor_reply: vendor_reply?.trim() || null,
-          vendor_replied_at: vendor_reply?.trim() ? new Date().toISOString() : null,
+          vendor_reply: sanitizeText(vendor_reply),
+          vendor_replied_at: sanitizeText(vendor_reply) ? new Date().toISOString() : null,
         })
         .eq('id', review_id)
         .select('*, customer:customers(first_name, last_name, email), deal:deals(title)')
@@ -279,7 +280,7 @@ export async function PATCH(request: NextRequest) {
         updates.rating = rating;
       }
       if (comment !== undefined) {
-        updates.comment = comment?.trim() || null;
+        updates.comment = sanitizeText(comment);
       }
 
       const { data: updated, error: updateError } = await supabase

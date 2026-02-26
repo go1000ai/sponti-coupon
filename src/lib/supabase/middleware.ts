@@ -48,7 +48,10 @@ export async function updateSession(request: NextRequest) {
 
     if (protectedPrefixes.some(p => path.startsWith(p))) {
       const redirectUrl = new URL('/auth/login', request.url);
-      redirectUrl.searchParams.set('redirect', path);
+      // Only allow internal paths as redirect targets (prevent open redirect)
+      if (path.startsWith('/') && !path.startsWith('//') && !path.includes('://')) {
+        redirectUrl.searchParams.set('redirect', path);
+      }
       return NextResponse.redirect(redirectUrl);
     }
   }
@@ -66,7 +69,7 @@ export async function updateSession(request: NextRequest) {
 
         const isProtected = protectedPrefixes.some(p => path.startsWith(p));
         const redirectUrl = new URL('/auth/login', request.url);
-        if (isProtected) {
+        if (isProtected && path.startsWith('/') && !path.startsWith('//') && !path.includes('://')) {
           redirectUrl.searchParams.set('redirect', path);
         }
         redirectUrl.searchParams.set('reason', 'inactivity');

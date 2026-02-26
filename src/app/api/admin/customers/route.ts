@@ -10,12 +10,16 @@ export async function GET(request: NextRequest) {
   const serviceClient = await createServiceRoleClient();
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search')?.trim() || '';
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
+  const offset = (page - 1) * limit;
 
-  // Fetch all customers
+  // Fetch customers with pagination
   let query = serviceClient
     .from('customers')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   // Apply search filter if provided
   if (search) {
@@ -24,7 +28,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { data: customersData, error: customersError } = await query;
+  const { data: customersData, error: customersError, count } = await query;
 
   if (customersError) {
     return NextResponse.json({ error: customersError.message }, { status: 500 });
@@ -71,5 +75,5 @@ export async function GET(request: NextRequest) {
     total_saved: statsMap[c.id]?.total_saved || 0,
   }));
 
-  return NextResponse.json({ customers });
+  return NextResponse.json({ customers, total: count || customers.length, page, limit });
 }

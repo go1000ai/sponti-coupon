@@ -57,8 +57,9 @@ export async function POST(request: NextRequest) {
         const query = encodeURIComponent(`${profileData.address}, ${profileData.city}, ${profileData.state} ${profileData.zip}, USA`);
         const geoRes = await fetch(
           `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-          { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
+          { headers: { 'User-Agent': 'SpontiCoupon/1.0' }, signal: AbortSignal.timeout(5000) }
         );
+        if (!geoRes.ok) throw new Error('Geocoding request failed');
         const geoData = await geoRes.json();
         if (geoData && geoData.length > 0) {
           lat = parseFloat(geoData[0].lat);

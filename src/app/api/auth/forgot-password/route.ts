@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 // POST /api/auth/forgot-password — Send password reset email
 export async function POST(request: NextRequest) {
+  // Rate limit: 3 attempts per hour per IP
+  const limited = rateLimit(request, { maxRequests: 3, windowMs: 60 * 60 * 1000 });
+  if (limited) return limited;
+
   const body = await request.json();
   const { email } = body;
 

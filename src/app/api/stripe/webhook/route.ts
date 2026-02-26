@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
       // The webhook may fire before or after the user completes signup.
       // If vendor doesn't exist yet, skip — the complete-signup endpoint handles it.
       if (flowType === 'guest_signup') {
-        if (vendorId && tier && session.subscription) {
+        if (vendorId && session.subscription) {
           // Vendor already completed signup — sync subscription data
           const subscriptionResponse = await getStripe().subscriptions.retrieve(
             session.subscription as string
@@ -46,7 +46,15 @@ export async function POST(request: NextRequest) {
             current_period_start: number;
             current_period_end: number;
             status: string;
+            items?: { data: Array<{ price?: { id: string } }> };
           };
+
+          // Resolve tier from Stripe price ID (canonical source), fallback to metadata
+          const verifiedTier = (subscription.items?.data?.[0]?.price?.id
+            ? resolveTierFromPriceId(subscription.items.data[0].price.id)
+            : null) || tier;
+
+          if (!verifiedTier) break;
 
           const dbStatus = subscription.status === 'trialing' || subscription.status === 'active'
             ? 'active'
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
             await supabase.from('subscriptions').insert({
               vendor_id: vendorId,
               stripe_subscription_id: subscription.id,
-              tier,
+              tier: verifiedTier,
               status: dbStatus,
               current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -72,7 +80,7 @@ export async function POST(request: NextRequest) {
           await supabase
             .from('vendors')
             .update({
-              subscription_tier: tier,
+              subscription_tier: verifiedTier,
               subscription_status: dbStatus,
             })
             .eq('id', vendorId);
@@ -82,7 +90,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Standard flow (authenticated checkout): vendor_id is always present
-      if (vendorId && tier && session.subscription) {
+      if (vendorId && session.subscription) {
         const subscriptionResponse = await getStripe().subscriptions.retrieve(
           session.subscription as string
         );
@@ -93,7 +101,15 @@ export async function POST(request: NextRequest) {
           trial_start: number | null;
           trial_end: number | null;
           status: string;
+          items?: { data: Array<{ price?: { id: string } }> };
         };
+
+        // Resolve tier from Stripe price ID (canonical source), fallback to metadata
+        const verifiedTier = (subscription.items?.data?.[0]?.price?.id
+          ? resolveTierFromPriceId(subscription.items.data[0].price.id)
+          : null) || tier;
+
+        if (!verifiedTier) break;
 
         // Map Stripe status — treat 'trialing' as 'active' for vendor access
         const dbStatus = subscription.status === 'trialing' || subscription.status === 'active'
@@ -111,7 +127,7 @@ export async function POST(request: NextRequest) {
           await supabase.from('subscriptions').insert({
             vendor_id: vendorId,
             stripe_subscription_id: subscription.id,
-            tier,
+            tier: verifiedTier,
             status: dbStatus,
             current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
@@ -121,7 +137,7 @@ export async function POST(request: NextRequest) {
         await supabase
           .from('vendors')
           .update({
-            subscription_tier: tier,
+            subscription_tier: verifiedTier,
             subscription_status: dbStatus,
           })
           .eq('id', vendorId);

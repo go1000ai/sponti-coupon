@@ -125,7 +125,11 @@ export async function POST(request: NextRequest) {
     vendorPaymentLink = deal.vendor?.stripe_payment_link || null;
   }
 
-  const redirectUrl = vendorPaymentLink
+  // Only allow HTTPS payment links to prevent phishing
+  const isValidPaymentLink = vendorPaymentLink
+    && vendorPaymentLink.startsWith('https://');
+
+  const redirectUrl = isValidPaymentLink
     ? `${vendorPaymentLink}?client_reference_id=${sessionToken}`
     : null;
 

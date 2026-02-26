@@ -163,8 +163,11 @@ export async function PUT(request: NextRequest) {
     // Update password
     if (body.password !== undefined) {
       const password = body.password as string;
-      if (!password || password.length < 6) {
-        return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 });
+      if (!password || password.length < 8) {
+        return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 });
+      }
+      if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+        return NextResponse.json({ error: 'Password must include uppercase, lowercase, and a number' }, { status: 400 });
       }
 
       const { error: passwordError } = await serviceClient.auth.admin.updateUserById(user.id, { password });
