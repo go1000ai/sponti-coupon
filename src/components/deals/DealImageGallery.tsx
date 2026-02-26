@@ -78,8 +78,12 @@ function getVideoThumbnail(url: string): string | null {
 export function DealImageGallery({ mainImage, images, videoUrls = [], title, fallback }: DealImageGalleryProps) {
   const allMedia: MediaItem[] = [];
 
-  const allImages = [mainImage, ...images].filter(Boolean) as string[];
-  allImages.forEach(url => allMedia.push({ type: 'image', url }));
+  // Deduplicate images (main image may also appear in image_urls)
+  const seen = new Set<string>();
+  [mainImage, ...images].filter(Boolean).forEach(url => {
+    const u = url as string;
+    if (!seen.has(u)) { seen.add(u); allMedia.push({ type: 'image', url: u }); }
+  });
 
   videoUrls.forEach(url => {
     allMedia.push({ type: 'video', url, thumbnail: getVideoThumbnail(url) || undefined });
