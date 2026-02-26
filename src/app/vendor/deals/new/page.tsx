@@ -41,6 +41,7 @@ export default function NewDealPage() {
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
+  const [videoPrompt, setVideoPrompt] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -455,6 +456,7 @@ export default function NewDealPage() {
           image_url: sourceImage,
           title: form.title,
           description: form.description,
+          video_prompt: videoPrompt || undefined,
         }),
       });
       const data = await res.json();
@@ -1341,13 +1343,20 @@ export default function NewDealPage() {
                       );
                     })}
                   </div>
+                  {/* Video prompt */}
+                  <div>
+                    <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1">Describe your video (optional)</p>
+                    <textarea value={videoPrompt} onChange={e => setVideoPrompt(e.target.value)}
+                      className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400"
+                      rows={2} placeholder="e.g., Slow zoom into the product with warm lighting, then pan to show the details..." />
+                  </div>
                   {/* Generate button */}
                   <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
                     className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
                     {aiVideoLoading ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
                     ) : (
-                      <><Video className="w-4 h-4" /> Generate Video from Selected Image</>
+                      <><Video className="w-4 h-4" /> Generate Video</>
                     )}
                   </button>
                   {aiVideoLoading && (

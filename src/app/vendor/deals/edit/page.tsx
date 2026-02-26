@@ -102,6 +102,7 @@ function EditDealPageInner() {
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
+  const [videoPrompt, setVideoPrompt] = useState('');
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
@@ -286,7 +287,7 @@ function EditDealPageInner() {
     try {
       const res = await fetch('/api/vendor/generate-video', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description }),
+        body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description, video_prompt: videoPrompt || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
@@ -670,10 +671,17 @@ function EditDealPageInner() {
                           );
                         })}
                       </div>
+                      {/* Video prompt */}
+                      <div>
+                        <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1">Describe your video (optional)</p>
+                        <textarea value={videoPrompt} onChange={e => setVideoPrompt(e.target.value)}
+                          className="w-full text-xs border border-emerald-200 rounded-lg p-2 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400"
+                          rows={2} placeholder="e.g., Slow zoom into the product with warm lighting, then pan to show the details..." />
+                      </div>
                       {/* Generate button */}
                       <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
                         className="w-full bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 shadow-sm">
-                        {aiVideoLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is creating your video...</> : <><Video className="w-3.5 h-3.5" /> Generate Video from Selected Image</>}
+                        {aiVideoLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is creating your video...</> : <><Video className="w-3.5 h-3.5" /> Generate Video</>}
                       </button>
                       {aiVideoLoading && (
                         <p className="text-[10px] text-emerald-600 text-center animate-pulse">This takes 1–3 minutes. You can keep editing while Ava works.</p>

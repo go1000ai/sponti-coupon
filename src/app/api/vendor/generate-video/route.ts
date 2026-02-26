@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { image_url, title, description } = body;
+  const { image_url, title, description, video_prompt } = body;
 
   if (!image_url) {
     return NextResponse.json({ error: 'An image URL is required to generate a video' }, { status: 400 });
@@ -75,7 +75,10 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
-    const prompt = `Smooth cinematic camera movement showcasing this ${vendor?.category || 'business'} deal: "${title || 'Special Deal'}". ${description || ''} Professional commercial quality, engaging and appealing, warm inviting atmosphere.`;
+    // Use vendor's custom prompt if provided, otherwise generate a default
+    const prompt = video_prompt
+      ? `${video_prompt}. Professional commercial quality for ${vendor?.business_name || 'this business'}'s ${vendor?.category || ''} deal: "${title || 'Special Deal'}". ${description || ''}`
+      : `Smooth cinematic camera movement showcasing this ${vendor?.category || 'business'} deal: "${title || 'Special Deal'}". ${description || ''} Professional commercial quality, engaging and appealing, warm inviting atmosphere.`;
 
     // Start video generation with image as starting frame (Veo 3.1)
     let operation = await ai.models.generateVideos({
@@ -143,21 +146,7 @@ export async function POST(request: NextRequest) {
     const serviceClient = await createServiceRoleClient();
     const filename = `${user.id}/${Date.now()}-ai-generated.mp4`;
 
-    // Ensure deal-videos bucket exists (ignore error if already exists)
-    try {
-      const { data: buckets } = await serviceClient.storage.listBuckets();
-      const bucketExists = buckets?.some(b => b.name === 'deal-videos');
-      if (!bucketExists) {
-        const { error: bucketError } = await serviceClient.storage.createBucket('deal-videos', {
-          public: true,
-          fileSizeLimit: 100 * 1024 * 1024,
-          allowedMimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
-        });
-        if (bucketError) console.error('Bucket creation error (may already exist):', bucketError);
-      }
-    } catch (bucketErr) {
-      console.error('Bucket check error:', bucketErr);
-    }
+    // deal-videos bucket created in Supabase (50MB limit, public, mp4/webm/quicktime)
 
     const { data: uploadData, error: uploadError } = await serviceClient.storage
       .from('deal-videos')
