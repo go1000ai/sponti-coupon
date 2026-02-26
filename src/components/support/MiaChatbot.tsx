@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Mic, MicOff } from 'lucide-react';
 import Image from 'next/image';
 
 // Auto-detect URLs in text and render them as clickable links
@@ -132,8 +132,45 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const speechSupported = typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+
+    try {
+      const recognition = new SR();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.continuous = false;
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+      };
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+
+      recognitionRef.current = recognition;
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      // Browser exposes API but doesn't actually support it
+      setIsListening(false);
+    }
+  };
 
   // Persist messages to sessionStorage (floating widget only)
   useEffect(() => {
@@ -309,6 +346,20 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
                 className="flex-1 min-w-0 resize-none border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
                 disabled={loading}
               />
+              {speechSupported && (
+                <button
+                  onClick={toggleListening}
+                  disabled={loading}
+                  className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${
+                    isListening
+                      ? 'bg-red-500 text-white animate-pulse shadow-md'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                  }`}
+                  aria-label={isListening ? 'Stop listening' : 'Voice input'}
+                >
+                  {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
+              )}
               <button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
