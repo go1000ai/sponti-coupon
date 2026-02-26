@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { X, RotateCcw } from 'lucide-react';
 import { MiaChatbot, MiaAvatar } from './MiaChatbot';
@@ -17,7 +17,6 @@ export function MiaFloatingWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [chatKey, setChatKey] = useState(0);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -36,52 +35,12 @@ export function MiaFloatingWidget() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [handleEscape]);
 
-  // Lock body scroll when panel is open (iOS-safe)
+  // Lock body scroll when panel is open
   useEffect(() => {
     if (!isOpen) return;
-    const scrollY = window.scrollY;
     document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.width = '100%';
     return () => {
       document.body.style.overflow = '';
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
-      document.body.style.width = '';
-      window.scrollTo(0, scrollY);
-    };
-  }, [isOpen]);
-
-  // Resize chat panel when mobile keyboard opens/closes
-  useEffect(() => {
-    if (!isOpen || !window.visualViewport) return;
-    const vv = window.visualViewport;
-    const navbarHeight = 80; // h-20 = 5rem = 80px
-
-    const handleResize = () => {
-      const panel = panelRef.current;
-      if (!panel || window.innerWidth >= 640) return; // skip desktop
-      const visibleHeight = vv.height;
-      panel.style.height = `${visibleHeight - navbarHeight}px`;
-      panel.style.bottom = 'auto';
-    };
-
-    const handleReset = () => {
-      const panel = panelRef.current;
-      if (!panel) return;
-      panel.style.height = '';
-      panel.style.bottom = '';
-    };
-
-    vv.addEventListener('resize', handleResize);
-    return () => {
-      vv.removeEventListener('resize', handleResize);
-      handleReset();
     };
   }, [isOpen]);
 
@@ -120,58 +79,59 @@ export function MiaFloatingWidget() {
       )}
 
       {/* Chat Panel */}
-      <div
-        ref={panelRef}
-        className={`fixed z-[55] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right overscroll-contain
-          ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
-          top-20 bottom-0 left-0 right-0 w-full
-          sm:bottom-6 sm:right-6 sm:left-auto sm:top-auto
-          sm:w-[380px] sm:h-[540px]
-          bg-white sm:rounded-2xl
-          shadow-2xl border border-gray-200`}
-        role="dialog"
-        aria-label="Chat with Mia, SpontiCoupon assistant"
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 py-3 flex items-center gap-3 shrink-0">
-          <MiaAvatar size={32} />
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-bold text-sm">Mia</h3>
-            <p className="text-secondary-200 text-[11px]">SpontiCoupon Assistant</p>
+      {isOpen && (
+        <div
+          className="fixed z-[55] flex flex-col overflow-hidden
+            top-20 bottom-0 left-0 right-0
+            sm:top-auto sm:bottom-6 sm:right-6 sm:left-auto
+            sm:w-[380px] sm:h-[540px]
+            bg-white sm:rounded-2xl
+            shadow-2xl border border-gray-200"
+          style={{ maxWidth: '100vw' }}
+          role="dialog"
+          aria-label="Chat with Mia, SpontiCoupon assistant"
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 py-3 flex items-center gap-3 shrink-0">
+            <MiaAvatar size={32} />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-white font-bold text-sm">Mia</h3>
+              <p className="text-secondary-200 text-[11px]">SpontiCoupon Assistant</p>
+            </div>
+            <div className="flex items-center gap-1.5 mr-1">
+              <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-[10px] text-secondary-200">Online</span>
+            </div>
+            <button
+              onClick={() => {
+                try { sessionStorage.removeItem('mia-chat-messages'); } catch { /* ignore */ }
+                setChatKey(k => k + 1);
+              }}
+              className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="New chat"
+              title="New chat"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+              aria-label="Close chat"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <div className="flex items-center gap-1.5 mr-1">
-            <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-            <span className="text-[10px] text-secondary-200">Online</span>
-          </div>
-          <button
-            onClick={() => {
-              try { sessionStorage.removeItem('mia-chat-messages'); } catch { /* ignore */ }
-              setChatKey(k => k + 1);
-            }}
-            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
-            aria-label="New chat"
-            title="New chat"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
-            aria-label="Close chat"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Chat body */}
-        <MiaChatbot
-          key={chatKey}
-          userRole="visitor"
-          variant="floating"
-          pageContext={pageContext}
-          onNewChat={() => setChatKey(k => k + 1)}
-        />
-      </div>
+          {/* Chat body */}
+          <MiaChatbot
+            key={chatKey}
+            userRole="visitor"
+            variant="floating"
+            pageContext={pageContext}
+            onNewChat={() => setChatKey(k => k + 1)}
+          />
+        </div>
+      )}
     </>
   );
 }
