@@ -97,6 +97,8 @@ function EditDealPageInner() {
   const [uploadingAdditional, setUploadingAdditional] = useState(false);
   const [imageMode, setImageMode] = useState<'upload' | 'url' | 'ai' | 'library'>('url');
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [showAdditionalMediaPicker, setShowAdditionalMediaPicker] = useState(false);
+  const [additionalImageUrl, setAdditionalImageUrl] = useState('');
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [customImagePrompt, setCustomImagePrompt] = useState('');
@@ -556,22 +558,37 @@ function EditDealPageInner() {
             {/* Additional images */}
             <div>
               <p className="text-xs font-medium text-gray-600 mb-1.5">Additional ({additionalImages.length}/10)</p>
-              <div className="flex flex-wrap gap-2">
-                {additionalImages.map((img, i) => (
-                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                    <button type="button" onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5" /></button>
-                  </div>
-                ))}
-                {additionalImages.length < 10 && (
+              {additionalImages.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {additionalImages.map((img, i) => (
+                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {additionalImages.length < 10 && (
+                <div className="flex items-center gap-2">
                   <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
-                    className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex flex-col items-center justify-center text-gray-400 hover:text-primary-500 transition-colors">
-                    {uploadingAdditional ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Upload className="w-4 h-4" /><span className="text-[9px]">Add</span></>}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50">
+                    {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload
                   </button>
-                )}
-              </div>
+                  <button type="button" onClick={() => setShowAdditionalMediaPicker(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
+                    <ImageIcon className="w-3 h-3" /> Library
+                  </button>
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <input value={additionalImageUrl} onChange={e => setAdditionalImageUrl(e.target.value)} className="input-field flex-1 text-xs py-1.5" placeholder="Paste image URL..."
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (additionalImageUrl.trim()) { setAdditionalImages(prev => [...prev, additionalImageUrl.trim()]); setAdditionalImageUrl(''); } } }} />
+                    <button type="button" onClick={() => { if (additionalImageUrl.trim()) { setAdditionalImages(prev => [...prev, additionalImageUrl.trim()]); setAdditionalImageUrl(''); } }}
+                      disabled={!additionalImageUrl.trim()}
+                      className="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium disabled:opacity-50 transition-colors">Add</button>
+                  </div>
+                </div>
+              )}
               <input ref={additionalFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
                 onChange={e => { const file = e.target.files?.[0]; if (file) handleAdditionalFileUpload(file); if (additionalFileInputRef.current) additionalFileInputRef.current.value = ''; }} />
             </div>
@@ -762,6 +779,9 @@ function EditDealPageInner() {
 
       <MediaPicker open={showMediaPicker} onClose={() => setShowMediaPicker(false)}
         onSelect={(url) => { setForm(prev => ({ ...prev, image_url: url })); setUploadPreview(null); setShowMediaPicker(false); }} type="image" />
+
+      <MediaPicker open={showAdditionalMediaPicker} onClose={() => setShowAdditionalMediaPicker(false)}
+        onSelect={(url) => { setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev); setShowAdditionalMediaPicker(false); }} type="image" />
     </div>
   );
 }
