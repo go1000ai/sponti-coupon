@@ -10,7 +10,7 @@ import { formatPercentage, formatCurrency, calculateDiscount } from '@/lib/utils
 import {
   ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
-  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList,
+  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -91,7 +91,7 @@ function EditDealPageInner() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [showToast, setShowToast] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadingAdditional, setUploadingAdditional] = useState(false);
@@ -316,7 +316,7 @@ function EditDealPageInner() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deal || !user) return;
-    setError(''); setSuccess(''); setSaving(true);
+    setError(''); setShowToast(false); setSaving(true);
     const supabase = createClient();
     const originalPrice = parseFloat(form.original_price);
     const dealPrice = parseFloat(form.deal_price);
@@ -349,7 +349,7 @@ function EditDealPageInner() {
 
     const { error: updateError } = await supabase.from('deals').update(updates).eq('id', deal.id).eq('vendor_id', user.id);
     if (updateError) setError('Failed to save: ' + updateError.message);
-    else { setSuccess('Deal updated successfully!'); setTimeout(() => router.push('/vendor/deals/calendar'), 1500); }
+    else { setShowToast(true); setTimeout(() => router.push('/vendor/deals/calendar'), 2000); }
     setSaving(false);
   };
 
@@ -423,9 +423,19 @@ function EditDealPageInner() {
         </div>
       </div>
 
-      {success && (
-        <div className="bg-green-50 text-green-700 text-sm p-4 rounded-xl border border-green-200 mb-6 flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5" /> {success}
+      {/* Animated save toast */}
+      {showToast && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+          <div className="animate-[toastPop_0.5s_ease-out_forwards] bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-2xl shadow-2xl shadow-emerald-500/30 flex items-center gap-3">
+            <div className="relative">
+              <CheckCircle2 className="w-7 h-7 animate-[spin_0.5s_ease-out]" />
+              <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-yellow-200 animate-pulse" />
+            </div>
+            <div>
+              <p className="font-bold text-base">Saved!</p>
+              <p className="text-emerald-100 text-xs">Your deal has been updated</p>
+            </div>
+          </div>
         </div>
       )}
       {error && (
