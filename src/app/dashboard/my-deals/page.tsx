@@ -602,7 +602,8 @@ function DetailModal({
   const vendor = deal.vendor as Deal['vendor'];
   const isSponti = deal.deal_type === 'sponti_coupon';
   const depositAmount = deal.deposit_amount || 0;
-  const remainingBalance = isSponti ? deal.deal_price - depositAmount : 0;
+  const hasDeposit = depositAmount > 0;
+  const remainingBalance = hasDeposit ? deal.deal_price - depositAmount : 0;
   const hasImage = deal.image_url || (deal.image_urls && deal.image_urls.length > 0);
   const displayImage = deal.image_url || (deal.image_urls && deal.image_urls[0]) || null;
   const canModify = status === 'active' || status === 'pending_deposit';
@@ -703,7 +704,7 @@ function DetailModal({
             <span className="text-2xl font-extrabold text-primary-500">{fmtCurrency(deal.deal_price)}</span>
             <span className="text-gray-400 line-through text-sm">{fmtCurrency(deal.original_price)}</span>
           </div>
-          {isSponti && depositAmount > 0 && (
+          {hasDeposit && (
             <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
               <CreditCard className="w-3.5 h-3.5 text-primary-500" />
               <span>Deposit: <b className="text-primary-600">{fmtCurrency(depositAmount)}</b></span>
@@ -780,8 +781,8 @@ function DetailModal({
                 </div>
               )}
 
-              {/* Deposit breakdown (Sponti) */}
-              {isSponti && depositAmount > 0 && (
+              {/* Deposit breakdown */}
+              {hasDeposit && (
                 <div className="bg-primary-50/60 border border-primary-100 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-secondary-500 mb-3 uppercase tracking-wider flex items-center gap-2">
                     <CreditCard className="w-3.5 h-3.5 text-primary-500" />
@@ -975,7 +976,7 @@ function DetailModal({
                     <div>
                       <h4 className="text-sm font-bold text-red-700">Cancel this coupon?</h4>
                       <p className="text-xs text-red-500 mt-1">
-                        This action is permanent.{isSponti && depositAmount > 0 && ' Your deposit is non-refundable.'}
+                        This action is permanent.{hasDeposit && ' Your deposit is non-refundable.'}
                       </p>
                     </div>
                   </div>

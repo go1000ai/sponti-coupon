@@ -174,7 +174,7 @@ export default function DealDetailPage() {
 
   const handleClaim = async () => {
     if (!user) { router.push(`/auth/login?redirect=/deals/${params.id}`); return; }
-    if (deal?.deal_type === 'sponti_coupon') { setShowDisclaimer(true); return; }
+    if (deal?.deposit_amount && deal.deposit_amount > 0) { setShowDisclaimer(true); return; }
     await processClaim();
   };
 
@@ -251,6 +251,7 @@ export default function DealDetailPage() {
   }
 
   const isSponti = deal.deal_type === 'sponti_coupon';
+  const hasDeposit = deal.deposit_amount != null && deal.deposit_amount > 0;
   const isExpired = new Date(deal.expires_at) < new Date();
   const isSoldOut = deal.max_claims ? deal.claims_count >= deal.max_claims : false;
   const vendor = deal.vendor;
@@ -503,7 +504,7 @@ export default function DealDetailPage() {
                         </h3>
                         <div className="grid sm:grid-cols-3 gap-4">
                           {[
-                            { step: '1', title: 'Claim the Deal', desc: isSponti ? 'Pay a small deposit to lock in your deal' : 'Click claim to get your QR code' },
+                            { step: '1', title: 'Claim the Deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to lock in your deal` : 'Click claim to get your QR code' },
                             { step: '2', title: 'Show QR Code', desc: 'Present your QR code at the business' },
                             { step: '3', title: 'Enjoy Savings!', desc: `Save ${formatPercentage(deal.discount_percentage)} on your purchase` },
                           ].map((s, i) => (
@@ -557,7 +558,7 @@ export default function DealDetailPage() {
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
                         <ol className="space-y-3">
                           {[
-                            { title: 'Claim this deal', desc: isSponti ? `Pay the ${formatCurrency(deal.deposit_amount || 0)} deposit to secure your spot` : 'Click the claim button — no payment required' },
+                            { title: 'Claim this deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to secure your spot` : 'Click the claim button — no payment required' },
                             { title: 'Get your QR code', desc: 'A unique QR code will appear in your "My Coupons" dashboard' },
                             { title: 'Visit the business', desc: `Head to ${vendor?.business_name || 'the business'} before the deal expires` },
                             { title: 'Show your QR code', desc: 'The staff will scan it to apply your discount' },
@@ -917,7 +918,7 @@ export default function DealDetailPage() {
                 </div>
 
                 {/* Deposit info */}
-                {isSponti && deal.deposit_amount && (
+                {hasDeposit && (
                   <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4">
                     <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount)}</p>
                     <p className="text-xs text-primary-600 mt-1">Paid directly to the business. Non-refundable if not redeemed.</p>
@@ -953,12 +954,12 @@ export default function DealDetailPage() {
                     onClick={handleClaim}
                     disabled={claiming}
                     className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
-                      isSponti
+                      isSponti || hasDeposit
                         ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
                         : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
                     }`}
                   >
-                    {claiming ? 'Processing...' : isSponti ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
+                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
                   </button>
                 )}
 

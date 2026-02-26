@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
 
   const sessionToken = uuidv4();
 
-  // For regular deals, no deposit needed — create claim with QR immediately
-  if (deal.deal_type === 'regular') {
+  // No deposit required — create claim with QR + redemption code immediately
+  if (!deal.deposit_amount || deal.deposit_amount <= 0) {
     const qrCode = uuidv4();
     const redemptionCode = generateRedemptionCode();
     const { data: claim, error: claimError } = await supabase
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  // For Sponti Coupons — create pending claim, redirect to vendor payment
+  // Deposit required — create pending claim, redirect to vendor payment
   const { data: claim, error: claimError } = await supabase
     .from('claims')
     .insert({
