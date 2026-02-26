@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { X, RotateCcw } from 'lucide-react';
 import { MiaChatbot, MiaAvatar } from './MiaChatbot';
@@ -17,6 +17,7 @@ export function MiaFloatingWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [chatKey, setChatKey] = useState(0);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -35,7 +36,7 @@ export function MiaFloatingWidget() {
     return () => document.removeEventListener('keydown', handleEscape);
   }, [handleEscape]);
 
-  // Lock body scroll on mobile when panel is open (iOS-safe)
+  // Lock body scroll when panel is open (iOS-safe)
   useEffect(() => {
     if (!isOpen) return;
     const scrollY = window.scrollY;
@@ -53,6 +54,34 @@ export function MiaFloatingWidget() {
       document.body.style.right = '';
       document.body.style.width = '';
       window.scrollTo(0, scrollY);
+    };
+  }, [isOpen]);
+
+  // Resize chat panel when mobile keyboard opens/closes
+  useEffect(() => {
+    if (!isOpen || !window.visualViewport) return;
+    const vv = window.visualViewport;
+    const navbarHeight = 80; // h-20 = 5rem = 80px
+
+    const handleResize = () => {
+      const panel = panelRef.current;
+      if (!panel || window.innerWidth >= 640) return; // skip desktop
+      const visibleHeight = vv.height;
+      panel.style.height = `${visibleHeight - navbarHeight}px`;
+      panel.style.bottom = 'auto';
+    };
+
+    const handleReset = () => {
+      const panel = panelRef.current;
+      if (!panel) return;
+      panel.style.height = '';
+      panel.style.bottom = '';
+    };
+
+    vv.addEventListener('resize', handleResize);
+    return () => {
+      vv.removeEventListener('resize', handleResize);
+      handleReset();
     };
   }, [isOpen]);
 
@@ -92,6 +121,7 @@ export function MiaFloatingWidget() {
 
       {/* Chat Panel */}
       <div
+        ref={panelRef}
         className={`fixed z-[55] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right overscroll-contain
           ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}
           top-20 bottom-0 left-0 right-0 w-full

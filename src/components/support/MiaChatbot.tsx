@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Mic, MicOff } from 'lucide-react';
 import Image from 'next/image';
 
 // Auto-detect URLs in text and render them as clickable links
@@ -132,8 +132,42 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Check if speech recognition is available
+  const speechSupported = typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript);
+    };
+
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
 
   // Persist messages to sessionStorage (floating widget only)
   useEffect(() => {
@@ -298,7 +332,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
           </div>
         ) : (
           <>
-            <div className="flex items-end gap-2 w-full overflow-hidden">
+            <div className="flex items-end gap-1.5 sm:gap-2 max-w-full">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -306,18 +340,33 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
                 rows={1}
-                className="flex-1 min-w-0 resize-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
+                className="flex-1 min-w-0 resize-none border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
                 disabled={loading}
               />
+              {speechSupported && (
+                <button
+                  onClick={toggleListening}
+                  disabled={loading}
+                  className={`p-2 sm:p-2.5 rounded-xl transition-all flex-shrink-0 ${
+                    isListening
+                      ? 'bg-red-500 text-white animate-pulse shadow-md'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700'
+                  }`}
+                  aria-label={isListening ? 'Stop listening' : 'Voice input'}
+                  title={isListening ? 'Tap to stop' : 'Voice input'}
+                >
+                  {isListening ? <MicOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Mic className="w-4 h-4 sm:w-5 sm:h-5" />}
+                </button>
+              )}
               <button
                 onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
-                className="bg-gradient-to-r from-primary-500 to-orange-400 text-white p-2.5 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+                className="bg-gradient-to-r from-primary-500 to-orange-400 text-white p-2 sm:p-2.5 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
               >
                 {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
                 ) : (
-                  <Send className="w-5 h-5" />
+                  <Send className="w-4 h-4 sm:w-5 sm:h-5" />
                 )}
               </button>
             </div>
