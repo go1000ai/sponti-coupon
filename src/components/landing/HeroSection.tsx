@@ -114,29 +114,30 @@ export function HeroSection() {
               <span className="text-primary-500"> Near You</span>
             </h1>
 
-            {/* Urgency badge — live deal count */}
-            {stats && stats.totalActive > 0 && (
-              <div
-                className={`mt-4 inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 transition-opacity duration-700 ease-out ${
-                  mounted ? 'opacity-100' : 'opacity-0'
-                }`}
-                style={{ transitionDelay: '225ms' }}
-              >
-                <span className="flex items-center gap-1.5 text-sm text-white/90 font-medium">
-                  <Flame className="w-4 h-4 text-primary-400 animate-pulse" />
-                  {stats.totalActive} deals live now
-                </span>
-                {stats.expiringSoon > 0 && (
-                  <>
-                    <span className="w-px h-4 bg-white/20" />
-                    <span className="flex items-center gap-1.5 text-sm text-yellow-300/90 font-medium">
-                      <Clock className="w-3.5 h-3.5" />
-                      {stats.expiringSoon} expiring in &lt; 2hrs
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
+            {/* Urgency badge — live deal count (always rendered, fades in when stats load) */}
+            <div
+              className={`mt-4 h-9 transition-opacity duration-700 ease-out ${
+                stats && stats.totalActive > 0 && mounted ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {stats && stats.totalActive > 0 && (
+                <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2">
+                  <span className="flex items-center gap-1.5 text-sm text-white/90 font-medium">
+                    <Flame className="w-4 h-4 text-primary-400 animate-pulse" />
+                    {stats.totalActive} deals live now
+                  </span>
+                  {stats.expiringSoon > 0 && (
+                    <>
+                      <span className="w-px h-4 bg-white/20" />
+                      <span className="flex items-center gap-1.5 text-sm text-yellow-300/90 font-medium">
+                        <Clock className="w-3.5 h-3.5" />
+                        {stats.expiringSoon} expiring in &lt; 2hrs
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             <p
               className={`mt-4 sm:mt-6 text-base sm:text-lg text-gray-300 max-w-xl mx-auto md:mx-0 leading-relaxed transition-opacity duration-700 ease-out ${
