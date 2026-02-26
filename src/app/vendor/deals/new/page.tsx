@@ -40,6 +40,7 @@ export default function NewDealPage() {
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoSourceImage, setVideoSourceImage] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
@@ -436,9 +437,11 @@ export default function NewDealPage() {
   };
 
   // ── AI Video Generation ──────────────────────────────────
+  const allDealImages = [form.image_url, ...additionalImages].filter(Boolean);
+
   const handleAiVideoGenerate = async () => {
-    const imageUrl = form.image_url;
-    if (!imageUrl) {
+    const sourceImage = videoSourceImage || form.image_url;
+    if (!sourceImage) {
       setError('Please add a deal image first so Ava can generate a video from it.');
       return;
     }
@@ -449,7 +452,7 @@ export default function NewDealPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image_url: imageUrl,
+          image_url: sourceImage,
           title: form.title,
           description: form.description,
         }),
@@ -1289,38 +1292,57 @@ export default function NewDealPage() {
           {/* Ava Video Generation */}
           {canAccess('ai_deal_assistant') && (
             <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm shadow-emerald-500/20">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
-                  <p className="text-xs text-emerald-500">I&apos;ll turn your deal image into an eye-catching promo video</p>
+                  <p className="text-xs text-emerald-500">Pick an image &rarr; Ava turns it into a cinematic promo video</p>
                 </div>
               </div>
-              {!form.image_url ? (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
+              {allDealImages.length === 0 ? (
+                <p className="text-xs text-amber-600 flex items-center gap-1 mt-2">
                   <AlertCircle className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
                 </p>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleAiVideoGenerate}
-                  disabled={aiVideoLoading}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20"
-                >
-                  {aiVideoLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
-                  ) : (
-                    <><Video className="w-4 h-4" /> Generate Video from Image</>
+                <div className="mt-2 space-y-3">
+                  {/* Image picker */}
+                  <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider">Choose source image</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {allDealImages.map((img, i) => {
+                      const isSelected = (videoSourceImage || form.image_url) === img;
+                      return (
+                        <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
+                          className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" />
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                              <CheckCircle2 className="w-6 h-6 text-emerald-600 drop-shadow" />
+                            </div>
+                          )}
+                          {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">Main</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Generate button */}
+                  <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
+                    {aiVideoLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
+                    ) : (
+                      <><Video className="w-4 h-4" /> Generate Video from Selected Image</>
+                    )}
+                  </button>
+                  {aiVideoLoading && (
+                    <p className="text-xs text-emerald-500 text-center animate-pulse">
+                      This takes 1–3 minutes. You can keep editing while Ava works.
+                    </p>
                   )}
-                </button>
-              )}
-              {aiVideoLoading && (
-                <p className="text-xs text-emerald-500 mt-2 animate-pulse">
-                  Ava is working on your video — this takes 1-3 minutes...
-                </p>
+                </div>
               )}
             </div>
           )}
