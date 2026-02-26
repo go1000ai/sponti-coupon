@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   CreditCard, Plus, Star, Trash2, Pencil, Check, X,
-  ToggleLeft, ToggleRight, Loader2, AlertCircle, Wallet,
+  ToggleLeft, ToggleRight, Loader2, AlertCircle, Wallet, Store,
 } from 'lucide-react';
 import { PAYMENT_PROCESSORS, PROCESSOR_LIST } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
@@ -66,7 +66,7 @@ export default function VendorPaymentsPage() {
           processor_type: newProcessorType,
           payment_link: newPaymentLink,
           display_name: newDisplayName || PAYMENT_PROCESSORS[newProcessorType].name,
-          is_primary: methods.length === 0,
+          is_primary: PAYMENT_PROCESSORS[newProcessorType].supportsDeposit && methods.length === 0,
         }),
       });
 
@@ -211,9 +211,11 @@ export default function VendorPaymentsPage() {
           <div>
             <p className="text-sm font-semibold text-primary-700">How it works</p>
             <p className="text-sm text-primary-600 mt-0.5">
-              When customers claim a Sponti Coupon, they&apos;re redirected to your primary payment method to pay the deposit.
+              <span className="font-medium">Deposit methods</span> (Stripe, Square, PayPal) — customers are redirected to pay the deposit online when claiming a deal. Set one as your primary.
               <br />
-              <span className="font-medium">SpontiCoupon never touches your money — it goes directly to you.</span>
+              <span className="font-medium">In-store methods</span> (Venmo, Zelle, Cash App) — displayed on your deal page so customers know what you accept at your business.
+              <br />
+              <span className="font-medium mt-1 block">SpontiCoupon never touches your money — it goes directly to you.</span>
             </p>
           </div>
         </div>
@@ -269,12 +271,20 @@ export default function VendorPaymentsPage() {
                   </button>
                 ))}
               </div>
+              {!PAYMENT_PROCESSORS[newProcessorType].supportsDeposit && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  <Store className="w-3.5 h-3.5 shrink-0" />
+                  <span>{PAYMENT_PROCESSORS[newProcessorType].name} will be shown as an accepted in-store payment method on your deal page. It cannot be used for online deposit collection.</span>
+                </div>
+              )}
             </div>
 
-            {/* Payment link */}
+            {/* Payment link / info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {PAYMENT_PROCESSORS[newProcessorType].name} Payment Link
+                {PAYMENT_PROCESSORS[newProcessorType].supportsDeposit
+                  ? `${PAYMENT_PROCESSORS[newProcessorType].name} Payment Link`
+                  : `${PAYMENT_PROCESSORS[newProcessorType].name} Info`}
               </label>
               <input
                 type="text"
@@ -404,6 +414,12 @@ export default function VendorPaymentsPage() {
                               PRIMARY
                             </span>
                           )}
+                          {!processor?.supportsDeposit && (
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <Store className="w-3 h-3" />
+                              IN-STORE
+                            </span>
+                          )}
                           {!method.is_active && (
                             <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                               DISABLED
@@ -421,7 +437,7 @@ export default function VendorPaymentsPage() {
                   {/* Actions */}
                   {!isEditing && (
                     <div className="flex items-center gap-1 shrink-0">
-                      {!method.is_primary && method.is_active && (
+                      {!method.is_primary && method.is_active && processor?.supportsDeposit && (
                         <button
                           onClick={() => handleSetPrimary(method.id)}
                           disabled={saving}

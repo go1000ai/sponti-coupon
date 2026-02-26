@@ -37,7 +37,7 @@ DEAL USAGE TRACKING:
 CLAIMING & REDEMPTION FLOW:
 1. Customer browses deals on the marketplace or a vendor's page.
 2. Customer clicks "Claim" on a deal they want.
-3. If the deal has a deposit, customer pays the deposit via Stripe at claim time.
+3. If the deal has a deposit, customer pays the deposit via the vendor's primary payment method (Stripe, Square, or PayPal) at claim time.
 4. Customer receives a QR code AND a 6-digit redemption code.
 5. Customer goes to the business and shows their QR code or tells the vendor their 6-digit code.
 6. Vendor scans the QR code (using camera or the Scan page) or enters the 6-digit code on their dashboard.
@@ -45,7 +45,7 @@ CLAIMING & REDEMPTION FLOW:
 
 DEPOSITS (vendor decides per deal):
 - No deposit: customer claims for free, pays full price at the business.
-- Deposit: customer pays a partial amount at claim time (via Stripe), pays the rest at the business.
+- Deposit: customer pays a partial amount at claim time (via the vendor's primary payment method), pays the rest at the business.
 - Full payment: customer pays the entire deal price upfront at claim time.
 
 QR CODES & REDEMPTION CODES:
@@ -79,7 +79,7 @@ VENDOR DASHBOARD FEATURES:
 - API: generate API keys for integrations (Enterprise only).
 - Branding: custom colors, logo, branded domain (Enterprise only).
 - Subscription: manage plan, view billing.
-- Payment Methods: manage Stripe payment methods.
+- Payment Methods: add and manage payment processors (Stripe, Square, PayPal, Venmo, Zelle, Cash App). Set a primary method for customer deposits.
 - Support: chat with Mia (me!) or open support tickets.
 - Settings: business info, hours, social links, notifications, auto-response settings.
 
@@ -93,18 +93,23 @@ AI FEATURES:
 
 CUSTOMER FEATURES:
 - Browse deals by category, location, or search.
-- Claim deals (with optional deposit payment via Stripe).
+- Claim deals (with optional deposit payment via the vendor's chosen payment method).
 - View claimed coupons with QR code and 6-digit code.
 - Earn loyalty points/punches at participating businesses.
 - Leave reviews after redeeming deals.
 - SpontiPoints: platform-wide reward points earned through activity.
 - Account settings, notification preferences.
 
-PAYMENTS:
-- All payments go through Stripe.
-- Vendors connect their Stripe account for payouts.
-- Customers pay deposits/full payments via Stripe at claim time.
-- Subscription billing is through Stripe (monthly or annual).`;
+PAYMENTS & PAYMENT METHODS:
+- SpontiCoupon supports MULTIPLE payment processors. Vendors are NOT limited to Stripe.
+- There are two categories of payment methods:
+  1. DEPOSIT METHODS (for online deposit collection): Stripe, Square, PayPal. These have checkout links — customers are redirected to pay the deposit online when claiming a deal. One must be set as the PRIMARY method.
+  2. IN-STORE METHODS (displayed on deal page): Venmo, Zelle, Cash App. These are shown on the vendor's deal page so customers know what's accepted at the business for the remaining balance. They CANNOT be used for online deposit collection or set as primary.
+- Vendors add their payment methods in the "Payment Methods" page in their sidebar.
+- Vendors can add multiple methods from both categories.
+- SpontiCoupon never holds or processes the money — deposits go directly from customer to vendor.
+- Vendors can enable/disable, edit, or remove payment methods at any time.
+- Subscription/platform billing (monthly plan fees) is handled separately through Stripe.`;
 
 const VENDOR_CONTEXT = `
 
@@ -118,7 +123,10 @@ Key things to know:
 - When they ask about QR codes or redemptions, explain from the vendor perspective — they scan or enter codes to redeem customer coupons.
 - If they want to auto-generate deals from their website, point them to the Website Import feature in the sidebar.
 - If they want AI help with deal descriptions, that's the AI Deal Assistant (Business+).
-- Settings page has: business info, hours, social media links, notification preferences, auto-response settings, and guided tour toggle.`;
+- Settings page has: business info, hours, social media links, notification preferences, auto-response settings, and guided tour toggle.
+- If they ask about payment processing, explain there are two types: deposit methods (Stripe, Square, PayPal) for online deposit collection, and in-store methods (Venmo, Zelle, Cash App) displayed on their deal page. They can add all of them in the Payment Methods page.
+- If they ask how customers pay deposits, explain that customers are redirected to the vendor's primary deposit method (Stripe, Square, or PayPal). Venmo, Zelle, and Cash App cannot collect deposits online but are shown so customers know what's accepted at the business.
+- The money goes directly to the vendor — SpontiCoupon never touches it.`;
 
 const CUSTOMER_CONTEXT = `
 
@@ -126,12 +134,13 @@ You are currently helping a CUSTOMER (deal shopper). They browse, claim, and red
 Common customer topics: finding deals, claiming coupons, using QR codes or 6-digit codes at businesses, deposit payments, remaining balance, loyalty rewards, SpontiPoints, account settings, leaving reviews.
 Key things to know:
 - When they claim a deal, they get both a QR code and a 6-digit code. They can use either at the business.
-- If a deal has a deposit, they pay it at claim time via Stripe. The remaining balance is paid at the business.
+- If a deal has a deposit, they pay it at claim time via the vendor's payment link (Stripe, Square, or PayPal). The remaining balance is paid at the business.
 - If a deal has full payment, they pay everything upfront and owe nothing at the business.
 - Loyalty points/punches are earned automatically when they redeem deals at participating businesses.
 - They can leave reviews after redeeming a deal.
 - SpontiPoints are platform-wide rewards earned through various activities.
-- When they ask about QR codes, explain they show their QR code or tell the vendor their 6-digit code to redeem.`;
+- When they ask about QR codes, explain they show their QR code or tell the vendor their 6-digit code to redeem.
+- If they ask about payment methods, explain that deposits are paid online via the vendor's primary method (Stripe, Square, or PayPal). Vendors may also accept Venmo, Zelle, or Cash App at the business for the remaining balance.`;
 
 interface ChatMessage {
   role: 'user' | 'assistant';

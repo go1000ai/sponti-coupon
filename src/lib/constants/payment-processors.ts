@@ -7,6 +7,8 @@ export interface PaymentProcessorInfo {
   bgColor: string;
   helpText: string;
   linkPrefix?: string;
+  /** Whether this processor supports checkout links for online deposit collection */
+  supportsDeposit: boolean;
 }
 
 export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorInfo> = {
@@ -17,6 +19,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     bgColor: 'bg-[#635BFF]',
     helpText: 'Paste your Stripe Payment Link URL. Create one at dashboard.stripe.com/payment-links.',
     linkPrefix: 'https://buy.stripe.com/',
+    supportsDeposit: true,
   },
   square: {
     name: 'Square',
@@ -25,6 +28,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     bgColor: 'bg-[#006AFF]',
     helpText: 'Paste your Square checkout link. Create one at squareup.com/dashboard/checkout-links.',
     linkPrefix: 'https://square.link/',
+    supportsDeposit: true,
   },
   paypal: {
     name: 'PayPal',
@@ -33,28 +37,38 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     bgColor: 'bg-[#003087]',
     helpText: 'Paste your PayPal.me link or PayPal checkout URL.',
     linkPrefix: 'https://paypal.me/',
+    supportsDeposit: true,
   },
   venmo: {
     name: 'Venmo',
     placeholder: '@yourbusiness',
     color: '#3D95CE',
     bgColor: 'bg-[#3D95CE]',
-    helpText: 'Enter your Venmo username (with @) or Venmo business profile link.',
+    helpText: 'Shown on your deal page so customers know you accept Venmo in-store.',
+    supportsDeposit: false,
   },
   zelle: {
     name: 'Zelle',
     placeholder: 'business@email.com or (555) 123-4567',
     color: '#6D1ED4',
     bgColor: 'bg-[#6D1ED4]',
-    helpText: 'Enter the email or phone number registered with your Zelle account.',
+    helpText: 'Shown on your deal page so customers know you accept Zelle in-store.',
+    supportsDeposit: false,
   },
   cashapp: {
     name: 'Cash App',
     placeholder: '$yourbusiness',
     color: '#00D632',
     bgColor: 'bg-[#00D632]',
-    helpText: 'Enter your Cash App $cashtag.',
+    helpText: 'Shown on your deal page so customers know you accept Cash App in-store.',
+    supportsDeposit: false,
   },
 } as const;
 
 export const PROCESSOR_LIST = Object.entries(PAYMENT_PROCESSORS) as [PaymentProcessorType, PaymentProcessorInfo][];
+
+/** Processors that support online checkout links for deposit collection */
+export const DEPOSIT_PROCESSORS = PROCESSOR_LIST.filter(([, p]) => p.supportsDeposit);
+
+/** Processors that are display-only (accepted in-store) */
+export const INSTORE_PROCESSORS = PROCESSOR_LIST.filter(([, p]) => !p.supportsDeposit);
