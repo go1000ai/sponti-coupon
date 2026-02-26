@@ -285,7 +285,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
       )}
 
       {/* Input or limit message */}
-      <div className="border-t border-gray-200 p-3 sm:p-4 bg-white shrink-0">
+      <div className="border-t border-gray-200 p-3 sm:p-4 bg-white shrink-0 overflow-hidden">
         {isAtLimit ? (
           <div className="text-center py-1">
             <p className="text-xs text-gray-500 mb-2">You&apos;ve reached the message limit for this chat.</p>
@@ -298,7 +298,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
           </div>
         ) : (
           <>
-            <div className="flex items-end gap-2">
+            <div className="flex items-end gap-2 w-full overflow-hidden">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -306,7 +306,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
                 rows={1}
-                className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
+                className="flex-1 min-w-0 resize-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
                 disabled={loading}
               />
               <button
