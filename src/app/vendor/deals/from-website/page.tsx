@@ -66,7 +66,7 @@ export default function ImportFromWebsitePage() {
   const [websiteImages, setWebsiteImages] = useState<string[]>(cached?.websiteImages || []);
   const [expandedDeal, setExpandedDeal] = useState<number | null>(0);
   const [generatingImage, setGeneratingImage] = useState<number | null>(null);
-  const [dealImages, setDealImages] = useState<Record<number, string>>(cached?.dealImages || {});
+  const [dealImages, setDealImages] = useState<Record<number, string[]>>(cached?.dealImages || {});
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [savedImages, setSavedImages] = useState<Record<number, boolean>>({});
   const [savingImage, setSavingImage] = useState<number | null>(null);
@@ -187,7 +187,8 @@ export default function ImportFromWebsitePage() {
           max_claims: deal.max_claims,
           starts_at: now.toISOString(),
           expires_at: expiresAt.toISOString(),
-          image_url: dealImages[idx] || null,
+          image_url: (dealImages[idx] || [])[0] || null,
+          image_urls: (dealImages[idx] || []).slice(1),
           terms_and_conditions: deal.terms_and_conditions || null,
           how_it_works: deal.how_it_works || null,
           fine_print: deal.fine_print || null,
@@ -228,7 +229,11 @@ export default function ImportFromWebsitePage() {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) {
-        setDealImages(prev => ({ ...prev, [idx]: data.url }));
+        setDealImages(prev => {
+          const current = prev[idx] || [];
+          if (current.length >= 10) return prev;
+          return { ...prev, [idx]: [...current, data.url] };
+        });
       } else {
         setError(data.error || 'Upload failed');
       }
@@ -251,7 +256,11 @@ export default function ImportFromWebsitePage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setDealImages(prev => ({ ...prev, [idx]: data.url }));
+        setDealImages(prev => {
+          const current = prev[idx] || [];
+          if (current.length >= 10) return prev;
+          return { ...prev, [idx]: [...current, data.url] };
+        });
       }
     } catch { /* silent */ }
     setGeneratingImage(null);
@@ -272,7 +281,9 @@ export default function ImportFromWebsitePage() {
     if (deal.fine_print) params.set('fine_print', deal.fine_print);
     if (deal.highlights?.length) params.set('highlights', JSON.stringify(deal.highlights));
     if (deal.amenities?.length) params.set('amenities', JSON.stringify(deal.amenities));
-    if (dealImages[idx]) params.set('image_url', dealImages[idx]);
+    const imgs = dealImages[idx] || [];
+    if (imgs.length > 0) params.set('image_url', imgs[0]);
+    if (imgs.length > 1) params.set('image_urls', JSON.stringify(imgs.slice(1)));
     return `/vendor/deals/new?${params.toString()}`;
   };
 
@@ -560,9 +571,9 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                   >
                     {/* Deal image or placeholder */}
                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
-                      {dealImages[idx] ? (
+                      {(dealImages[idx] || []).length > 0 ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={dealImages[idx]} alt="" className="w-full h-full object-cover" />
+                        <img src={dealImages[idx][0]} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <Tag className="w-8 h-8 text-gray-300" />
                       )}
@@ -647,29 +658,50 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                       <div className="mb-4">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Deal Image</p>
 
-                        {/* Selected image preview */}
-                        {dealImages[idx] && (
-                          <div className="flex items-start gap-4 mb-3 bg-green-50 rounded-xl p-3 border border-green-200">
-                            <div className="w-32 h-32 rounded-xl overflow-hidden border-2 border-green-300 flex-shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={dealImages[idx]} alt="Selected" className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex flex-col gap-2 pt-1">
+                        {/* Selected images preview */}
+                        {(dealImages[idx] || []).length > 0 && (
+                          <div className="mb-3 bg-green-50 rounded-xl p-3 border border-green-200">
+                            <div className="flex items-center justify-between mb-2">
                               <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Image selected
+                                <CheckCircle2 className="w-3.5 h-3.5" /> {(dealImages[idx] || []).length} image{(dealImages[idx] || []).length > 1 ? 's' : ''} selected
                               </span>
                               <button
                                 onClick={() => setDealImages(prev => { const n = { ...prev }; delete n[idx]; return n; })}
                                 className="text-xs text-red-500 hover:text-red-600 font-medium"
                               >
-                                Change image
+                                Clear all
                               </button>
                             </div>
+                            <div className="flex gap-2 overflow-x-auto pb-1">
+                              {(dealImages[idx] || []).map((imgUrl, imgI) => (
+                                <div key={imgI} className="relative flex-shrink-0">
+                                  <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-green-300">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={imgUrl} alt={`Selected ${imgI + 1}`} className="w-full h-full object-cover" />
+                                  </div>
+                                  {imgI === 0 && (
+                                    <span className="absolute top-0.5 left-0.5 bg-green-600 text-white text-[9px] px-1 rounded font-bold">Main</span>
+                                  )}
+                                  <button
+                                    onClick={() => setDealImages(prev => ({
+                                      ...prev,
+                                      [idx]: (prev[idx] || []).filter((_, j) => j !== imgI),
+                                    }))}
+                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            {(dealImages[idx] || []).length < 10 && (
+                              <p className="text-[10px] text-gray-400 mt-1">You can select up to {10 - (dealImages[idx] || []).length} more image{10 - (dealImages[idx] || []).length > 1 ? 's' : ''}</p>
+                            )}
                           </div>
                         )}
 
                         {/* Image picker tabs */}
-                        {!dealImages[idx] && (
+                        {(dealImages[idx] || []).length < 10 && (
                           <div className="rounded-xl border border-gray-200 overflow-hidden">
                             {/* Tab headers */}
                             <div className="flex bg-gray-50 border-b border-gray-200">
@@ -725,18 +757,39 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                               {/* Website images tab */}
                               {(imageTab[idx] || 'website') === 'website' && websiteImages.length > 0 && (
                                 <div>
-                                  <p className="text-xs text-gray-500 mb-2">Click an image from your website to use it:</p>
+                                  <p className="text-xs text-gray-500 mb-2">Click images to select or deselect (up to 10):</p>
                                   <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
-                                    {websiteImages.slice(0, 8).map((imgUrl, i) => (
-                                      <button
-                                        key={i}
-                                        onClick={() => setDealImages(prev => ({ ...prev, [idx]: imgUrl }))}
-                                        className="aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-[#E8632B] transition-all"
-                                      >
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
-                                      </button>
-                                    ))}
+                                    {websiteImages.slice(0, 12).map((imgUrl, i) => {
+                                      const isSelected = (dealImages[idx] || []).includes(imgUrl);
+                                      const atLimit = (dealImages[idx] || []).length >= 10;
+                                      return (
+                                        <button
+                                          key={i}
+                                          onClick={() => {
+                                            setDealImages(prev => {
+                                              const current = prev[idx] || [];
+                                              if (isSelected) {
+                                                return { ...prev, [idx]: current.filter(u => u !== imgUrl) };
+                                              }
+                                              if (current.length >= 10) return prev;
+                                              return { ...prev, [idx]: [...current, imgUrl] };
+                                            });
+                                          }}
+                                          disabled={!isSelected && atLimit}
+                                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                                            isSelected ? 'border-green-500 ring-2 ring-green-300' : 'border-transparent hover:border-[#E8632B]'
+                                          } ${!isSelected && atLimit ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                        >
+                                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                                          <img src={imgUrl} alt="" className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+                                          {isSelected && (
+                                            <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
+                                              <CheckCircle2 className="w-5 h-5 text-green-600 drop-shadow-sm" />
+                                            </div>
+                                          )}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
@@ -777,11 +830,20 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                                       placeholder="https://example.com/image.jpg"
                                     />
                                     <button
-                                      onClick={() => { if (urlInputs[idx]?.trim()) setDealImages(prev => ({ ...prev, [idx]: urlInputs[idx].trim() })); }}
-                                      disabled={!urlInputs[idx]?.trim()}
+                                      onClick={() => {
+                                        if (urlInputs[idx]?.trim()) {
+                                          setDealImages(prev => {
+                                            const current = prev[idx] || [];
+                                            if (current.length >= 10) return prev;
+                                            return { ...prev, [idx]: [...current, urlInputs[idx].trim()] };
+                                          });
+                                          setUrlInputs(prev => ({ ...prev, [idx]: '' }));
+                                        }
+                                      }}
+                                      disabled={!urlInputs[idx]?.trim() || (dealImages[idx] || []).length >= 10}
                                       className="px-4 py-2 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-[#D55A25] transition-all disabled:opacity-50"
                                     >
-                                      Use Image
+                                      Add Image
                                     </button>
                                   </div>
                                 </div>
@@ -883,7 +945,11 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
         onClose={() => setMediaPickerDeal(null)}
         onSelect={(selectedUrl) => {
           if (mediaPickerDeal !== null) {
-            setDealImages(prev => ({ ...prev, [mediaPickerDeal]: selectedUrl }));
+            setDealImages(prev => {
+              const current = prev[mediaPickerDeal] || [];
+              if (current.length >= 10) return prev;
+              return { ...prev, [mediaPickerDeal]: [...current, selectedUrl] };
+            });
           }
           setMediaPickerDeal(null);
         }}

@@ -137,6 +137,10 @@ export default function NewDealPage() {
       }));
       if (p.get('image_url')) setImageMode('url');
       try {
+        const imgUrlsRaw = p.get('image_urls');
+        if (imgUrlsRaw) setAdditionalImages(JSON.parse(imgUrlsRaw));
+      } catch { /* ignore */ }
+      try {
         const hlRaw = p.get('highlights');
         if (hlRaw) setHighlights(JSON.parse(hlRaw));
       } catch { /* ignore */ }
