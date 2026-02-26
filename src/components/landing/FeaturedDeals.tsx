@@ -35,7 +35,7 @@ export function FeaturedDeals() {
   const tabs: { key: DealTab; label: string; icon: React.ReactNode }[] = [
     { key: 'all', label: 'All Deals', icon: <Flame className="w-4 h-4" /> },
     { key: 'sponti_coupon', label: 'Sponti Coupons', icon: <SpontiIcon className="w-4 h-4" /> },
-    { key: 'regular', label: 'Regular Deals', icon: <Tag className="w-4 h-4" /> },
+    { key: 'regular', label: 'Steady Deals', icon: <Tag className="w-4 h-4" /> },
   ];
 
   return (

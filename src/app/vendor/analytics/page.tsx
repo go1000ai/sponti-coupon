@@ -261,7 +261,7 @@ const supabase = createClient();
 // =============================================================================
 export default function VendorAnalyticsPage() {
   const { user } = useAuth();
-  const { canAccess } = useVendorTier();
+  const { canAccess, loading: tierLoading } = useVendorTier();
 
   // ─── State ─────────────────────────────────────────────────────────────────
   const [allDeals, setAllDeals] = useState<Deal[]>([]);
@@ -445,7 +445,7 @@ export default function VendorAnalyticsPage() {
     const dealMap: Record<string, { name: string; claims: number; redemptions: number }> = {};
     allDeals.forEach(d => {
       dealMap[d.id] = {
-        name: d.title.length > 18 ? d.title.slice(0, 18) + '...' : d.title,
+        name: d.title.length > 10 ? d.title.slice(0, 10) + '...' : d.title,
         claims: 0,
         redemptions: 0,
       };
@@ -811,7 +811,7 @@ export default function VendorAnalyticsPage() {
 
       {/* Row 1: Revenue Over Time + Conversion Funnel */}
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
-        <GatedSection locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Revenue & Claims Over Time" description="Track your revenue trends and claim volume. Upgrade to Pro for charts.">
+        <GatedSection loading={tierLoading} locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Revenue & Claims Over Time" description="Track your revenue trends and claim volume. Upgrade to Pro for charts.">
         <div className="card p-6 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -898,7 +898,7 @@ export default function VendorAnalyticsPage() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={claimsVsRedemptionsData} barGap={2}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="#9ca3af" angle={-20} textAnchor="end" height={60} />
+                <XAxis dataKey="name" tick={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -912,7 +912,7 @@ export default function VendorAnalyticsPage() {
         </div>
 
         {/* Deal Type Performance */}
-        <GatedSection locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Sponti vs Steady Performance" description="Compare deal types to see what drives more claims. Upgrade to Pro.">
+        <GatedSection loading={tierLoading} locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Sponti vs Steady Performance" description="Compare deal types to see what drives more claims. Upgrade to Pro.">
         <div className="card p-6">
           <h3 className="text-lg font-bold text-[#1A1A2E] mb-4">Sponti vs Steady Performance</h3>
           <div className="grid grid-cols-2 gap-4 mb-5">
@@ -957,7 +957,7 @@ export default function VendorAnalyticsPage() {
       {/* Row 3: Hourly Heatmap + Day of Week */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         {/* Hourly Heatmap */}
-        <GatedSection locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Hourly Claims Heatmap" description="See when customers claim the most. Upgrade to Pro.">
+        <GatedSection loading={tierLoading} locked={!canAccess('basic_charts')} requiredTier="pro" featureName="Hourly Claims Heatmap" description="See when customers claim the most. Upgrade to Pro.">
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="w-4 h-4 text-[#E8632B]" />
@@ -1059,7 +1059,7 @@ export default function VendorAnalyticsPage() {
       </div>
 
       {/* Row 4: Discount Impact + Category Performance */}
-      <GatedSection locked={!canAccess('advanced_analytics')} requiredTier="business" featureName="Advanced Analytics" description="Unlock discount analysis, category insights, and data tables. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('advanced_analytics')} requiredTier="business" featureName="Advanced Analytics" description="Unlock discount analysis, category insights, and data tables. Upgrade to Business.">
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         {/* Discount Impact Analysis */}
         <div className="card p-6">
@@ -1135,7 +1135,7 @@ export default function VendorAnalyticsPage() {
       </GatedSection>
 
       {/* ─── AI Deal Advisor Section ──────────────────────────────────────── */}
-      <GatedSection locked={!canAccess('ai_deal_advisor')} requiredTier="business" featureName="AI Deal Advisor" description="Get AI-powered insights, competitor analysis, and personalized deal recommendations. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_advisor')} requiredTier="business" featureName="AI Deal Advisor" description="Get AI-powered insights, competitor analysis, and personalized deal recommendations. Upgrade to Business.">
       <div className="mb-10">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1A1A2E] via-[#2D2D4A] to-[#1A1A2E] p-[1px]">
           <div className="absolute inset-0 bg-gradient-to-r from-[#E8632B]/20 via-transparent to-[#8B5CF6]/20 animate-pulse" style={{ animationDuration: '4s' }} />
@@ -1298,7 +1298,7 @@ export default function VendorAnalyticsPage() {
                           Based on your historical performance, this combination has the best chance of maximizing claims.
                         </p>
                         <Link
-                          href="/vendor/deals/new"
+                          href={`/vendor/deals/new?ai_suggest=true&deal_type=${suggestedDeal.typeValue}&discount=${encodeURIComponent(suggestedDeal.discountRange)}&duration=${encodeURIComponent(suggestedDeal.duration)}`}
                           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#E8632B] to-[#F4945E] text-white font-semibold text-sm hover:shadow-lg hover:shadow-orange-500/25 transition-all hover:scale-[1.02]"
                         >
                           <Zap className="w-4 h-4" />
@@ -1336,7 +1336,7 @@ export default function VendorAnalyticsPage() {
       </GatedSection>
 
       {/* ─── Performance Table ────────────────────────────────────────────── */}
-      <GatedSection locked={!canAccess('advanced_analytics')} requiredTier="business" featureName="Deal Performance Table" description="Detailed deal-by-deal breakdown with sortable data. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('advanced_analytics')} requiredTier="business" featureName="Deal Performance Table" description="Detailed deal-by-deal breakdown with sortable data. Upgrade to Business.">
       <div className="mb-10">
         <SectionHeader icon={TableIcon} title="Deal Performance Table" subtitle="Click column headers to sort. Click a row to expand." />
         <div className="card overflow-hidden">

@@ -134,7 +134,7 @@ export function TrendingDeals() {
 
                     {/* Discount badge */}
                     <div className="absolute top-3 right-3 bg-white text-primary-500 font-bold text-xs px-2.5 py-1 rounded-full shadow-md">
-                      {formatPercentage(deal.discount_percentage)}% OFF
+                      {formatPercentage(deal.discount_percentage)} OFF
                     </div>
 
                     {/* Views + Distance */}

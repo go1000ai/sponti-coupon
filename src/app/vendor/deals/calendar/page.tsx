@@ -3,10 +3,11 @@
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Calendar, ChevronLeft, ChevronRight, Plus, Tag, Clock,
-  List, CalendarDays,
+  List, CalendarDays, FileEdit, Trash2, Loader2,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency } from '@/lib/utils';
@@ -28,8 +29,12 @@ function getFirstDayOfMonth(year: number, month: number) {
 
 export default function DealsCalendarPage() {
   const { user } = useAuth();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'deals' | 'drafts'>('deals');
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [drafts, setDrafts] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -37,6 +42,7 @@ export default function DealsCalendarPage() {
   useEffect(() => {
     if (!user) return;
     fetchDeals();
+    fetchDrafts();
   }, [user, currentMonth, currentYear]);
 
   async function fetchDeals() {
@@ -57,6 +63,26 @@ export default function DealsCalendarPage() {
 
     setDeals(data || []);
     setLoading(false);
+  }
+
+  async function fetchDrafts() {
+    if (!user) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('deals')
+      .select('*')
+      .eq('vendor_id', user.id)
+      .eq('status', 'draft')
+      .order('created_at', { ascending: false });
+    setDrafts(data || []);
+  }
+
+  async function handleDeleteDraft(id: string) {
+    setDeletingDraft(id);
+    const supabase = createClient();
+    await supabase.from('deals').delete().eq('id', id);
+    setDrafts(prev => prev.filter(d => d.id !== id));
+    setDeletingDraft(null);
   }
 
   const prevMonth = () => {
@@ -116,13 +142,52 @@ export default function DealsCalendarPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Calendar className="w-8 h-8 text-primary-500" />
           <div>
             <h1 className="text-3xl font-bold text-secondary-500">My Deals</h1>
-            <p className="text-gray-500 text-sm mt-1">Visualize your deals across the month</p>
+            <p className="text-gray-500 text-sm mt-1">Manage and visualize your deals</p>
           </div>
+        </div>
+        <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
+          <Plus className="w-4 h-4" /> New Deal
+        </Link>
+      </div>
+
+      {/* Tabs: My Deals / Drafts */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
+          <button
+            onClick={() => setActiveTab('deals')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'deals'
+                ? 'bg-white text-secondary-500 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <CalendarDays className="w-4 h-4" /> My Deals
+          </button>
+          <button
+            onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === 'drafts'
+                ? 'bg-white text-secondary-500 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <FileEdit className="w-4 h-4" /> Drafts
+            {drafts.length > 0 && (
+              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                {drafts.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* List/Calendar toggle (only on deals tab) */}
+        {activeTab === 'deals' && (
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <Link
               href="/vendor/deals"
@@ -138,13 +203,120 @@ export default function DealsCalendarPage() {
               <CalendarDays className="w-3.5 h-3.5" /> Calendar
             </button>
           </div>
-        </div>
-        <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> New Deal
-        </Link>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* ═══════════════ DRAFTS TAB ═══════════════ */}
+      {activeTab === 'drafts' && (
+        <div>
+          {drafts.length === 0 ? (
+            <div className="card p-12 text-center">
+              <FileEdit className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No drafts yet</h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Start creating a deal and save it as a draft to continue later.
+              </p>
+              <Link
+                href="/vendor/deals/new"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#E8632B] text-white rounded-xl font-medium text-sm hover:bg-[#D55A25] transition-all"
+              >
+                <Plus className="w-4 h-4" /> Create New Deal
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {drafts.map(draft => (
+                <div
+                  key={draft.id}
+                  className="card overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
+                  onClick={() => router.push(`/vendor/deals/edit?id=${draft.id}`)}
+                >
+                  {/* Image or Placeholder */}
+                  {draft.image_url ? (
+                    <div className="aspect-[16/10] bg-gray-100">
+                      <img src={draft.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="aspect-[16/10] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                      <FileEdit className="w-10 h-10 text-amber-300" />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-secondary-500 truncate">
+                          {draft.title || 'Untitled Draft'}
+                        </h3>
+                        {draft.description && (
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{draft.description}</p>
+                        )}
+                      </div>
+                      <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        draft.deal_type === 'sponti_coupon'
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {draft.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}
+                      </span>
+                    </div>
+
+                    {/* Pricing */}
+                    {(draft.deal_price > 0 || draft.original_price > 0) && (
+                      <div className="flex items-center gap-2 mt-3">
+                        {draft.deal_price > 0 && (
+                          <span className="text-lg font-bold text-primary-500">{formatCurrency(draft.deal_price)}</span>
+                        )}
+                        {draft.original_price > 0 && (
+                          <span className="text-sm text-gray-400 line-through">{formatCurrency(draft.original_price)}</span>
+                        )}
+                        {draft.discount_percentage > 0 && (
+                          <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                            {Math.round(draft.discount_percentage)}% off
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                      <span className="text-xs text-gray-400">
+                        Saved {new Date(draft.created_at).toLocaleDateString()}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={`/vendor/deals/edit?id=${draft.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                          title="Edit draft"
+                        >
+                          <FileEdit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteDraft(draft.id); }}
+                          disabled={deletingDraft === draft.id}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                          title="Delete draft"
+                        >
+                          {deletingDraft === draft.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════ DEALS TAB ═══════════════ */}
+      {activeTab === 'deals' && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
         <div className="lg:col-span-2 card p-6">
           {/* Month Navigation */}
@@ -369,7 +541,7 @@ export default function DealsCalendarPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

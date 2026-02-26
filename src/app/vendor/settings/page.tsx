@@ -80,7 +80,7 @@ const DELAY_OPTIONS = [
 
 export default function VendorSettingsPage() {
   const { user } = useAuth();
-  const { canAccess } = useVendorTier();
+  const { canAccess, loading: tierLoading } = useVendorTier();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -906,7 +906,7 @@ export default function VendorSettingsPage() {
 
           {expandedSection === 'auto_response' && (
             <div className="px-6 pb-6 border-t border-gray-100 pt-4">
-              <GatedSection locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Auto-Response" description="Let AI automatically respond to customer reviews. Available on Business plan and above.">
+              <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Auto-Response" description="Let AI automatically respond to customer reviews. Available on Business plan and above.">
                 <div className="space-y-6">
                   {/* Enable Toggle */}
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">

@@ -81,12 +81,12 @@ export function PreferencePicker() {
             {/* Header */}
             <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-8 pb-10">
               {/* Decorative circles */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
               <button
                 onClick={dismiss}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
               >
                 <X className="w-4 h-4 text-white" />
               </button>

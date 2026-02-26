@@ -244,7 +244,7 @@ export default function VendorInsightsPage() {
       {/* Competitor Analysis + Your Top Performer */}
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
         {/* Competitor Benchmark */}
-        <GatedSection locked={!canAccess('competitor_data')} requiredTier="business" featureName="Competitor Benchmarking" description="See how you compare to competitors in your area. Upgrade to Business.">
+        <GatedSection loading={tierLoading} locked={!canAccess('competitor_data')} requiredTier="business" featureName="Competitor Benchmarking" description="See how you compare to competitors in your area. Upgrade to Business.">
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-primary-500" />
@@ -386,7 +386,7 @@ export default function VendorInsightsPage() {
                 <p className="text-sm text-gray-700">&ldquo;{myStats.bestDeal.title}&rdquo;</p>
                 <p className="text-xs text-gray-500 mt-1">
                   {formatPercentage(myStats.bestDeal.discount_percentage)} off &middot; {myStats.bestDeal.claims_count} claims
-                  &middot; {myStats.bestDeal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Regular Deal'}
+                  &middot; {myStats.bestDeal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'}
                 </p>
               </div>
             )}

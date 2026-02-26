@@ -82,8 +82,8 @@ export default function VendorTermsPage() {
               Refusing to honor a valid, unredeemed deal may result in account suspension.
             </li>
             <li>
-              <strong>Deal Types:</strong> SpontiCoupon offers two deal types: Regular Deals (up to 30 days)
-              and Sponti Coupons (4&ndash;24 hours, minimum 10% additional discount over your Regular Deal).
+              <strong>Deal Types:</strong> SpontiCoupon offers two deal types: Steady Deals (up to 30 days)
+              and Sponti Coupons (4&ndash;24 hours, minimum 10% additional discount over your Steady Deal).
             </li>
             <li>
               <strong>Deal Limits:</strong> Your subscription tier determines the number of deals you may

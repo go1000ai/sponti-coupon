@@ -182,7 +182,7 @@ function SpontiDealCard({ deal }: { deal: DealWithDistance }) {
 
           {/* Discount */}
           <div className="absolute top-3 right-3 bg-white text-primary-500 font-bold text-sm px-3 py-1.5 rounded-full shadow-lg">
-            {formatPercentage(deal.discount_percentage)}% OFF
+            {formatPercentage(deal.discount_percentage)} OFF
           </div>
 
           {/* Distance */}

@@ -111,6 +111,7 @@ export function UpgradePrompt({
 
 interface GatedSectionProps {
   locked: boolean;
+  loading?: boolean;
   requiredTier: SubscriptionTier;
   featureName: string;
   description?: string;
@@ -119,17 +120,21 @@ interface GatedSectionProps {
 
 export function GatedSection({
   locked,
+  loading,
   requiredTier,
   featureName,
   description,
   children,
 }: GatedSectionProps) {
+  // While tier is loading, show children normally to avoid a paywall flash
+  const showLock = locked && !loading;
+
   return (
     <div className="relative">
-      <div className={locked ? 'pointer-events-none select-none filter blur-[3px] opacity-60' : ''}>
+      <div className={showLock ? 'pointer-events-none select-none filter blur-[3px] opacity-60' : ''}>
         {children}
       </div>
-      {locked && (
+      {showLock && (
         <UpgradePrompt
           requiredTier={requiredTier}
           featureName={featureName}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -10,24 +10,36 @@ import { formatCurrency, formatPercentage, calculateDiscount } from '@/lib/utils
 import {
   Tag, AlertCircle, ArrowLeft, Info, Image as ImageIcon,
   Sparkles, Upload, X, Loader2, CheckCircle2, Link as LinkIcon,
-  Calendar, Clock, Lock, MapPin, Globe, ChevronDown,
+  Calendar, Clock, Lock, MapPin, Globe, ChevronDown, Wand2, Video, Save,
+  FileEdit, Trash2, Plus,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
 import type { Deal, VendorLocation } from '@/lib/types/database';
+import MediaPicker from '@/components/vendor/MediaPicker';
 
 export default function NewDealPage() {
   const { user } = useAuth();
-  const { canAccess } = useVendorTier();
+  const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dealType, setDealType] = useState<'regular' | 'sponti_coupon'>('regular');
+  const aiSuggest = searchParams.get('ai_suggest') === 'true';
+  const fromWebsite = searchParams.get('from_website') === 'true';
+  const suggestedType = searchParams.get('deal_type') as 'regular' | 'sponti_coupon' | null;
+  const suggestedDiscount = searchParams.get('discount');
+  const [dealType, setDealType] = useState<'regular' | 'sponti_coupon'>(suggestedType || 'regular');
   const [regularDeal, setRegularDeal] = useState<Deal | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [imageMode, setImageMode] = useState<'upload' | 'url'>('upload');
+  const [imageMode, setImageMode] = useState<'upload' | 'url' | 'ai' | 'library'>('upload');
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [customImagePrompt, setCustomImagePrompt] = useState('');
+  const [aiImageLoading, setAiImageLoading] = useState(false);
+  const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiSource, setAiSource] = useState<'ai' | 'template' | null>(null);
@@ -44,7 +56,15 @@ export default function NewDealPage() {
   const [newAmenity, setNewAmenity] = useState('');
   const [highlights, setHighlights] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState('');
+  const [searchTags, setSearchTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [generatingTags, setGeneratingTags] = useState(false);
   const [uploadingAdditional, setUploadingAdditional] = useState(false);
+  const [activeTab, setActiveTab] = useState<'new' | 'drafts'>('new');
+  const [drafts, setDrafts] = useState<Deal[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
+  const [draftToast, setDraftToast] = useState(false);
   const additionalFileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: '',
@@ -91,7 +111,136 @@ export default function NewDealPage() {
           setLocations(data);
         }
       });
+
+    // Fetch drafts
+    fetchDrafts();
   }, [user]);
+
+  // Pre-fill form when coming from Website Import
+  const websiteTriggered = useRef(false);
+  useEffect(() => {
+    if (fromWebsite && !websiteTriggered.current) {
+      websiteTriggered.current = true;
+      const p = searchParams;
+      setForm(prev => ({
+        ...prev,
+        title: p.get('title') || prev.title,
+        description: p.get('description') || prev.description,
+        original_price: p.get('original_price') || prev.original_price,
+        deal_price: p.get('deal_price') || prev.deal_price,
+        max_claims: p.get('max_claims') || prev.max_claims,
+        image_url: p.get('image_url') || prev.image_url,
+        terms_and_conditions: p.get('terms') || prev.terms_and_conditions,
+        how_it_works: p.get('how_it_works') || prev.how_it_works,
+        fine_print: p.get('fine_print') || prev.fine_print,
+      }));
+      if (p.get('image_url')) setImageMode('url');
+      try {
+        const hlRaw = p.get('highlights');
+        if (hlRaw) setHighlights(JSON.parse(hlRaw));
+      } catch { /* ignore */ }
+      try {
+        const amRaw = p.get('amenities');
+        if (amRaw) setAmenities(JSON.parse(amRaw));
+      } catch { /* ignore */ }
+      if (p.get('deal_type') === 'sponti_coupon') setDealType('sponti_coupon');
+      setAiSource('ai'); // Mark that this was AI-generated
+    }
+  }, [fromWebsite, searchParams]);
+
+  // Auto-trigger full AI pipeline when coming from AI Deal Advisor
+  const aiTriggered = useRef(false);
+  const [aiPipelineStep, setAiPipelineStep] = useState<string | null>(null);
+  useEffect(() => {
+    if (aiSuggest && user && !aiTriggered.current) {
+      aiTriggered.current = true;
+      const hint = suggestedDiscount
+        ? `Create a deal in the ${suggestedDiscount} discount range. Make it compelling and ready to publish.`
+        : undefined;
+
+      const runPipeline = async () => {
+        let generatedTitle = '';
+        let generatedDescription = '';
+
+        // Step 1: Generate deal text (title, description, pricing)
+        setAiPipelineStep('Generating deal details...');
+        setAiLoading(true);
+        try {
+          const res = await fetch('/api/vendor/ai-deal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ deal_type: dealType, prompt: hint }),
+          });
+          const data = await res.json();
+          if (res.ok && data.suggestion) {
+            const s = data.suggestion;
+            generatedTitle = s.title || '';
+            generatedDescription = s.description || '';
+            setForm(prev => ({
+              ...prev,
+              title: s.title || prev.title,
+              description: s.description || prev.description,
+              original_price: s.original_price?.toString() || prev.original_price,
+              deal_price: s.deal_price?.toString() || prev.deal_price,
+              deposit_amount: s.suggested_deposit?.toString() || prev.deposit_amount,
+              max_claims: s.max_claims?.toString() || prev.max_claims,
+              terms_and_conditions: s.terms_and_conditions || prev.terms_and_conditions,
+              how_it_works: s.how_it_works || prev.how_it_works,
+              fine_print: s.fine_print || prev.fine_print,
+            }));
+            if (s.highlights) setHighlights(s.highlights);
+            if (s.amenities) setAmenities(s.amenities);
+            setAiSource(data.source);
+          }
+        } catch { /* continue */ }
+        setAiLoading(false);
+
+        if (!generatedTitle) { setAiPipelineStep(null); return; }
+
+        // Step 2: Generate image from the deal title/description
+        setAiPipelineStep('Creating AI image...');
+        setAiImageLoading(true);
+        try {
+          const res = await fetch('/api/vendor/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: generatedTitle, description: generatedDescription }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            setForm(prev => ({ ...prev, image_url: data.url }));
+            setImageMode('ai');
+          }
+        } catch { /* continue */ }
+        setAiImageLoading(false);
+
+        // Step 3: Generate search tags
+        setAiPipelineStep('Generating search tags...');
+        setGeneratingTags(true);
+        try {
+          const res = await fetch('/api/vendor/generate-tags', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: generatedTitle,
+              description: generatedDescription,
+              deal_type: dealType,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && data.tags) {
+            setSearchTags(data.tags);
+          }
+        } catch { /* continue */ }
+        setGeneratingTags(false);
+
+        setAiPipelineStep(null);
+      };
+
+      const timer = setTimeout(runPipeline, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [aiSuggest, user, dealType, suggestedDiscount]);
 
   const discount = form.original_price && form.deal_price
     ? calculateDiscount(parseFloat(form.original_price), parseFloat(form.deal_price))
@@ -141,7 +290,12 @@ export default function NewDealPage() {
         deal_price: s.deal_price?.toString() || prev.deal_price,
         deposit_amount: s.suggested_deposit?.toString() || prev.deposit_amount,
         max_claims: s.max_claims?.toString() || prev.max_claims,
+        terms_and_conditions: s.terms_and_conditions || prev.terms_and_conditions,
+        how_it_works: s.how_it_works || prev.how_it_works,
+        fine_print: s.fine_print || prev.fine_print,
       }));
+      if (s.highlights) setHighlights(s.highlights);
+      if (s.amenities) setAmenities(s.amenities);
       setAiSource(data.source);
     } catch {
       setError('Failed to get AI suggestions. Please try again.');
@@ -245,6 +399,100 @@ export default function NewDealPage() {
     setUploadingAdditional(false);
   };
 
+  // ── AI Image Generation ──────────────────────────────────
+  const handleAiImageGenerate = async () => {
+    if (!form.title) {
+      setError('Please enter a deal title first so AI can generate a relevant image.');
+      return;
+    }
+    setAiImageLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/vendor/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to generate image');
+        setAiImageLoading(false);
+        return;
+      }
+      setForm(prev => ({ ...prev, image_url: data.url }));
+      setUploadPreview(null);
+    } catch {
+      setError('Failed to generate image. Please try again.');
+    }
+    setAiImageLoading(false);
+  };
+
+  // ── AI Video Generation ──────────────────────────────────
+  const handleAiVideoGenerate = async () => {
+    const imageUrl = form.image_url;
+    if (!imageUrl) {
+      setError('Please add a deal image first so AI can generate a video from it.');
+      return;
+    }
+    setAiVideoLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/vendor/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: imageUrl,
+          title: form.title,
+          description: form.description,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to generate video');
+        setAiVideoLoading(false);
+        return;
+      }
+      setVideoUrls(prev => [...prev, data.url]);
+    } catch {
+      setError('Failed to generate video. Please try again.');
+    }
+    setAiVideoLoading(false);
+  };
+
+  // ── AI Search Tags ────────────────────────────────────────
+  const generateSearchTags = async () => {
+    if (!form.title.trim()) {
+      setError('Enter a deal title first so AI can generate search tags.');
+      return;
+    }
+    setGeneratingTags(true);
+    try {
+      const res = await fetch('/api/vendor/generate-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          deal_type: dealType,
+          original_price: form.original_price ? parseFloat(form.original_price) : null,
+          deal_price: form.deal_price ? parseFloat(form.deal_price) : null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Failed to generate tags');
+      } else {
+        setSearchTags(data.tags || []);
+      }
+    } catch {
+      setError('Failed to generate search tags. Please try again.');
+    }
+    setGeneratingTags(false);
+  };
+
   // ── Submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,6 +556,7 @@ export default function NewDealPage() {
           how_it_works: form.how_it_works || null,
           highlights,
           fine_print: form.fine_print || null,
+          search_tags: searchTags,
         }),
       });
 
@@ -327,16 +576,245 @@ export default function NewDealPage() {
     setLoading(false);
   };
 
+  const fetchDrafts = useCallback(async () => {
+    if (!user) return;
+    setDraftsLoading(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('deals')
+      .select('*')
+      .eq('vendor_id', user.id)
+      .eq('status', 'draft')
+      .order('created_at', { ascending: false });
+    setDrafts(data || []);
+    setDraftsLoading(false);
+  }, [user]);
+
+  const handleDeleteDraft = async (id: string) => {
+    setDeletingDraft(id);
+    const supabase = createClient();
+    await supabase.from('deals').delete().eq('id', id);
+    setDrafts(prev => prev.filter(d => d.id !== id));
+    setDeletingDraft(null);
+  };
+
+  const handleSaveDraft = async () => {
+    setSavingDraft(true);
+    setError('');
+    try {
+      const response = await fetch('/api/deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'draft',
+          deal_type: dealType,
+          title: form.title || undefined,
+          description: form.description || undefined,
+          original_price: form.original_price ? parseFloat(form.original_price) : undefined,
+          deal_price: form.deal_price ? parseFloat(form.deal_price) : undefined,
+          deposit_amount: form.deposit_amount ? parseFloat(form.deposit_amount) : undefined,
+          max_claims: form.max_claims ? parseInt(form.max_claims) : undefined,
+          image_url: form.image_url || undefined,
+          image_urls: additionalImages.length > 0 ? additionalImages : undefined,
+          video_urls: videoUrls.length > 0 ? videoUrls : undefined,
+          terms_and_conditions: form.terms_and_conditions || undefined,
+          how_it_works: form.how_it_works || undefined,
+          highlights: highlights.length > 0 ? highlights : undefined,
+          fine_print: form.fine_print || undefined,
+          amenities: amenities.length > 0 ? amenities : undefined,
+          search_tags: searchTags.length > 0 ? searchTags : undefined,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || 'Failed to save draft');
+        setSavingDraft(false);
+        return;
+      }
+      // Show toast, refresh drafts, switch to drafts tab
+      setDraftToast(true);
+      setTimeout(() => setDraftToast(false), 3000);
+      await fetchDrafts();
+      setActiveTab('drafts');
+    } catch {
+      setError('Failed to save draft. Please try again.');
+    }
+    setSavingDraft(false);
+  };
+
   // Current image to display (upload preview or URL)
   const displayImage = uploadPreview || form.image_url;
 
   return (
     <div className="max-w-3xl mx-auto">
+      {/* Draft Saved Toast */}
+      {draftToast && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-green-600/25 animate-in slide-in-from-top">
+          <CheckCircle2 className="w-5 h-5" />
+          <span className="font-medium text-sm">Draft saved</span>
+        </div>
+      )}
+
       <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
         <ArrowLeft className="w-4 h-4" /> Back to Deals
       </Link>
 
-      <h1 className="text-3xl font-bold text-secondary-500 mb-8">Create New Deal</h1>
+      <h1 className="text-3xl font-bold text-secondary-500 mb-6">Deals</h1>
+
+      {/* Tabs: New Deal / Drafts */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-8 w-fit">
+        <button
+          onClick={() => setActiveTab('new')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'new'
+              ? 'bg-white text-secondary-500 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Plus className="w-4 h-4" /> Create New Deal
+        </button>
+        <button
+          onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'drafts'
+              ? 'bg-white text-secondary-500 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <FileEdit className="w-4 h-4" /> Drafts
+          {drafts.length > 0 && (
+            <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
+              {drafts.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ═══════════════ DRAFTS TAB ═══════════════ */}
+      {activeTab === 'drafts' && (
+        <div>
+          {draftsLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+            </div>
+          ) : drafts.length === 0 ? (
+            <div className="card p-12 text-center">
+              <FileEdit className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No drafts yet</h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Start creating a deal and save it as a draft to continue later.
+              </p>
+              <button
+                onClick={() => setActiveTab('new')}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#E8632B] text-white rounded-xl font-medium text-sm hover:bg-[#D55A25] transition-all"
+              >
+                <Plus className="w-4 h-4" /> Create New Deal
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {drafts.map(draft => (
+                <div
+                  key={draft.id}
+                  className="card overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
+                  onClick={() => router.push(`/vendor/deals/edit?id=${draft.id}`)}
+                >
+                  {/* Image or Placeholder */}
+                  {draft.image_url ? (
+                    <div className="aspect-[16/10] bg-gray-100">
+                      <img src={draft.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="aspect-[16/10] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                      <FileEdit className="w-10 h-10 text-amber-300" />
+                    </div>
+                  )}
+
+                  {/* Content */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-bold text-secondary-500 truncate">
+                          {draft.title || 'Untitled Draft'}
+                        </h3>
+                        {draft.description && (
+                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{draft.description}</p>
+                        )}
+                      </div>
+                      <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        draft.deal_type === 'sponti_coupon'
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {draft.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}
+                      </span>
+                    </div>
+
+                    {/* Pricing */}
+                    {(draft.deal_price > 0 || draft.original_price > 0) && (
+                      <div className="flex items-center gap-2 mt-3">
+                        {draft.deal_price > 0 && (
+                          <span className="text-lg font-bold text-primary-500">{formatCurrency(draft.deal_price)}</span>
+                        )}
+                        {draft.original_price > 0 && (
+                          <span className="text-sm text-gray-400 line-through">{formatCurrency(draft.original_price)}</span>
+                        )}
+                        {draft.discount_percentage > 0 && (
+                          <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                            {Math.round(draft.discount_percentage)}% off
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                      <span className="text-xs text-gray-400">
+                        Saved {new Date(draft.created_at).toLocaleDateString()}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Link
+                          href={`/vendor/deals/edit?id=${draft.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                          title="Edit draft"
+                        >
+                          <FileEdit className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteDraft(draft.id); }}
+                          disabled={deletingDraft === draft.id}
+                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                          title="Delete draft"
+                        >
+                          {deletingDraft === draft.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════════ NEW DEAL TAB ═══════════════ */}
+      {activeTab === 'new' && <>
+      {/* AI Pipeline Progress Banner */}
+      {aiPipelineStep && (
+        <div className="mb-6 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-4 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 text-violet-600 animate-spin flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-violet-700">AI is building your deal...</p>
+            <p className="text-xs text-violet-500">{aiPipelineStep}</p>
+          </div>
+        </div>
+      )}
 
       {/* Deal Type Selector */}
       <div className="grid grid-cols-2 gap-4 mb-8">
@@ -400,7 +878,7 @@ export default function NewDealPage() {
       )}
 
       {/* ── AI Assist Panel ───────────────────────────────────── */}
-      <GatedSection locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Deal Assistant" description="Let AI create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
+      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="AI Deal Assistant" description="Let AI create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
       <div className="card p-6 mb-6 bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
         <div className="flex items-center gap-2 mb-3">
           <div className="bg-violet-100 rounded-lg p-2">
@@ -438,7 +916,7 @@ export default function NewDealPage() {
           <div className="mt-2 flex items-center gap-1.5 text-xs">
             <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
             <span className="text-green-700">
-              {aiSource === 'ai' ? 'Generated by Claude AI' : 'Generated from smart templates'} — fields auto-filled below
+              {aiSource === 'ai' ? 'Generated by SpontiCoupon' : 'Generated from smart templates'} — fields auto-filled below
             </span>
           </div>
         )}
@@ -502,6 +980,26 @@ export default function NewDealPage() {
             >
               <LinkIcon className="w-3.5 h-3.5" /> Paste URL
             </button>
+            {canAccess('ai_deal_assistant') && (
+              <button
+                type="button"
+                onClick={() => setImageMode('ai')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  imageMode === 'ai' ? 'bg-gradient-to-r from-violet-500 to-purple-500 text-white shadow-sm' : 'text-violet-500 hover:text-violet-700'
+                }`}
+              >
+                <Wand2 className="w-3.5 h-3.5" /> AI Generate
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setImageMode('library')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                imageMode === 'library' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" /> Library
+            </button>
           </div>
 
           {imageMode === 'upload' ? (
@@ -538,7 +1036,7 @@ export default function NewDealPage() {
                 }}
               />
             </div>
-          ) : (
+          ) : imageMode === 'url' ? (
             <div className="flex gap-2">
               <input
                 name="image_url"
@@ -547,6 +1045,96 @@ export default function NewDealPage() {
                 className="input-field flex-1"
                 placeholder="https://images.unsplash.com/..."
               />
+            </div>
+          ) : imageMode === 'library' ? (
+            /* Library mode */
+            <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center bg-blue-50/30">
+              <ImageIcon className="w-10 h-10 text-blue-400 mx-auto mb-2" />
+              <h4 className="font-semibold text-blue-800 mb-1">Pick from Library</h4>
+              <p className="text-sm text-blue-600 mb-4">Select from your previously uploaded or AI-generated images</p>
+              <button
+                type="button"
+                onClick={() => setShowMediaPicker(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-all"
+              >
+                Browse Library
+              </button>
+            </div>
+          ) : (
+            /* AI Generate mode */
+            <div className="border-2 border-dashed border-violet-200 rounded-xl p-6 text-center bg-gradient-to-br from-violet-50/50 to-purple-50/50">
+              {!displayImage ? (
+                <>
+                  <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center mx-auto mb-3">
+                    <Wand2 className="w-7 h-7 text-violet-500" />
+                  </div>
+                  <h4 className="font-semibold text-violet-800 mb-1">AI Image Generation</h4>
+                  <p className="text-sm text-violet-600 mb-3">
+                    Generate a professional image using AI. Describe what you want or use your deal title.
+                  </p>
+                  <input
+                    value={customImagePrompt}
+                    onChange={e => setCustomImagePrompt(e.target.value)}
+                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-violet-200 bg-white text-sm focus:ring-2 focus:ring-violet-500 focus:border-violet-500 mb-4"
+                    placeholder="Describe the image (e.g., 'a cozy Italian restaurant with warm lighting')"
+                  />
+                  {!form.title && !customImagePrompt && (
+                    <p className="text-xs text-amber-600 mb-3 flex items-center justify-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5" /> Enter a deal title or image description
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customImagePrompt) {
+                        // Use custom prompt
+                        setAiImageLoading(true);
+                        setError('');
+                        fetch('/api/vendor/generate-image', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            title: form.title || customImagePrompt,
+                            description: form.description,
+                            custom_prompt: customImagePrompt,
+                          }),
+                        })
+                          .then(r => r.json())
+                          .then(data => {
+                            if (data.url) {
+                              setForm(prev => ({ ...prev, image_url: data.url }));
+                              setUploadPreview(null);
+                            } else {
+                              setError(data.error || 'Failed to generate image');
+                            }
+                          })
+                          .catch(() => setError('Failed to generate image.'))
+                          .finally(() => setAiImageLoading(false));
+                      } else {
+                        handleAiImageGenerate();
+                      }
+                    }}
+                    disabled={aiImageLoading || (!form.title && !customImagePrompt)}
+                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-violet-500/25"
+                  >
+                    {aiImageLoading ? (
+                      <><Loader2 className="w-5 h-5 animate-spin" /> Generating Image...</>
+                    ) : (
+                      <><Wand2 className="w-5 h-5" /> Generate Image with AI</>
+                    )}
+                  </button>
+                  {aiImageLoading && (
+                    <p className="text-xs text-violet-500 mt-3 animate-pulse">
+                      This may take 10-15 seconds...
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-violet-700">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>AI image generated! You can see the preview below.</span>
+                </div>
+              )}
             </div>
           )}
 
@@ -675,6 +1263,44 @@ export default function NewDealPage() {
             </button>
           </div>
           <p className="text-xs text-gray-400 mt-1.5">Add YouTube or Vimeo links to show off your product or service</p>
+
+          {/* AI Video Generation */}
+          {canAccess('ai_deal_assistant') && (
+            <div className="mt-4 bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="bg-indigo-100 rounded-lg p-1.5">
+                  <Video className="w-4 h-4 text-indigo-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-indigo-800">AI Video Generation</h4>
+                  <p className="text-xs text-indigo-500">Generate a promo video from your deal image using SpontiCoupon</p>
+                </div>
+              </div>
+              {!form.image_url ? (
+                <p className="text-xs text-amber-600 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Add a deal image first to generate a video from it
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleAiVideoGenerate}
+                  disabled={aiVideoLoading}
+                  className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-indigo-500/20"
+                >
+                  {aiVideoLoading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Generating Video...</>
+                  ) : (
+                    <><Video className="w-4 h-4" /> Generate Video from Image</>
+                  )}
+                </button>
+              )}
+              {aiVideoLoading && (
+                <p className="text-xs text-indigo-500 mt-2 animate-pulse">
+                  Video generation takes 1-3 minutes. Please wait...
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Highlights ───────────────────────────────────── */}
@@ -756,6 +1382,72 @@ export default function NewDealPage() {
                 if (newAmenity.trim()) {
                   setAmenities(prev => [...prev, newAmenity.trim()]);
                   setNewAmenity('');
+                }
+              }}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Search Tags (AI-generated keywords for discoverability) */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Search Tags
+              <span className="text-xs text-gray-400 ml-1">(keywords so customers can find your deal)</span>
+            </label>
+            <button
+              type="button"
+              onClick={generateSearchTags}
+              disabled={generatingTags || !form.title.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-medium rounded-lg hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 transition-all"
+            >
+              {generatingTags ? (
+                <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</>
+              ) : (
+                <><Sparkles className="w-3 h-3" /> AI Generate Tags</>
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-2">
+            These tags help customers discover your deal when searching. AI will suggest tags based on your deal — you can add or remove any.
+          </p>
+          {searchTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-2">
+              {searchTags.map((tag, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-sm px-3 py-1.5 rounded-full border border-purple-200">
+                  {tag}
+                  <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={newTag}
+              onChange={e => setNewTag(e.target.value)}
+              className="input-field flex-1"
+              placeholder="Add a custom tag (e.g. date night, family friendly)"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                    setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                    setNewTag('');
+                  }
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                  setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                  setNewTag('');
                 }
               }}
               className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium"
@@ -1104,18 +1796,42 @@ export default function NewDealPage() {
           <p className="text-xs text-gray-400 mt-1">Short restrictions or legal notes shown prominently to customers</p>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || (dealType === 'sponti_coupon' && (!regularDeal || !meetsMinDiscount))}
-          className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 ${
-            dealType === 'sponti_coupon'
-              ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'
-              : 'bg-secondary-500 hover:bg-secondary-600 shadow-lg shadow-secondary-500/25'
-          }`}
-        >
-          {loading ? 'Creating...' : dealType === 'sponti_coupon' ? 'Create Sponti Coupon' : 'Create Steady Deal'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={savingDraft || loading}
+            className="flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 transition-all disabled:opacity-50"
+          >
+            {savingDraft ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {savingDraft ? 'Saving...' : 'Save as Draft'}
+          </button>
+          <button
+            type="submit"
+            disabled={loading || savingDraft || (dealType === 'sponti_coupon' && (!regularDeal || !meetsMinDiscount))}
+            className={`flex-1 text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 ${
+              dealType === 'sponti_coupon'
+                ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'
+                : 'bg-secondary-500 hover:bg-secondary-600 shadow-lg shadow-secondary-500/25'
+            }`}
+          >
+            {loading ? 'Creating...' : dealType === 'sponti_coupon' ? 'Create Sponti Coupon' : 'Create Steady Deal'}
+          </button>
+        </div>
       </form>
+
+      {/* Media Picker Modal */}
+      <MediaPicker
+        open={showMediaPicker}
+        onClose={() => setShowMediaPicker(false)}
+        onSelect={(url) => {
+          setForm(prev => ({ ...prev, image_url: url }));
+          setUploadPreview(null);
+          setShowMediaPicker(false);
+        }}
+        type="image"
+      />
+      </>}
     </div>
   );
 }

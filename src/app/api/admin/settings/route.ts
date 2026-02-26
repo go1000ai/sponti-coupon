@@ -88,7 +88,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'key and value (object) are required' }, { status: 400 });
     }
 
-    const validKeys = ['sponti_points', 'deal_config', 'system_limits', 'platform_info'];
+    const validKeys = ['sponti_points', 'deal_config', 'system_limits', 'platform_info', 'ranking_config'];
     if (!validKeys.includes(key)) {
       return NextResponse.json({ error: `Invalid key. Must be one of: ${validKeys.join(', ')}` }, { status: 400 });
     }

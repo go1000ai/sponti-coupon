@@ -161,7 +161,7 @@ export default function RootLayout({
         name: "How do Sponti Coupons work?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Browse available Sponti Deals near you, claim a deal by paying a small deposit, receive a unique QR code, then visit the business and show your QR code to redeem the discount. Sponti Coupons expire within 24 hours, creating urgency and deeper discounts than regular deals.",
+          text: "Browse available Sponti Deals near you, claim a deal by paying a small deposit, receive a unique QR code, then visit the business and show your QR code to redeem the discount. Sponti Coupons expire within 24 hours, creating urgency and deeper discounts than steady deals.",
         },
       },
       {
@@ -209,7 +209,7 @@ export default function RootLayout({
         name: "How do businesses list deals on SpontiCoupon?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Business owners can sign up as a vendor on SpontiCoupon, choose a subscription plan starting at $29/month, and start posting deals immediately. Create regular deals that last up to 30 days or Sponti Deals that expire in 24 hours with deeper discounts to drive foot traffic.",
+          text: "Business owners can sign up as a vendor on SpontiCoupon, choose a subscription plan starting at $29/month, and start posting deals immediately. Create Steady Deals that last up to 30 days or Sponti Deals that expire in 24 hours with deeper discounts to drive foot traffic.",
         },
       },
       {

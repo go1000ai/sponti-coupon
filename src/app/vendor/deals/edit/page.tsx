@@ -196,7 +196,7 @@ function EditDealPageInner() {
         <div>
           <h1 className="text-3xl font-bold text-secondary-500">Edit Deal</h1>
           <p className="text-sm text-gray-500">
-            {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Regular Deal'} &middot;
+            {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'} &middot;
             Status: <span className={`font-medium ${deal.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}>{deal.status}</span>
           </p>
         </div>

@@ -31,7 +31,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-secondary-500">2. Platform Description</h2>
           <p className="text-gray-600 leading-relaxed">
-            SpontiCoupon is a Sponti Deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Regular Deals and Sponti Coupons (Sponti Deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
+            SpontiCoupon is a Sponti Deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Steady Deals and Sponti Coupons (Sponti Deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
           </p>
         </section>
 

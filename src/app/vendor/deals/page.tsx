@@ -15,7 +15,7 @@ export default function VendorDealsPage() {
   const { user } = useAuth();
   const { dealsPerMonth } = useVendorTier();
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'paused'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'draft' | 'expired' | 'paused'>('all');
   const [loading, setLoading] = useState(true);
   const [dealsThisMonth, setDealsThisMonth] = useState(0);
 
@@ -133,7 +133,7 @@ export default function VendorDealsPage() {
 
       {/* Filters */}
       <div className="flex gap-2 mb-6">
-        {(['all', 'active', 'expired', 'paused'] as const).map(f => (
+        {(['all', 'active', 'draft', 'expired', 'paused'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -179,15 +179,16 @@ export default function VendorDealsPage() {
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         deal.deal_type === 'sponti_coupon' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Regular Deal'}
+                        {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'}
                       </span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         deal.status === 'active' ? 'bg-green-50 text-green-600' :
+                        deal.status === 'draft' ? 'bg-amber-50 text-amber-600' :
                         deal.status === 'expired' ? 'bg-gray-100 text-gray-500' :
                         deal.status === 'paused' ? 'bg-yellow-50 text-yellow-600' :
                         'bg-gray-100 text-gray-500'
                       }`}>
-                        {deal.status}
+                        {deal.status === 'draft' ? 'Draft' : deal.status}
                       </span>
                       {deal.website_url ? (
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600 flex items-center gap-1">

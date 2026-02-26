@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
+import { rankDeals } from '@/lib/ranking/deal-ranker';
+import { loadRankingConfig } from '@/lib/ranking/ranking-weights';
 
 export const runtime = 'edge';
 
@@ -36,18 +38,34 @@ export async function GET(request: NextRequest) {
     query = query.eq('vendor.city', city);
   }
 
-  if (searchText) {
-    query = query.or(`title.ilike.%${searchText}%,description.ilike.%${searchText}%`);
-  }
-
   const { data: deals, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Keyword search: match across deal title, description, tags, vendor info
+  let keywordFilteredDeals = deals || [];
+  if (searchText) {
+    const keywords = searchText.toLowerCase().split(/\s+/).filter(Boolean);
+    keywordFilteredDeals = keywordFilteredDeals.filter(deal => {
+      const searchableText = [
+        deal.title || '',
+        deal.description || '',
+        deal.vendor?.category || '',
+        deal.vendor?.business_name || '',
+        deal.vendor?.description || '',
+        ...(deal.search_tags || []),
+        ...(deal.amenities || []),
+        ...(deal.highlights || []),
+      ].join(' ').toLowerCase();
+      // Every keyword must appear somewhere in the searchable text
+      return keywords.every(kw => searchableText.includes(kw));
+    });
+  }
+
   // Filter by distance if lat/lng provided
-  let filteredDeals = deals || [];
+  let filteredDeals = keywordFilteredDeals;
   if (lat && lng) {
     const userLat = parseFloat(lat);
     const userLng = parseFloat(lng);
@@ -66,26 +84,16 @@ export async function GET(request: NextRequest) {
       }));
   }
 
-  // Featured on Homepage: Business & Enterprise vendors' deals sort first, then by distance (nearest first)
-  const FEATURED_TIERS = ['business', 'enterprise'];
-  filteredDeals.sort((a, b) => {
-    const aFeatured = FEATURED_TIERS.includes(a.vendor?.subscription_tier || '') ? 1 : 0;
-    const bFeatured = FEATURED_TIERS.includes(b.vendor?.subscription_tier || '') ? 1 : 0;
-    if (bFeatured !== aFeatured) return bFeatured - aFeatured; // featured first
-    // Sort by distance if available (nearest first), then by newest
-    const aDist = (a as Record<string, unknown>).distance as number | undefined;
-    const bDist = (b as Record<string, unknown>).distance as number | undefined;
-    if (aDist != null && bDist != null) return aDist - bDist;
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  // Rank deals using weighted scoring algorithm (tier, relevance, distance, freshness, etc.)
+  const rankingConfig = await loadRankingConfig(supabase);
+  const searchKeywords = searchText ? searchText.toLowerCase().split(/\s+/).filter(Boolean) : [];
+  const rankedDeals = rankDeals(filteredDeals, {
+    searchKeywords,
+    radiusMiles: parseFloat(radius),
+    config: rankingConfig,
   });
 
-  // Tag featured deals so the frontend can show a badge
-  const taggedDeals = filteredDeals.map(deal => ({
-    ...deal,
-    is_featured: FEATURED_TIERS.includes(deal.vendor?.subscription_tier || ''),
-  }));
-
-  return NextResponse.json({ deals: taggedDeals, total: filteredDeals.length });
+  return NextResponse.json({ deals: rankedDeals, total: rankedDeals.length });
 }
 
 // POST /api/deals - Create a new deal (vendor only)
@@ -176,7 +184,7 @@ export async function POST(request: NextRequest) {
 
     if ((regularCount || 0) >= tierConfig.regular_deals_per_month) {
       return NextResponse.json({
-        error: `You've reached your ${tierConfig.regular_deals_per_month} Regular deal limit for this month. Upgrade your plan for more Regular deals.`,
+        error: `You've reached your ${tierConfig.regular_deals_per_month} Steady deal limit for this month. Upgrade your plan for more Steady deals.`,
       }, { status: 403 });
     }
   }
@@ -184,8 +192,51 @@ export async function POST(request: NextRequest) {
     deal_type, title, description, original_price, deal_price,
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
     location_ids, website_url, terms_and_conditions, video_urls, amenities,
-    how_it_works, highlights, fine_print, image_urls,
+    how_it_works, highlights, fine_print, image_urls, search_tags,
   } = body;
+
+  // Draft mode — save the deal immediately with minimal validation
+  if (body.status === 'draft') {
+    const discount_percentage = original_price && deal_price
+      ? ((original_price - deal_price) / original_price) * 100
+      : 0;
+    const now = new Date().toISOString();
+    const { data: draft, error: draftErr } = await supabase
+      .from('deals')
+      .insert({
+        vendor_id: user.id,
+        deal_type: deal_type || 'regular',
+        title: title || 'Untitled Draft',
+        description: description || null,
+        original_price: original_price || 0,
+        deal_price: deal_price || 0,
+        discount_percentage,
+        deposit_amount: deposit_amount || null,
+        max_claims: max_claims || 50,
+        starts_at: starts_at || now,
+        expires_at: expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        status: 'draft',
+        image_url: image_url || null,
+        image_urls: image_urls || [],
+        location_ids: location_ids || null,
+        website_url: website_url || null,
+        terms_and_conditions: terms_and_conditions || null,
+        video_urls: video_urls || [],
+        amenities: amenities || [],
+        how_it_works: how_it_works || null,
+        highlights: highlights || [],
+        fine_print: fine_print || null,
+        search_tags: search_tags || [],
+      })
+      .select()
+      .single();
+
+    if (draftErr) {
+      return NextResponse.json({ error: draftErr.message }, { status: 500 });
+    }
+    return NextResponse.json({ deal: draft });
+  }
 
   // Check if vendor is trying to schedule a future deal without the custom_scheduling feature
   if (new Date(starts_at) > new Date() && !tierConfig.custom_scheduling) {
@@ -213,7 +264,7 @@ export async function POST(request: NextRequest) {
 
     if (!regularDeal) {
       return NextResponse.json({
-        error: 'You must have an active Regular Deal before posting a Sponti Coupon.',
+        error: 'You must have an active Steady Deal before posting a Sponti Coupon.',
       }, { status: 400 });
     }
 
@@ -222,7 +273,7 @@ export async function POST(request: NextRequest) {
 
     if (discount_percentage - regularDiscount < 10) {
       return NextResponse.json({
-        error: `Your Sponti Coupon must offer at least 10% more savings than your Regular Deal (${Math.round(regularDiscount)}% off). Increase your discount to at least ${Math.round(requiredDiscount)}% to publish.`,
+        error: `Your Sponti Coupon must offer at least 10% more savings than your Steady Deal (${Math.round(regularDiscount)}% off). Increase your discount to at least ${Math.round(requiredDiscount)}% to publish.`,
       }, { status: 400 });
     }
 
@@ -276,6 +327,7 @@ export async function POST(request: NextRequest) {
         how_it_works: how_it_works || null,
         highlights: highlights || [],
         fine_print: fine_print || null,
+        search_tags: search_tags || [],
       })
       .select()
       .single();
@@ -292,7 +344,7 @@ export async function POST(request: NextRequest) {
   const durationDays = durationMs / (24 * 60 * 60 * 1000);
   if (durationDays > 30) {
     return NextResponse.json({
-      error: 'Regular deals can last up to 30 days.',
+      error: 'Steady deals can last up to 30 days.',
     }, { status: 400 });
   }
 
@@ -325,6 +377,7 @@ export async function POST(request: NextRequest) {
       how_it_works: how_it_works || null,
       highlights: highlights || [],
       fine_print: fine_print || null,
+      search_tags: search_tags || [],
     })
     .select()
     .single();

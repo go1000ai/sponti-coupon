@@ -269,7 +269,7 @@ function SmallDealCard({ deal }: { deal: DealWithDistance }) {
           )}
         </div>
         <span className="bg-white text-primary-500 font-bold text-xs px-2 py-1 rounded-full shadow-md">
-          {formatPercentage(deal.discount_percentage)}%
+          {formatPercentage(deal.discount_percentage)}
         </span>
       </div>
 

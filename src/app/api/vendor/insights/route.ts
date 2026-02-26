@@ -111,14 +111,14 @@ export async function GET() {
   if (spontiDeals.length === 0 && regularDeals.length > 0) {
     recommendations.push({
       title: 'Try a Sponti Coupon',
-      description: 'You haven\'t created any Sponti Coupons yet. Sponti Deals with deposits typically see 2-3x higher engagement than regular deals. Create a 24-hour Sponti Deal with a small deposit to boost traffic.',
+      description: 'You haven\'t created any Sponti Coupons yet. Sponti Deals with deposits typically see 2-3x higher engagement than Steady deals. Create a 24-hour Sponti Deal with a small deposit to boost traffic.',
       priority: 'high',
       action: '/vendor/deals/new',
     });
   } else if (spontiAvgClaims > regularAvgClaims * 1.5) {
     recommendations.push({
       title: 'Sponti Coupons are your top performers',
-      description: `Your Sponti Coupons average ${Math.round(spontiAvgClaims)} claims vs ${Math.round(regularAvgClaims)} for Regular Deals. Consider running more Sponti Deals to maximize engagement.`,
+      description: `Your Sponti Coupons average ${Math.round(spontiAvgClaims)} claims vs ${Math.round(regularAvgClaims)} for Steady Deals. Consider running more Sponti Deals to maximize engagement.`,
       priority: 'medium',
       action: '/vendor/deals/new',
     });
@@ -152,7 +152,7 @@ export async function GET() {
   if (activeDeals.length === 0) {
     recommendations.push({
       title: 'You have no active deals',
-      description: 'Customers can\'t find you without active deals. Create a Regular Deal to establish your baseline, then add a Sponti Coupon for a traffic boost.',
+      description: 'Customers can\'t find you without active deals. Create a Steady Deal to establish your baseline, then add a Sponti Coupon for a traffic boost.',
       priority: 'high',
       action: '/vendor/deals/new',
     });

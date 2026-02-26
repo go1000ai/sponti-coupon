@@ -32,7 +32,7 @@ const PLANS = [
     gradient: 'from-accent-500 to-accent-600',
     tagline: 'Perfect for getting started',
     features: [
-      '2 Sponti + 4 Regular deals/mo',
+      '2 Sponti + 4 Steady deals/mo',
       'QR code + 6-digit redemption',
       'Basic analytics (KPI cards)',
       'Deal usage tracking',
@@ -46,7 +46,7 @@ const PLANS = [
     gradient: 'from-primary-500 to-primary-600',
     tagline: 'Most popular for growing businesses',
     features: [
-      '6 Sponti + 12 Regular deals/mo',
+      '6 Sponti + 12 Steady deals/mo',
       'Everything in Starter, plus:',
       'Basic charts (3 charts)',
       'Custom deal scheduling',
@@ -62,7 +62,7 @@ const PLANS = [
     tagline: 'For serious local businesses',
     badge: 'BEST VALUE',
     features: [
-      '25 Sponti + 50 Regular deals/mo',
+      '25 Sponti + 50 Steady deals/mo',
       'Everything in Pro, plus:',
       'Featured on homepage + more exposure',
       'AI Deal Assistant & Insights',
@@ -127,7 +127,7 @@ const CATEGORIES = [
 /* ─────── Feature Comparison Matrix ─────── */
 const FEATURE_MATRIX = [
   { feature: 'Sponti deals/month', starter: '2', pro: '6', business: '25' },
-  { feature: 'Regular deals/month', starter: '4', pro: '12', business: '50' },
+  { feature: 'Steady deals/month', starter: '4', pro: '12', business: '50' },
   { feature: 'QR code redemption', starter: true, pro: true, business: true },
   { feature: '6-digit backup codes', starter: true, pro: true, business: true },
   { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true },
@@ -598,7 +598,7 @@ export default function PricingPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                 {[
-                  { label: 'Unlimited Deals', desc: 'Sponti + Regular, no limits' },
+                  { label: 'Unlimited Deals', desc: 'Sponti + Steady, no limits' },
                   { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
                   { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
                   { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },

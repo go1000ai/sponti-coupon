@@ -148,7 +148,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-sm font-bold text-primary-500">{formatCurrency(deal.deal_price)}</p>
-                      <p className="text-[10px] text-green-500 font-medium">{formatPercentage(deal.discount_percentage)}% off</p>
+                      <p className="text-[10px] text-green-500 font-medium">{formatPercentage(deal.discount_percentage)} off</p>
                     </div>
                   </button>
                 );

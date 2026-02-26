@@ -25,6 +25,8 @@ import {
   Palette,
   Gift,
   Headphones,
+  ImagePlus,
+  Globe,
 } from 'lucide-react';
 
 interface NavChild {
@@ -49,6 +51,8 @@ const navItems: NavItem[] = [
   { label: 'Analytics', href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'AI Insights', href: '/vendor/insights', icon: <Sparkles className="w-5 h-5" /> },
   { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" /> },
+  { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" /> },
+  { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" /> },
   { label: 'Scan / Redeem', href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
   { label: 'Reviews', href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" /> },
   { label: 'Loyalty', href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" /> },
@@ -77,8 +81,10 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
 
   const isActive = (href: string) => {
     if (href === '/vendor/dashboard') return pathname === '/vendor/dashboard';
-    // My Deals calendar link should highlight for all /vendor/deals routes
-    if (href === '/vendor/deals/calendar') return pathname.startsWith('/vendor/deals');
+    // Website Import has its own nav item
+    if (href === '/vendor/deals/from-website') return pathname.startsWith('/vendor/deals/from-website');
+    // My Deals calendar link should highlight for all /vendor/deals routes except from-website
+    if (href === '/vendor/deals/calendar') return pathname.startsWith('/vendor/deals') && !pathname.startsWith('/vendor/deals/from-website');
     return pathname.startsWith(href);
   };
 

@@ -57,42 +57,47 @@ export async function POST(request: NextRequest) {
 
       const systemPrompt = `You are an expert marketing copywriter helping local businesses create irresistible deal listings for a coupon/deal app called SpontiCoupon.
 
-Your #1 goal is to write a SPECIFIC, VIVID, and DETAILED deal description that makes customers want to act immediately.
+Your #1 goal is to generate a COMPLETE, READY-TO-PUBLISH deal listing with every field filled in, so the vendor just reviews and hits publish.
 
-CRITICAL RULES for the description:
-- Write 3-5 rich sentences that paint a picture of the deal experience
-- ALWAYS incorporate the specific deal details the user mentions (what items, what discount, what occasion)
-- Mention specific food items, services, products, or experiences — NEVER be vague
-- Include the actual savings/discount amount or percentage when possible
-- Add sensory language (e.g., "hand-tossed", "freshly brewed", "stone-fired", "artisan-crafted")
-- Create urgency with a call-to-action at the end
-- If the user mentions specific items (e.g., "pizza", "haircut", "massage"), describe THOSE items in detail
-- Do NOT use generic filler like "amazing savings" or "incredible deal" — be SPECIFIC about what makes this deal great
-- The description should read like a mini advertisement that makes your mouth water or gets you excited
-
-For the title: Make it punchy, specific to the actual deal, and under 60 characters. Include the key value proposition (e.g., "20% Off All Hand-Tossed Pizzas" not "Special Deal at Store").
+CRITICAL RULES:
+- Write SPECIFIC, VIVID descriptions — mention actual items, services, or experiences
+- Add sensory language (e.g., "hand-tossed", "freshly brewed", "stone-fired")
+- Create urgency with a call-to-action
+- Do NOT use generic filler — be SPECIFIC about what makes this deal great
+- For the title: punchy, specific, under 60 characters
 
 IMPORTANT: Return ONLY valid JSON with these exact fields (no markdown, no code blocks, just raw JSON):
 {
-  "title": "Short catchy title that describes the specific deal (max 60 chars)",
-  "description": "3-5 vivid, specific sentences describing the deal, what customers get, and why they should act now",
-  "original_price": number (reasonable for the category and items mentioned),
-  "deal_price": number (the discounted price — should match any percentage/discount the user mentioned),
-  "suggested_deposit": number (10-20% of deal price, only for sponti deals, null for regular),
-  "max_claims": number (suggested limit, 20-100)
-}`;
+  "title": "Short catchy title (max 60 chars)",
+  "description": "3-5 vivid sentences describing the deal experience",
+  "original_price": number,
+  "deal_price": number,
+  "suggested_deposit": number or null (10-20% of deal price for sponti deals, null for regular),
+  "max_claims": number (20-100),
+  "terms_and_conditions": "Clear terms: what's included, exclusions, validity period, one per customer, etc.",
+  "how_it_works": "Step-by-step: 1. Claim this deal on SpontiCoupon 2. Show your QR code at the business 3. Enjoy your discount",
+  "highlights": ["highlight 1", "highlight 2", "highlight 3", "highlight 4"],
+  "amenities": ["amenity 1", "amenity 2", "amenity 3"],
+  "fine_print": "Brief legal: not combinable with other offers, subject to availability, etc."
+}
+
+For highlights: 3-5 short bullet points about what makes this deal special (e.g., "Fresh ingredients daily", "Award-winning chef", "Free parking").
+For amenities: 3-6 relevant amenities for the business type (e.g., "Free Wi-Fi", "Outdoor seating", "Wheelchair accessible", "Live music").
+For terms_and_conditions: Write clear, professional terms covering the deal scope, restrictions, and validity.
+For how_it_works: Always start with claiming on SpontiCoupon, then showing QR code, then enjoying the deal.
+For fine_print: Brief, standard disclaimers.`;
 
       const userPrompt = `Business: ${businessName}
 Category: ${category}
 Location: ${location}
-Deal Type: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours, needs deposit)' : 'Regular Deal (steady savings, 1-30 days)'}
+Deal Type: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours, needs deposit)' : 'Steady Deal (steady savings, 1-30 days)'}
 ${prompt ? `\nVENDOR'S DEAL IDEA (THIS IS THE MOST IMPORTANT INPUT — base the title, description, pricing, and all details on this):\n"${prompt}"` : ''}
 
 Generate a specific, compelling deal based on the vendor's idea above. The description must be detailed and vivid — describe what the customer will actually experience, taste, or receive. Do NOT write generic marketing fluff.`;
 
       const message = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
+        max_tokens: 1500,
         messages: [
           { role: 'user', content: userPrompt },
         ],
@@ -213,5 +218,10 @@ function generateTemplateSuggestion(
     deal_price: dealPrice,
     suggested_deposit: isSponti ? Math.round(dealPrice * 0.15 * 100) / 100 : null,
     max_claims: isSponti ? Math.floor(20 + Math.random() * 30) : Math.floor(50 + Math.random() * 50),
+    terms_and_conditions: `Valid for dine-in and takeout. One deal per customer per visit. Cannot be combined with other offers or promotions. Must present QR code at time of purchase. Deal is non-transferable. ${businessName} reserves the right to modify or cancel this offer.`,
+    how_it_works: `1. Claim this deal on SpontiCoupon\n2. Visit ${businessName} during business hours\n3. Show your QR code to the staff\n4. Enjoy your discount!`,
+    highlights: ['Great value for money', 'Premium quality guaranteed', 'Perfect for any occasion', 'Limited availability'],
+    amenities: ['Free Wi-Fi', 'Parking available', 'Wheelchair accessible'],
+    fine_print: `Subject to availability. Not valid on holidays or special events. ${businessName} reserves the right to limit quantities. Gratuity not included.`,
   };
 }

@@ -19,7 +19,6 @@ export default function DealsPage() {
   const [filters, setFilters] = useState({
     type: '' as '' | 'regular' | 'sponti_coupon',
     radius: 25,
-    category: '',
     search: '',
     city: '',
   });
@@ -27,10 +26,14 @@ export default function DealsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [sortBy, setSortBy] = useState<SortOption>('distance');
-  const [zipInput, setZipInput] = useState('');
   const [geocoding, setGeocoding] = useState(false);
 
   const { lat, lng, loading: geoLoading, error: geoError } = useGeolocation();
+
+  // Warm up stats endpoint
+  useEffect(() => {
+    fetch('/api/deals/stats').then(() => {}).catch(() => {});
+  }, []);
 
   // Set user location from geolocation hook
   useEffect(() => {
@@ -49,7 +52,6 @@ export default function DealsPage() {
       params.set('radius', String(filters.radius));
     }
     if (filters.type) params.set('type', filters.type);
-    if (filters.category) params.set('category', filters.category);
     if (filters.city) params.set('city', filters.city);
     if (filters.search) params.set('search', filters.search);
 
@@ -76,14 +78,22 @@ export default function DealsPage() {
     fetchDeals();
   }, [geoLoading, fetchDeals]);
 
-  const handleZipGeocode = async () => {
-    if (!zipInput.trim()) return;
+  const handleLocationSearch = async () => {
+    if (!filters.city.trim()) return;
     setGeocoding(true);
-    const coords = await geocodeAddress(zipInput.trim());
+    const coords = await geocodeAddress(filters.city.trim());
     if (coords) {
       setUserLocation(coords);
     }
     setGeocoding(false);
+  };
+
+  const handleSearchSubmit = async () => {
+    // Geocode the city/ZIP if user entered one and we don't have location
+    if (filters.city.trim() && !userLocation) {
+      await handleLocationSearch();
+    }
+    fetchDeals();
   };
 
   const spontiCount = deals.filter(d => d.deal_type === 'sponti_coupon').length;
@@ -91,71 +101,60 @@ export default function DealsPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Location fallback banner */}
-      {showLocationBanner && (
+      {/* Location fallback banner — only when geolocation denied and no ZIP entered yet */}
+      {showLocationBanner && !filters.city && (
         <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-3">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+          <div className="max-w-7xl mx-auto flex flex-col items-center gap-1 text-center">
             <div className="flex items-center gap-2">
               <Navigation className="w-4 h-4" />
-              <span className="text-sm font-medium">Enter your ZIP code to find nearby deals</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                value={zipInput}
-                onChange={e => setZipInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleZipGeocode()}
-                className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-white/70 text-sm focus:outline-none focus:ring-2 focus:ring-white/50 w-32"
-                placeholder="ZIP code"
-              />
-              <button
-                onClick={handleZipGeocode}
-                disabled={geocoding}
-                className="px-4 py-1.5 bg-white text-orange-600 font-semibold text-sm rounded-lg hover:bg-white/90 transition-colors disabled:opacity-50"
-              >
-                {geocoding ? 'Finding...' : 'Go'}
-              </button>
+              <span className="text-sm font-medium">Enable location or enter a ZIP code below to find nearby deals</span>
             </div>
           </div>
         </div>
       )}
 
       {/* Gradient hero header */}
-      <div className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-10 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto animate-fade-up">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          {/* Title row */}
+          <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl sm:text-3xl font-bold">Browse Deals</h1>
                 <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
               </div>
-              <p className="text-gray-300 mt-1">
+              <p className="text-gray-300 mt-1 text-sm sm:text-base">
                 {deals.length} deal{deals.length !== 1 ? 's' : ''} available
                 {userLocation && ` within ${filters.radius} miles`}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              {spontiCount > 0 && (
-                <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-primary-500/20 to-orange-500/20 border border-primary-400/30 text-primary-300 px-3 py-1.5 rounded-full text-sm font-medium">
-                  <Flame className="w-3.5 h-3.5 text-primary-400" />
-                  {spontiCount} Sponti Live
-                </div>
-              )}
-
-              {/* Sort dropdown */}
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={e => setSortBy(e.target.value as SortOption)}
-                  className="appearance-none bg-white/10 border border-white/20 rounded-lg pl-8 pr-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
-                >
-                  <option value="distance" className="text-secondary-500">Nearest</option>
-                  <option value="newest" className="text-secondary-500">Newest</option>
-                  <option value="discount" className="text-secondary-500">Best Discount</option>
-                </select>
-                <ArrowUpDown className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            {spontiCount > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-primary-500/20 to-orange-500/20 border border-primary-400/30 text-primary-300 px-3 py-1.5 rounded-full text-sm font-medium">
+                <Flame className="w-3.5 h-3.5 text-primary-400" />
+                {spontiCount} Sponti Live
               </div>
+            )}
+          </div>
 
+          {/* Controls row — stacked on mobile, inline on desktop */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mt-4">
+            {/* Sort dropdown */}
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortOption)}
+                className="w-full sm:w-auto appearance-none bg-white/10 border border-white/20 rounded-lg pl-8 pr-8 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
+              >
+                <option value="distance" className="text-secondary-500">Nearest</option>
+                <option value="newest" className="text-secondary-500">Newest</option>
+                <option value="discount" className="text-secondary-500">Best Discount</option>
+              </select>
+              <ArrowUpDown className="absolute left-2.5 top-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* View toggle + Filters button */}
+            <div className="flex gap-2">
               {/* View toggle: Grid / Map */}
               <div className="flex bg-white/10 rounded-lg p-0.5">
                 <button
@@ -167,7 +166,7 @@ export default function DealsPage() {
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
-                  <span className="hidden sm:inline">Grid</span>
+                  <span className="sm:inline">Grid</span>
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
@@ -178,7 +177,7 @@ export default function DealsPage() {
                   }`}
                 >
                   <Map className="w-4 h-4" />
-                  <span className="hidden sm:inline">Map</span>
+                  <span className="sm:inline">Map</span>
                 </button>
               </div>
 
@@ -196,23 +195,23 @@ export default function DealsPage() {
             </div>
           </div>
 
-          {/* Search & Filters — integrated into hero */}
-          <div className={`mt-6 ${showFilters ? '' : 'hidden sm:block'}`}>
-            {/* Input fields row: stacked on mobile, 3 columns on desktop */}
+          {/* Search & Filters */}
+          <div className={`mt-5 ${showFilters ? '' : 'hidden'}`}>
+            {/* Row 1: Keyword search + Location + Radius — stacked on mobile, 3-col on desktop */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Search */}
+              {/* Keyword Search — searches titles, descriptions, vendor category, business name */}
               <div className="relative">
                 <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
                   value={filters.search}
                   onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && fetchDeals()}
+                  onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="Search deals..."
+                  placeholder="game show, brunch, yoga, spa..."
                 />
               </div>
 
-              {/* City / ZIP with geocode */}
+              {/* City / ZIP */}
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
@@ -220,24 +219,30 @@ export default function DealsPage() {
                   onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
                   onKeyDown={async e => {
                     if (e.key === 'Enter') {
-                      // Try to geocode the city/ZIP input for distance filtering
-                      if (filters.city.trim() && !userLocation) {
+                      if (filters.city.trim()) {
+                        setGeocoding(true);
                         const coords = await geocodeAddress(filters.city.trim());
                         if (coords) setUserLocation(coords);
+                        setGeocoding(false);
                       }
                       fetchDeals();
                     }
                   }}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="City or ZIP"
+                  placeholder="City, ZIP, or address"
                 />
+                {geocoding && (
+                  <div className="absolute right-3 top-3.5">
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
 
               {/* Radius */}
               <select
                 value={filters.radius}
                 onChange={e => setFilters(f => ({ ...f, radius: parseInt(e.target.value) }))}
-                className="py-3 px-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                className="w-full py-3 px-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
                 {RADIUS_OPTIONS.map(r => (
                   <option key={r} value={r} className="text-secondary-500">{r} miles</option>
@@ -245,75 +250,51 @@ export default function DealsPage() {
               </select>
             </div>
 
-            {/* Search button below fields */}
-            <div className="mt-3 flex justify-center sm:justify-end">
-              <button
-                onClick={async () => {
-                  // Geocode the city/ZIP input if no location yet
-                  if (filters.city.trim() && !userLocation) {
-                    const coords = await geocodeAddress(filters.city.trim());
-                    if (coords) setUserLocation(coords);
-                  }
-                  fetchDeals();
-                }}
-                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-orange-600 transition-all shadow-lg shadow-primary-500/30 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                Search Deals
-              </button>
-            </div>
-
-            {/* Deal Type Filter */}
-            <div className="flex flex-wrap gap-2 mt-4">
-              <button
-                onClick={() => setFilters(f => ({ ...f, type: '' }))}
-                className={`flex items-center gap-1 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                  filters.type === '' ? 'bg-white text-secondary-500 shadow-lg' : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                All Deals
-              </button>
-              <button
-                onClick={() => setFilters(f => ({ ...f, type: 'sponti_coupon' }))}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                  filters.type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                <SpontiIcon className="w-3.5 h-3.5" /> Sponti Coupons
-              </button>
-              <button
-                onClick={() => setFilters(f => ({ ...f, type: 'regular' }))}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                  filters.type === 'regular' ? 'bg-gradient-to-r from-accent-500 to-blue-600 text-white shadow-lg shadow-accent-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                }`}
-              >
-                <Tag className="w-3.5 h-3.5" /> Steady Deals
-              </button>
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2 mt-3">
-              {['restaurants', 'beauty-spa', 'health-fitness', 'entertainment', 'shopping', 'food-drink'].map(cat => (
+            {/* Row 2: Deal type pills + Search button */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+              <div className="flex flex-wrap gap-2">
                 <button
-                  key={cat}
-                  onClick={() => setFilters(f => ({ ...f, category: f.category === cat ? '' : cat }))}
-                  className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                    filters.category === cat
-                      ? 'bg-white text-secondary-500 shadow-lg'
-                      : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  onClick={() => setFilters(f => ({ ...f, type: '' }))}
+                  className={`flex items-center gap-1 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                    filters.type === '' ? 'bg-white text-secondary-500 shadow-lg' : 'bg-white/10 text-gray-300 hover:bg-white/20'
                   }`}
                 >
-                  {cat.replace('-', ' & ').replace(/\b\w/g, l => l.toUpperCase())}
+                  All Deals
                 </button>
-              ))}
+                <button
+                  onClick={() => setFilters(f => ({ ...f, type: 'sponti_coupon' }))}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                    filters.type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  }`}
+                >
+                  <SpontiIcon className="w-3.5 h-3.5" /> Sponti Coupons
+                </button>
+                <button
+                  onClick={() => setFilters(f => ({ ...f, type: 'regular' }))}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
+                    filters.type === 'regular' ? 'bg-gradient-to-r from-accent-500 to-blue-600 text-white shadow-lg shadow-accent-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  }`}
+                >
+                  <Tag className="w-3.5 h-3.5" /> Steady Deals
+                </button>
+              </div>
+
+              <button
+                onClick={handleSearchSubmit}
+                disabled={geocoding}
+                className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-orange-600 transition-all shadow-lg shadow-primary-500/30 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Search className="w-4 h-4" />
+                {geocoding ? 'Finding location...' : 'Search Deals'}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Deals Grid — subtle parallax bg */}
+      {/* Deals Grid */}
       <div className="relative">
-        {/* Soft gradient background so it's not plain white */}
+        {/* Soft gradient background */}
         <div className="absolute inset-0 bg-gradient-to-b from-gray-50 via-white to-accent-50/30 pointer-events-none" />
         <div className="absolute inset-0 dot-pattern opacity-[0.03] pointer-events-none" />
 

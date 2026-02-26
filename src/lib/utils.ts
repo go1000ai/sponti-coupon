@@ -104,6 +104,21 @@ export async function geocodeAddress(query: string): Promise<{ lat: number; lng:
   }
 }
 
+/**
+ * Convert a Supabase storage public URL to the branded /media/ path.
+ * e.g., https://xxx.supabase.co/storage/v1/object/public/deal-images/file.jpg
+ *    -> /media/deal-images/file.jpg
+ */
+export function brandStorageUrl(url: string): string {
+  if (!url) return url;
+  const marker = '/storage/v1/object/public/';
+  const idx = url.indexOf(marker);
+  if (idx !== -1) {
+    return `/media/${url.slice(idx + marker.length)}`;
+  }
+  return url;
+}
+
 export function formatDistance(miles: number): string {
   if (miles < 1) {
     return `${Math.round(miles * 5280).toLocaleString()} ft`;

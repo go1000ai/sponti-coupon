@@ -144,6 +144,7 @@ export interface Deal {
   how_it_works: string | null;
   highlights: string[];
   fine_print: string | null;
+  search_tags: string[];
   category_id: string | null;
   created_at: string;
   // Joined fields
@@ -488,6 +489,25 @@ export interface SupportTicket {
   // Joined fields
   messages?: SupportMessage[];
   last_message?: SupportMessage;
+}
+
+export type MediaType = 'image' | 'video';
+export type MediaSource = 'upload' | 'ai_generated' | 'url' | 'ai_video';
+
+export interface VendorMedia {
+  id: string;
+  vendor_id: string;
+  type: MediaType;
+  url: string;
+  storage_path: string | null;
+  bucket: string;
+  filename: string | null;
+  title: string | null;
+  ai_prompt: string | null;
+  source: MediaSource;
+  file_size: number | null;
+  mime_type: string | null;
+  created_at: string;
 }
 
 export interface SupportMessage {

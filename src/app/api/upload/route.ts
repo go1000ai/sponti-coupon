@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { brandStorageUrl } from '@/lib/utils';
 
 // Allowed buckets vendors can upload to
 const ALLOWED_BUCKETS = ['deal-images', 'vendor-assets'] as const;
@@ -89,8 +90,25 @@ export async function POST(request: NextRequest) {
     .from(bucket)
     .getPublicUrl(uploadData.path);
 
+  const brandedUrl = brandStorageUrl(urlData.publicUrl);
+
+  // Auto-record in vendor media library (only for deal-images, not vendor-assets like logos)
+  if (bucket === 'deal-images') {
+    await serviceClient.from('vendor_media').insert({
+      vendor_id: user.id,
+      type: 'image',
+      url: brandedUrl,
+      storage_path: filename,
+      bucket,
+      filename: file.name,
+      source: 'upload',
+      file_size: file.size,
+      mime_type: file.type,
+    });
+  }
+
   return NextResponse.json({
-    url: urlData.publicUrl,
+    url: brandedUrl,
     path: uploadData.path,
   });
 }
