@@ -27,6 +27,7 @@
     "qrcode": "^1.5.4",
     "react": "^18",
     "react-dom": "^18",
+    "react-joyride": "^2.9.3",
     "react-leaflet": "^4.2.1",
     "recharts": "^3.7.0",
     "resend": "^6.9.2",

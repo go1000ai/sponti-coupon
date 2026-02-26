@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { MiaChatbot } from '@/components/support/MiaChatbot';
 import {
   Headphones,
-  Plus,
   Loader2,
-  MessageSquare,
   ChevronRight,
   Clock,
   Send,
@@ -19,6 +18,7 @@ import {
   Image as ImageIcon,
   Download,
   AlertCircle,
+  TicketIcon,
 } from 'lucide-react';
 
 /* ── Types ──────────────────────────── */
@@ -583,10 +583,26 @@ export default function CustomerSupportPage() {
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const ticketSectionRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to top once content has loaded (not during loading spinner)
+  useEffect(() => {
+    if (!authLoading && !loading) {
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+      });
+    }
+  }, [authLoading, loading]);
 
   const showToast = (type: 'success' | 'error', text: string) => {
     setToast({ type, text });
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const scrollToTickets = () => {
+    setShowNewTicket(true);
+    ticketSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const fetchTickets = useCallback(async () => {
@@ -633,7 +649,7 @@ export default function CustomerSupportPage() {
   // Show ticket detail if one is selected
   if (selectedTicketId) {
     return (
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4 sm:px-0">
         <TicketDetailView
           ticketId={selectedTicketId}
           onBack={() => { setSelectedTicketId(null); fetchTickets(); }}
@@ -643,7 +659,7 @@ export default function CustomerSupportPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 sm:px-0">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg ${
@@ -656,69 +672,71 @@ export default function CustomerSupportPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <Headphones className="w-8 h-8 text-primary-500" />
-          <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Support</h1>
-            <p className="text-sm text-gray-500">Get help with your account and issues</p>
+      <div className="flex items-center gap-3 mb-6">
+        <Headphones className="w-8 h-8 text-primary-500" />
+        <div>
+          <h1 className="text-2xl font-bold text-secondary-500">Support & Help</h1>
+          <p className="text-sm text-gray-500">Chat with Mia or open a support ticket</p>
+        </div>
+      </div>
+
+      {/* Mia Chatbot */}
+      <MiaChatbot onOpenTicket={scrollToTickets} />
+
+      {/* Divider — Need more help? */}
+      <div ref={ticketSectionRef} className="my-8">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative bg-gray-50 px-4">
+            <span className="text-sm text-gray-400">Need more help?</span>
           </div>
         </div>
-        <button
-          onClick={() => setShowNewTicket(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          New Ticket
-        </button>
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setShowNewTicket(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-sm"
+          >
+            <TicketIcon className="w-4 h-4" />
+            Open Support Ticket
+          </button>
+          <p className="text-xs text-gray-400 mt-2">Our team will respond within 24 hours</p>
+        </div>
       </div>
 
       {/* Ticket List */}
-      {tickets.length === 0 ? (
-        <div className="card p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <MessageSquare className="w-8 h-8 text-gray-400" />
-          </div>
-          <h2 className="text-lg font-bold text-gray-700 mb-2">No Support Tickets</h2>
-          <p className="text-gray-400 text-sm mb-6 max-w-sm mx-auto">
-            Need help? Create a new support ticket and our team will get back to you as soon as possible.
-          </p>
-          <button
-            onClick={() => setShowNewTicket(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Create Ticket
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {tickets.map((ticket) => (
-            <button
-              key={ticket.id}
-              onClick={() => setSelectedTicketId(ticket.id)}
-              className="card p-4 w-full text-left hover:shadow-md transition-all duration-200 group"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <h3 className="font-semibold text-secondary-500 truncate group-hover:text-primary-500 transition-colors">
-                      {ticket.subject}
-                    </h3>
+      {tickets.length > 0 && (
+        <div>
+          <h2 className="text-lg font-bold text-secondary-500 mb-4">Your Tickets</h2>
+          <div className="space-y-3">
+            {tickets.map((ticket) => (
+              <button
+                key={ticket.id}
+                onClick={() => setSelectedTicketId(ticket.id)}
+                className="card p-4 w-full text-left hover:shadow-md transition-all duration-200 group"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <h3 className="font-semibold text-secondary-500 truncate group-hover:text-primary-500 transition-colors">
+                        {ticket.subject}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getStatusBadge(ticket.status)}
+                      {getCategoryBadge(ticket.category)}
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Updated {formatTimeAgo(ticket.updated_at)}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {getStatusBadge(ticket.status)}
-                    {getCategoryBadge(ticket.category)}
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      Updated {formatTimeAgo(ticket.updated_at)}
-                    </span>
-                  </div>
+                  <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
-              </div>
-            </button>
-          ))}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

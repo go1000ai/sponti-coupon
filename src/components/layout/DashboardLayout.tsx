@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -22,20 +22,27 @@ import {
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'My Coupons', href: '/dashboard/my-deals', icon: Ticket },
-  { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift },
-  { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart },
-  { label: 'Notifications', href: '/dashboard/notifications', icon: Bell },
-  { label: 'Support', href: '/dashboard/support', icon: Headphones },
-  { label: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { label: 'My Coupons', href: '/dashboard/my-deals', icon: Ticket, dataTour: 'customer-nav-coupons' },
+  { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift, dataTour: 'customer-nav-loyalty' },
+  { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart, dataTour: 'customer-nav-foryou' },
+  { label: 'Notifications', href: '/dashboard/notifications', icon: Bell, dataTour: 'customer-nav-notifications' },
+  { label: 'Support', href: '/dashboard/support', icon: Headphones, dataTour: 'customer-nav-support' },
+  { label: 'Settings', href: '/dashboard/settings', icon: Settings, dataTour: 'customer-nav-settings' },
 ];
 
-const browseItem = { label: 'Browse Deals', href: '/deals', icon: Compass };
+const browseItem = { label: 'Browse Deals', href: '/deals', icon: Compass, dataTour: 'customer-nav-browse' };
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Scroll main content to top on route change
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
 
   const userEmail = user?.email || '';
   const userName = user?.user_metadata?.first_name
@@ -49,7 +56,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const allItems = [...navItems, browseItem];
 
-  const sidebarContent = (
+  const renderSidebarContent = (enableTourAttrs: boolean) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-5 border-b border-secondary-400/30">
@@ -66,7 +73,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav {...(enableTourAttrs ? { 'data-tour': 'customer-sidebar' } : {})} className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -75,6 +82,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
+              {...(enableTourAttrs && item.dataTour ? { 'data-tour': item.dataTour } : {})}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                 active
                   ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
@@ -92,6 +100,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <Link
             href={browseItem.href}
             onClick={() => setMobileOpen(false)}
+            {...(enableTourAttrs ? { 'data-tour': browseItem.dataTour } : {})}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
               isActive(browseItem.href)
                 ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
@@ -152,7 +161,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar — no data-tour attrs so Joyride targets the desktop sidebar */}
       <aside
         className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-secondary-500 transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
@@ -165,12 +174,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         >
           <X className="w-5 h-5" />
         </button>
-        {sidebarContent}
+        {renderSidebarContent(false)}
       </aside>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — has data-tour attrs for guided tour */}
       <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-secondary-500 z-30">
-        {sidebarContent}
+        {renderSidebarContent(true)}
       </aside>
 
       {/* Main content area */}
@@ -183,7 +192,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 bg-gray-50 p-4 md:p-6 lg:p-8 overflow-auto">
+        <main ref={mainRef} className="flex-1 bg-gray-50 p-4 md:p-6 lg:p-8 overflow-auto">
           {children}
         </main>
       </div>

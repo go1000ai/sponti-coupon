@@ -363,7 +363,7 @@ function SignupForm() {
           </div>
         )}
 
-        <form onSubmit={handleSignup} className="card p-8 space-y-4">
+        <form onSubmit={handleSignup} className="card p-5 sm:p-8 space-y-4">
           {error && (
             <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200">
               {error}
@@ -443,7 +443,7 @@ function SignupForm() {
             </>
           )}
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">City {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
               <div className="relative">

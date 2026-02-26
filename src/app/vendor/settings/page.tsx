@@ -7,7 +7,7 @@ import {
   Settings, Save, Loader2, Building2, Globe, Clock, Bell,
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
-  ExternalLink, Bot, AlertTriangle, Info,
+  ExternalLink, Bot, AlertTriangle, Info, Navigation, RotateCcw, Play,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -51,7 +51,7 @@ const DEFAULT_NOTIFICATIONS: VendorNotificationPreferences = {
   email_digest: true,
 };
 
-type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response';
+type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour';
 
 const DEFAULT_AUTO_RESPONSE: AutoResponseSettings = {
   enabled: false,
@@ -86,6 +86,10 @@ export default function VendorSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expandedSection, setExpandedSection] = useState<SettingsSection | null>('business');
+
+  // Personal name
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
 
   // Business info form
   const [businessForm, setBusinessForm] = useState({
@@ -133,6 +137,12 @@ export default function VendorSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  // Guided Tour settings
+  const [tourAutoStart, setTourAutoStart] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('sponti_tour_auto_start') !== 'false';
+  });
+
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
@@ -143,6 +153,10 @@ export default function VendorSettingsPage() {
         .select('*')
         .eq('id', user!.id)
         .single();
+
+      // Load personal name from auth metadata
+      setFirstName(user!.user_metadata?.first_name || '');
+      setLastName(user!.user_metadata?.last_name || '');
 
       if (data) {
         setVendor(data);
@@ -264,8 +278,9 @@ export default function VendorSettingsPage() {
 
       setVendor(prev => prev ? { ...prev, [updateField]: publicUrl } : prev);
       setMessage({ type: 'success', text: `${type === 'logo' ? 'Logo' : 'Cover photo'} updated!` });
-    } catch {
-      setMessage({ type: 'error', text: `Failed to upload ${type}. Please try again.` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : `Failed to upload ${type}`;
+      setMessage({ type: 'error', text: msg });
     } finally {
       setter(false);
     }
@@ -293,6 +308,16 @@ export default function VendorSettingsPage() {
     });
 
     const supabase = createClient();
+
+    // Save personal name to auth user_metadata
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+      },
+    });
+
     const { error } = await supabase
       .from('vendors')
       .update({
@@ -315,7 +340,7 @@ export default function VendorSettingsPage() {
       })
       .eq('id', user.id);
 
-    if (error) {
+    if (error || authError) {
       setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
     } else {
       // Auto-geocode the address after saving
@@ -511,6 +536,36 @@ export default function VendorSettingsPage() {
                   className="input-field"
                   required
                 />
+              </div>
+
+              {/* Personal name fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    id="first_name"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="input-field"
+                    placeholder="Your first name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    id="last_name"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="input-field"
+                    placeholder="Your last name"
+                  />
+                </div>
               </div>
 
               <div>
@@ -1026,6 +1081,89 @@ export default function VendorSettingsPage() {
                   </div>
                 </div>
               </GatedSection>
+            </div>
+          )}
+        </div>
+
+        {/* ===== GUIDED TOUR ===== */}
+        <div className="card mb-6 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('tour')}
+            className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Navigation className="w-5 h-5 text-primary-500" />
+              <div className="text-left">
+                <h2 className="text-lg font-bold text-secondary-500">Guided Tour</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Dashboard walkthrough settings</p>
+              </div>
+            </div>
+            {expandedSection === 'tour' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+          </button>
+
+          {expandedSection === 'tour' && (
+            <div className="px-6 pb-6 space-y-5 border-t border-gray-100 pt-4">
+              {/* Auto-start toggle */}
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={tourAutoStart}
+                  onChange={(e) => {
+                    setTourAutoStart(e.target.checked);
+                    localStorage.setItem('sponti_tour_auto_start', String(e.target.checked));
+                    if (!e.target.checked) {
+                      // Mark tours as done so they don't auto-start
+                      localStorage.setItem('sponti_tour_vendor_dashboard_done', 'true');
+                    } else {
+                      // Remove the done flag so tour can auto-start next login
+                      localStorage.removeItem('sponti_tour_vendor_dashboard_done');
+                    }
+                  }}
+                  className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                />
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Auto-start tour on login</p>
+                  <p className="text-xs text-gray-400">Show the guided tour automatically when you log in for the first time</p>
+                </div>
+              </label>
+
+              {/* Restart tour button */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-2">Restart Tour</p>
+                <p className="text-xs text-gray-400 mb-3">Replay the dashboard walkthrough to see all features explained step by step.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.removeItem('sponti_tour_vendor_dashboard_done');
+                    setMessage({ type: 'success', text: 'Tour will start when you visit the dashboard!' });
+                    window.location.href = '/vendor/dashboard';
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
+                >
+                  <Play className="w-4 h-4" />
+                  Start Tour Now
+                </button>
+              </div>
+
+              {/* Reset all tours */}
+              <div className="pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Clear all tour-related localStorage keys
+                    const keys = Object.keys(localStorage).filter(k => k.startsWith('sponti_tour_'));
+                    keys.forEach(k => localStorage.removeItem(k));
+                    localStorage.setItem('sponti_tour_auto_start', 'true');
+                    setTourAutoStart(true);
+                    setMessage({ type: 'success', text: 'All tours have been reset. They will show again on your next visit.' });
+                  }}
+                  className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset all tours
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -22,6 +22,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import Image from 'next/image';
+import { GuidedTour } from '@/components/ui/GuidedTour';
+import { CUSTOMER_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import type { Claim, Deal, LoyaltyCard } from '@/lib/types/database';
 
 const SavingsChart = dynamic(() => import('@/components/dashboard/SavingsChart'), { ssr: false });
@@ -179,11 +181,11 @@ export default function ConsumerDashboardPage() {
       </div>
 
       {/* Stats cards — staggered */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div data-tour="customer-stats" className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, i) => (
           <div
             key={stat.label}
-            className={`card p-5 bg-gradient-to-br ${stat.bgGradient} tilt-card animate-fade-up`}
+            className={`card p-4 sm:p-5 bg-gradient-to-br ${stat.bgGradient} tilt-card animate-fade-up`}
             style={{ animationDelay: `${i * 100 + 100}ms` }}
           >
             <div className="flex items-center gap-3">
@@ -202,7 +204,7 @@ export default function ConsumerDashboardPage() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-up" style={{ animationDelay: '500ms' }}>
+      <div data-tour="customer-actions" className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-up" style={{ animationDelay: '500ms' }}>
         <Link href="/deals" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card">
           <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-xl p-3 group-hover:scale-110 transition-transform shadow-lg shadow-primary-200">
             <Compass className="w-6 h-6 text-white" />
@@ -228,7 +230,7 @@ export default function ConsumerDashboardPage() {
 
       {/* Loyalty Rewards Progress */}
       {loyaltyCards.length > 0 && (
-        <div className="animate-fade-up" style={{ animationDelay: '600ms' }}>
+        <div data-tour="customer-loyalty" className="animate-fade-up" style={{ animationDelay: '600ms' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-primary-500 to-amber-400 rounded-lg p-1.5">
@@ -382,16 +384,18 @@ export default function ConsumerDashboardPage() {
                         <p className="text-sm text-gray-500 truncate">{(deal.vendor as Deal['vendor'])?.business_name}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 sm:gap-6">
-                      <span className="text-primary-500 font-bold text-lg">{formatPercentage(deal.discount_percentage)} off</span>
-                      <div className="hidden sm:block"><CountdownTimer expiresAt={claim.expires_at} size="sm" /></div>
-                      <Link href="/dashboard/my-deals" className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:from-secondary-600 hover:to-secondary-700 transition-all flex items-center gap-1.5 flex-shrink-0 shadow-sm">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
+                      <div className="flex items-center justify-between sm:gap-6">
+                        <span className="text-primary-500 font-bold text-lg">{formatPercentage(deal.discount_percentage)} off</span>
+                        <div className="hidden sm:block"><CountdownTimer expiresAt={claim.expires_at} size="sm" /></div>
+                      </div>
+                      <div className="sm:hidden">
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><Clock className="w-3 h-3" /><span>Expires in:</span></div>
+                        <CountdownTimer expiresAt={claim.expires_at} size="sm" />
+                      </div>
+                      <Link href="/dashboard/my-deals" className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:from-secondary-600 hover:to-secondary-700 transition-all flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto">
                         <QrCode className="w-4 h-4" /> QR Code
                       </Link>
-                    </div>
-                    <div className="sm:hidden">
-                      <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><Clock className="w-3 h-3" /><span>Expires in:</span></div>
-                      <CountdownTimer expiresAt={claim.expires_at} size="sm" />
                     </div>
                   </div>
                 </div>
@@ -451,6 +455,9 @@ export default function ConsumerDashboardPage() {
           </Link>
         </div>
       )}
+
+      {/* Guided Tour */}
+      <GuidedTour tourKey="customer_dashboard" steps={CUSTOMER_DASHBOARD_STEPS} />
     </div>
   );
 }

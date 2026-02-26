@@ -35,20 +35,24 @@ export async function POST(request: NextRequest) {
     ? (bucketParam as AllowedBucket)
     : 'deal-images';
 
-  if (!file) {
+  if (!file || (typeof file === 'string')) {
+    console.error('[Upload] No file in formData');
     return NextResponse.json({ error: 'No file provided' }, { status: 400 });
   }
 
+  console.log('[Upload] File received:', { name: file.name, type: file.type, size: file.size });
+
   // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
   if (!allowedTypes.includes(file.type)) {
-    return NextResponse.json({ error: 'Invalid file type. Please upload JPG, PNG, WebP, or GIF.' }, { status: 400 });
+    console.error('[Upload] Invalid file type:', file.type);
+    return NextResponse.json({ error: `Invalid file type: ${file.type}. Please upload JPG, PNG, WebP, SVG, or GIF.` }, { status: 400 });
   }
 
   // Validate file size (max 5MB)
   const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
-    return NextResponse.json({ error: 'File too large. Maximum size is 5MB.' }, { status: 400 });
+    return NextResponse.json({ error: `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 5MB.` }, { status: 400 });
   }
 
   // Use service role client to bypass RLS for storage
@@ -81,8 +85,8 @@ export async function POST(request: NextRequest) {
     });
 
   if (uploadError) {
-    console.error('Upload error:', uploadError);
-    return NextResponse.json({ error: 'Failed to upload image. Please try again.' }, { status: 500 });
+    console.error('[Upload] Storage error:', uploadError.message, uploadError);
+    return NextResponse.json({ error: `Upload failed: ${uploadError.message}` }, { status: 500 });
   }
 
   // Get public URL

@@ -40,6 +40,7 @@ interface NavItem {
   href: string;
   icon: React.ReactNode;
   children?: NavChild[];
+  dataTour?: string;
 }
 
 const navItems: NavItem[] = [
@@ -50,20 +51,20 @@ const navItems: NavItem[] = [
   },
   { label: 'Analytics', href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'AI Insights', href: '/vendor/insights', icon: <Sparkles className="w-5 h-5" /> },
-  { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" /> },
-  { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" /> },
-  { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" /> },
+  { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
+  { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
+  { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
   { label: 'Scan / Redeem', href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
-  { label: 'Reviews', href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" /> },
-  { label: 'Loyalty', href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" /> },
+  { label: 'Reviews', href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" />, dataTour: 'vendor-nav-reviews' },
+  { label: 'Loyalty', href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" />, dataTour: 'vendor-nav-loyalty' },
   { label: 'Locations', href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
   { label: 'Team', href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
   { label: 'API', href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
-  { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" /> },
+  { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Payment Methods', href: '/vendor/payments', icon: <Wallet className="w-5 h-5" /> },
-  { label: 'Support', href: '/vendor/support', icon: <Headphones className="w-5 h-5" /> },
-  { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" /> },
+  { label: 'Support', href: '/vendor/support', icon: <Headphones className="w-5 h-5" />, dataTour: 'vendor-nav-support' },
+  { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
 ];
 
 interface VendorSidebarProps {
@@ -78,6 +79,11 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+
+  // Scroll window to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
 
   const isActive = (href: string) => {
     if (href === '/vendor/dashboard') return pathname === '/vendor/dashboard';
@@ -116,7 +122,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
     return expandedGroups.includes(href);
   };
 
-  const sidebarContent = (
+  const renderSidebarContent = (enableTourAttrs: boolean) => (
     <div className="flex flex-col h-full">
       {/* Branding — Actual Logo */}
       <div className="p-5 border-b border-secondary-400/30">
@@ -133,7 +139,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav {...(enableTourAttrs ? { 'data-tour': 'vendor-sidebar' } : {})} className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const active = isActive(item.href);
           const groupActive = isGroupActive(item);
@@ -143,7 +149,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
           return (
             <div key={item.href}>
               {/* Main nav item */}
-              <div className="flex items-center">
+              <div className="flex items-center" {...(enableTourAttrs && item.dataTour ? { 'data-tour': item.dataTour } : {})}>
                 <Link
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
@@ -248,7 +254,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar — no data-tour attrs so Joyride targets the desktop sidebar */}
       <aside
         className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-secondary-500 transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
@@ -261,12 +267,12 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
         >
           <X className="w-5 h-5" />
         </button>
-        {sidebarContent}
+        {renderSidebarContent(false)}
       </aside>
 
-      {/* Desktop sidebar */}
+      {/* Desktop sidebar — has data-tour attrs for guided tour */}
       <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-secondary-500 z-30">
-        {sidebarContent}
+        {renderSidebarContent(true)}
       </aside>
     </>
   );

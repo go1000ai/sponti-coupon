@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -13,9 +13,18 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, role, loading, signOut } = useAuth();
   const { status: subscriptionStatus, loading: tierLoading } = useVendorTier();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [vendorLogoUrl, setVendorLogoUrl] = useState<string | null>(null);
+
+  // Scroll to top on every route change
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+    });
+  }, [pathname]);
 
   // Only allow through if subscription was just completed successfully
   const isSubscriptionSuccess = searchParams.get('subscription') === 'success';

@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { ROIDashboard } from '@/components/vendor/ROIDashboard';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { GuidedTour } from '@/components/ui/GuidedTour';
+import { VENDOR_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
 } from 'recharts';
@@ -203,7 +205,7 @@ function VendorDashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-fade-up">
         <div>
@@ -222,20 +224,20 @@ function VendorDashboard() {
             {vendor?.city && <span className="text-sm text-gray-500">{vendor.city}, {vendor.state}</span>}
           </div>
         </div>
-        <div className="flex gap-3">
-          <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all hover:scale-[1.02]">
+        <div className="flex gap-3 w-full sm:w-auto">
+          <Link href="/vendor/deals/new" data-tour="vendor-create" className="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all hover:scale-[1.02]">
             <Plus className="w-4 h-4" /> Create Deal
           </Link>
-          <Link href="/vendor/scan" className="btn-secondary flex items-center gap-2 shadow-lg shadow-secondary-200 hover:shadow-xl transition-all hover:scale-[1.02]">
+          <Link href="/vendor/scan" data-tour="vendor-scan-qr" className="btn-secondary flex-1 sm:flex-initial flex items-center justify-center gap-2 shadow-lg shadow-secondary-200 hover:shadow-xl transition-all hover:scale-[1.02]">
             <QrCode className="w-4 h-4" /> Scan QR
           </Link>
         </div>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div data-tour="vendor-stats" className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
         {statItems.map((stat, i) => (
-          <div key={stat.label} className="card p-5 tilt-card animate-fade-up" style={{ animationDelay: `${i * 80 + 100}ms` }}>
+          <div key={stat.label} className="card p-4 sm:p-5 tilt-card animate-fade-up" style={{ animationDelay: `${i * 80 + 100}ms` }}>
             <div className="flex items-center justify-between mb-2">
               <div className={`bg-gradient-to-br ${stat.color} rounded-xl p-2 text-white shadow-lg`}>
                 {stat.icon}
@@ -257,7 +259,7 @@ function VendorDashboard() {
       {/* Quick Redeem + Chart Row */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
         {/* Quick Redeem Card */}
-        <div className="card p-6 animate-fade-up gradient-border" style={{ animationDelay: '500ms' }}>
+        <div data-tour="vendor-redeem" className="card p-6 animate-fade-up gradient-border" style={{ animationDelay: '500ms' }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1.5">
               <Hash className="w-4 h-4 text-white" />
@@ -325,7 +327,7 @@ function VendorDashboard() {
         </div>
 
         {/* Claims Mini Chart */}
-        <div className="card p-6 lg:col-span-2 animate-fade-up" style={{ animationDelay: '600ms' }}>
+        <div data-tour="vendor-claims-chart" className="card p-6 lg:col-span-2 animate-fade-up" style={{ animationDelay: '600ms' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-accent-500 to-blue-600 rounded-lg p-1.5">
@@ -363,7 +365,7 @@ function VendorDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div data-tour="vendor-actions" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Link href="/vendor/analytics" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card animate-fade-up" style={{ animationDelay: '700ms' }}>
           <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl p-3 text-white shadow-lg shadow-purple-200 group-hover:scale-110 transition-transform">
             <BarChart3 className="w-5 h-5" />
@@ -411,12 +413,12 @@ function VendorDashboard() {
       </div>
 
       {/* ROI Dashboard */}
-      <div className="mb-8 animate-fade-up" style={{ animationDelay: '900ms' }}>
+      <div data-tour="vendor-roi" className="mb-8 animate-fade-up" style={{ animationDelay: '900ms' }}>
         <ROIDashboard />
       </div>
 
       {/* Recent Deals */}
-      <div className="card animate-fade-up" style={{ animationDelay: '1000ms' }}>
+      <div data-tour="vendor-deals" className="card animate-fade-up" style={{ animationDelay: '1000ms' }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h2 className="text-xl font-bold text-secondary-500">Recent Deals</h2>
           <Link href="/vendor/deals" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
@@ -470,7 +472,7 @@ function VendorDashboard() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
                   {deal.status === 'active' && deal.deal_type === 'sponti_coupon' && (
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
@@ -491,6 +493,9 @@ function VendorDashboard() {
           </div>
         )}
       </div>
+
+      {/* Guided Tour */}
+      <GuidedTour tourKey="vendor_dashboard" steps={VENDOR_DASHBOARD_STEPS} />
     </div>
   );
 }

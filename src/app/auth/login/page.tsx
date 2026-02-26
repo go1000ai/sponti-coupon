@@ -79,7 +79,7 @@ function LoginForm() {
           <p className="text-gray-500 mt-2">Sign in to access your deals</p>
         </div>
 
-        <form onSubmit={handleLogin} className="card p-8 space-y-5">
+        <form onSubmit={handleLogin} className="card p-5 sm:p-8 space-y-5">
           {reason === 'inactivity' && (
             <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg border border-amber-200">
               You were signed out due to inactivity. Please sign in again.

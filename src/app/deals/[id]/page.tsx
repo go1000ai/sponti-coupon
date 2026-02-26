@@ -920,7 +920,7 @@ export default function DealDetailPage() {
                 {/* Deposit info */}
                 {hasDeposit && (
                   <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4">
-                    <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount)}</p>
+                    <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
                     <p className="text-xs text-primary-600 mt-1">Paid directly to the business. Non-refundable if not redeemed.</p>
                   </div>
                 )}
