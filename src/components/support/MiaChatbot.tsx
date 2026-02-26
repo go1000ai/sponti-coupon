@@ -1,8 +1,31 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+
+// Auto-detect URLs in text and render them as clickable links
+function linkifyText(text: string): ReactNode {
+  const urlRegex = /(https?:\/\/[^\s,)]+)/g;
+  const parts = text.split(urlRegex);
+  if (parts.length === 1) return text;
+
+  return parts.map((part, i) =>
+    urlRegex.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target={part.includes(window.location.host) ? '_self' : '_blank'}
+        rel="noopener noreferrer"
+        className="underline font-medium hover:opacity-80"
+      >
+        {part.replace(/^https?:\/\//, '')}
+      </a>
+    ) : (
+      part
+    )
+  );
+}
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -11,7 +34,9 @@ interface ChatMessage {
 
 interface MiaChatbotProps {
   onOpenTicket?: () => void;
-  userRole?: 'vendor' | 'customer';
+  userRole?: 'vendor' | 'customer' | 'visitor';
+  variant?: 'card' | 'floating';
+  pageContext?: 'general' | 'vendor-prospect';
 }
 
 const VENDOR_SUGGESTIONS = [
@@ -26,9 +51,21 @@ const CUSTOMER_SUGGESTIONS = [
   'How do deposits work?',
 ];
 
+const VISITOR_SUGGESTIONS = [
+  'What is SpontiCoupon?',
+  'How does it work?',
+  'Is it free?',
+];
+
+const VENDOR_PROSPECT_SUGGESTIONS = [
+  'How much does it cost?',
+  'What features do I get?',
+  'How do deals work?',
+];
+
 const MIA_AVATAR = '/mia.png';
 
-function MiaAvatar({ size = 32 }: { size?: number }) {
+export function MiaAvatar({ size = 32 }: { size?: number }) {
   const [imgError, setImgError] = useState(false);
 
   if (imgError) {
@@ -43,22 +80,41 @@ function MiaAvatar({ size = 32 }: { size?: number }) {
   }
 
   return (
-    <Image
-      src={MIA_AVATAR}
-      alt="Mia"
-      width={size}
-      height={size}
-      className="rounded-full object-cover flex-shrink-0"
-      onError={() => setImgError(true)}
-    />
+    <div
+      className="rounded-full overflow-hidden flex-shrink-0"
+      style={{ width: size, height: size, minWidth: size, minHeight: size }}
+    >
+      <Image
+        src={MIA_AVATAR}
+        alt="Mia"
+        width={size}
+        height={size}
+        className="w-full h-full object-cover"
+        onError={() => setImgError(true)}
+      />
+    </div>
   );
 }
 
-export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotProps) {
+function getGreeting(userRole: string): string {
+  if (userRole === 'visitor') {
+    return "Hey there! I'm Mia. Whether you're looking for amazing deals or thinking about listing your business — I'm here to help! What can I tell you?";
+  }
+  return "Hi! I'm Mia, your SpontiCoupon assistant. How can I help you today?";
+}
+
+function getSuggestions(userRole: string, pageContext?: string): string[] {
+  if (pageContext === 'vendor-prospect') return VENDOR_PROSPECT_SUGGESTIONS;
+  if (userRole === 'vendor') return VENDOR_SUGGESTIONS;
+  if (userRole === 'visitor') return VISITOR_SUGGESTIONS;
+  return CUSTOMER_SUGGESTIONS;
+}
+
+export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext }: MiaChatbotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "Hi! I'm Mia, your SpontiCoupon assistant. How can I help you today?",
+      content: getGreeting(userRole),
     },
   ]);
   const [input, setInput] = useState('');
@@ -94,7 +150,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
       const res = await fetch('/api/support/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages, userRole }),
+        body: JSON.stringify({ messages: updatedMessages, userRole, origin: window.location.origin }),
       });
       const data = await res.json();
       const reply = data.reply || "I'm sorry, I couldn't process that. Please try again.";
@@ -104,12 +160,13 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
         ...prev,
         {
           role: 'assistant',
-          content: "I'm having trouble connecting right now. Please try again or open a support ticket below.",
+          content: userRole === 'visitor'
+            ? "I'm having a little trouble right now. Check out our FAQ at /faq or reach out at /contact!"
+            : "I'm having trouble connecting right now. Please try again or open a support ticket below.",
         },
       ]);
     } finally {
       setLoading(false);
-      // Re-focus the textarea so user can keep typing
       requestAnimationFrame(() => {
         textareaRef.current?.focus();
       });
@@ -131,26 +188,19 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   };
 
-  const suggestions = userRole === 'vendor' ? VENDOR_SUGGESTIONS : CUSTOMER_SUGGESTIONS;
+  const suggestions = getSuggestions(userRole, pageContext);
   const showSuggestions = messages.length === 1 && !loading;
+  const isFloating = variant === 'floating';
 
-  return (
-    <div className="card overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 sm:px-6 py-4 flex items-center gap-3">
-        <MiaAvatar size={40} />
-        <div>
-          <h3 className="text-white font-bold text-base">Mia</h3>
-          <p className="text-secondary-200 text-xs">Support Assistant</p>
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <span className="text-xs text-secondary-200">Online</span>
-        </div>
-      </div>
-
+  const messagesArea = (
+    <>
       {/* Messages */}
-      <div ref={messagesContainerRef} className="h-[400px] sm:h-[450px] overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50">
+      <div
+        ref={messagesContainerRef}
+        className={`overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50 ${
+          isFloating ? 'flex-1' : 'h-[400px] sm:h-[450px]'
+        }`}
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -164,7 +214,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
                   : 'bg-white border border-gray-100 text-gray-700 shadow-sm rounded-tl-sm'
               }`}
             >
-              {msg.content}
+              {msg.role === 'assistant' ? linkifyText(msg.content) : msg.content}
             </div>
           </div>
         ))}
@@ -188,7 +238,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
 
       {/* Suggestion chips */}
       {showSuggestions && (
-        <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-white">
+        <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-white shrink-0">
           <p className="text-xs text-gray-400 mb-2">Quick questions:</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((s) => (
@@ -205,7 +255,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
       )}
 
       {/* Input */}
-      <div className="border-t border-gray-200 p-3 sm:p-4 bg-white">
+      <div className="border-t border-gray-200 p-3 sm:p-4 bg-white shrink-0">
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -229,7 +279,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
             )}
           </button>
         </div>
-        {onOpenTicket && (
+        {onOpenTicket && userRole !== 'visitor' && (
           <button
             onClick={onOpenTicket}
             className="w-full text-center text-xs text-gray-400 hover:text-primary-500 mt-2 transition-colors"
@@ -238,6 +288,30 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotPr
           </button>
         )}
       </div>
+    </>
+  );
+
+  // Floating variant: no card wrapper or header (parent provides them)
+  if (isFloating) {
+    return <div className="flex flex-col flex-1 overflow-hidden">{messagesArea}</div>;
+  }
+
+  // Card variant (original): full card with header
+  return (
+    <div className="card overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 sm:px-6 py-4 flex items-center gap-3">
+        <MiaAvatar size={40} />
+        <div>
+          <h3 className="text-white font-bold text-base">Mia</h3>
+          <p className="text-secondary-200 text-xs">Support Assistant</p>
+        </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+          <span className="text-xs text-secondary-200">Online</span>
+        </div>
+      </div>
+      {messagesArea}
     </div>
   );
 }

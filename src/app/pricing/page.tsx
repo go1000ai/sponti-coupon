@@ -66,10 +66,12 @@ const PLANS = [
       'Everything in Pro, plus:',
       'Featured on homepage + more exposure',
       'Ava — Deal Assistant & Insights',
+      'Ava imports your website & creates deals',
       'Advanced analytics (8+ charts)',
       'Competitor benchmarking',
       'Loyalty rewards program',
-      'Multi-location & team access',
+      'Up to 5 team members',
+      'Multi-location support',
     ],
   },
 ];
@@ -126,25 +128,28 @@ const CATEGORIES = [
 
 /* ─────── Feature Comparison Matrix ─────── */
 const FEATURE_MATRIX = [
-  { feature: 'Sponti deals/month', starter: '2', pro: '6', business: '25' },
-  { feature: 'Steady deals/month', starter: '4', pro: '12', business: '50' },
-  { feature: 'QR code redemption', starter: true, pro: true, business: true },
-  { feature: '6-digit backup codes', starter: true, pro: true, business: true },
-  { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true },
-  { feature: 'Basic charts (3 charts)', starter: false, pro: true, business: true },
-  { feature: 'Advanced analytics (8+ charts + table)', starter: false, pro: false, business: true },
-  { feature: 'Ava Deal Assistant', starter: false, pro: false, business: true },
-  { feature: 'Ava Insights & scoring', starter: false, pro: false, business: true },
-  { feature: 'Ava Deal Advisor', starter: false, pro: false, business: true },
-  { feature: 'Competitor benchmarking', starter: false, pro: false, business: true },
-  { feature: 'Custom scheduling', starter: false, pro: true, business: true },
-  { feature: 'Loyalty rewards program', starter: false, pro: true, business: true },
-  { feature: 'Multi-location support', starter: false, pro: false, business: true },
-  { feature: 'Team member access', starter: false, pro: false, business: true },
-  { feature: 'Priority support', starter: false, pro: true, business: true },
-  { feature: 'Featured on homepage', starter: false, pro: false, business: true },
-  { feature: 'Dedicated support', starter: false, pro: false, business: true },
-  { feature: 'Zero transaction fees', starter: true, pro: true, business: true },
+  { feature: 'Sponti deals/month', starter: '2', pro: '6', business: '25', enterprise: 'Unlimited' },
+  { feature: 'Steady deals/month', starter: '4', pro: '12', business: '50', enterprise: 'Unlimited' },
+  { feature: 'QR code redemption', starter: true, pro: true, business: true, enterprise: true },
+  { feature: '6-digit backup codes', starter: true, pro: true, business: true, enterprise: true },
+  { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true, enterprise: true },
+  { feature: 'Basic charts (3 charts)', starter: false, pro: true, business: true, enterprise: true },
+  { feature: 'Advanced analytics (8+ charts + table)', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Ava Deal Assistant', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Ava Insights & scoring', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Ava Deal Advisor', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Ava Website Import', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Competitor benchmarking', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Custom scheduling', starter: false, pro: true, business: true, enterprise: true },
+  { feature: 'Loyalty rewards program', starter: false, pro: true, business: true, enterprise: true },
+  { feature: 'Multi-location support', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Team members', starter: '0', pro: '0', business: 'Up to 5', enterprise: 'Unlimited' },
+  { feature: 'Priority support', starter: false, pro: true, business: true, enterprise: true },
+  { feature: 'Featured on homepage', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Dedicated support', starter: false, pro: false, business: true, enterprise: true },
+  { feature: 'Custom branding', starter: false, pro: false, business: false, enterprise: true },
+  { feature: 'API access & integrations', starter: false, pro: false, business: false, enterprise: true },
+  { feature: 'Zero transaction fees', starter: true, pro: true, business: true, enterprise: true },
 ];
 
 /* ════════════════════════════════════════════════════════════════
@@ -156,6 +161,7 @@ export default function PricingPage() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [spotsTaken, setSpotsTaken] = useState(0);
 
   // Fetch real founder spots count from DB
@@ -170,6 +176,7 @@ export default function PricingPage() {
 
   const handleCheckout = async (tier: string) => {
     setLoadingPlan(tier);
+    setCheckoutError(null);
     try {
       const isPromo = FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(tier);
       const res = await fetch('/api/stripe/create-guest-checkout', {
@@ -186,9 +193,9 @@ export default function PricingPage() {
         window.location.href = data.url;
         return;
       }
-      console.error('No checkout URL returned:', data.error);
-    } catch (err) {
-      console.error('Checkout error:', err);
+      setCheckoutError(data.error || 'Unable to start checkout. Please try again or contact support.');
+    } catch {
+      setCheckoutError('Unable to connect to our payment system. Please try again in a moment.');
     }
     setLoadingPlan(null);
   };
@@ -380,6 +387,23 @@ export default function PricingPage() {
               </button>
             </div>
           </div>
+
+          {/* Checkout error banner */}
+          {checkoutError && (
+            <div className="mb-8 max-w-2xl mx-auto bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-red-500 text-xs font-bold">!</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">Unable to start checkout</p>
+                <p className="text-sm text-red-600 mt-0.5">{checkoutError}</p>
+              </div>
+              <button onClick={() => setCheckoutError(null)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                <span className="sr-only">Dismiss</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          )}
 
           {/* Founders Rate callout above cards */}
           {FOUNDERS_LAUNCH.active && (
@@ -591,7 +615,7 @@ export default function PricingPage() {
                         Loading...
                       </>
                     ) : (
-                      'Contact Sales'
+                      'Start Free Trial'
                     )}
                   </button>
                 </div>
@@ -599,7 +623,7 @@ export default function PricingPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {[
                   { label: 'Unlimited Deals', desc: 'Sponti + Steady, no limits' },
-                  { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
+                  { label: 'Unlimited Team Members', desc: 'Add your whole team with no caps' },
                   { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
                   { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
                 ].map(item => (
@@ -631,12 +655,16 @@ export default function PricingPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[40%]">Feature</th>
-                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[20%]">Starter</th>
-                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[20%]">Pro</th>
-                      <th className="text-center py-4 px-6 font-semibold text-secondary-500 bg-secondary-50/40 w-[20%]">
+                      <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[32%]">Feature</th>
+                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">Starter</th>
+                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">Pro</th>
+                      <th className="text-center py-4 px-6 font-semibold text-secondary-500 bg-secondary-50/40 w-[17%]">
                         Business
                         <span className="block text-[10px] text-secondary-400 font-normal">Best Value</span>
+                      </th>
+                      <th className="text-center py-4 px-6 font-semibold text-amber-600 bg-amber-50/40 w-[17%]">
+                        Enterprise
+                        <span className="block text-[10px] text-amber-500 font-normal">Custom</span>
                       </th>
                     </tr>
                   </thead>
@@ -644,11 +672,12 @@ export default function PricingPage() {
                     {visibleFeatures.map((row) => (
                       <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-3.5 px-6 font-medium text-secondary-500">{row.feature}</td>
-                        {(['starter', 'pro', 'business'] as const).map((plan) => {
+                        {(['starter', 'pro', 'business', 'enterprise'] as const).map((plan) => {
                           const val = row[plan];
                           const isBusiness = plan === 'business';
+                          const isEnterprise = plan === 'enterprise';
                           return (
-                            <td key={plan} className={`py-3.5 px-6 text-center ${isBusiness ? 'bg-secondary-50/20' : ''}`}>
+                            <td key={plan} className={`py-3.5 px-6 text-center ${isBusiness ? 'bg-secondary-50/20' : isEnterprise ? 'bg-amber-50/20' : ''}`}>
                               {typeof val === 'boolean' ? (
                                 val ? (
                                   <Check className="w-5 h-5 text-green-500 mx-auto" />
@@ -656,7 +685,7 @@ export default function PricingPage() {
                                   <span className="text-gray-300">&mdash;</span>
                                 )
                               ) : (
-                                <span className={`font-semibold ${isBusiness ? 'text-secondary-600' : 'text-secondary-500'}`}>{val}</span>
+                                <span className={`font-semibold ${isEnterprise ? 'text-amber-600' : isBusiness ? 'text-secondary-600' : 'text-secondary-500'}`}>{val}</span>
                               )}
                             </td>
                           );
@@ -777,6 +806,7 @@ export default function PricingPage() {
           </ScrollReveal>
         </div>
       </section>
+
     </div>
   );
 }

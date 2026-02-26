@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { ShoppingBag, MapPin, Clock } from 'lucide-react';
 
 const ACTIVITIES = [
-  { name: 'Jessica M.', action: 'claimed', deal: '50% Off Thai Massage', city: 'Miami', ago: '2 min ago' },
-  { name: 'David P.', action: 'saved', deal: 'BOGO Craft Cocktails', city: 'Fort Lauderdale', ago: '4 min ago' },
-  { name: 'Ashley R.', action: 'claimed', deal: '40% Off Yoga Classes', city: 'Coral Gables', ago: '5 min ago' },
-  { name: 'Michael K.', action: 'redeemed', deal: '30% Off Auto Detailing', city: 'Hollywood', ago: '8 min ago' },
-  { name: 'Sarah L.', action: 'claimed', deal: '60% Off Facial Treatment', city: 'Boca Raton', ago: '11 min ago' },
-  { name: 'James W.', action: 'claimed', deal: 'Kids Eat Free Weekend', city: 'Doral', ago: '13 min ago' },
-  { name: 'Lisa T.', action: 'redeemed', deal: '$20 Off Hair Styling', city: 'Aventura', ago: '15 min ago' },
-  { name: 'Chris N.', action: 'claimed', deal: '45% Off Escape Room', city: 'Pembroke Pines', ago: '18 min ago' },
+  { name: 'Jessica M.', action: 'claimed', deal: '50% Off Thai Massage', city: 'Orlando', ago: '2 min ago' },
+  { name: 'David P.', action: 'saved', deal: 'BOGO Craft Cocktails', city: 'Winter Park', ago: '4 min ago' },
+  { name: 'Ashley R.', action: 'claimed', deal: '40% Off Yoga Classes', city: 'Kissimmee', ago: '5 min ago' },
+  { name: 'Michael K.', action: 'redeemed', deal: '30% Off Auto Detailing', city: 'Lake Nona', ago: '8 min ago' },
+  { name: 'Sarah L.', action: 'claimed', deal: '60% Off Facial Treatment', city: 'Dr. Phillips', ago: '11 min ago' },
+  { name: 'James W.', action: 'claimed', deal: 'Kids Eat Free Weekend', city: 'Altamonte Springs', ago: '13 min ago' },
+  { name: 'Lisa T.', action: 'redeemed', deal: '$20 Off Hair Styling', city: 'Winter Garden', ago: '15 min ago' },
+  { name: 'Chris N.', action: 'claimed', deal: '45% Off Escape Room', city: 'Sanford', ago: '18 min ago' },
 ];
 
 export function LiveActivity() {

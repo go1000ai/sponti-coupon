@@ -184,7 +184,7 @@ function buildEmailHtml({
 
               <!-- Physical address (CAN-SPAM requirement) -->
               <p style="margin: 0 0 8px; color: #bbb; font-size: 11px; line-height: 1.4;">
-                SpontiCoupon &bull; Miami, FL 33101
+                SpontiCoupon &bull; Orlando, FL 32801
               </p>
 
               <p style="margin: 0; color: #ccc; font-size: 11px;">

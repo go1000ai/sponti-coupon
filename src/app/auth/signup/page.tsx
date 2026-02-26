@@ -448,7 +448,7 @@ function SignupForm() {
               <label className="block text-sm font-medium text-gray-700 mb-1">City {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder="Miami" required={accountType === 'vendor'} />
+                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder="Orlando" required={accountType === 'vendor'} />
               </div>
             </div>
             <div>

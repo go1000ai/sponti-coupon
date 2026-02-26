@@ -251,11 +251,11 @@ export const CUSTOMER_DASHBOARD_STEPS: Step[] = [
     disableBeacon: true,
   },
   {
-    target: '[data-tour="customer-sidebar"]',
+    target: 'body',
     title: "You're All Set!",
     content:
       "You have everything you need to start saving. Browse deals, claim coupons, and show your QR code at the business to redeem. Happy saving!",
-    placement: 'right',
+    placement: 'center',
     disableBeacon: true,
   },
 ];

@@ -5,6 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { InactivityGuard } from "@/components/auth/InactivityGuard";
+import { MiaFloatingWidget } from "@/components/support/MiaFloatingWidget";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     "coupons near me", "sponti deals", "local deals", "discount coupons",
     "restaurant deals", "spa deals", "daily deals", "sponti coupon",
     "sponticoupon", "last minute deals", "deal of the day",
-    "local business coupons", "Miami deals", "best deals near me",
+    "local business coupons", "Orlando deals", "best deals near me",
     "coupon app", "sponti sale", "limited time offers",
   ],
   authors: [{ name: "SpontiCoupon", url: BASE_URL }],
@@ -201,7 +202,7 @@ export default function RootLayout({
         name: "What cities does SpontiCoupon serve?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "SpontiCoupon is currently launching in Miami, Florida and surrounding areas including Miami Beach, Coral Gables, and Brickell. We are expanding to more cities soon. Sign up to be notified when SpontiCoupon arrives in your area.",
+          text: "SpontiCoupon is currently launching in the Orlando, Florida area and surrounding communities including Kissimmee, Winter Park, and Lake Nona. We are expanding to more cities soon. Sign up to be notified when SpontiCoupon arrives in your area.",
         },
       },
       {
@@ -285,6 +286,7 @@ export default function RootLayout({
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
+        <MiaFloatingWidget />
         <InactivityGuard />
         <ServiceWorkerRegistration />
       </body>

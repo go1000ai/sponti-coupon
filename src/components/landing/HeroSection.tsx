@@ -64,25 +64,36 @@ export function HeroSection() {
 
   return (
     <section className="relative text-white overflow-hidden h-[80vh] md:h-[90vh] flex items-center bg-secondary-700">
-      {/* Subtle parallax background — moves slightly as you scroll */}
+      {/* Business collage background — moves slightly as you scroll */}
       <div
         ref={bgRef}
         className="absolute inset-0 -top-[15%] -bottom-[15%] will-change-transform"
       >
-        <Image
-          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop"
-          alt=""
-          fill
-          priority
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAQMEAgMBAAAAAAAAAAAAAQIDBAAFESEGMRJBYXH/xAAVAQEBAAAAAAAAAAAAAAAAAAADBP/EABkRAAIDAQAAAAAAAAAAAAAAAAECAAMRIf/aAAwDAQACEQMRAD8Aw+0caudynNQ4jPm86cAaGtk9AfaqPOOIXHjsh1u5R0thyUtkNOAKAPWQKUqjG7IyENdn/9k="
-          className="object-cover object-center"
-          sizes="100vw"
-        />
+        <div className="grid grid-cols-3 grid-rows-2 w-full h-full">
+          {[
+            { src: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop', alt: 'Restaurant dining' },
+            { src: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1200&auto=format&fit=crop', alt: 'Spa and beauty' },
+            { src: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop', alt: 'Fitness gym' },
+            { src: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?q=80&w=1200&auto=format&fit=crop', alt: 'Entertainment event' },
+            { src: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200&auto=format&fit=crop', alt: 'Shopping retail' },
+            { src: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=1200&auto=format&fit=crop', alt: 'Coffee shop cafe' },
+          ].map((img, i) => (
+            <div key={i} className="relative overflow-hidden">
+              <Image
+                src={img.src}
+                alt={img.alt}
+                fill
+                priority={i < 3}
+                className="object-cover"
+                sizes="34vw"
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Dark overlay with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/90 via-secondary-600/85 to-secondary-700/90" />
+      <div className="absolute inset-0 bg-gradient-to-br from-secondary-700/80 via-secondary-800/75 to-secondary-900/80" />
 
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
+import { rateLimit } from '@/lib/rate-limit';
 
 // POST /api/vendor/generate-tags — AI-generate search tags for a deal
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 tag generations per hour
+  const limited = rateLimit(request, { maxRequests: 30, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-tags' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

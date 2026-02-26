@@ -134,62 +134,54 @@ export function WhyChooseUs() {
           </div>
         </ScrollReveal>
 
-        {/* ── 2×4 Pain Point Card Grid (flip on hover / tap) ── */}
+        {/* ── 2×4 Pain Point Card Grid (overlay on hover/tap) ── */}
         <p className="text-center text-xs text-gray-400 mb-4 sm:hidden">Tap a card to learn more</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
           {PAIN_POINTS.map((item, index) => {
-            const isFlipped = flippedCard === item.num;
+            const isActive = flippedCard === item.num;
             return (
               <ScrollReveal key={item.num} animation="fade-up" delay={index * 80}>
                 <div
-                  className="group [perspective:1000px] h-[220px] cursor-pointer"
+                  className="group relative bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden h-[220px] cursor-pointer"
                   onClick={() => toggleCard(item.num)}
                 >
-                  <div className={`relative w-full h-full transition-transform duration-500 [transform-style:preserve-3d] lg:group-hover:[transform:rotateY(180deg)] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+                  {/* Large faded number */}
+                  <span className="absolute top-4 right-5 text-5xl font-extrabold text-primary-100 select-none pointer-events-none">
+                    {item.num}
+                  </span>
 
-                    {/* ── FRONT FACE ── */}
-                    <div className="absolute inset-0 bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 [backface-visibility:hidden] overflow-hidden shadow-sm group-hover:shadow-none flex flex-col">
-                      {/* Large faded number */}
-                      <span className="absolute top-4 right-5 text-5xl font-extrabold text-primary-100 select-none pointer-events-none">
-                        {item.num}
-                      </span>
+                  {/* Front content (always visible) */}
+                  <div className="relative z-10 flex flex-col h-full">
+                    <span className="text-3xl block mb-2">{item.emoji}</span>
+                    <h3 className="text-base font-bold text-secondary-500 mb-auto">{item.title}</h3>
 
-                      <div className="relative z-10 flex flex-col flex-1">
-                        {/* Icon + Title */}
-                        <span className="text-3xl block mb-2">{item.emoji}</span>
-                        <h3 className="text-base font-bold text-secondary-500 mb-auto">{item.title}</h3>
-
-                        {/* Bad / Good rows — pushed to bottom for alignment */}
-                        <div className="mt-4 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                            <p className="text-sm text-red-500/90 leading-snug">{item.bad}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <SpontiIcon className="w-4 h-4 shrink-0" />
-                            <p className="text-sm text-green-600 font-medium leading-snug">{item.good}</p>
-                          </div>
-                        </div>
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                        <p className="text-sm text-red-500/90 leading-snug">{item.bad}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <SpontiIcon className="w-4 h-4 shrink-0" />
+                        <p className="text-sm text-green-600 font-medium leading-snug">{item.good}</p>
                       </div>
                     </div>
+                  </div>
 
-                    {/* ── BACK FACE (explanation on hover/tap) ── */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-secondary-500 to-secondary-700 rounded-2xl p-5 sm:p-6 [backface-visibility:hidden] [transform:rotateY(180deg)] overflow-hidden shadow-lg shadow-secondary-200/30">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-2xl">{item.emoji}</span>
-                          <h3 className="text-sm font-bold text-white">{item.title}</h3>
-                        </div>
-                        <p className="text-[13px] text-gray-200 leading-relaxed flex-1">
-                          {item.explain}
-                        </p>
-                        <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/10">
-                          <SpontiIcon className="w-3.5 h-3.5" />
-                          <span className="text-xs font-semibold text-primary-300">SpontiCoupon</span>
-                        </div>
-                      </div>
+                  {/* Dark overlay (desktop: hover, mobile: tap) */}
+                  <div className={`absolute inset-0 bg-gradient-to-br from-secondary-500/95 to-secondary-700/95 rounded-2xl p-5 sm:p-6 flex flex-col transition-opacity duration-300 z-20 ${
+                    isActive ? 'opacity-100' : 'opacity-0 lg:group-hover:opacity-100'
+                  }`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">{item.emoji}</span>
+                      <h3 className="text-sm font-bold text-white">{item.title}</h3>
                     </div>
-
+                    <p className="text-[13px] text-gray-200 leading-relaxed flex-1 overflow-y-auto">
+                      {item.explain}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/10">
+                      <SpontiIcon className="w-3.5 h-3.5" />
+                      <span className="text-xs font-semibold text-primary-300">SpontiCoupon</span>
+                    </div>
                   </div>
                 </div>
               </ScrollReveal>

@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Gift, Stamp, Star, Check, Lock, Loader2, Award, ChevronDown, ChevronUp,
-  TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store,
+  TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store, Coins,
 } from 'lucide-react';
+import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import type { LoyaltyProgram, LoyaltyReward } from '@/lib/types/database';
 
 /* ──────────────────────────────────────────
@@ -41,7 +42,10 @@ interface Transaction {
 /* ──────────────────────────────────────────
    Main Page
    ────────────────────────────────────────── */
+type LoyaltyTab = 'spontipoints' | 'business';
+
 export default function CustomerLoyaltyPage() {
+  const [activeTab, setActiveTab] = useState<LoyaltyTab>('spontipoints');
   const [cards, setCards] = useState<LoyaltyCardData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +153,40 @@ export default function CustomerLoyaltyPage() {
         </div>
       </div>
 
+      {/* ═══ TABS ═══ */}
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-8">
+        <button
+          onClick={() => setActiveTab('spontipoints')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'spontipoints'
+              ? 'bg-white text-orange-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Coins className="w-4 h-4" />
+          SpontiPoints
+        </button>
+        <button
+          onClick={() => setActiveTab('business')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
+            activeTab === 'business'
+              ? 'bg-white text-indigo-600 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Store className="w-4 h-4" />
+          Business Rewards
+        </button>
+      </div>
+
+      {/* ═══ SPONTIPOINTS TAB ═══ */}
+      {activeTab === 'spontipoints' && (
+        <SpontiPointsWithFallback />
+      )}
+
+      {/* ═══ BUSINESS REWARDS TAB ═══ */}
+      {activeTab === 'business' && (
+        <>
       {/* Success/Error message */}
       {message && (
         <div className={`mb-6 px-5 py-3 rounded-xl text-sm font-medium flex items-center gap-2 ${
@@ -245,6 +283,8 @@ export default function CustomerLoyaltyPage() {
           </div>
         </>
       )}
+        </>
+      )}
 
       {/* ═══ CARD DETAIL MODAL ═══ */}
       {selectedCard && (
@@ -255,6 +295,55 @@ export default function CustomerLoyaltyPage() {
           redeeming={redeeming}
         />
       )}
+    </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────
+   SpontiPoints with Empty State Fallback
+   ────────────────────────────────────────── */
+function SpontiPointsWithFallback() {
+  const [hasData, setHasData] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    fetch('/api/customer/spontipoints')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setHasData(data && (data.balance > 0 || data.transactions?.length > 0));
+      })
+      .catch(() => setHasData(false));
+  }, []);
+
+  if (hasData === null) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 text-orange-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (hasData) {
+    return <SpontiPointsWallet />;
+  }
+
+  return (
+    <div className="card p-12 text-center">
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mx-auto mb-4">
+        <Coins className="w-10 h-10 text-orange-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-700 mb-2">No SpontiPoints Yet</h2>
+      <p className="text-gray-400 max-w-md mx-auto">
+        You earn 25 SpontiPoints every time you redeem a deal at any business. Once you reach 500 points, you can convert them into credit. Start redeeming deals to earn!
+      </p>
+      <a
+        href="/deals"
+        className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-200/50 transition-all"
+      >
+        <Sparkles className="w-4 h-4" />
+        Browse Deals
+        <ArrowRight className="w-4 h-4" />
+      </a>
     </div>
   );
 }

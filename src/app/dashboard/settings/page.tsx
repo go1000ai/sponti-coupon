@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { User, MapPin, Bell, Mail, Save, Check } from 'lucide-react';
+import { User, MapPin, Bell, Mail, Save, Check, Navigation, Play, RotateCcw } from 'lucide-react';
 import type { Customer } from '@/lib/types/database';
 
 export default function DashboardSettingsPage() {
@@ -12,6 +12,8 @@ export default function DashboardSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [tourAutoStart, setTourAutoStart] = useState(true);
+  const [tourMessage, setTourMessage] = useState('');
   const [form, setForm] = useState({
     first_name: '',
     last_name: '',
@@ -21,6 +23,13 @@ export default function DashboardSettingsPage() {
     zip: '',
     email_digest_opt_in: true,
   });
+
+  useEffect(() => {
+    try {
+      const autoStart = localStorage.getItem('sponti_tour_auto_start');
+      setTourAutoStart(autoStart !== 'false');
+    } catch { /* noop */ }
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -163,6 +172,79 @@ export default function DashboardSettingsPage() {
               <p className="text-sm text-gray-500">Receive top deals in your area every morning at 8am</p>
             </div>
           </label>
+        </div>
+
+        {/* Guided Tour */}
+        <div className="border-t border-gray-100 pt-6">
+          <h3 className="font-semibold text-secondary-500 mb-4 flex items-center gap-2">
+            <Navigation className="w-5 h-5" /> Guided Tour
+          </h3>
+
+          <div className="space-y-5">
+            {/* Auto-start toggle */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tourAutoStart}
+                onChange={(e) => {
+                  setTourAutoStart(e.target.checked);
+                  localStorage.setItem('sponti_tour_auto_start', String(e.target.checked));
+                  if (!e.target.checked) {
+                    localStorage.setItem('sponti_tour_customer_dashboard_done', 'true');
+                  } else {
+                    localStorage.removeItem('sponti_tour_customer_dashboard_done');
+                  }
+                }}
+                className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-700">Show tour on login</p>
+                <p className="text-xs text-gray-400">Automatically show the guided dashboard tour when you log in</p>
+              </div>
+            </label>
+
+            {/* Restart tour */}
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Restart Tour</p>
+              <p className="text-xs text-gray-400 mb-3">Replay the dashboard walkthrough to see all features explained step by step.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('sponti_tour_customer_dashboard_done');
+                  setTourMessage('Tour will start when you visit the dashboard!');
+                  setTimeout(() => setTourMessage(''), 3000);
+                  window.location.href = '/dashboard';
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
+              >
+                <Play className="w-4 h-4" />
+                Start Tour Now
+              </button>
+            </div>
+
+            {/* Reset all tours */}
+            <div className="pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => {
+                  const keys = Object.keys(localStorage).filter(k => k.startsWith('sponti_tour_'));
+                  keys.forEach(k => localStorage.removeItem(k));
+                  localStorage.setItem('sponti_tour_auto_start', 'true');
+                  setTourAutoStart(true);
+                  setTourMessage('All tours have been reset.');
+                  setTimeout(() => setTourMessage(''), 3000);
+                }}
+                className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Reset all tours
+              </button>
+            </div>
+
+            {tourMessage && (
+              <p className="text-sm text-green-600 font-medium">{tourMessage}</p>
+            )}
+          </div>
         </div>
 
         <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">

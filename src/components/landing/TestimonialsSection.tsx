@@ -9,21 +9,21 @@ const testimonials = [
     quote:
       'I saved over $200 last month just from Sponti Coupons at restaurants near my office. The 24-hour deals create this fun urgency — I check the app every morning.',
     name: 'Jessica Taylor',
-    role: 'Miami, FL',
+    role: 'Orlando, FL',
     rating: 5,
   },
   {
     quote:
       'Found a 50% off spa day that was only available for 24 hours. The deposit was tiny and the experience was amazing. This app is my go-to for local deals.',
     name: 'David Park',
-    role: 'Fort Lauderdale, FL',
+    role: 'Winter Park, FL',
     rating: 5,
   },
   {
     quote:
       'Way better than other deal sites. The discounts are real, the QR code redemption is seamless, and I love discovering new local spots I never would have tried.',
     name: 'Ashley Martinez',
-    role: 'Coral Gables, FL',
+    role: 'Kissimmee, FL',
     rating: 5,
   },
 ];

@@ -3,9 +3,14 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
+import { rateLimit } from '@/lib/rate-limit';
 
 // POST /api/vendor/ai-deal — AI-assisted deal creation using Claude
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 AI deal requests per hour
+  const limited = rateLimit(request, { maxRequests: 30, windowMs: 60 * 60 * 1000, identifier: 'ai-deal' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
+import { rateLimit } from '@/lib/rate-limit';
 
 interface AdvisorMessage {
   role: 'user' | 'assistant';
@@ -11,6 +12,10 @@ interface AdvisorMessage {
 
 // POST /api/vendor/deal-advisor — AI deal pricing advisor (conversational)
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 advisor requests per hour
+  const limited = rateLimit(request, { maxRequests: 30, windowMs: 60 * 60 * 1000, identifier: 'ai-deal-advisor' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

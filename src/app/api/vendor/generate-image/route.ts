@@ -4,9 +4,14 @@ import { GoogleGenAI } from '@google/genai';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { brandStorageUrl } from '@/lib/utils';
+import { rateLimit } from '@/lib/rate-limit';
 
 // POST /api/vendor/generate-image — Generate a deal image using Nano Banana (Gemini)
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 image generations per hour
+  const limited = rateLimit(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-image' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

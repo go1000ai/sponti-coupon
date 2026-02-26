@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
+import { rateLimit } from '@/lib/rate-limit';
 
 type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name';
 
@@ -29,6 +30,10 @@ const TONE_PROMPTS: Record<AutoResponseTone, string> = {
 
 // POST /api/vendor/ai-assist — General AI text assist (Business+ tier only)
 export async function POST(request: NextRequest) {
+  // Rate limit: 30 AI assist requests per hour
+  const limited = rateLimit(request, { maxRequests: 30, windowMs: 60 * 60 * 1000, identifier: 'ai-assist' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

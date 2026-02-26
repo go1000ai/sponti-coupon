@@ -85,11 +85,9 @@ export function GuidedTour({ tourKey, steps }: GuidedTourProps) {
 
   useEffect(() => {
     try {
-      // Check if auto-start is disabled in settings
       const autoStart = localStorage.getItem('sponti_tour_auto_start');
       if (autoStart === 'false') return;
 
-      // Check if this specific tour was already completed/dismissed
       const done = localStorage.getItem(storageKey);
       if (done) return;
     } catch {
@@ -116,6 +114,12 @@ export function GuidedTour({ tourKey, steps }: GuidedTourProps) {
     if (action === ACTIONS.CLOSE) {
       setRun(false);
       try { localStorage.setItem(storageKey, 'true'); } catch { /* noop */ }
+      return;
+    }
+
+    // If target not found at runtime, auto-advance to next step
+    if (type === EVENTS.TARGET_NOT_FOUND) {
+      setStepIndex(index + 1);
       return;
     }
 

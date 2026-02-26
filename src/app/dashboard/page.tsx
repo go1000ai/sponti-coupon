@@ -228,9 +228,10 @@ export default function ConsumerDashboardPage() {
         </Link>
       </div>
 
-      {/* Loyalty Rewards Progress */}
-      {loyaltyCards.length > 0 && (
-        <div data-tour="customer-loyalty" className="animate-fade-up" style={{ animationDelay: '600ms' }}>
+      {/* Loyalty Rewards Progress — wrapper always rendered for Joyride tour target */}
+      <div data-tour="customer-loyalty" className="animate-fade-up" style={{ animationDelay: '600ms' }}>
+        {loyaltyCards.length > 0 && (
+          <>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="bg-gradient-to-br from-primary-500 to-amber-400 rounded-lg p-1.5">
@@ -327,8 +328,9 @@ export default function ConsumerDashboardPage() {
               );
             })}
           </div>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Analytics Charts */}
       {analytics && claims.length > 0 && (

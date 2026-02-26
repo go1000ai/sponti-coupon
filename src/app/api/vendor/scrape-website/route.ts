@@ -5,6 +5,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Fetch a URL with SSL tolerance and redirect following (many small biz sites have cert issues)
 async function fetchWebsite(targetUrl: string): Promise<{ html: string; finalUrl: string }> {
@@ -72,6 +73,10 @@ async function fetchWebsite(targetUrl: string): Promise<{ html: string; finalUrl
 
 // POST /api/vendor/scrape-website — Scrape vendor website and generate deal suggestions
 export async function POST(request: NextRequest) {
+  // Rate limit: 10 website scrapes per hour
+  const limited = rateLimit(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'ai-scrape-website' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

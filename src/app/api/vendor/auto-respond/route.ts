@@ -3,6 +3,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone, AutoResponseSettings } from '@/lib/types/database';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Tone-specific system prompts (same as in ai-assist)
 // Each tone MUST produce noticeably different wording, sentence structure, and vocabulary
@@ -17,7 +18,11 @@ const TONE_PROMPTS: Record<AutoResponseTone, string> = {
 const DEFAULT_PROMPT = `You are a customer service expert helping a local business owner reply to a customer review. Write a professional, warm, and appreciative response. If the review is negative, be empathetic and constructive. Keep it concise (2-3 sentences). Return ONLY the reply text, no quotes, no labels.`;
 
 // POST /api/vendor/auto-respond — Process pending auto-responses for a specific vendor
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Rate limit: 20 auto-respond requests per hour
+  const limited = rateLimit(request, { maxRequests: 20, windowMs: 60 * 60 * 1000, identifier: 'ai-auto-respond' });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

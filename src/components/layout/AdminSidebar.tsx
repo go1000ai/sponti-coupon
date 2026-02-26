@@ -25,6 +25,15 @@ import {
   UserCog,
   Settings,
   Brain,
+  MapPin,
+  ImageIcon,
+  Wallet,
+  Globe,
+  Wand2,
+  UsersRound,
+  Heart,
+  Key,
+  Calendar,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -52,8 +61,10 @@ const navGroups: NavGroup[] = [
       { label: 'Vendors', href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
       { label: 'Customers', href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
       { label: 'Deals', href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
+      { label: 'Deal Calendar', href: '/admin/deals/calendar', icon: <Calendar className="w-5 h-5" /> },
       { label: 'Claims', href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
       { label: 'Reviews', href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
+      { label: 'Locations', href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
     ],
   },
   {
@@ -70,6 +81,11 @@ const navGroups: NavGroup[] = [
       { label: 'Featured Deals', href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
       { label: 'Notifications', href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
+      { label: 'Media Library', href: '/admin/media', icon: <ImageIcon className="w-5 h-5" /> },
+      { label: 'Payment Methods', href: '/admin/payment-methods', icon: <Wallet className="w-5 h-5" /> },
+      { label: 'Teams', href: '/admin/teams', icon: <UsersRound className="w-5 h-5" /> },
+      { label: 'Website Import', href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
+      { label: 'AI Tools', href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
       { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
       { label: 'Support', href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
     ],
@@ -79,12 +95,14 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Revenue', href: '/admin/revenue', icon: <DollarSign className="w-5 h-5" /> },
       { label: 'Analytics', href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+      { label: 'Recommendations', href: '/admin/recommendations', icon: <Heart className="w-5 h-5" /> },
     ],
   },
   {
     label: 'System',
     items: [
       { label: 'Users & Roles', href: '/admin/users', icon: <UserCog className="w-5 h-5" /> },
+      { label: 'API Keys', href: '/admin/api-keys', icon: <Key className="w-5 h-5" /> },
       { label: 'Settings', href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
     ],
   },
