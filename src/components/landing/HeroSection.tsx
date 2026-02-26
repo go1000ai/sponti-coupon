@@ -63,7 +63,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative text-white overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center">
+    <section className="relative text-white overflow-hidden h-[80vh] md:h-[90vh] flex items-center bg-secondary-700">
       {/* Subtle parallax background — moves slightly as you scroll */}
       <div
         ref={bgRef}
@@ -74,6 +74,8 @@ export function HeroSection() {
           alt=""
           fill
           priority
+          placeholder="blur"
+          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIRAAAQMEAgMBAAAAAAAAAAAAAQIDBAAFESEGMRJBYXH/xAAVAQEBAAAAAAAAAAAAAAAAAAADBP/EABkRAAIDAQAAAAAAAAAAAAAAAAECAAMRIf/aAAwDAQACEQMRAD8Aw+0caudynNQ4jPm86cAaGtk9AfaqPOOIXHjsh1u5R0thyUtkNOAKAPWQKUqjG7IyENdn/9k="
           className="object-cover object-center"
           sizes="100vw"
         />
@@ -94,8 +96,8 @@ export function HeroSection() {
           {/* Left Side: Text Content + Search */}
           <div className="w-full md:w-1/2 text-center md:text-left">
             <div
-              className={`inline-flex items-center gap-2 bg-primary-500/20 border border-primary-500/40 rounded-full px-4 py-1.5 mb-6 transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`inline-flex items-center gap-2 bg-primary-500/20 border border-primary-500/40 rounded-full px-4 py-1.5 mb-6 transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
             >
               <SpontiIcon className="w-4 h-4 text-primary-400" />
@@ -103,8 +105,8 @@ export function HeroSection() {
             </div>
 
             <h1
-              className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '150ms' }}
             >
@@ -115,8 +117,8 @@ export function HeroSection() {
             {/* Urgency badge — live deal count */}
             {stats && stats.totalActive > 0 && (
               <div
-                className={`mt-4 inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 transition-all duration-700 ease-out ${
-                  mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+                className={`mt-4 inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2 transition-opacity duration-700 ease-out ${
+                  mounted ? 'opacity-100' : 'opacity-0'
                 }`}
                 style={{ transitionDelay: '225ms' }}
               >
@@ -137,8 +139,8 @@ export function HeroSection() {
             )}
 
             <p
-              className={`mt-4 sm:mt-6 text-base sm:text-lg text-gray-300 max-w-xl mx-auto md:mx-0 leading-relaxed transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`mt-4 sm:mt-6 text-base sm:text-lg text-gray-300 max-w-xl mx-auto md:mx-0 leading-relaxed transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '300ms' }}
             >
@@ -147,8 +149,8 @@ export function HeroSection() {
 
             {/* Search Autocomplete */}
             <div
-              className={`mt-8 transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`mt-8 transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '450ms' }}
             >
@@ -157,8 +159,8 @@ export function HeroSection() {
 
             {/* Quick category links */}
             <div
-              className={`mt-6 flex flex-wrap gap-2 justify-center md:justify-start transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`mt-6 flex flex-wrap gap-2 justify-center md:justify-start transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '600ms' }}
             >
@@ -181,8 +183,8 @@ export function HeroSection() {
 
             {/* Trust indicators */}
             <div
-              className={`mt-8 flex flex-wrap items-center gap-4 sm:gap-6 justify-center md:justify-start transition-all duration-700 ease-out ${
-                mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+              className={`mt-8 flex flex-wrap items-center gap-4 sm:gap-6 justify-center md:justify-start transition-opacity duration-700 ease-out ${
+                mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '750ms' }}
             >
@@ -207,8 +209,8 @@ export function HeroSection() {
 
           {/* Right Side: Image Accordion */}
           <div
-            className={`w-full md:w-1/2 hidden md:block transition-all duration-1000 ease-out ${
-              mounted ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-12'
+            className={`w-full md:w-1/2 hidden md:block transition-opacity duration-1000 ease-out ${
+              mounted ? 'opacity-100' : 'opacity-0'
             }`}
             style={{ transitionDelay: '300ms' }}
           >
