@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
@@ -49,14 +49,24 @@ export default function ImportFromWebsitePage() {
   const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
 
-  const [url, setUrl] = useState('');
+  const STORAGE_KEY = 'website-import-cache';
+
+  // Restore cached import results from sessionStorage
+  const cached = typeof window !== 'undefined' ? (() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })() : null;
+
+  const [url, setUrl] = useState(cached?.url || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [websiteImages, setWebsiteImages] = useState<string[]>([]);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(cached?.analysis || null);
+  const [websiteImages, setWebsiteImages] = useState<string[]>(cached?.websiteImages || []);
   const [expandedDeal, setExpandedDeal] = useState<number | null>(0);
   const [generatingImage, setGeneratingImage] = useState<number | null>(null);
-  const [dealImages, setDealImages] = useState<Record<number, string>>({});
+  const [dealImages, setDealImages] = useState<Record<number, string>>(cached?.dealImages || {});
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [savedImages, setSavedImages] = useState<Record<number, boolean>>({});
   const [savingImage, setSavingImage] = useState<number | null>(null);
@@ -67,6 +77,16 @@ export default function ImportFromWebsitePage() {
   const [uploadingForDeal, setUploadingForDeal] = useState<number | null>(null);
   const [mediaPickerDeal, setMediaPickerDeal] = useState<number | null>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  // Persist import results to sessionStorage so user can navigate away and come back
+  useEffect(() => {
+    if (!analysis) return;
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        url, analysis, websiteImages, dealImages,
+      }));
+    } catch { /* ignore */ }
+  }, [url, analysis, websiteImages, dealImages]);
 
   const handleScrape = async () => {
     if (!url.trim()) {
@@ -316,10 +336,31 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
               </>
             )}
           </button>
+          {analysis && (
+            <button
+              onClick={() => {
+                setAnalysis(null);
+                setWebsiteImages([]);
+                setDealImages({});
+                setUrl('');
+                try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+              }}
+              className="flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-all"
+            >
+              Clear
+            </button>
+          )}
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          We&apos;ll scan your website to learn about your products, services, and pricing. Then generate personalized deal suggestions.
-        </p>
+        {analysis && (
+          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Your import is saved. You can leave and come back without losing your results.
+          </p>
+        )}
+        {!analysis && (
+          <p className="text-xs text-gray-400 mt-2">
+            We&apos;ll scan your website to learn about your products, services, and pricing. Then generate personalized deal suggestions.
+          </p>
+        )}
       </div>
 
       {/* Go1000.ai CTA — shown when no URL entered and no analysis yet */}
