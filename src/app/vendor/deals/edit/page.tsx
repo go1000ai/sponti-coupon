@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback, ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
-import { formatPercentage, calculateDiscount } from '@/lib/utils';
+import { formatPercentage, formatCurrency, calculateDiscount } from '@/lib/utils';
 import {
-  ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X,
-  Image as ImageIcon, Upload, CheckCircle2,
-  Link as LinkIcon, Wand2, Video, MapPin, Globe, ChevronDown,
+  ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown,
+  Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
+  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -22,6 +22,59 @@ export default function EditDealPage() {
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" /></div>}>
       <EditDealPageInner />
     </Suspense>
+  );
+}
+
+// Collapsible bento section card
+function BentoCard({
+  icon,
+  title,
+  summary,
+  open,
+  onToggle,
+  color = 'gray',
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  color?: string;
+  children: ReactNode;
+}) {
+  const colorMap: Record<string, { bg: string; iconBg: string; border: string; ring: string }> = {
+    gray: { bg: 'bg-white', iconBg: 'bg-gray-100 text-gray-600', border: 'border-gray-200', ring: 'ring-gray-300' },
+    orange: { bg: 'bg-white', iconBg: 'bg-primary-50 text-primary-600', border: 'border-primary-200', ring: 'ring-primary-300' },
+    blue: { bg: 'bg-white', iconBg: 'bg-blue-50 text-blue-600', border: 'border-blue-200', ring: 'ring-blue-300' },
+    green: { bg: 'bg-white', iconBg: 'bg-green-50 text-green-600', border: 'border-green-200', ring: 'ring-green-300' },
+    purple: { bg: 'bg-white', iconBg: 'bg-purple-50 text-purple-600', border: 'border-purple-200', ring: 'ring-purple-300' },
+    amber: { bg: 'bg-white', iconBg: 'bg-amber-50 text-amber-600', border: 'border-amber-200', ring: 'ring-amber-300' },
+  };
+  const c = colorMap[color] || colorMap.gray;
+
+  return (
+    <div className={`${c.bg} rounded-2xl border ${open ? c.border + ' ring-2 ' + c.ring : 'border-gray-200'} shadow-sm hover:shadow-md transition-all overflow-hidden`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 p-4 text-left"
+      >
+        <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center flex-shrink-0`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-secondary-500 text-sm">{title}</h3>
+          <p className="text-xs text-gray-400 truncate">{summary}</p>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -48,6 +101,10 @@ function EditDealPageInner() {
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [dragActive, setDragActive] = useState(false);
+
+  // Bento sections open state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ content: true });
+  const toggleSection = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   // Array state for list fields
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
@@ -112,7 +169,6 @@ function EditDealPageInner() {
         fine_print: data.fine_print || '',
       });
 
-      // Populate array fields
       setAdditionalImages(data.image_urls || []);
       setVideoUrls(data.video_urls || []);
       setHighlights(data.highlights || []);
@@ -120,7 +176,6 @@ function EditDealPageInner() {
       setSearchTags(data.search_tags || []);
       setWebsiteUrl(data.website_url || '');
 
-      // Determine location mode from data
       if (data.website_url) {
         setLocationMode('website');
       } else if (data.location_ids === null) {
@@ -132,13 +187,10 @@ function EditDealPageInner() {
         setLocationMode('none');
       }
 
-      // Set image mode based on whether there's an image
       if (data.image_url) setImageMode('url');
-
       setLoading(false);
     }
 
-    // Fetch vendor locations
     const supabase = createClient();
     supabase
       .from('vendor_locations')
@@ -160,18 +212,11 @@ function EditDealPageInner() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // Image upload
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File too large. Maximum size is 5MB.');
-      return;
-    }
+    if (!allowedTypes.includes(file.type)) { setError('Invalid file type.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setError('File too large. Max 5MB.'); return; }
     const previewUrl = URL.createObjectURL(file);
     setUploadPreview(previewUrl);
     setUploading(true);
@@ -181,54 +226,22 @@ function EditDealPageInner() {
       formData.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Upload failed');
-        setUploadPreview(null);
-        setUploading(false);
-        return;
-      }
+      if (!res.ok) { setError(data.error || 'Upload failed'); setUploadPreview(null); setUploading(false); return; }
       setForm(prev => ({ ...prev, image_url: data.url }));
-    } catch {
-      setError('Failed to upload image. Please try again.');
-      setUploadPreview(null);
-    }
+    } catch { setError('Upload failed.'); setUploadPreview(null); }
     setUploading(false);
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFileUpload(file);
-  }, []);
+  const handleDrop = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragActive(false); const file = e.dataTransfer.files?.[0]; if (file) handleFileUpload(file); }, []);
+  const handleDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setDragActive(true); }, []);
+  const handleDragLeave = useCallback(() => { setDragActive(false); }, []);
+  const removeImage = () => { setForm(prev => ({ ...prev, image_url: '' })); setUploadPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragActive(false);
-  }, []);
-
-  const removeImage = () => {
-    setForm(prev => ({ ...prev, image_url: '' }));
-    setUploadPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  // Additional image upload
   const handleAdditionalFileUpload = async (file: File) => {
     if (!file) return;
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File too large. Maximum size is 5MB.');
-      return;
-    }
+    if (!allowedTypes.includes(file.type)) { setError('Invalid file type.'); return; }
+    if (file.size > 5 * 1024 * 1024) { setError('File too large. Max 5MB.'); return; }
     setUploadingAdditional(true);
     setError('');
     try {
@@ -236,110 +249,57 @@ function EditDealPageInner() {
       formData.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Upload failed');
-        setUploadingAdditional(false);
-        return;
-      }
+      if (!res.ok) { setError(data.error || 'Upload failed'); setUploadingAdditional(false); return; }
       setAdditionalImages(prev => [...prev, data.url]);
-    } catch {
-      setError('Failed to upload image. Please try again.');
-    }
+    } catch { setError('Upload failed.'); }
     setUploadingAdditional(false);
   };
 
-  // AI Image Generation
   const handleAiImageGenerate = async () => {
-    if (!form.title) {
-      setError('Please enter a deal title first so Ava can generate a relevant image.');
-      return;
-    }
+    if (!form.title) { setError('Enter a deal title first.'); return; }
     setAiImageLoading(true);
     setError('');
     try {
       const res = await fetch('/api/vendor/generate-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title,
-          description: form.description,
-          custom_prompt: customImagePrompt || undefined,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, description: form.description, custom_prompt: customImagePrompt || undefined }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to generate image');
-        setAiImageLoading(false);
-        return;
-      }
+      if (!res.ok) { setError(data.error || 'Failed to generate image'); setAiImageLoading(false); return; }
       setForm(prev => ({ ...prev, image_url: data.url }));
       setUploadPreview(null);
-    } catch {
-      setError('Failed to generate image. Please try again.');
-    }
+    } catch { setError('Failed to generate image.'); }
     setAiImageLoading(false);
   };
 
-  // AI Video Generation
   const handleAiVideoGenerate = async () => {
-    const imageUrl = form.image_url;
-    if (!imageUrl) {
-      setError('Please add a deal image first so Ava can generate a video from it.');
-      return;
-    }
+    if (!form.image_url) { setError('Add a deal image first.'); return; }
     setAiVideoLoading(true);
     setError('');
     try {
       const res = await fetch('/api/vendor/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          title: form.title,
-          description: form.description,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: form.image_url, title: form.title, description: form.description }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to generate video');
-        setAiVideoLoading(false);
-        return;
-      }
+      if (!res.ok) { setError(data.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
       setVideoUrls(prev => [...prev, data.url]);
-    } catch {
-      setError('Failed to generate video. Please try again.');
-    }
+    } catch { setError('Failed to generate video.'); }
     setAiVideoLoading(false);
   };
 
-  // AI Search Tags
   const generateSearchTags = async () => {
-    if (!form.title.trim()) {
-      setError('Enter a deal title first so Ava can generate search tags.');
-      return;
-    }
+    if (!form.title.trim()) { setError('Enter a deal title first.'); return; }
     setGeneratingTags(true);
     try {
       const res = await fetch('/api/vendor/generate-tags', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: form.title,
-          description: form.description,
-          deal_type: deal?.deal_type || 'regular',
-          original_price: form.original_price ? parseFloat(form.original_price) : null,
-          deal_price: form.deal_price ? parseFloat(form.deal_price) : null,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: form.title, description: form.description, deal_type: deal?.deal_type || 'regular', original_price: form.original_price ? parseFloat(form.original_price) : null, deal_price: form.deal_price ? parseFloat(form.deal_price) : null }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Failed to generate tags');
-      } else {
-        setSearchTags(data.tags || []);
-      }
-    } catch {
-      setError('Failed to generate search tags. Please try again.');
-    }
+      if (!res.ok) setError(data.error || 'Failed to generate tags');
+      else setSearchTags(data.tags || []);
+    } catch { setError('Failed to generate tags.'); }
     setGeneratingTags(false);
   };
 
@@ -348,24 +308,15 @@ function EditDealPageInner() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deal || !user) return;
-
-    setError('');
-    setSuccess('');
-    setSaving(true);
-
+    setError(''); setSuccess(''); setSaving(true);
     const supabase = createClient();
-
     const originalPrice = parseFloat(form.original_price);
     const dealPrice = parseFloat(form.deal_price);
     const discountPercentage = calculateDiscount(originalPrice, dealPrice);
 
-    // Determine location_ids based on mode
     let locationIds: string[] | null = null;
-    if (locationMode === 'specific' && selectedLocationIds.length > 0) {
-      locationIds = selectedLocationIds;
-    } else if (locationMode === 'none' || locationMode === 'website') {
-      locationIds = [];
-    }
+    if (locationMode === 'specific' && selectedLocationIds.length > 0) locationIds = selectedLocationIds;
+    else if (locationMode === 'none' || locationMode === 'website') locationIds = [];
 
     const updates: Record<string, unknown> = {
       title: form.title,
@@ -388,36 +339,20 @@ function EditDealPageInner() {
       website_url: locationMode === 'website' && websiteUrl ? websiteUrl : null,
     };
 
-    const { error: updateError } = await supabase
-      .from('deals')
-      .update(updates)
-      .eq('id', deal.id)
-      .eq('vendor_id', user.id);
-
-    if (updateError) {
-      setError('Failed to save changes: ' + updateError.message);
-    } else {
-      setSuccess('Deal updated successfully!');
-      setTimeout(() => router.push('/vendor/deals/calendar'), 1500);
-    }
-
+    const { error: updateError } = await supabase.from('deals').update(updates).eq('id', deal.id).eq('vendor_id', user.id);
+    if (updateError) setError('Failed to save: ' + updateError.message);
+    else { setSuccess('Deal updated successfully!'); setTimeout(() => router.push('/vendor/deals/calendar'), 1500); }
     setSaving(false);
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" /></div>;
   }
 
   if (!deal) {
     return (
       <div className="max-w-3xl mx-auto">
-        <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Deals
-        </Link>
+        <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6"><ArrowLeft className="w-4 h-4" /> Back to Deals</Link>
         <div className="card p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
           <h2 className="text-xl font-bold text-secondary-500">Deal Not Found</h2>
@@ -428,542 +363,405 @@ function EditDealPageInner() {
   }
 
   const isLocked = deal.claims_count > 0;
-
   if (isLocked) {
     return (
       <div className="max-w-3xl mx-auto">
-        <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Deals
-        </Link>
+        <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6"><ArrowLeft className="w-4 h-4" /> Back to Deals</Link>
         <div className="card p-8 text-center">
           <Lock className="w-12 h-12 text-amber-400 mx-auto mb-3" />
           <h2 className="text-xl font-bold text-secondary-500">Deal Locked</h2>
-          <p className="text-gray-500 mt-2 max-w-md mx-auto">
-            This deal has <strong>{deal.claims_count} claim{deal.claims_count > 1 ? 's' : ''}</strong> and can no longer be edited to ensure fairness to customers who already claimed it.
-          </p>
-          <p className="text-gray-400 text-sm mt-3">
-            You can pause or expire this deal from the deals list, then create a new one with updated details.
-          </p>
+          <p className="text-gray-500 mt-2 max-w-md mx-auto">This deal has <strong>{deal.claims_count} claim{deal.claims_count > 1 ? 's' : ''}</strong> and can no longer be edited.</p>
           <div className="flex gap-3 justify-center mt-6">
-            <Link href="/vendor/deals/calendar" className="btn-outline">
-              Back to Deals
-            </Link>
-            <Link href="/vendor/deals/new" className="btn-primary">
-              Create New Deal
-            </Link>
+            <Link href="/vendor/deals/calendar" className="btn-outline">Back to Deals</Link>
+            <Link href="/vendor/deals/new" className="btn-primary">Create New Deal</Link>
           </div>
         </div>
       </div>
     );
   }
 
+  // Summaries for bento cards
+  const contentSummary = form.title || 'Add title and description';
+  const pricingSummary = form.original_price && form.deal_price
+    ? `${formatCurrency(parseFloat(form.deal_price))} (${formatPercentage(discount)} off)`
+    : 'Set your prices';
+  const mediaCount = (form.image_url ? 1 : 0) + additionalImages.length;
+  const mediaSummary = `${mediaCount} image${mediaCount !== 1 ? 's' : ''}${videoUrls.length > 0 ? `, ${videoUrls.length} video${videoUrls.length > 1 ? 's' : ''}` : ''}`;
+  const detailsSummary = `${highlights.length} highlights, ${amenities.length} amenities, ${searchTags.length} tags`;
+  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online' : 'No location';
+  const termsSummary = [form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 0
+    ? `${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length} section${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 1 ? 's' : ''} filled`
+    : 'Add terms, how it works, fine print';
+
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
         <ArrowLeft className="w-4 h-4" /> Back to Deals
       </Link>
 
-      <div className="flex items-center gap-3 mb-8">
-        <div className={`rounded-lg p-2 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-100'}`}>
-          {deal.deal_type === 'sponti_coupon' ? (
-            <SpontiIcon className="w-6 h-6 text-primary-500" />
-          ) : (
-            <Tag className="w-6 h-6 text-secondary-500" />
-          )}
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-secondary-500">Edit Deal</h1>
-          <p className="text-sm text-gray-500">
-            {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'} &middot;
-            Status: <span className={`font-medium ${deal.status === 'active' ? 'text-green-600' : deal.status === 'draft' ? 'text-amber-600' : 'text-gray-500'}`}>{deal.status}</span>
-          </p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-lg p-2 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-100'}`}>
+            {deal.deal_type === 'sponti_coupon' ? <SpontiIcon className="w-6 h-6 text-primary-500" /> : <Tag className="w-6 h-6 text-secondary-500" />}
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-secondary-500">Edit Deal</h1>
+            <p className="text-xs text-gray-500">
+              {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'} &middot;
+              <span className={`font-medium ml-1 ${deal.status === 'active' ? 'text-green-600' : deal.status === 'draft' ? 'text-amber-600' : 'text-gray-500'}`}>{deal.status}</span>
+            </p>
+          </div>
         </div>
       </div>
 
       {success && (
-        <div className="bg-green-50 text-green-700 text-sm p-4 rounded-lg border border-green-200 mb-6 flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5" />
-          {success}
+        <div className="bg-green-50 text-green-700 text-sm p-4 rounded-xl border border-green-200 mb-6 flex items-center gap-2">
+          <CheckCircle2 className="w-5 h-5" /> {success}
         </div>
       )}
-
       {error && (
-        <div className="bg-red-50 text-red-600 text-sm p-4 rounded-lg border border-red-200 mb-6 flex items-start gap-2">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
+        <div className="bg-red-50 text-red-600 text-sm p-4 rounded-xl border border-red-200 mb-6 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" /> <p>{error}</p>
         </div>
       )}
 
-      <form onSubmit={handleSave} className="card p-8 space-y-6">
-        {/* Title */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">Deal Title *</label>
-            <AIAssistButton
-              type="deal_title"
-              context={{
-                current_text: form.title,
-                deal_type: deal?.deal_type || 'regular',
-                description: form.description,
-              }}
-              onResult={(text) => setForm(prev => ({ ...prev, title: text }))}
-              label="Ava Rewrite"
-            />
-          </div>
-          <input
-            name="title"
-            value={form.title}
-            onChange={handleChange}
-            className="input-field"
-            placeholder="e.g., 50% Off All Entrees Tonight Only!"
-            required
-          />
-        </div>
+      <form onSubmit={handleSave}>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
 
-        {/* Description */}
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">Description</label>
-            <AIAssistButton
-              type="deal_description"
-              context={{
-                current_text: form.description,
-                deal_type: deal?.deal_type || 'regular',
-                title: form.title,
-                original_price: form.original_price,
-                deal_price: form.deal_price,
-              }}
-              onResult={(text) => setForm(prev => ({ ...prev, description: text }))}
-              label="Ava Rewrite"
-            />
-          </div>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            className="input-field min-h-[100px]"
-            placeholder="Describe your deal..."
-          />
-        </div>
-
-        {/* Main Deal Image */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4" /> Deal Image</span>
-          </label>
-
-          <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1 w-fit">
-            <button type="button" onClick={() => setImageMode('upload')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${imageMode === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <Upload className="w-3.5 h-3.5" /> Upload
-            </button>
-            <button type="button" onClick={() => setImageMode('url')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${imageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <LinkIcon className="w-3.5 h-3.5" /> URL
-            </button>
-            {canAccess('ai_deal_assistant') && (
-              <button type="button" onClick={() => setImageMode('ai')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${imageMode === 'ai' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full" /> Ava Generate
-              </button>
-            )}
-            <button type="button" onClick={() => setImageMode('library')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${imageMode === 'library' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <ImageIcon className="w-3.5 h-3.5" /> Library
-            </button>
-          </div>
-
-          {imageMode === 'upload' ? (
+          {/* Content */}
+          <BentoCard icon={<FileText className="w-5 h-5" />} title="Content" summary={contentSummary} color="orange"
+            open={!!openSections.content} onToggle={() => toggleSection('content')}>
             <div>
-              {!displayImage && (
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                    dragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <Upload className={`w-8 h-8 mx-auto mb-2 ${dragActive ? 'text-primary-500' : 'text-gray-400'}`} />
-                  <p className="text-sm font-medium text-gray-600">{dragActive ? 'Drop image here' : 'Click to upload or drag & drop'}</p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP, GIF - Max 5MB</p>
-                </div>
-              )}
-              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
-                onChange={e => { const file = e.target.files?.[0]; if (file) handleFileUpload(file); }} />
-            </div>
-          ) : imageMode === 'url' ? (
-            <div className="flex gap-2">
-              <input name="image_url" value={form.image_url} onChange={handleChange} className="input-field flex-1" placeholder="https://images.unsplash.com/..." />
-            </div>
-          ) : imageMode === 'library' ? (
-            <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center bg-blue-50/30">
-              <ImageIcon className="w-10 h-10 text-blue-400 mx-auto mb-2" />
-              <h4 className="font-semibold text-blue-800 mb-1">Pick from Library</h4>
-              <p className="text-sm text-blue-600 mb-4">Select from your previously uploaded or Ava-generated images</p>
-              <button type="button" onClick={() => setShowMediaPicker(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-all">
-                Browse Library
-              </button>
-            </div>
-          ) : (
-            <div className="border-2 border-dashed border-emerald-200 rounded-xl p-6 text-center bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
-              {!displayImage ? (
-                <>
-                  <div className="w-14 h-14 rounded-full overflow-hidden mx-auto mb-3 shadow-lg shadow-emerald-500/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
-                  </div>
-                  <h4 className="font-semibold text-emerald-800 mb-1">Ava&apos;s Image Studio</h4>
-                  <p className="text-sm text-emerald-600 mb-3">Tell me what you want and I&apos;ll generate a professional image.</p>
-                  <input value={customImagePrompt} onChange={e => setCustomImagePrompt(e.target.value)}
-                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-4"
-                    placeholder="Describe the image you want..." />
-                  <button type="button" onClick={handleAiImageGenerate}
-                    disabled={aiImageLoading || (!form.title && !customImagePrompt)}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-emerald-500/25">
-                    {aiImageLoading ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating...</> : <><Wand2 className="w-5 h-5" /> Generate Image</>}
-                  </button>
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-sm text-emerald-700">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Ava created your image! You can see the preview below.</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Image preview */}
-          {displayImage && (
-            <div className="relative mt-3 inline-block">
-              <div className="w-full max-w-xs h-40 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={displayImage} alt="Deal preview" className="w-full h-full object-cover" />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Title *</label>
+                <AIAssistButton type="deal_title" context={{ current_text: form.title, deal_type: deal.deal_type, description: form.description }} onResult={(text) => setForm(prev => ({ ...prev, title: text }))} label="Ava Rewrite" />
               </div>
-              {uploading && (
-                <div className="absolute inset-0 max-w-xs bg-black/50 rounded-xl flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-white animate-spin" />
-                </div>
-              )}
-              <button type="button" onClick={removeImage}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+              <input name="title" value={form.title} onChange={handleChange} className="input-field" placeholder="Deal title" required />
             </div>
-          )}
-        </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <AIAssistButton type="deal_description" context={{ current_text: form.description, deal_type: deal.deal_type, title: form.title }} onResult={(text) => setForm(prev => ({ ...prev, description: text }))} label="Ava Rewrite" />
+              </div>
+              <textarea name="description" value={form.description} onChange={handleChange} className="input-field min-h-[80px]" placeholder="Describe your deal..." />
+            </div>
+          </BentoCard>
 
-        {/* Additional Images */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Additional Images ({additionalImages.length}/10)</label>
-          <div className="flex flex-wrap gap-3">
-            {additionalImages.map((img, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={img} alt={`Additional ${i + 1}`} className="w-full h-full object-cover" />
-                <button type="button" onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
-                  className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X className="w-3 h-3" />
+          {/* Pricing */}
+          <BentoCard icon={<DollarSign className="w-5 h-5" />} title="Pricing" summary={pricingSummary} color="green"
+            open={!!openSections.pricing} onToggle={() => toggleSection('pricing')}>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Original Price *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
+                  <input name="original_price" type="number" step="0.01" min="0" value={form.original_price} onChange={handleChange} className="input-field pl-7 text-sm" required />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Deal Price *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
+                  <input name="deal_price" type="number" step="0.01" min="0" value={form.deal_price} onChange={handleChange} className="input-field pl-7 text-sm" required />
+                </div>
+              </div>
+            </div>
+            {discount > 0 && (
+              <div className="bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-600">Discount:</span>
+                <span className="text-lg font-bold text-green-600">{formatPercentage(discount)} OFF</span>
+              </div>
+            )}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Deposit {deal.deal_type === 'sponti_coupon' ? '*' : '(optional)'}
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
+                <input name="deposit_amount" type="number" step="0.01" min={deal.deal_type === 'sponti_coupon' ? '1' : '0'}
+                  value={form.deposit_amount} onChange={handleChange} className="input-field pl-7 text-sm"
+                  placeholder={deal.deal_type === 'sponti_coupon' ? '10.00' : '0.00'}
+                  required={deal.deal_type === 'sponti_coupon'} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Max Claims</label>
+              <input name="max_claims" type="number" min="1" value={form.max_claims} onChange={handleChange} className="input-field text-sm" placeholder="Unlimited" />
+            </div>
+          </BentoCard>
+
+          {/* Media */}
+          <BentoCard icon={<ImageIcon className="w-5 h-5" />} title="Media" summary={mediaSummary} color="blue"
+            open={!!openSections.media} onToggle={() => toggleSection('media')}>
+
+            {/* Image mode tabs */}
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+              <button type="button" onClick={() => setImageMode('upload')} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${imageMode === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}>
+                <Upload className="w-3 h-3" /> Upload
+              </button>
+              <button type="button" onClick={() => setImageMode('url')} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${imageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}>
+                <LinkIcon className="w-3 h-3" /> URL
+              </button>
+              {canAccess('ai_deal_assistant') && (
+                <button type="button" onClick={() => setImageMode('ai')} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${imageMode === 'ai' ? 'bg-emerald-500 text-white shadow-sm' : 'text-emerald-600'}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full" /> Ava
                 </button>
+              )}
+              <button type="button" onClick={() => setImageMode('library')} className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${imageMode === 'library' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}>
+                <ImageIcon className="w-3 h-3" /> Library
+              </button>
+            </div>
+
+            {imageMode === 'upload' && !displayImage && (
+              <div onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${dragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:border-primary-300'}`}>
+                <Upload className="w-6 h-6 mx-auto mb-1 text-gray-400" />
+                <p className="text-xs font-medium text-gray-600">{dragActive ? 'Drop here' : 'Click or drag & drop'}</p>
+                <p className="text-[10px] text-gray-400">JPG, PNG, WebP, GIF - Max 5MB</p>
               </div>
-            ))}
-            {additionalImages.length < 10 && (
-              <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex flex-col items-center justify-center text-gray-400 hover:text-primary-500 transition-colors">
-                {uploadingAdditional ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Upload className="w-5 h-5" /><span className="text-[10px] mt-0.5">Add</span></>}
+            )}
+            {imageMode === 'url' && (
+              <input name="image_url" value={form.image_url} onChange={handleChange} className="input-field text-sm" placeholder="https://..." />
+            )}
+            {imageMode === 'library' && (
+              <button type="button" onClick={() => setShowMediaPicker(true)} className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 text-center text-sm text-blue-600 font-medium hover:bg-blue-100 transition-colors">
+                Browse Media Library
               </button>
             )}
-          </div>
-          <input ref={additionalFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
-            onChange={e => { const file = e.target.files?.[0]; if (file) handleAdditionalFileUpload(file); if (additionalFileInputRef.current) additionalFileInputRef.current.value = ''; }} />
-          <p className="text-xs text-gray-400 mt-1.5">Add multiple photos to showcase your deal</p>
-        </div>
-
-        {/* Videos */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Videos (optional)</label>
-          {videoUrls.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {videoUrls.map((url, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-600 truncate flex-1">{url}</span>
-                  <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <input value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} className="input-field flex-1"
-              placeholder="Paste YouTube or Vimeo URL..."
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } } }} />
-            <button type="button" onClick={() => { if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Add</button>
-          </div>
-
-          {/* Ava Video Generation */}
-          {canAccess('ai_deal_assistant') && (
-            <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm shadow-emerald-500/20">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
-                  <p className="text-xs text-emerald-500">I&apos;ll turn your deal image into an eye-catching promo video</p>
-                </div>
-              </div>
-              {!form.image_url ? (
-                <p className="text-xs text-amber-600 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
-                </p>
-              ) : (
-                <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
-                  className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
-                  {aiVideoLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</> : <><Video className="w-4 h-4" /> Generate Video from Image</>}
+            {imageMode === 'ai' && !displayImage && (
+              <div className="text-center">
+                <input value={customImagePrompt} onChange={e => setCustomImagePrompt(e.target.value)} className="input-field text-sm mb-2" placeholder="Describe the image..." />
+                <button type="button" onClick={handleAiImageGenerate} disabled={aiImageLoading || (!form.title && !customImagePrompt)}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-50 flex items-center gap-1.5 mx-auto">
+                  {aiImageLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</> : <><Wand2 className="w-3.5 h-3.5" /> Generate</>}
                 </button>
-              )}
-              {aiVideoLoading && <p className="text-xs text-emerald-500 mt-2 animate-pulse">Ava is working on your video — this takes 1-3 minutes...</p>}
+              </div>
+            )}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (file) handleFileUpload(file); }} />
+
+            {displayImage && (
+              <div className="relative inline-block">
+                <div className="w-full h-32 rounded-xl overflow-hidden border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={displayImage} alt="Deal" className="w-full h-full object-cover" />
+                </div>
+                {uploading && <div className="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center"><Loader2 className="w-6 h-6 text-white animate-spin" /></div>}
+                <button type="button" onClick={removeImage} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600"><X className="w-3 h-3" /></button>
+              </div>
+            )}
+
+            {/* Additional images */}
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-1.5">Additional ({additionalImages.length}/10)</p>
+              <div className="flex flex-wrap gap-2">
+                {additionalImages.map((img, i) => (
+                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5" /></button>
+                  </div>
+                ))}
+                {additionalImages.length < 10 && (
+                  <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
+                    className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex flex-col items-center justify-center text-gray-400 hover:text-primary-500 transition-colors">
+                    {uploadingAdditional ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Upload className="w-4 h-4" /><span className="text-[9px]">Add</span></>}
+                  </button>
+                )}
+              </div>
+              <input ref={additionalFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                onChange={e => { const file = e.target.files?.[0]; if (file) handleAdditionalFileUpload(file); if (additionalFileInputRef.current) additionalFileInputRef.current.value = ''; }} />
             </div>
-          )}
-        </div>
 
-        {/* Pricing */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Original Price *</label>
-            <div className="relative">
-              <span className="absolute left-3 top-3 text-gray-400">$</span>
-              <input name="original_price" type="number" step="0.01" min="0" value={form.original_price} onChange={handleChange} className="input-field pl-8" required />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deal Price *</label>
-            <div className="relative">
-              <span className="absolute left-3 top-3 text-gray-400">$</span>
-              <input name="deal_price" type="number" step="0.01" min="0" value={form.deal_price} onChange={handleChange} className="input-field pl-8" required />
-            </div>
-          </div>
-        </div>
-
-        {discount > 0 && (
-          <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Calculated Discount:</span>
-              <span className="text-2xl font-bold text-green-600">{formatPercentage(discount)} OFF</span>
-            </div>
-          </div>
-        )}
-
-        {/* Deposit */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Customer Deposit Amount {deal.deal_type === 'sponti_coupon' ? '*' : '(optional)'}
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-3 text-gray-400">$</span>
-            <input name="deposit_amount" type="number" step="0.01" min={deal.deal_type === 'sponti_coupon' ? '1' : '0'}
-              value={form.deposit_amount} onChange={handleChange} className="input-field pl-8"
-              placeholder={deal.deal_type === 'sponti_coupon' ? '10.00' : '0.00 (optional)'}
-              required={deal.deal_type === 'sponti_coupon'} />
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            {deal.deal_type === 'sponti_coupon'
-              ? 'Required for Sponti Coupons. Customer pays this upfront to lock in the deal.'
-              : 'Optional. Offer a deposit option so customers can lock in their deal.'}
-          </p>
-        </div>
-
-        {/* Max Claims */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Max Claims</label>
-          <input name="max_claims" type="number" min="1" value={form.max_claims} onChange={handleChange} className="input-field" placeholder="Leave empty for unlimited" />
-        </div>
-
-        {/* Highlights */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Highlights (optional)</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {highlights.map((h, i) => (
-              <span key={i} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200">
-                {h}
-                <button type="button" onClick={() => setHighlights(prev => prev.filter((_, idx) => idx !== i))}><X className="w-3 h-3" /></button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input value={newHighlight} onChange={e => setNewHighlight(e.target.value)} className="input-field flex-1"
-              placeholder="e.g., Best Seller, Family Friendly..."
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newHighlight.trim()) { setHighlights(prev => [...prev, newHighlight.trim()]); setNewHighlight(''); } } }} />
-            <button type="button" onClick={() => { if (newHighlight.trim()) { setHighlights(prev => [...prev, newHighlight.trim()]); setNewHighlight(''); } }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Add</button>
-          </div>
-        </div>
-
-        {/* Amenities */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Amenities (optional)</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {amenities.map((a, i) => (
-              <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full border border-blue-200">
-                {a}
-                <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))}><X className="w-3 h-3" /></button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} className="input-field flex-1"
-              placeholder="e.g., Free Parking, WiFi, Pet Friendly..."
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } } }} />
-            <button type="button" onClick={() => { if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Add</button>
-          </div>
-        </div>
-
-        {/* Search Tags */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Search Tags <span className="text-xs text-gray-400 ml-1">(keywords so customers can find your deal)</span>
-            </label>
-            <button type="button" onClick={generateSearchTags} disabled={generatingTags || !form.title.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium rounded-lg hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 transition-all">
-              {generatingTags ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating...</> : <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full" /> Ava Generate Tags</>}
-            </button>
-          </div>
-          {searchTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-2">
-              {searchTags.map((tag, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-sm px-3 py-1.5 rounded-full border border-purple-200">
-                  {tag}
-                  <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}><X className="w-3 h-3" /></button>
-                </span>
+            {/* Videos */}
+            <div>
+              <p className="text-xs font-medium text-gray-600 mb-1.5">Videos</p>
+              {videoUrls.map((url, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5 mb-1.5">
+                  <span className="text-xs text-gray-600 truncate flex-1">{url}</span>
+                  <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
+                </div>
               ))}
-            </div>
-          )}
-          <div className="flex gap-2">
-            <input value={newTag} onChange={e => setNewTag(e.target.value)} className="input-field flex-1"
-              placeholder="Add a custom tag (e.g. date night, family friendly)"
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) { setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]); setNewTag(''); } } }} />
-            <button type="button" onClick={() => { if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) { setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]); setNewTag(''); } }}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">Add</button>
-          </div>
-        </div>
-
-        {/* How It Works */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">How It Works (optional)</label>
-          <textarea name="how_it_works" value={form.how_it_works} onChange={handleChange} className="input-field min-h-[80px]"
-            placeholder="Step-by-step instructions: 1. Claim the deal 2. Show QR code at checkout 3. Enjoy your savings!" />
-          <p className="text-xs text-gray-400 mt-1">Help customers understand exactly how to use this deal</p>
-        </div>
-
-        {/* Terms & Conditions */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Terms & Conditions (optional)</label>
-          <textarea name="terms_and_conditions" value={form.terms_and_conditions} onChange={handleChange} className="input-field min-h-[80px]"
-            placeholder="e.g., Valid for dine-in only. Not combinable with other offers." />
-        </div>
-
-        {/* Fine Print */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fine Print (optional)</label>
-          <textarea name="fine_print" value={form.fine_print} onChange={handleChange} className="input-field min-h-[60px]"
-            placeholder="e.g., Must be 18+. Gratuity not included. Subject to availability." />
-          <p className="text-xs text-gray-400 mt-1">Short restrictions or legal notes shown prominently to customers</p>
-        </div>
-
-        {/* Location */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> Where is this deal available?</span>
-          </label>
-          <div className="relative">
-            <select value={locationMode} onChange={(e) => {
-              const mode = e.target.value as typeof locationMode;
-              setLocationMode(mode);
-              if (mode !== 'specific') setSelectedLocationIds([]);
-              if (mode !== 'website') setWebsiteUrl('');
-            }} className="input-field appearance-none pr-10">
-              {locations.length > 0 && <option value="all">All Locations</option>}
-              {locations.length > 0 && <option value="specific">Specific Locations</option>}
-              <option value="website">Online / Website</option>
-              <option value="none">No Location (General)</option>
-            </select>
-            <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          </div>
-
-          {locationMode === 'specific' && locations.length > 0 && (
-            <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3 mt-3">
-              {locations.map(loc => {
-                const isSelected = selectedLocationIds.includes(loc.id);
-                return (
-                  <label key={loc.id} className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-50 border border-transparent'}`}>
-                    <input type="checkbox" checked={isSelected} onChange={() => {
-                      setSelectedLocationIds(prev => isSelected ? prev.filter(id => id !== loc.id) : [...prev, loc.id]);
-                    }} className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-secondary-500 truncate">{loc.name}</p>
-                      <p className="text-xs text-gray-400 truncate">{loc.address}, {loc.city}, {loc.state} {loc.zip}</p>
+              <div className="flex gap-2">
+                <input value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} className="input-field flex-1 text-sm" placeholder="YouTube or Vimeo URL..."
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } } }} />
+                <button type="button" onClick={() => { if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
+              </div>
+              {canAccess('ai_deal_assistant') && (
+                <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
                     </div>
-                  </label>
-                );
-              })}
+                    <p className="text-xs font-semibold text-emerald-800">Ava Video Studio</p>
+                  </div>
+                  {!form.image_url ? (
+                    <p className="text-xs text-amber-600">Add an image first to generate a video</p>
+                  ) : (
+                    <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
+                      className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 disabled:opacity-50">
+                      {aiVideoLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating...</> : <><Video className="w-3.5 h-3.5" /> Generate Video</>}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </BentoCard>
 
-          {locationMode === 'website' && (
-            <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Website or Product Link</label>
+          {/* Details */}
+          <BentoCard icon={<Star className="w-5 h-5" />} title="Details" summary={detailsSummary} color="purple"
+            open={!!openSections.details} onToggle={() => toggleSection('details')}>
+
+            {/* Highlights */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Highlights</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {highlights.map((h, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full border border-green-200">
+                    {h} <button type="button" onClick={() => setHighlights(prev => prev.filter((_, idx) => idx !== i))}><X className="w-2.5 h-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <input value={newHighlight} onChange={e => setNewHighlight(e.target.value)} className="input-field flex-1 text-sm" placeholder="e.g., Best Seller..."
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newHighlight.trim()) { setHighlights(prev => [...prev, newHighlight.trim()]); setNewHighlight(''); } } }} />
+                <button type="button" onClick={() => { if (newHighlight.trim()) { setHighlights(prev => [...prev, newHighlight.trim()]); setNewHighlight(''); } }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
+              </div>
+            </div>
+
+            {/* Amenities */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Amenities</label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {amenities.map((a, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
+                    {a} <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))}><X className="w-2.5 h-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} className="input-field flex-1 text-sm" placeholder="e.g., Free Parking..."
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } } }} />
+                <button type="button" onClick={() => { if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
+              </div>
+            </div>
+
+            {/* Search Tags */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-gray-700">Search Tags</label>
+                <button type="button" onClick={generateSearchTags} disabled={generatingTags || !form.title.trim()}
+                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white text-[10px] font-medium rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-all">
+                  {generatingTags ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/ava.png" alt="" className="w-3 h-3 rounded-full" /></>} Ava Tags
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {searchTags.map((tag, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs px-2.5 py-1 rounded-full border border-purple-200">
+                    {tag} <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}><X className="w-2.5 h-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <input value={newTag} onChange={e => setNewTag(e.target.value)} className="input-field flex-1 text-sm" placeholder="Custom tag..."
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) { setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]); setNewTag(''); } } }} />
+                <button type="button" onClick={() => { if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) { setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]); setNewTag(''); } }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* Location */}
+          <BentoCard icon={<MapPin className="w-5 h-5" />} title="Location" summary={locationSummary} color="amber"
+            open={!!openSections.location} onToggle={() => toggleSection('location')}>
+            <div className="relative">
+              <select value={locationMode} onChange={(e) => {
+                const mode = e.target.value as typeof locationMode;
+                setLocationMode(mode);
+                if (mode !== 'specific') setSelectedLocationIds([]);
+                if (mode !== 'website') setWebsiteUrl('');
+              }} className="input-field appearance-none pr-10 text-sm">
+                {locations.length > 0 && <option value="all">All Locations</option>}
+                {locations.length > 0 && <option value="specific">Specific Locations</option>}
+                <option value="website">Online / Website</option>
+                <option value="none">No Location (General)</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {locationMode === 'specific' && locations.length > 0 && (
+              <div className="space-y-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                {locations.map(loc => {
+                  const isSelected = selectedLocationIds.includes(loc.id);
+                  return (
+                    <label key={loc.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-sm ${isSelected ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-50 border border-transparent'}`}>
+                      <input type="checkbox" checked={isSelected} onChange={() => setSelectedLocationIds(prev => isSelected ? prev.filter(id => id !== loc.id) : [...prev, loc.id])}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-secondary-500 truncate">{loc.name}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{loc.address}, {loc.city}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            {locationMode === 'website' && (
               <div className="relative">
                 <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="input-field pl-10" placeholder="https://www.yourstore.com/product" />
+                <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="input-field pl-10 text-sm" placeholder="https://yoursite.com/product" />
               </div>
+            )}
+          </BentoCard>
+
+          {/* Terms & Legal */}
+          <BentoCard icon={<ClipboardList className="w-5 h-5" />} title="Terms & Legal" summary={termsSummary} color="gray"
+            open={!!openSections.terms} onToggle={() => toggleSection('terms')}>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">How It Works</label>
+              <textarea name="how_it_works" value={form.how_it_works} onChange={handleChange} className="input-field min-h-[60px] text-sm"
+                placeholder="1. Claim the deal 2. Show QR code 3. Enjoy!" />
             </div>
-          )}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Terms & Conditions</label>
+              <textarea name="terms_and_conditions" value={form.terms_and_conditions} onChange={handleChange} className="input-field min-h-[60px] text-sm"
+                placeholder="Valid for dine-in only..." />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Fine Print</label>
+              <textarea name="fine_print" value={form.fine_print} onChange={handleChange} className="input-field min-h-[50px] text-sm"
+                placeholder="Must be 18+. Subject to availability." />
+            </div>
+          </BentoCard>
         </div>
 
-        {/* Info */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-          <p className="font-medium mb-1">Note:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-600">
-            <li>Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'}) cannot be changed after creation</li>
-            <li>Expiration date cannot be changed after creation</li>
-            <li>Current claims: {deal.claims_count}</li>
-          </ul>
+        {/* Info note */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-600 mb-6">
+          <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) and expiration cannot be changed. Claims: {deal.claims_count}
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
+        {/* Save button */}
+        <button type="submit" disabled={saving}
           className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
             deal.deal_type === 'sponti_coupon'
               ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'
               : 'bg-secondary-500 hover:bg-secondary-600 shadow-lg shadow-secondary-500/25'
-          }`}
-        >
+          }`}>
           {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save Changes</>}
         </button>
       </form>
 
-      {/* Media Picker Modal */}
-      <MediaPicker
-        open={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
-        onSelect={(url) => {
-          setForm(prev => ({ ...prev, image_url: url }));
-          setUploadPreview(null);
-          setShowMediaPicker(false);
-        }}
-        type="image"
-      />
+      <MediaPicker open={showMediaPicker} onClose={() => setShowMediaPicker(false)}
+        onSelect={(url) => { setForm(prev => ({ ...prev, image_url: url })); setUploadPreview(null); setShowMediaPicker(false); }} type="image" />
     </div>
   );
 }
