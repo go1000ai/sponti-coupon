@@ -596,7 +596,7 @@ export default function PricingPage() {
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {[
                   { label: 'Unlimited Deals', desc: 'Sponti + Steady, no limits' },
                   { label: 'Loyalty Program', desc: 'Punch cards & points to retain customers' },
@@ -747,7 +747,7 @@ export default function PricingPage() {
               )}
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 px-4 sm:px-0">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <button
                 onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
                 className="group btn-primary w-full sm:w-auto px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300 text-center"

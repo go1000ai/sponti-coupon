@@ -650,7 +650,7 @@ export default function VendorSupportPage() {
   // Show ticket detail if one is selected
   if (selectedTicketId) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-0">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <TicketDetailView
           ticketId={selectedTicketId}
           onBack={() => { setSelectedTicketId(null); fetchTickets(); }}
@@ -660,7 +660,7 @@ export default function VendorSupportPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-0">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Toast */}
       {toast && (
         <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-medium shadow-lg ${

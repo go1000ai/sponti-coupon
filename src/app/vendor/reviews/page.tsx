@@ -215,7 +215,7 @@ export default function VendorReviewsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-0">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-primary-500 flex-shrink-0" />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowRight, Star, Users, ShieldCheck, Flame, Clock } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { LandingAccordionItem } from '@/components/ui/interactive-image-accordion';
@@ -66,12 +67,17 @@ export function HeroSection() {
       {/* Subtle parallax background — moves slightly as you scroll */}
       <div
         ref={bgRef}
-        className="absolute inset-0 -top-[15%] -bottom-[15%] bg-cover bg-center will-change-transform"
-        style={{
-          backgroundImage:
-            'url(https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop)',
-        }}
-      />
+        className="absolute inset-0 -top-[15%] -bottom-[15%] will-change-transform"
+      >
+        <Image
+          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="100vw"
+        />
+      </div>
 
       {/* Dark overlay with gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-secondary-500/90 via-secondary-600/85 to-secondary-700/90" />

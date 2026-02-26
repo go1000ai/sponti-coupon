@@ -225,7 +225,7 @@ function VendorDashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-0">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-fade-up">
         <div>
@@ -571,7 +571,7 @@ function VendorDashboard() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 w-full sm:w-auto">
                   {deal.status === 'active' && deal.deal_type === 'sponti_coupon' && (
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
