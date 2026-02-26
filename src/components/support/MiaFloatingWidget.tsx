@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
+import { X, RotateCcw } from 'lucide-react';
 import { MiaChatbot, MiaAvatar } from './MiaChatbot';
 
 const ALLOWED_PATHS = ['/', '/pricing', '/for-business'];
@@ -16,6 +16,7 @@ export function MiaFloatingWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [chatKey, setChatKey] = useState(0);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -95,10 +96,21 @@ export function MiaFloatingWidget() {
             <h3 className="text-white font-bold text-sm">Mia</h3>
             <p className="text-secondary-200 text-[11px]">SpontiCoupon Assistant</p>
           </div>
-          <div className="flex items-center gap-1.5 mr-2">
+          <div className="flex items-center gap-1.5 mr-1">
             <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
             <span className="text-[10px] text-secondary-200">Online</span>
           </div>
+          <button
+            onClick={() => {
+              try { sessionStorage.removeItem('mia-chat-messages'); } catch { /* ignore */ }
+              setChatKey(k => k + 1);
+            }}
+            className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
+            aria-label="New chat"
+            title="New chat"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
           <button
             onClick={() => setIsOpen(false)}
             className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
@@ -110,9 +122,11 @@ export function MiaFloatingWidget() {
 
         {/* Chat body */}
         <MiaChatbot
+          key={chatKey}
           userRole="visitor"
           variant="floating"
           pageContext={pageContext}
+          onNewChat={() => setChatKey(k => k + 1)}
         />
       </div>
     </>

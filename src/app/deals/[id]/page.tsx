@@ -296,9 +296,9 @@ export default function DealDetailPage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Deal Header Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 animate-fade-up">
+            <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-8 animate-fade-up text-center sm:text-left">
               {/* Badges row */}
-              <div className="flex items-center flex-wrap gap-2 mb-4">
+              <div className="flex items-center flex-wrap gap-2 mb-4 justify-center sm:justify-start">
                 <DealTypeBadge type={deal.deal_type} size="lg" />
                 {isExpired && <span className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">EXPIRED</span>}
                 {isSoldOut && <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">SOLD OUT</span>}
@@ -310,11 +310,11 @@ export default function DealDetailPage() {
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-secondary-500 leading-tight">{deal.title}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-secondary-500 leading-tight break-words">{deal.title}</h1>
 
               {/* Vendor row */}
               {vendor && (
-                <div className="flex items-center gap-3 mt-4">
+                <div className="flex items-center gap-3 mt-4 justify-center sm:justify-start">
                   {vendor.logo_url ? (
                     <Image src={vendor.logo_url} alt={vendor.business_name} width={44} height={44} className="rounded-xl object-cover" />
                   ) : (
@@ -324,7 +324,7 @@ export default function DealDetailPage() {
                   )}
                   <div>
                     <p className="font-semibold text-secondary-500">{vendor.business_name}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-500 justify-center sm:justify-start">
                       {totalReviews > 0 && (
                         <button onClick={() => setActiveTab('reviews')} className="flex items-center gap-1 hover:text-primary-500 transition-colors">
                           <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
@@ -334,13 +334,13 @@ export default function DealDetailPage() {
                       )}
                       {vendor.city && (
                         <>
-                          {totalReviews > 0 && <span className="text-gray-300">|</span>}
+                          {totalReviews > 0 && <span className="text-gray-300 hidden sm:inline">|</span>}
                           <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" /> {vendor.city}, {vendor.state}</span>
                         </>
                       )}
                       {isOpenNow !== undefined && (
                         <>
-                          <span className="text-gray-300">|</span>
+                          <span className="text-gray-300 hidden sm:inline">|</span>
                           <span className={`font-medium ${isOpenNow ? 'text-green-600' : 'text-red-500'}`}>
                             {isOpenNow ? 'Open Now' : 'Closed'}
                           </span>
@@ -358,7 +358,7 @@ export default function DealDetailPage() {
 
               {/* Highlights */}
               {deal.highlights && deal.highlights.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
                   {deal.highlights.map((h, i) => (
                     <span key={i} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200 font-medium">
                       <Sparkles className="w-3 h-3" /> {h}
@@ -416,7 +416,7 @@ export default function DealDetailPage() {
                         : 'Steady deals are everyday savings that stick around longer. They offer reliable discounts from local businesses — typically 20-40% off — with more time to claim and redeem. No deposit required, just claim and show your QR code!'
                       }
                     </p>
-                    <div className="flex flex-wrap gap-3 mt-3">
+                    <div className="flex flex-wrap gap-3 mt-3 justify-center sm:justify-start">
                       {isSponti ? (
                         <>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
@@ -456,6 +456,65 @@ export default function DealDetailPage() {
                   </div>
                   <CountdownTimer expiresAt={deal.expires_at} size="lg" />
                 </div>
+              )}
+            </div>
+
+            {/* ===== MOBILE PRICE CARD (shown only below lg) ===== */}
+            <div className="lg:hidden bg-white rounded-2xl shadow-lg p-6 text-center">
+              <div className="text-gray-400 line-through text-lg">{formatCurrency(deal.original_price)}</div>
+              <div className="text-4xl font-bold text-primary-500 my-1">{formatCurrency(deal.deal_price)}</div>
+              <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-lg px-4 py-1.5 rounded-full">
+                {formatPercentage(deal.discount_percentage)} OFF
+              </div>
+              <p className="text-xs text-gray-400 mt-2">You save {formatCurrency(deal.original_price - deal.deal_price)}</p>
+
+              {hasDeposit && (
+                <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mt-4 text-left">
+                  <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
+                  <p className="text-xs text-primary-600 mt-1">Paid directly to the business. Non-refundable if not redeemed.</p>
+                </div>
+              )}
+
+              {deal.max_claims && (
+                <div className="mt-4 text-left">
+                  <div className="flex justify-between text-sm text-gray-500 mb-1.5">
+                    <span>{deal.claims_count} claimed</span>
+                    <span className="font-medium">{deal.max_claims - deal.claims_count} left</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                    <div
+                      className={`h-2.5 rounded-full transition-all ${
+                        (deal.claims_count / deal.max_claims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
+                      }`}
+                      style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!isExpired && !isSoldOut && deal.status === 'active' && (
+                <button
+                  onClick={handleClaim}
+                  disabled={claiming}
+                  className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg mt-4 ${
+                    isSponti || hasDeposit
+                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
+                      : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
+                  }`}
+                >
+                  {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
+                </button>
+              )}
+
+              {isExpired && (
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold mt-4">This deal has expired</div>
+              )}
+              {isSoldOut && (
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold mt-4">This deal is sold out</div>
+              )}
+
+              {error && (
+                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 mt-4">{error}</div>
               )}
             </div>
 
@@ -903,7 +962,7 @@ export default function DealDetailPage() {
           </div>
 
           {/* ===== SIDEBAR (1 col) ===== */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 hidden lg:block">
             <div className="sticky top-6 space-y-4">
               {/* Price Card */}
               <div className="bg-white rounded-2xl shadow-lg p-6 animate-fade-up" style={{ animationDelay: '100ms' }}>

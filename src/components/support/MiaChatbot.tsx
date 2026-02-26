@@ -32,11 +32,15 @@ interface ChatMessage {
   content: string;
 }
 
+const MAX_USER_MESSAGES = 25;
+const STORAGE_KEY = 'mia-chat-messages';
+
 interface MiaChatbotProps {
   onOpenTicket?: () => void;
   userRole?: 'vendor' | 'customer' | 'visitor';
   variant?: 'card' | 'floating';
   pageContext?: 'general' | 'vendor-prospect';
+  onNewChat?: () => void;
 }
 
 const VENDOR_SUGGESTIONS = [
@@ -110,17 +114,37 @@ function getSuggestions(userRole: string, pageContext?: string): string[] {
   return CUSTOMER_SUGGESTIONS;
 }
 
-export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext }: MiaChatbotProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      content: getGreeting(userRole),
-    },
-  ]);
+export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: MiaChatbotProps) {
+  const isFloating = variant === 'floating';
+
+  // Load persisted messages from sessionStorage (floating widget only)
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    if (isFloating && typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch { /* ignore */ }
+    }
+    return [{ role: 'assistant', content: getGreeting(userRole) }];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Persist messages to sessionStorage (floating widget only)
+  useEffect(() => {
+    if (isFloating && messages.length > 1) {
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages)); } catch { /* ignore */ }
+    }
+  }, [messages, isFloating]);
+
+  // Count user messages for the limit
+  const userMessageCount = messages.filter(m => m.role === 'user').length;
+  const isAtLimit = userMessageCount >= MAX_USER_MESSAGES;
 
   // Scroll the chat container (not the page) to bottom on new messages
   useEffect(() => {
@@ -132,8 +156,15 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
     }
   }, [messages, loading]);
 
+  const handleNewChat = () => {
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    setMessages([{ role: 'assistant', content: getGreeting(userRole) }]);
+    setInput('');
+    onNewChat?.();
+  };
+
   const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || isAtLimit) return;
 
     const userMsg: ChatMessage = { role: 'user', content: text.trim() };
     const updatedMessages = [...messages, userMsg];
@@ -161,7 +192,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
         {
           role: 'assistant',
           content: userRole === 'visitor'
-            ? "I'm having a little trouble right now. Check out our FAQ at /faq or reach out at /contact!"
+            ? "I'm having a little trouble right now. Check out our FAQ page or reach out through the Contact page!"
             : "I'm having trouble connecting right now. Please try again or open a support ticket below.",
         },
       ]);
@@ -190,7 +221,6 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
 
   const suggestions = getSuggestions(userRole, pageContext);
   const showSuggestions = messages.length === 1 && !loading;
-  const isFloating = variant === 'floating';
 
   const messagesArea = (
     <>
@@ -254,38 +284,52 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
         </div>
       )}
 
-      {/* Input */}
+      {/* Input or limit message */}
       <div className="border-t border-gray-200 p-3 sm:p-4 bg-white shrink-0">
-        <div className="flex items-end gap-2">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={handleInput}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message..."
-            rows={1}
-            className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
-            disabled={loading}
-          />
-          <button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-            className="bg-gradient-to-r from-primary-500 to-orange-400 text-white p-2.5 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
-          >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
+        {isAtLimit ? (
+          <div className="text-center py-1">
+            <p className="text-xs text-gray-500 mb-2">You&apos;ve reached the message limit for this chat.</p>
+            <button
+              onClick={handleNewChat}
+              className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+            >
+              Start a new chat
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-end gap-2">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="Type a message..."
+                rows={1}
+                className="flex-1 resize-none border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
+                disabled={loading}
+              />
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || loading}
+                className="bg-gradient-to-r from-primary-500 to-orange-400 text-white p-2.5 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 shadow-sm"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+            {onOpenTicket && userRole !== 'visitor' && (
+              <button
+                onClick={onOpenTicket}
+                className="w-full text-center text-xs text-gray-400 hover:text-primary-500 mt-2 transition-colors"
+              >
+                Rather open a support ticket?
+              </button>
             )}
-          </button>
-        </div>
-        {onOpenTicket && userRole !== 'visitor' && (
-          <button
-            onClick={onOpenTicket}
-            className="w-full text-center text-xs text-gray-400 hover:text-primary-500 mt-2 transition-colors"
-          >
-            Rather open a support ticket?
-          </button>
+          </>
         )}
       </div>
     </>
