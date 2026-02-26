@@ -1904,8 +1904,13 @@ export default function NewDealPage() {
       <MediaPicker
         open={showAdditionalMediaPicker}
         onClose={() => setShowAdditionalMediaPicker(false)}
+        multiple
         onSelect={(url) => {
           setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev);
+          setShowAdditionalMediaPicker(false);
+        }}
+        onSelectMultiple={(urls) => {
+          setAdditionalImages(prev => { const remaining = 10 - prev.length; return [...prev, ...urls.slice(0, remaining)]; });
           setShowAdditionalMediaPicker(false);
         }}
         type="image"

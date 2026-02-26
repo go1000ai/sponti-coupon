@@ -817,7 +817,8 @@ function EditDealPageInner() {
         onSelect={(url) => { setForm(prev => ({ ...prev, image_url: url })); setUploadPreview(null); setShowMediaPicker(false); }} type="image" />
 
       <MediaPicker open={showAdditionalMediaPicker} onClose={() => setShowAdditionalMediaPicker(false)}
-        onSelect={(url) => { setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev); setShowAdditionalMediaPicker(false); }} type="image" />
+        multiple onSelect={(url) => { setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev); setShowAdditionalMediaPicker(false); }}
+        onSelectMultiple={(urls) => { setAdditionalImages(prev => { const remaining = 10 - prev.length; return [...prev, ...urls.slice(0, remaining)]; }); setShowAdditionalMediaPicker(false); }} type="image" />
     </div>
   );
 }

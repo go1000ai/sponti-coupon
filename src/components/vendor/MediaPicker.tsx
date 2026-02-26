@@ -10,14 +10,17 @@ interface MediaPickerProps {
   open: boolean;
   onClose: () => void;
   onSelect: (url: string) => void;
+  onSelectMultiple?: (urls: string[]) => void;
+  multiple?: boolean;
   type?: 'image' | 'video' | 'all';
 }
 
-export default function MediaPicker({ open, onClose, onSelect, type = 'image' }: MediaPickerProps) {
+export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple, multiple = false, type = 'image' }: MediaPickerProps) {
   const [media, setMedia] = useState<VendorMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchMedia = useCallback(async () => {
@@ -33,7 +36,10 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
   }, [type]);
 
   useEffect(() => {
-    if (open) fetchMedia();
+    if (open) {
+      fetchMedia();
+      setSelected(new Set());
+    }
   }, [open, fetchMedia]);
 
   const handleUpload = async (file: File) => {
@@ -56,8 +62,13 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       if (res.ok) {
-        // Select the just-uploaded image immediately
-        onSelect(data.url);
+        if (multiple) {
+          // In multi mode, add to selection and refresh library
+          setSelected(prev => new Set(prev).add(data.url));
+          fetchMedia();
+        } else {
+          onSelect(data.url);
+        }
       } else {
         setError(data.error || 'Upload failed');
       }
@@ -65,6 +76,21 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
       setError('Upload failed.');
     }
     setUploading(false);
+  };
+
+  const toggleItem = (url: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const handleAddSelected = () => {
+    if (onSelectMultiple) {
+      onSelectMultiple(Array.from(selected));
+    }
   };
 
   if (!open) return null;
@@ -76,7 +102,7 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
         <div className="flex items-center justify-between p-5 border-b">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <FolderOpen className="w-5 h-5 text-[#E8632B]" />
-            Pick from Library
+            {multiple ? 'Select Images' : 'Pick from Library'}
           </h3>
           <div className="flex items-center gap-3">
             <button
@@ -91,14 +117,31 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple={multiple}
               className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
+              onChange={(e) => {
+                const files = e.target.files;
+                if (!files) return;
+                if (multiple) {
+                  Array.from(files).forEach(f => handleUpload(f));
+                } else {
+                  if (files[0]) handleUpload(files[0]);
+                }
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
             />
             <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
+
+        {/* Multi-select hint */}
+        {multiple && !loading && media.length > 0 && (
+          <div className="mx-5 mt-3 text-xs text-gray-500">
+            Tap images to select them, then press &quot;Add Selected&quot;
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -121,35 +164,64 @@ export default function MediaPicker({ open, onClose, onSelect, type = 'image' }:
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {media.map(item => (
-                <button
-                  key={item.id}
-                  onClick={() => onSelect(item.url)}
-                  className="group relative rounded-xl overflow-hidden border-2 border-transparent hover:border-[#E8632B] transition-all focus:outline-none focus:border-[#E8632B]"
-                >
-                  {item.type === 'image' ? (
-                    <div className="aspect-square bg-gray-50">
-                      <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-gray-900 relative">
-                      <video src={item.url} className="w-full h-full object-cover" />
-                      <Film className="absolute top-1 left-1 w-4 h-4 text-white drop-shadow" />
-                    </div>
-                  )}
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-[#E8632B]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <CheckCircle2 className="w-8 h-8 text-white drop-shadow-lg" />
-                  </div>
-                  {/* Source badge */}
-                  {(item.source === 'ai_generated' || item.source === 'ai_video') && (
-                    <span className="absolute bottom-1 right-1 text-[9px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-medium">SC</span>
-                  )}
-                </button>
-              ))}
+              {media.map(item => {
+                const isSelected = multiple && selected.has(item.url);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => multiple ? toggleItem(item.url) : onSelect(item.url)}
+                    className={`group relative rounded-xl overflow-hidden border-2 transition-all focus:outline-none ${
+                      isSelected
+                        ? 'border-[#E8632B] ring-2 ring-[#E8632B]/30'
+                        : 'border-transparent hover:border-[#E8632B]'
+                    }`}
+                  >
+                    {item.type === 'image' ? (
+                      <div className="aspect-square bg-gray-50">
+                        <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-gray-900 relative">
+                        <video src={item.url} className="w-full h-full object-cover" />
+                        <Film className="absolute top-1 left-1 w-4 h-4 text-white drop-shadow" />
+                      </div>
+                    )}
+                    {/* Selected / hover overlay */}
+                    {isSelected ? (
+                      <div className="absolute inset-0 bg-[#E8632B]/20 flex items-center justify-center">
+                        <CheckCircle2 className="w-8 h-8 text-[#E8632B] drop-shadow-lg" />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 bg-[#E8632B]/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <CheckCircle2 className="w-8 h-8 text-white drop-shadow-lg" />
+                      </div>
+                    )}
+                    {/* Source badge */}
+                    {(item.source === 'ai_generated' || item.source === 'ai_video') && (
+                      <span className="absolute bottom-1 right-1 text-[9px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-medium">SC</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
+
+        {/* Footer with Add Selected button (multi mode only) */}
+        {multiple && (
+          <div className="border-t p-4 flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              {selected.size === 0 ? 'No images selected' : `${selected.size} image${selected.size > 1 ? 's' : ''} selected`}
+            </p>
+            <button
+              onClick={handleAddSelected}
+              disabled={selected.size === 0}
+              className="px-5 py-2.5 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Add Selected ({selected.size})
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
