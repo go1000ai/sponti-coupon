@@ -132,19 +132,31 @@ export async function POST(request: NextRequest) {
     const videoArrayBuffer = await videoResponse.arrayBuffer();
     const videoBuffer = Buffer.from(videoArrayBuffer);
 
+    console.log(`Video downloaded: ${videoBuffer.length} bytes (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
+
+    if (videoBuffer.length < 1000) {
+      console.error('Video buffer suspiciously small:', videoBuffer.toString('utf-8').slice(0, 500));
+      return NextResponse.json({ error: 'Generated video data appears invalid. Please try again.' }, { status: 500 });
+    }
+
     // Upload to Supabase Storage
     const serviceClient = await createServiceRoleClient();
     const filename = `${user.id}/${Date.now()}-ai-generated.mp4`;
 
-    // Ensure bucket exists
-    const { data: buckets } = await serviceClient.storage.listBuckets();
-    const bucketExists = buckets?.some(b => b.name === 'deal-videos');
-    if (!bucketExists) {
-      await serviceClient.storage.createBucket('deal-videos', {
-        public: true,
-        fileSizeLimit: 100 * 1024 * 1024,
-        allowedMimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
-      });
+    // Ensure deal-videos bucket exists (ignore error if already exists)
+    try {
+      const { data: buckets } = await serviceClient.storage.listBuckets();
+      const bucketExists = buckets?.some(b => b.name === 'deal-videos');
+      if (!bucketExists) {
+        const { error: bucketError } = await serviceClient.storage.createBucket('deal-videos', {
+          public: true,
+          fileSizeLimit: 100 * 1024 * 1024,
+          allowedMimeTypes: ['video/mp4', 'video/webm', 'video/quicktime'],
+        });
+        if (bucketError) console.error('Bucket creation error (may already exist):', bucketError);
+      }
+    } catch (bucketErr) {
+      console.error('Bucket check error:', bucketErr);
     }
 
     const { data: uploadData, error: uploadError } = await serviceClient.storage
@@ -152,11 +164,45 @@ export async function POST(request: NextRequest) {
       .upload(filename, videoBuffer, {
         contentType: 'video/mp4',
         cacheControl: '3600',
+        upsert: true,
       });
 
     if (uploadError) {
-      console.error('Video upload error:', uploadError);
-      return NextResponse.json({ error: 'Failed to save generated video' }, { status: 500 });
+      console.error('Video upload error:', JSON.stringify(uploadError));
+      // Fallback: try uploading to deal-images bucket (which we know works)
+      const fallbackFilename = `${user.id}/${Date.now()}-ai-video.mp4`;
+      const { data: fallbackData, error: fallbackError } = await serviceClient.storage
+        .from('deal-images')
+        .upload(fallbackFilename, videoBuffer, {
+          contentType: 'video/mp4',
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (fallbackError) {
+        console.error('Fallback upload also failed:', JSON.stringify(fallbackError));
+        return NextResponse.json({ error: `Failed to save generated video: ${uploadError.message}` }, { status: 500 });
+      }
+
+      const { data: fallbackUrl } = serviceClient.storage
+        .from('deal-images')
+        .getPublicUrl(fallbackData.path);
+
+      const brandedUrl = brandStorageUrl(fallbackUrl.publicUrl);
+
+      await serviceClient.from('vendor_media').insert({
+        vendor_id: user.id,
+        type: 'video',
+        url: brandedUrl,
+        storage_path: fallbackFilename,
+        bucket: 'deal-images',
+        filename: fallbackFilename.split('/').pop(),
+        source: 'ai_video',
+        file_size: videoBuffer.length,
+        mime_type: 'video/mp4',
+      });
+
+      return NextResponse.json({ url: brandedUrl, source: 'sponticoupon' });
     }
 
     const { data: urlData } = serviceClient.storage

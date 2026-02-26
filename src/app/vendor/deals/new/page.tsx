@@ -1245,17 +1245,30 @@ export default function NewDealPage() {
 
         {/* ── Video URLs ───────────────────────────────────── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Videos (optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Videos ({videoUrls.length})</label>
           {videoUrls.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {videoUrls.map((url, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                  <span className="text-sm text-gray-600 truncate flex-1">{url}</span>
-                  <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-3 mb-3">
+              {videoUrls.map((url, i) => {
+                const isDirectVideo = url.match(/\.(mp4|webm|mov)(\?|$)/i) || url.includes('supabase');
+                return (
+                  <div key={i} className="relative group">
+                    {isDirectVideo ? (
+                      <div className="w-40 h-24 rounded-xl overflow-hidden border border-gray-200 bg-black">
+                        <video src={url} className="w-full h-full object-cover" muted playsInline
+                          onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
+                          onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+                      </div>
+                    ) : (
+                      <div className="w-40 h-24 rounded-xl overflow-hidden border border-gray-200 bg-gray-900 flex items-center justify-center relative">
+                        <Video className="w-8 h-8 text-gray-400" />
+                        <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white truncate">{url}</span>
+                      </div>
+                    )}
+                    <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"><X className="w-3 h-3" /></button>
+                  </div>
+                );
+              })}
             </div>
           )}
           <div className="flex gap-2">
@@ -1263,7 +1276,7 @@ export default function NewDealPage() {
               value={newVideoUrl}
               onChange={e => setNewVideoUrl(e.target.value)}
               className="input-field flex-1"
-              placeholder="Paste YouTube or Vimeo URL..."
+              placeholder="Video URL (YouTube, Vimeo, or direct link)..."
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -1287,7 +1300,7 @@ export default function NewDealPage() {
               Add
             </button>
           </div>
-          <p className="text-xs text-gray-400 mt-1.5">Add YouTube or Vimeo links to show off your product or service</p>
+          <p className="text-xs text-gray-400 mt-1.5">Add video links to show off your product or service</p>
 
           {/* Ava Video Generation */}
           {canAccess('ai_deal_assistant') && (

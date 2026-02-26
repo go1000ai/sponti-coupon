@@ -600,15 +600,34 @@ function EditDealPageInner() {
 
             {/* Videos */}
             <div>
-              <p className="text-xs font-medium text-gray-600 mb-1.5">Videos</p>
-              {videoUrls.map((url, i) => (
-                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5 mb-1.5">
-                  <span className="text-xs text-gray-600 truncate flex-1">{url}</span>
-                  <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
+              <p className="text-xs font-medium text-gray-600 mb-1.5">Videos ({videoUrls.length})</p>
+              {videoUrls.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {videoUrls.map((url, i) => {
+                    const isDirectVideo = url.match(/\.(mp4|webm|mov)(\?|$)/i) || url.includes('supabase');
+                    return (
+                      <div key={i} className="relative group">
+                        {isDirectVideo ? (
+                          <div className="w-32 h-20 rounded-lg overflow-hidden border border-gray-200 bg-black">
+                            <video src={url} className="w-full h-full object-cover" muted playsInline
+                              onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
+                              onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+                          </div>
+                        ) : (
+                          <div className="w-32 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-900 flex items-center justify-center">
+                            <Video className="w-6 h-6 text-gray-400" />
+                            <span className="absolute bottom-1 left-1 right-1 text-[8px] text-white truncate">{url}</span>
+                          </div>
+                        )}
+                        <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"><X className="w-2.5 h-2.5" /></button>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              )}
               <div className="flex gap-2">
-                <input value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} className="input-field flex-1 text-sm" placeholder="YouTube or Vimeo URL..."
+                <input value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} className="input-field flex-1 text-sm" placeholder="Video URL (YouTube, Vimeo, or direct link)..."
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } } }} />
                 <button type="button" onClick={() => { if (newVideoUrl.trim()) { setVideoUrls(prev => [...prev, newVideoUrl.trim()]); setNewVideoUrl(''); } }}
                   className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
