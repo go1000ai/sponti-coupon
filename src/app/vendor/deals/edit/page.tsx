@@ -10,7 +10,7 @@ import { formatPercentage, formatCurrency, calculateDiscount } from '@/lib/utils
 import {
   ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
-  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles,
+  Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -350,6 +350,22 @@ function EditDealPageInner() {
     const { error: updateError } = await supabase.from('deals').update(updates).eq('id', deal.id).eq('vendor_id', user.id);
     if (updateError) setError('Failed to save: ' + updateError.message);
     else { setShowToast(true); setTimeout(() => router.push('/vendor/deals/calendar'), 2000); }
+    setSaving(false);
+  };
+
+  const handleStatusChange = async (newStatus: 'active' | 'draft' | 'paused') => {
+    if (!deal || !user) return;
+    setSaving(true);
+    setError('');
+    const supabase = createClient();
+    const { error: statusError } = await supabase.from('deals').update({ status: newStatus }).eq('id', deal.id).eq('vendor_id', user.id);
+    if (statusError) {
+      setError('Failed to update status: ' + statusError.message);
+    } else {
+      setDeal(prev => prev ? { ...prev, status: newStatus } : prev);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2500);
+    }
     setSaving(false);
   };
 
@@ -839,15 +855,28 @@ function EditDealPageInner() {
           <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) and expiration cannot be changed. Claims: {deal.claims_count}
         </div>
 
-        {/* Save button */}
-        <button type="submit" disabled={saving}
-          className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-            deal.deal_type === 'sponti_coupon'
-              ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'
-              : 'bg-secondary-500 hover:bg-secondary-600 shadow-lg shadow-secondary-500/25'
-          }`}>
-          {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save Changes</>}
-        </button>
+        {/* Save + Publish/Pause buttons */}
+        <div className="flex gap-3">
+          <button type="submit" disabled={saving}
+            className={`flex-1 text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+              deal.deal_type === 'sponti_coupon'
+                ? 'bg-primary-500 hover:bg-primary-600 shadow-lg shadow-primary-500/25'
+                : 'bg-secondary-500 hover:bg-secondary-600 shadow-lg shadow-secondary-500/25'
+            }`}>
+            {saving ? <><Loader2 className="w-5 h-5 animate-spin" /> Saving...</> : <><Save className="w-5 h-5" /> Save Changes</>}
+          </button>
+          {deal.status === 'draft' || deal.status === 'paused' ? (
+            <button type="button" disabled={saving} onClick={() => handleStatusChange('active')}
+              className="px-6 py-4 rounded-xl font-bold text-white bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/25 transition-all disabled:opacity-50 flex items-center gap-2 text-lg">
+              <Rocket className="w-5 h-5" /> Go Live
+            </button>
+          ) : deal.status === 'active' ? (
+            <button type="button" disabled={saving} onClick={() => handleStatusChange('paused')}
+              className="px-6 py-4 rounded-xl font-bold text-white bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/25 transition-all disabled:opacity-50 flex items-center gap-2 text-lg">
+              <Pause className="w-5 h-5" /> Pause
+            </button>
+          ) : null}
+        </div>
       </form>
 
       <MediaPicker open={showMediaPicker} onClose={() => setShowMediaPicker(false)}
