@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -11,9 +11,16 @@ interface ChatMessage {
 
 interface MiaChatbotProps {
   onOpenTicket?: () => void;
+  userRole?: 'vendor' | 'customer';
 }
 
-const SUGGESTIONS = [
+const VENDOR_SUGGESTIONS = [
+  'How do I create a deal?',
+  'How do I scan a QR code?',
+  'Billing question',
+];
+
+const CUSTOMER_SUGGESTIONS = [
   'How do I claim a deal?',
   'Billing question',
   'How do deposits work?',
@@ -47,7 +54,7 @@ function MiaAvatar({ size = 32 }: { size?: number }) {
   );
 }
 
-export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
+export function MiaChatbot({ onOpenTicket, userRole = 'customer' }: MiaChatbotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -56,16 +63,18 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
+  // Scroll the chat container (not the page) to bottom on new messages
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+    const container = messagesContainerRef.current;
+    if (container) {
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
+  }, [messages, loading]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -85,7 +94,7 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
       const res = await fetch('/api/support/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, userRole }),
       });
       const data = await res.json();
       const reply = data.reply || "I'm sorry, I couldn't process that. Please try again.";
@@ -100,6 +109,10 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
       ]);
     } finally {
       setLoading(false);
+      // Re-focus the textarea so user can keep typing
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
     }
   };
 
@@ -118,6 +131,7 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   };
 
+  const suggestions = userRole === 'vendor' ? VENDOR_SUGGESTIONS : CUSTOMER_SUGGESTIONS;
   const showSuggestions = messages.length === 1 && !loading;
 
   return (
@@ -136,7 +150,7 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
       </div>
 
       {/* Messages */}
-      <div className="h-[400px] sm:h-[450px] overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50">
+      <div ref={messagesContainerRef} className="h-[400px] sm:h-[450px] overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -169,7 +183,7 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
+        <div />
       </div>
 
       {/* Suggestion chips */}
@@ -177,7 +191,7 @@ export function MiaChatbot({ onOpenTicket }: MiaChatbotProps) {
         <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-white">
           <p className="text-xs text-gray-400 mb-2">Quick questions:</p>
           <div className="flex flex-wrap gap-2">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button
                 key={s}
                 onClick={() => sendMessage(s)}

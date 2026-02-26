@@ -379,6 +379,7 @@ export const SUBSCRIPTION_TIERS = {
     priority_support: false,
     multi_location: false,
     team_access: false,
+    max_team_members: 0,
     api_access: false,
     custom_branding: false,
     loyalty_program: false,
@@ -402,6 +403,7 @@ export const SUBSCRIPTION_TIERS = {
     priority_support: true,
     multi_location: false,
     team_access: false,
+    max_team_members: 0,
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
@@ -425,6 +427,7 @@ export const SUBSCRIPTION_TIERS = {
     priority_support: true,
     multi_location: true,
     team_access: true,
+    max_team_members: 5,
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
@@ -448,6 +451,7 @@ export const SUBSCRIPTION_TIERS = {
     priority_support: true,
     multi_location: true,
     team_access: true,
+    max_team_members: -1, // unlimited
     api_access: true,
     custom_branding: true,
     loyalty_program: true,
@@ -460,7 +464,7 @@ export const SUBSCRIPTION_TIERS = {
 export const TIER_ORDER: SubscriptionTier[] = ['starter', 'pro', 'business', 'enterprise'];
 
 // Feature flag keys (excluding non-boolean fields)
-export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'stripe_price_id' | 'stripe_annual_price_id'>;
+export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'max_team_members' | 'stripe_price_id' | 'stripe_annual_price_id'>;
 
 // Support Ticket System
 export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';

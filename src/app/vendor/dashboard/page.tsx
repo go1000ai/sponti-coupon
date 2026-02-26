@@ -20,7 +20,8 @@ import { VENDOR_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
 } from 'recharts';
-import type { Deal, Vendor } from '@/lib/types/database';
+import type { Deal, Vendor, SubscriptionTier } from '@/lib/types/database';
+import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 
 interface Analytics {
   total_deals: number;
@@ -62,6 +63,8 @@ function VendorDashboard() {
   const [recentClaims, setRecentClaims] = useState<{ date: string; claims: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [monthlyDeals, setMonthlyDeals] = useState<{ total: number; sponti: number; regular: number }>({ total: 0, sponti: 0, regular: 0 });
+
   const [redeemDigits, setRedeemDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [redeeming, setRedeeming] = useState(false);
   const [redeemResult, setRedeemResult] = useState<RedeemResult | null>(null);
@@ -101,6 +104,23 @@ function VendorDashboard() {
         setVendor(vendorRes.data);
         const allDeals = dealsRes.data || [];
         setDeals(allDeals);
+
+        // Count deals created this month for usage tracking
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+        const monthStart = startOfMonth.toISOString();
+
+        const [totalRes, spontiRes, regularRes] = await Promise.all([
+          supabase.from('deals').select('id', { count: 'exact', head: true }).eq('vendor_id', user!.id).gte('created_at', monthStart),
+          supabase.from('deals').select('id', { count: 'exact', head: true }).eq('vendor_id', user!.id).eq('deal_type', 'sponti_coupon').gte('created_at', monthStart),
+          supabase.from('deals').select('id', { count: 'exact', head: true }).eq('vendor_id', user!.id).eq('deal_type', 'regular').gte('created_at', monthStart),
+        ]);
+        setMonthlyDeals({
+          total: totalRes.count || 0,
+          sponti: spontiRes.count || 0,
+          regular: regularRes.count || 0,
+        });
 
         try {
           const analyticsRes = await supabase.rpc('get_vendor_analytics', { vendor_id_param: user!.id });
@@ -255,6 +275,84 @@ function VendorDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Monthly Deal Usage */}
+      {vendor?.subscription_tier && (() => {
+        const tier = (vendor.subscription_tier as SubscriptionTier) || 'starter';
+        const tierConfig = SUBSCRIPTION_TIERS[tier];
+        const isUnlimited = tierConfig.deals_per_month === -1;
+        const totalLimit = tierConfig.deals_per_month;
+        const spontiLimit = tierConfig.sponti_deals_per_month;
+        const regularLimit = tierConfig.regular_deals_per_month;
+        const totalPct = isUnlimited ? 0 : Math.min((monthlyDeals.total / totalLimit) * 100, 100);
+        const spontiPct = isUnlimited ? 0 : Math.min((monthlyDeals.sponti / spontiLimit) * 100, 100);
+        const regularPct = isUnlimited ? 0 : Math.min((monthlyDeals.regular / regularLimit) * 100, 100);
+
+        return (
+          <div className="card p-4 sm:p-5 mb-8 animate-fade-up" style={{ animationDelay: '600ms' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-secondary-500 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary-500" />
+                Deals This Month
+              </h3>
+              <span className="text-xs text-gray-400 capitalize">{tierConfig.name} Plan</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Total */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-500">Total</span>
+                  <span className="font-medium text-secondary-500">
+                    {monthlyDeals.total}{isUnlimited ? '' : ` / ${totalLimit}`}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${totalPct >= 90 ? 'bg-red-500' : totalPct >= 70 ? 'bg-yellow-500' : 'bg-primary-500'}`}
+                    style={{ width: isUnlimited ? '15%' : `${totalPct}%` }}
+                  />
+                </div>
+              </div>
+              {/* Sponti */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-500">Sponti</span>
+                  <span className="font-medium text-secondary-500">
+                    {monthlyDeals.sponti}{isUnlimited ? '' : ` / ${spontiLimit}`}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${spontiPct >= 90 ? 'bg-red-500' : spontiPct >= 70 ? 'bg-yellow-500' : 'bg-orange-500'}`}
+                    style={{ width: isUnlimited ? '15%' : `${spontiPct}%` }}
+                  />
+                </div>
+              </div>
+              {/* Regular */}
+              <div>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="text-gray-500">Steady</span>
+                  <span className="font-medium text-secondary-500">
+                    {monthlyDeals.regular}{isUnlimited ? '' : ` / ${regularLimit}`}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${regularPct >= 90 ? 'bg-red-500' : regularPct >= 70 ? 'bg-yellow-500' : 'bg-accent-500'}`}
+                    style={{ width: isUnlimited ? '15%' : `${regularPct}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            {!isUnlimited && totalPct >= 80 && (
+              <p className="text-xs text-yellow-600 mt-2">
+                Running low on deals this month.{' '}
+                <Link href="/vendor/subscription" className="text-primary-500 hover:underline font-medium">Upgrade</Link> for more.
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Quick Redeem + Chart Row */}
       <div className="grid lg:grid-cols-3 gap-6 mb-8">

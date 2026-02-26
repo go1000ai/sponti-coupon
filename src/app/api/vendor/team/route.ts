@@ -42,11 +42,29 @@ export async function POST(request: NextRequest) {
     .single();
 
   const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-  if (!SUBSCRIPTION_TIERS[tier].team_access) {
+  const tierConfig = SUBSCRIPTION_TIERS[tier];
+  if (!tierConfig.team_access) {
     return NextResponse.json(
       { error: 'Team member access requires a Business plan or higher.' },
       { status: 403 }
     );
+  }
+
+  // Enforce max team members limit (-1 = unlimited)
+  const maxMembers = tierConfig.max_team_members;
+  if (maxMembers !== -1) {
+    const { count } = await supabase
+      .from('team_members')
+      .select('id', { count: 'exact', head: true })
+      .eq('vendor_id', user.id)
+      .neq('status', 'revoked');
+
+    if (count !== null && count >= maxMembers) {
+      return NextResponse.json(
+        { error: `Your ${tierConfig.name} plan allows up to ${maxMembers} team members. Upgrade to add more.` },
+        { status: 403 }
+      );
+    }
   }
 
   const body = await request.json();

@@ -24,6 +24,7 @@ import {
   BarChart3,
   UserCog,
   Settings,
+  Brain,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -69,6 +70,7 @@ const navGroups: NavGroup[] = [
       { label: 'Featured Deals', href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
       { label: 'Subscriptions', href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
       { label: 'Notifications', href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
+      { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
       { label: 'Support', href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
     ],
   },

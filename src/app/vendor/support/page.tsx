@@ -682,7 +682,7 @@ export default function VendorSupportPage() {
       </div>
 
       {/* Mia Chatbot */}
-      <MiaChatbot onOpenTicket={scrollToTickets} />
+      <MiaChatbot onOpenTicket={scrollToTickets} userRole="vendor" />
 
       {/* Divider — Need more help? */}
       <div ref={ticketSectionRef} className="my-8">
