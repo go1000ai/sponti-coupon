@@ -36,7 +36,7 @@ const aiTools = [
   },
   {
     title: 'AI Video Generator',
-    description: 'Transform deal images into engaging promotional videos using Nano Banana.',
+    description: 'Transform deal images into engaging promotional videos using Nano Banana 2 + Veo 3.1.',
     icon: Video,
     color: 'from-orange-500 to-amber-500',
     bgColor: 'bg-orange-50',

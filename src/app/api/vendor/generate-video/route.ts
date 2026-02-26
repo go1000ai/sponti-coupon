@@ -9,7 +9,7 @@ import { rateLimit } from '@/lib/rate-limit';
 const MAX_POLL_TIME_MS = 5 * 60 * 1000; // 5 minutes max
 const POLL_INTERVAL_MS = 10_000; // 10 seconds between polls
 
-// POST /api/vendor/generate-video — Generate a promo video from a deal image using Veo 3.1
+// POST /api/vendor/generate-video — Generate a promo video from a deal image using Veo 3.1 + Nano Banana 2 pipeline
 export async function POST(request: NextRequest) {
   // Rate limit: 5 video generations per hour (most expensive AI operation)
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });

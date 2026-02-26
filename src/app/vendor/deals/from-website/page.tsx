@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import {
   Globe, Loader2, ArrowRight, Tag, Download, Save,
   Image as ImageIcon, ChevronUp, Upload, LinkIcon, FolderOpen,
-  AlertCircle, Zap, CheckCircle2, Copy, ChevronDown,
+  AlertCircle, Zap, CheckCircle2, Copy, ChevronDown, Clock, Trash2, X,
 } from 'lucide-react';
 
 interface ExtractedInfo {
@@ -42,6 +42,34 @@ interface AnalysisResult {
   extracted_info: ExtractedInfo;
   suggested_deals: SuggestedDeal[];
   recommended_images?: string[];
+}
+
+interface ImportHistoryEntry {
+  url: string;
+  business_name: string;
+  deal_count: number;
+  timestamp: number;
+}
+
+const HISTORY_KEY = 'website-import-history';
+const MAX_HISTORY = 5;
+
+function loadHistory(): ImportHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveHistoryEntry(entry: Omit<ImportHistoryEntry, 'timestamp'>) {
+  const history = loadHistory();
+  // Remove duplicate URL if exists
+  const filtered = history.filter(h => h.url !== entry.url);
+  // Add new entry at the front
+  const updated = [{ ...entry, timestamp: Date.now() }, ...filtered].slice(0, MAX_HISTORY);
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+  return updated;
 }
 
 export default function ImportFromWebsitePage() {
@@ -77,6 +105,7 @@ export default function ImportFromWebsitePage() {
   const [uploadingForDeal, setUploadingForDeal] = useState<number | null>(null);
   const [mediaPickerDeal, setMediaPickerDeal] = useState<number | null>(null);
   const fileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [importHistory, setImportHistory] = useState<ImportHistoryEntry[]>(loadHistory);
 
   // Persist import results to sessionStorage so user can navigate away and come back
   useEffect(() => {
@@ -113,6 +142,13 @@ export default function ImportFromWebsitePage() {
       }
       setAnalysis(data.analysis);
       setWebsiteImages(data.website_images || []);
+      // Save to import history
+      const updated = saveHistoryEntry({
+        url: url.trim(),
+        business_name: data.analysis?.extracted_info?.business_name || new URL(url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`).hostname,
+        deal_count: data.analysis?.suggested_deals?.length || 0,
+      });
+      setImportHistory(updated);
     } catch {
       setError('Failed to analyze website. Please try again.');
     }
@@ -334,6 +370,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
             />
           </div>
           <button
+            data-analyze-btn
             onClick={handleScrape}
             disabled={loading || !url.trim()}
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-blue-500/25 transition-all disabled:opacity-50"
@@ -373,6 +410,77 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
           </p>
         )}
       </div>
+
+      {/* Import History — shown when no analysis loaded */}
+      {!analysis && !loading && importHistory.length > 0 && (
+        <div className="card p-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-gray-700 text-sm flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" /> Recent Imports
+            </h3>
+            <button
+              onClick={() => {
+                try { localStorage.removeItem(HISTORY_KEY); } catch { /* ignore */ }
+                setImportHistory([]);
+              }}
+              className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1"
+            >
+              <Trash2 className="w-3 h-3" /> Clear
+            </button>
+          </div>
+          <div className="space-y-2">
+            {importHistory.map((entry, i) => (
+              <div
+                key={`${entry.url}-${entry.timestamp}`}
+                className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-blue-200 hover:bg-blue-50/50 transition-all group cursor-pointer"
+                onClick={() => {
+                  setUrl(entry.url);
+                }}
+              >
+                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <Globe className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{entry.business_name}</p>
+                  <p className="text-xs text-gray-400 truncate">{entry.url}</p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs text-gray-500">{entry.deal_count} deal{entry.deal_count !== 1 ? 's' : ''}</p>
+                    <p className="text-[10px] text-gray-400">{new Date(entry.timestamp).toLocaleDateString()}</p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const updated = importHistory.filter((_, idx) => idx !== i);
+                      setImportHistory(updated);
+                      try { localStorage.setItem(HISTORY_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
+                    }}
+                    className="p-1 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Remove"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setUrl(entry.url);
+                      // Auto-trigger re-analyze
+                      setTimeout(() => {
+                        const btn = document.querySelector('[data-analyze-btn]') as HTMLButtonElement;
+                        btn?.click();
+                      }, 100);
+                    }}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    Re-analyze <ArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Go1000.ai CTA — shown when no URL entered and no analysis yet */}
       {!analysis && !loading && !url.trim() && (

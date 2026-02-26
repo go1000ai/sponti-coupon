@@ -6,7 +6,7 @@ import type { SubscriptionTier } from '@/lib/types/database';
 import { brandStorageUrl } from '@/lib/utils';
 import { rateLimit } from '@/lib/rate-limit';
 
-// POST /api/vendor/generate-image — Generate a deal image using Nano Banana (Gemini)
+// POST /api/vendor/generate-image — Generate a deal image using Nano Banana 2 (Gemini 3.1 Flash Image)
 export async function POST(request: NextRequest) {
   // Rate limit: 10 image generations per hour
   const limited = rateLimit(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-image' });
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       : `Professional, photorealistic promotional photograph for a ${dealCategory} deal titled "${title}". ${description || ''} High quality commercial photography, vibrant natural lighting, appetizing and appealing composition, clean modern style. Do NOT include any text, watermarks, logos, or overlays on the image.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: prompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
