@@ -10,7 +10,7 @@ import {
   QrCode, Clock, CheckCircle2, XCircle, DollarSign, ShoppingBag,
   Copy, Check, ExternalLink, Store, CreditCard,
   X, MapPin, Tag, Shield, Phone, Globe, Mail, Send, Trash2, Loader2, AlertTriangle,
-  Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target, Info,
+  Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target,
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';

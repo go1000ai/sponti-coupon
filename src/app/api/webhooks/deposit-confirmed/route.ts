@@ -87,6 +87,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No pending claim found for this session' }, { status: 404 });
     }
 
+    // Skip claims handled by Stripe Connect (they use the /api/webhooks/stripe-connect endpoint)
+    if (claim.payment_tier === 'integrated') {
+      return NextResponse.json({ error: 'This claim uses integrated Stripe Connect payments' }, { status: 400 });
+    }
+
     // Check if deal is still active and not expired
     if (new Date(claim.expires_at) < new Date()) {
       return NextResponse.json({ error: 'Claim has expired' }, { status: 400 });

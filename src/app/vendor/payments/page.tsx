@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   CreditCard, Plus, Star, Trash2, Pencil, Check, X,
-  ToggleLeft, ToggleRight, Loader2, AlertCircle, Wallet, Store,
+  ToggleLeft, ToggleRight, Loader2, AlertCircle, Wallet,
+  Clock, CheckCircle2, Zap, Smartphone,
 } from 'lucide-react';
 import { PAYMENT_PROCESSORS, PROCESSOR_LIST } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 import type { VendorPaymentMethod } from '@/lib/types/database';
+import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
+import { formatCurrency } from '@/lib/utils';
 
 export default function VendorPaymentsPage() {
   const [methods, setMethods] = useState<VendorPaymentMethod[]>([]);
@@ -27,6 +30,17 @@ export default function VendorPaymentsPage() {
   const [editLink, setEditLink] = useState('');
   const [editDisplayName, setEditDisplayName] = useState('');
 
+  // Pending manual payments
+  interface PendingClaim {
+    id: string;
+    created_at: string;
+    payment_tier: string;
+    deal?: { title: string; deal_price: number; deposit_amount: number | null };
+    customer?: { email: string; first_name: string | null; last_name: string | null };
+  }
+  const [pendingPayments, setPendingPayments] = useState<PendingClaim[]>([]);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+
   const fetchMethods = useCallback(async () => {
     try {
       const res = await fetch('/api/vendor/payment-methods');
@@ -39,9 +53,39 @@ export default function VendorPaymentsPage() {
     }
   }, []);
 
+  const fetchPendingPayments = useCallback(async () => {
+    try {
+      const res = await fetch('/api/vendor/pending-payments');
+      const data = await res.json();
+      if (data.claims) setPendingPayments(data.claims);
+    } catch {
+      // Silently fail
+    }
+  }, []);
+
   useEffect(() => {
     fetchMethods();
-  }, [fetchMethods]);
+    fetchPendingPayments();
+  }, [fetchMethods, fetchPendingPayments]);
+
+  const handleConfirmPayment = async (claimId: string) => {
+    setConfirmingId(claimId);
+    try {
+      const res = await fetch('/api/vendor/confirm-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim_id: claimId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      showSuccessMessage('Payment confirmed! QR code sent to customer.');
+      fetchPendingPayments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to confirm payment');
+    } finally {
+      setConfirmingId(null);
+    }
+  };
 
   const showSuccessMessage = (msg: string) => {
     setSuccess(msg);
@@ -66,7 +110,7 @@ export default function VendorPaymentsPage() {
           processor_type: newProcessorType,
           payment_link: newPaymentLink,
           display_name: newDisplayName || PAYMENT_PROCESSORS[newProcessorType].name,
-          is_primary: PAYMENT_PROCESSORS[newProcessorType].supportsDeposit && methods.length === 0,
+          is_primary: methods.length === 0,
         }),
       });
 
@@ -204,6 +248,9 @@ export default function VendorPaymentsPage() {
         </button>
       </div>
 
+      {/* Stripe Connect Banner */}
+      <StripeConnectBanner />
+
       {/* Info banner */}
       <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6">
         <div className="flex items-start gap-3">
@@ -211,9 +258,11 @@ export default function VendorPaymentsPage() {
           <div>
             <p className="text-sm font-semibold text-primary-700">How it works</p>
             <p className="text-sm text-primary-600 mt-0.5">
-              <span className="font-medium">Deposit methods</span> (Stripe, Square, PayPal) — customers are redirected to pay the deposit online when claiming a deal. Set one as your primary.
+              <span className="font-medium">Integrated</span> (Stripe Connect) — automated payments with the exact deal price. Customers pay through secure checkout.
               <br />
-              <span className="font-medium">In-store methods</span> (Venmo, Zelle, Cash App) — displayed on your deal page so customers know what you accept at your business.
+              <span className="font-medium">Manual</span> (Venmo, Zelle, Cash App) — customers see your payment info and send payment directly. You confirm receipt to release the deal.
+              <br />
+              <span className="font-medium">Link</span> (Static payment links) — customers are redirected to your existing Stripe/Square/PayPal checkout link.
               <br />
               <span className="font-medium mt-1 block">SpontiCoupon never touches your money — it goes directly to you.</span>
             </p>
@@ -271,10 +320,10 @@ export default function VendorPaymentsPage() {
                   </button>
                 ))}
               </div>
-              {!PAYMENT_PROCESSORS[newProcessorType].supportsDeposit && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                  <Store className="w-3.5 h-3.5 shrink-0" />
-                  <span>{PAYMENT_PROCESSORS[newProcessorType].name} will be shown as an accepted in-store payment method on your deal page. It cannot be used for online deposit collection.</span>
+              {PAYMENT_PROCESSORS[newProcessorType].supportedTiers.includes('manual') && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                  <Smartphone className="w-3.5 h-3.5 shrink-0" />
+                  <span>{PAYMENT_PROCESSORS[newProcessorType].name} uses manual payment confirmation. Customers will send payment directly to you, and you&apos;ll confirm receipt from this page.</span>
                 </div>
               )}
             </div>
@@ -414,10 +463,21 @@ export default function VendorPaymentsPage() {
                               PRIMARY
                             </span>
                           )}
-                          {!processor?.supportsDeposit && (
-                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              <Store className="w-3 h-3" />
-                              IN-STORE
+                          {method.payment_tier === 'integrated' && (
+                            <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <Zap className="w-3 h-3" />
+                              INTEGRATED
+                            </span>
+                          )}
+                          {method.payment_tier === 'manual' && (
+                            <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <Smartphone className="w-3 h-3" />
+                              MANUAL
+                            </span>
+                          )}
+                          {method.payment_tier === 'link' && (
+                            <span className="inline-flex items-center gap-1 bg-gray-50 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              LINK
                             </span>
                           )}
                           {!method.is_active && (
@@ -437,7 +497,7 @@ export default function VendorPaymentsPage() {
                   {/* Actions */}
                   {!isEditing && (
                     <div className="flex items-center gap-1 shrink-0">
-                      {!method.is_primary && method.is_active && processor?.supportsDeposit && (
+                      {!method.is_primary && method.is_active && method.payment_tier !== 'integrated' && (
                         <button
                           onClick={() => handleSetPrimary(method.id)}
                           disabled={saving}
@@ -484,6 +544,57 @@ export default function VendorPaymentsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pending Manual Payments */}
+      {pendingPayments.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-500" />
+            Pending Manual Payments
+            <span className="ml-2 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              {pendingPayments.length}
+            </span>
+          </h2>
+          <div className="space-y-3">
+            {pendingPayments.map(claim => (
+              <div key={claim.id} className="card p-5 border-amber-200 bg-amber-50/30">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-secondary-500 text-sm">
+                      {claim.deal?.title || 'Deal'}
+                    </h4>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {claim.customer?.first_name
+                        ? `${claim.customer.first_name} ${claim.customer.last_name || ''}`
+                        : claim.customer?.email || 'Customer'}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-sm font-bold text-primary-500">
+                        {formatCurrency(claim.deal?.deposit_amount || claim.deal?.deal_price || 0)}
+                      </span>
+                      <span className="text-[10px] text-gray-400">
+                        Claimed {new Date(claim.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleConfirmPayment(claim.id)}
+                    disabled={confirmingId === claim.id}
+                    className="btn-primary text-xs px-4 py-2 flex items-center gap-1.5 shrink-0"
+                  >
+                    {confirmingId === claim.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    )}
+                    {confirmingId === claim.id ? 'Confirming...' : 'Confirm Payment'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

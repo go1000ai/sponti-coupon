@@ -189,8 +189,36 @@ export default function DealDetailPage() {
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error); setClaiming(false); return; }
-      if (data.redirect_url) { window.location.href = data.redirect_url; return; }
-      router.push('/my-deals');
+
+      // Route based on payment tier
+      if (data.payment_tier === 'integrated' && data.redirect_url) {
+        // Stripe Connect Checkout — redirect to Stripe
+        window.location.href = data.redirect_url;
+        return;
+      }
+
+      if (data.payment_tier === 'manual' && data.payment_instructions) {
+        // Manual payment — show instructions page
+        const pi = data.payment_instructions;
+        const params = new URLSearchParams({
+          session_token: data.session_token,
+          processor: pi.processor,
+          payment_info: pi.payment_info,
+          amount: pi.amount.toString(),
+          deal_title: pi.deal_title || '',
+        });
+        router.push(`/claim/manual-payment?${params.toString()}`);
+        return;
+      }
+
+      if (data.redirect_url) {
+        // Legacy static link
+        window.location.href = data.redirect_url;
+        return;
+      }
+
+      // No deposit — instant QR
+      router.push('/dashboard/my-deals');
     } catch { setError('Failed to claim deal. Please try again.'); }
     setClaiming(false);
     setShowDisclaimer(false);

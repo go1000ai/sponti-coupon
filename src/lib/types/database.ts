@@ -89,6 +89,9 @@ export interface Vendor {
   subscription_status: SubscriptionStatus | null;
   stripe_payment_link: string | null;
   deposit_webhook_secret: string | null;
+  stripe_connect_account_id: string | null;
+  stripe_connect_onboarding_complete: boolean;
+  stripe_connect_charges_enabled: boolean;
   average_ticket_value: number | null;
   created_at: string;
 }
@@ -165,6 +168,10 @@ export interface Claim {
   redeemed: boolean;
   redeemed_at: string | null;
   review_request_sent_at: string | null;
+  payment_method_type: string | null;
+  payment_tier: string | null;
+  stripe_checkout_session_id: string | null;
+  deposit_amount_paid: number | null;
   expires_at: string;
   created_at: string;
   // Joined fields
@@ -231,6 +238,8 @@ export interface Notification {
   channel: NotificationChannel;
 }
 
+export type PaymentTier = 'integrated' | 'manual' | 'link';
+
 export interface VendorPaymentMethod {
   id: string;
   vendor_id: string;
@@ -239,6 +248,7 @@ export interface VendorPaymentMethod {
   display_name: string | null;
   is_primary: boolean;
   is_active: boolean;
+  payment_tier: PaymentTier;
   created_at: string;
   updated_at: string;
 }

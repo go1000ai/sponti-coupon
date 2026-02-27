@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { PAYMENT_PROCESSORS } from '@/lib/constants/payment-processors';
-import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
+// Payment tier is determined by processor type
 
 // GET /api/vendor/payment-methods - Fetch vendor's payment methods
 export async function GET() {
@@ -41,16 +40,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Processor type and payment link are required' }, { status: 400 });
   }
 
-  const processorInfo = PAYMENT_PROCESSORS[processor_type as PaymentProcessorType];
-
-  // Only deposit-capable processors can be set as primary
-  if (is_primary && processorInfo && !processorInfo.supportsDeposit) {
-    return NextResponse.json(
-      { error: `${processorInfo.name} cannot be set as primary because it doesn't support online deposits. Use Stripe, Square, or PayPal for deposit collection.` },
-      { status: 400 }
-    );
-  }
-
   // If setting as primary, unset other primaries first
   if (is_primary) {
     await supabase
@@ -66,8 +55,11 @@ export async function POST(request: NextRequest) {
     .select('*', { count: 'exact', head: true })
     .eq('vendor_id', user.id);
 
-  const canBePrimary = !processorInfo || processorInfo.supportsDeposit;
-  const shouldBePrimary = canBePrimary && (is_primary || count === 0);
+  const shouldBePrimary = is_primary || count === 0;
+
+  // Determine payment tier from processor type
+  const manualProcessors = ['venmo', 'zelle', 'cashapp'];
+  const paymentTier = manualProcessors.includes(processor_type) ? 'manual' : 'link';
 
   const { data: method, error } = await supabase
     .from('vendor_payment_methods')
@@ -78,6 +70,7 @@ export async function POST(request: NextRequest) {
       display_name: display_name || null,
       is_primary: shouldBePrimary,
       is_active: true,
+      payment_tier: paymentTier,
     })
     .select()
     .single();
@@ -122,17 +115,6 @@ export async function PUT(request: NextRequest) {
 
   if (!existing) {
     return NextResponse.json({ error: 'Payment method not found' }, { status: 404 });
-  }
-
-  // Only deposit-capable processors can be set as primary
-  if (is_primary) {
-    const existingProcessor = PAYMENT_PROCESSORS[existing.processor_type as PaymentProcessorType];
-    if (existingProcessor && !existingProcessor.supportsDeposit) {
-      return NextResponse.json(
-        { error: `${existingProcessor.name} cannot be set as primary because it doesn't support online deposits. Use Stripe, Square, or PayPal for deposit collection.` },
-        { status: 400 }
-      );
-    }
   }
 
   // If setting as primary, unset other primaries first
