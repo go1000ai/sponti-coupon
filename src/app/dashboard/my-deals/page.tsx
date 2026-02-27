@@ -10,13 +10,32 @@ import {
   QrCode, Clock, CheckCircle2, XCircle, DollarSign, ShoppingBag,
   Copy, Check, ExternalLink, Store, CreditCard,
   X, MapPin, Tag, Shield, Phone, Globe, Mail, Send, Trash2, Loader2, AlertTriangle,
-  Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target,
+  Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target, Info,
+  Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { LoyaltyCards } from '@/components/customer/LoyaltyCards';
 import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 import type { Claim, Deal, Vendor, BusinessHours } from '@/lib/types/database';
+
+// Amenity icon mapping (same as deal detail page)
+const AMENITY_ICONS: Record<string, React.ElementType> = {
+  'wifi': Wifi, 'free wifi': Wifi, 'wi-fi': Wifi,
+  'parking': Car, 'free parking': Car, 'valet': Car,
+  'pet friendly': PawPrint, 'pets allowed': PawPrint, 'dog friendly': PawPrint,
+  'coffee': Coffee, 'drinks': Coffee,
+  'outdoor seating': UtensilsCrossed, 'patio': UtensilsCrossed, 'dine-in': UtensilsCrossed,
+  'live music': Music, 'entertainment': Music,
+};
+
+function getAmenityIcon(amenity: string): React.ElementType {
+  const lower = amenity.toLowerCase();
+  for (const [key, icon] of Object.entries(AMENITY_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return CheckCircle2;
+}
 
 type ClaimStatus = 'active' | 'redeemed' | 'expired' | 'pending_deposit';
 type SortOption = 'newest' | 'oldest' | 'expiring_soon' | 'discount' | 'price_low' | 'price_high' | 'category';
@@ -742,6 +761,68 @@ function DetailModal({
               {deal.description && (
                 <p className="text-gray-600 text-sm leading-relaxed">{deal.description}</p>
               )}
+
+              {/* Highlights */}
+              {deal.highlights && deal.highlights.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {deal.highlights.map((h: string, i: number) => (
+                    <span key={i} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full border border-green-200 font-medium">
+                      <Sparkles className="w-3 h-3" /> {h}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Amenities */}
+              {deal.amenities && deal.amenities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" /> Amenities
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {deal.amenities.map((a: string, i: number) => {
+                      const Icon = getAmenityIcon(a);
+                      return (
+                        <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                          <Icon className="w-3.5 h-3.5 text-primary-500 flex-shrink-0" />
+                          <span className="text-xs text-gray-700">{a}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Terms & Conditions */}
+              {deal.terms_and_conditions && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-primary-500" /> Terms & Conditions
+                  </h4>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{deal.terms_and_conditions}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Fine Print */}
+              {deal.fine_print && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    <span className="font-semibold">Fine Print: </span>
+                    {deal.fine_print}
+                  </p>
+                </div>
+              )}
+
+              {/* View Full Deal Link */}
+              <Link
+                href={`/deals/${deal.id}`}
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-600 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                View Full Deal Page
+              </Link>
 
               {/* Time Remaining */}
               {(status === 'active' || status === 'pending_deposit') && (

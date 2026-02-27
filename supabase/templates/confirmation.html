@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+@keyframes glow{0%,100%{box-shadow:0 0 20px rgba(232,99,43,0.3),0 0 40px rgba(232,99,43,0.1)}50%{box-shadow:0 0 30px rgba(232,99,43,0.6),0 0 60px rgba(232,99,43,0.3),0 0 80px rgba(232,99,43,0.1)}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#0E0E1C;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:linear-gradient(180deg,#0E0E1C 0%,#1A1A2E 50%,#0E0E1C 100%)">
+<tr><td align="center" style="padding:40px 20px">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%">
+
+<tr><td align="center" style="padding-bottom:30px">
+<div style="animation:glow 3s ease-in-out infinite;border-radius:24px;display:inline-block;padding:3px;background:linear-gradient(135deg,#E8632B,#F5A623,#E8632B)">
+<div style="background:#1A1A2E;border-radius:22px;padding:16px 28px;display:inline-block;text-align:center">
+<img src="https://ypoytvqxuxpjipcyaxwg.supabase.co/storage/v1/object/public/vendor-assets/brand/logo.png" alt="SpontiCoupon" width="200" style="display:block;max-width:200px;height:auto" />
+</div></div>
+</td></tr>
+
+<tr><td>
+<div style="background:linear-gradient(135deg,rgba(232,99,43,0.1),rgba(26,26,46,0.95));border:1px solid rgba(232,99,43,0.2);border-radius:24px;overflow:hidden">
+<div style="height:4px;background:linear-gradient(90deg,#E8632B,#F5A623,#29ABE2,#F5A623,#E8632B);background-size:200% auto;animation:shimmer 3s linear infinite"></div>
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+<tr><td style="padding:48px 40px 32px">
+<h1 style="margin:0 0 8px;font-size:32px;font-weight:800;color:#ffffff;text-align:center">Welcome to SpontiCoupon! &#x1F389;</h1>
+<p style="margin:0;font-size:16px;color:#9E9EB3;text-align:center;line-height:1.6">Thank you for joining! Verify your email to get started.</p>
+</td></tr>
+
+<tr><td style="padding:0 40px 32px">
+<div style="background:rgba(41,171,226,0.08);border:1px solid rgba(41,171,226,0.15);border-radius:16px;padding:24px;text-align:center">
+<p style="margin:0 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:2px;color:#29ABE2;font-weight:700">&#x2728; What Awaits You</p>
+<p style="margin:8px 0 0;font-size:16px;font-weight:600;color:#ffffff">Exclusive deals &bull; Real-time savings &bull; Local businesses</p>
+</div>
+</td></tr>
+
+<tr><td style="padding:0 40px 40px" align="center">
+<p style="margin:0 0 24px;font-size:15px;color:#C5C5D0;text-align:center;line-height:1.7">Click the button below to verify your email and start exploring.</p>
+<div style="animation:glow 3s ease-in-out infinite;border-radius:14px;display:inline-block;padding:2px;background:linear-gradient(135deg,#E8632B,#F5A623)">
+<a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#E8632B,#D05524);color:#ffffff;text-decoration:none;font-size:17px;font-weight:700;border-radius:12px;letter-spacing:0.3px">&#x2709;&#xFE0F; Verify My Email</a>
+</div>
+</td></tr>
+</table>
+</div>
+</td></tr>
+
+<tr><td style="padding:32px 40px" align="center">
+<table role="presentation" cellspacing="0" cellpadding="0"><tr>
+<td style="padding:0 24px" align="center">
+<div style="width:48px;height:48px;border-radius:12px;background:rgba(232,99,43,0.1);border:1px solid rgba(232,99,43,0.2);text-align:center;margin:0 auto 8px"><span style="font-size:24px;line-height:48px">&#x1F4B0;</span></div>
+<p style="margin:0;font-size:13px;color:#9E9EB3;font-weight:600">Save Money</p>
+</td>
+<td style="padding:0 24px" align="center">
+<div style="width:48px;height:48px;border-radius:12px;background:rgba(41,171,226,0.1);border:1px solid rgba(41,171,226,0.2);text-align:center;margin:0 auto 8px"><span style="font-size:24px;line-height:48px">&#x1F4CD;</span></div>
+<p style="margin:0;font-size:13px;color:#9E9EB3;font-weight:600">Deals Near You</p>
+</td>
+<td style="padding:0 24px" align="center">
+<div style="width:48px;height:48px;border-radius:12px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.2);text-align:center;margin:0 auto 8px"><span style="font-size:24px;line-height:48px">&#x26A1;</span></div>
+<p style="margin:0;font-size:13px;color:#9E9EB3;font-weight:600">Real-Time</p>
+</td>
+</tr></table>
+</td></tr>
+
+<tr><td style="padding:20px 40px;border-top:1px solid rgba(232,99,43,0.1)" align="center">
+<p style="margin:0 0 8px;font-size:12px;color:#595980">&copy; 2026 SpontiCoupon. All rights reserved.</p>
+<p style="margin:0;font-size:11px;color:#595980">Orlando, FL</p>
+</td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>

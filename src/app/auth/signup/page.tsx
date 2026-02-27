@@ -105,7 +105,9 @@ function SignupForm() {
       callbackParams.set('zip', form.zip);
     }
 
-    const redirectTo = `${window.location.origin}/auth/callback?${callbackParams.toString()}`;
+    // Use NEXT_PUBLIC_APP_URL so email verification links point to production (not localhost)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    const redirectTo = `${baseUrl}/auth/callback?${callbackParams.toString()}`;
 
     const { data, error: authError } = await supabase.auth.signUp({
       email: form.email,
@@ -236,12 +238,17 @@ function SignupForm() {
           </p>
           <p className="text-lg font-semibold text-secondary-500 mb-6">{form.email}</p>
           <div className="card p-6">
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Click the link in your email to confirm your account.
-              {accountType === 'vendor' && (
-                <> You&apos;ll be taken directly to set up your subscription after confirming.</>
-              )}
-            </p>
+            {accountType === 'customer' ? (
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Click the link in your email to confirm your account.
+                Once confirmed, you&apos;ll be ready to browse and claim deals near you!
+              </p>
+            ) : (
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Click the link in your email to confirm your account.
+                You&apos;ll be taken directly to set up your subscription after confirming.
+              </p>
+            )}
           </div>
           <p className="text-sm text-gray-400 mt-6">
             Didn&apos;t receive it? Check your spam folder or{' '}
