@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { DealCard } from '@/components/deals/DealCard';
 import { DealsMap } from '@/components/deals/DealsMap';
-import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Map, ArrowUpDown, Navigation } from 'lucide-react';
+import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Map, ArrowUpDown, Navigation, Store } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import { geocodeAddress } from '@/lib/utils';
@@ -21,7 +21,9 @@ export default function DealsPage() {
     radius: 0,
     search: '',
     city: '',
+    category: '',
   });
+  const [categories, setCategories] = useState<string[]>([]);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
@@ -30,9 +32,13 @@ export default function DealsPage() {
 
   const { lat, lng, loading: geoLoading, error: geoError } = useGeolocation();
 
-  // Warm up stats endpoint
+  // Warm up stats endpoint + fetch categories
   useEffect(() => {
-    fetch('/api/deals/stats').then(() => {}).catch(() => {});
+    fetch('/api/deals/stats').catch(() => {});
+    fetch('/api/deals/categories')
+      .then(r => r.json())
+      .then(d => setCategories(d.categories || []))
+      .catch(() => {});
   }, []);
 
   // Set user location from geolocation hook
@@ -52,6 +58,7 @@ export default function DealsPage() {
       params.set('radius', String(filters.radius));
     }
     if (filters.type) params.set('type', filters.type);
+    if (filters.category) params.set('category', filters.category);
     if (filters.city) params.set('city', filters.city);
     if (filters.search) params.set('search', filters.search);
 
@@ -197,9 +204,9 @@ export default function DealsPage() {
 
           {/* Search & Filters */}
           <div className={`mt-5 ${showFilters ? '' : 'hidden'}`}>
-            {/* Row 1: Keyword search + Location + Radius — stacked on mobile, 3-col on desktop */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {/* Keyword Search — searches titles, descriptions, vendor category, business name */}
+            {/* Row 1: Keyword search + Category + Location + Radius */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Keyword Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
@@ -209,6 +216,21 @@ export default function DealsPage() {
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   placeholder="game show, brunch, yoga, spa..."
                 />
+              </div>
+
+              {/* Business Category */}
+              <div className="relative">
+                <Store className="absolute left-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                <select
+                  value={filters.category}
+                  onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+                  className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+                >
+                  <option value="" className="text-secondary-500">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat} className="text-secondary-500">{cat}</option>
+                  ))}
+                </select>
               </div>
 
               {/* City / ZIP */}

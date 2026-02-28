@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const lng = searchParams.get('lng');
   const radius = searchParams.get('radius') || '25';
   const dealType = searchParams.get('type');
+  const category = searchParams.get('category');
   const city = searchParams.get('city');
   const searchText = searchParams.get('search');
   const page = parseInt(searchParams.get('page') || '1');
@@ -40,12 +41,20 @@ export async function GET(request: NextRequest) {
 
   const { data: deals, error } = await query;
 
+  // Filter by vendor category (post-query since vendor is a joined table)
+  let categoryFilteredDeals = deals || [];
+  if (category) {
+    categoryFilteredDeals = categoryFilteredDeals.filter(
+      deal => deal.vendor?.category?.toLowerCase() === category.toLowerCase()
+    );
+  }
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   // Keyword search: match across deal title, description, tags, vendor info
-  let keywordFilteredDeals = deals || [];
+  let keywordFilteredDeals = categoryFilteredDeals;
   if (searchText) {
     const keywords = searchText.toLowerCase().split(/\s+/).filter(Boolean);
     keywordFilteredDeals = keywordFilteredDeals.filter(deal => {
