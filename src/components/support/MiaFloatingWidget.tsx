@@ -87,7 +87,7 @@ export function MiaFloatingWidget() {
             sm:w-[380px] sm:h-[540px]
             bg-white sm:rounded-2xl
             shadow-2xl border border-gray-200"
-          style={{ maxWidth: '100vw' }}
+          style={{ maxWidth: '100%' }}
           role="dialog"
           aria-label="Chat with Mia, SpontiCoupon assistant"
         >

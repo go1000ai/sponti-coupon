@@ -270,7 +270,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
       {/* Mobile hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-secondary-500 text-white rounded-lg shadow-lg"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-secondary-500 text-white rounded-xl shadow-lg shadow-secondary-500/30 ring-1 ring-white/10"
         aria-label="Open menu"
       >
         <Menu className="w-6 h-6" />

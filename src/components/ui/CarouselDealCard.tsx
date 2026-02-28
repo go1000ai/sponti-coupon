@@ -11,7 +11,7 @@ import type { Deal } from '@/lib/types/database';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
-const CARD_WIDTH = 'w-[calc(100vw-3rem)] sm:w-[280px] lg:w-[300px]';
+const CARD_WIDTH = 'w-[calc(100%-1rem)] max-w-[calc(100vw-3rem)] sm:w-[280px] lg:w-[300px]';
 
 interface CarouselDealCardProps {
   deal: DealWithDistance;

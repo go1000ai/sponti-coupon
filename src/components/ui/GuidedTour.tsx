@@ -23,7 +23,7 @@ function CustomTooltip({
   return (
     <div
       {...tooltipProps}
-      className="bg-white rounded-2xl shadow-2xl w-[calc(100vw-2rem)] sm:w-80 max-w-sm animate-scale-up"
+      className="bg-white rounded-2xl shadow-2xl w-[calc(100%-2rem)] max-w-sm sm:w-80 animate-scale-up"
     >
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-500 to-orange-400 px-4 sm:px-5 py-3 flex items-center justify-between rounded-t-2xl">

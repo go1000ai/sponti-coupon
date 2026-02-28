@@ -44,9 +44,9 @@ export function DealsGrid() {
         <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }} />
         <div className="absolute inset-0 bg-secondary-500/75" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-4 overflow-hidden">
+          <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="shrink-0 w-[calc(100vw-3rem)] sm:w-[calc(85vw-2rem)] lg:w-[calc(70vw-3rem)] lg:max-w-[900px] h-[280px] sm:h-[320px] lg:h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
+              <div key={i} className="shrink-0 w-[85%] sm:w-[280px] lg:w-[300px] h-[280px] sm:h-[320px] lg:h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
             ))}
           </div>
         </div>

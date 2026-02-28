@@ -33,17 +33,26 @@ const accordionItems = [
 function AccordionItem({
   item,
   isActive,
-  onMouseEnter,
+  onActivate,
+  isMobile,
 }: {
   item: (typeof accordionItems)[number];
   isActive: boolean;
-  onMouseEnter: () => void;
+  onActivate: () => void;
+  isMobile: boolean;
 }) {
   return (
     <div
-      className="relative h-[450px] rounded-2xl overflow-hidden cursor-pointer transition-[flex] duration-700 ease-in-out"
-      style={{ flex: isActive ? 6 : 1 }}
-      onMouseEnter={onMouseEnter}
+      className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-700 ease-in-out ${
+        isMobile ? 'w-full' : 'h-[450px]'
+      }`}
+      style={
+        isMobile
+          ? { height: isActive ? 200 : 60 }
+          : { flex: isActive ? 6 : 1, height: 450 }
+      }
+      onMouseEnter={!isMobile ? onActivate : undefined}
+      onClick={isMobile ? onActivate : undefined}
     >
       <img
         src={item.imageUrl}
@@ -56,9 +65,11 @@ function AccordionItem({
           absolute text-white text-lg font-semibold whitespace-nowrap
           transition-all duration-300 ease-in-out
           ${
-            isActive
-              ? 'bottom-6 left-1/2 -translate-x-1/2 rotate-0'
-              : 'w-auto text-left bottom-24 left-1/2 -translate-x-1/2 rotate-90'
+            isMobile
+              ? 'bottom-4 left-4'
+              : isActive
+                ? 'bottom-6 left-1/2 -translate-x-1/2 rotate-0'
+                : 'w-auto text-left bottom-24 left-1/2 -translate-x-1/2 rotate-90'
           }
         `}
       >
@@ -70,16 +81,25 @@ function AccordionItem({
 
 export function LandingAccordionItem() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   return (
     <div className="w-full">
-      <div className="flex flex-row items-center gap-4 p-4">
+      <div className={`flex ${isMobile ? 'flex-col' : 'flex-row items-center'} gap-2 sm:gap-4 p-2 sm:p-4`}>
         {accordionItems.map((item, index) => (
           <AccordionItem
             key={item.id}
             item={item}
             isActive={index === activeIndex}
-            onMouseEnter={() => setActiveIndex(index)}
+            onActivate={() => setActiveIndex(index)}
+            isMobile={isMobile}
           />
         ))}
       </div>
