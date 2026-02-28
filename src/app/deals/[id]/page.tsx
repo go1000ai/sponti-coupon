@@ -207,6 +207,9 @@ export default function DealDetailPage() {
           amount: pi.amount.toString(),
           deal_title: pi.deal_title || '',
         });
+        if (pi.payment_reference) {
+          params.set('payment_reference', pi.payment_reference);
+        }
         router.push(`/claim/manual-payment?${params.toString()}`);
         return;
       }

@@ -172,6 +172,7 @@ export interface Claim {
   payment_tier: string | null;
   stripe_checkout_session_id: string | null;
   deposit_amount_paid: number | null;
+  payment_reference: string | null;
   expires_at: string;
   created_at: string;
   // Joined fields

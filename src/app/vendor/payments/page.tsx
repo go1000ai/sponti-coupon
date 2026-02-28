@@ -35,6 +35,8 @@ export default function VendorPaymentsPage() {
     id: string;
     created_at: string;
     payment_tier: string;
+    payment_reference: string | null;
+    payment_method_type: string | null;
     deal?: { title: string; deal_price: number; deposit_amount: number | null };
     customer?: { email: string; first_name: string | null; last_name: string | null };
   }
@@ -562,13 +564,25 @@ export default function VendorPaymentsPage() {
               <div key={claim.id} className="card p-5 border-amber-200 bg-amber-50/30">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-secondary-500 text-sm">
-                      {claim.deal?.title || 'Deal'}
-                    </h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-secondary-500 text-sm">
+                        {claim.deal?.title || 'Deal'}
+                      </h4>
+                      {claim.payment_reference && (
+                        <span className="inline-flex items-center bg-primary-100 text-primary-700 text-xs font-mono font-bold px-2 py-0.5 rounded-md">
+                          {claim.payment_reference}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {claim.customer?.first_name
                         ? `${claim.customer.first_name} ${claim.customer.last_name || ''}`
                         : claim.customer?.email || 'Customer'}
+                      {claim.payment_method_type && (
+                        <span className="ml-1 text-gray-400">
+                          via {PAYMENT_PROCESSORS[claim.payment_method_type as PaymentProcessorType]?.name || claim.payment_method_type}
+                        </span>
+                      )}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-sm font-bold text-primary-500">
@@ -578,6 +592,11 @@ export default function VendorPaymentsPage() {
                         Claimed {new Date(claim.created_at).toLocaleString()}
                       </span>
                     </div>
+                    {claim.payment_reference && (
+                      <p className="text-[11px] text-amber-600 mt-1.5">
+                        Look for &quot;{claim.payment_reference}&quot; in the payment note/memo
+                      </p>
+                    )}
                   </div>
                   <button
                     onClick={() => handleConfirmPayment(claim.id)}

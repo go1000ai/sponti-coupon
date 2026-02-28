@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { getStripe } from '@/lib/stripe';
 
 // POST /api/stripe/connect/disconnect
-// Revokes the OAuth connection
+// Removes the Stripe Connect link from this vendor
 export async function POST() {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -20,17 +19,6 @@ export async function POST() {
 
   if (!vendor?.stripe_connect_account_id) {
     return NextResponse.json({ error: 'No Stripe Connect account linked' }, { status: 400 });
-  }
-
-  try {
-    // Deauthorize the connected account
-    await getStripe().oauth.deauthorize({
-      client_id: process.env.STRIPE_CONNECT_CLIENT_ID!,
-      stripe_user_id: vendor.stripe_connect_account_id,
-    });
-  } catch (error) {
-    console.error('[Stripe Connect] Deauthorize error:', error);
-    // Continue even if deauthorize fails — we still want to clean up our DB
   }
 
   // Clear vendor's Stripe Connect fields

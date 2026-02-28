@@ -4,6 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
 
+/** Generate a short payment reference code like SC-4829 for manual payments */
+function generatePaymentReference(): string {
+  const num = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+  return `SC-${num}`;
+}
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // POST /api/claims - Create a new claim on a deal
@@ -207,6 +213,7 @@ export async function POST(request: NextRequest) {
   const manualProcessors = ['venmo', 'zelle', 'cashapp'];
   if (primaryMethod && manualProcessors.includes(primaryMethod.processor_type)) {
     const depositAmount = deal.deposit_amount || deal.deal_price;
+    const paymentReference = generatePaymentReference();
 
     const { data: claim, error: claimError } = await supabase
       .from('claims')
@@ -218,6 +225,7 @@ export async function POST(request: NextRequest) {
         expires_at: deal.expires_at,
         payment_method_type: primaryMethod.processor_type,
         payment_tier: 'manual',
+        payment_reference: paymentReference,
       })
       .select()
       .single();
@@ -237,6 +245,7 @@ export async function POST(request: NextRequest) {
         payment_info: primaryMethod.payment_link,
         amount: depositAmount,
         deal_title: deal.title,
+        payment_reference: paymentReference,
       },
       deposit_amount: depositAmount,
     });

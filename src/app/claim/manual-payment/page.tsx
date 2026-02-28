@@ -29,10 +29,12 @@ function ManualPaymentContent() {
   const paymentInfo = searchParams.get('payment_info');
   const amount = searchParams.get('amount');
   const dealTitle = searchParams.get('deal_title');
+  const paymentReference = searchParams.get('payment_reference');
 
   const [status, setStatus] = useState<'instructions' | 'confirmed' | 'error'>('instructions');
   const [claim, setClaim] = useState<Claim | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedRef, setCopiedRef] = useState(false);
   const [pollCount, setPollCount] = useState(0);
 
   const processor = processorType ? PAYMENT_PROCESSORS[processorType] : null;
@@ -71,6 +73,14 @@ function ManualPaymentContent() {
       await navigator.clipboard.writeText(paymentInfo);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleCopyRef = async () => {
+    if (paymentReference) {
+      await navigator.clipboard.writeText(paymentReference);
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 2000);
     }
   };
 
@@ -192,10 +202,33 @@ function ManualPaymentContent() {
             )}
           </div>
 
-          {/* Step 3: Wait for confirmation */}
+          {/* Step 3: Include reference code in payment note */}
+          {paymentReference && (
+            <div className="bg-primary-50 rounded-xl p-5 border border-primary-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">3</div>
+                <p className="font-semibold text-secondary-500">Include Reference Code</p>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Add this code in the payment note/memo so the vendor can match your payment:
+              </p>
+              <div className="flex items-center justify-center gap-3 bg-white rounded-lg p-4 border-2 border-primary-300">
+                <p className="text-2xl font-mono font-bold text-primary-600 tracking-widest">{paymentReference}</p>
+                <button
+                  onClick={handleCopyRef}
+                  className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors shrink-0"
+                  title="Copy reference code"
+                >
+                  {copiedRef ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Wait for confirmation */}
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">3</div>
+              <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">{paymentReference ? '4' : '3'}</div>
               <p className="font-semibold text-secondary-500">Wait for Confirmation</p>
             </div>
             <p className="text-sm text-gray-500">

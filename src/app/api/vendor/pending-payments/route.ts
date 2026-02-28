@@ -19,6 +19,7 @@ export async function GET() {
     .in('payment_tier', ['manual'])
     .gte('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false });
+  // Note: payment_reference is included via the '*' selector
 
   if (error) {
     // Fallback: if the filter-on-join fails, query differently
