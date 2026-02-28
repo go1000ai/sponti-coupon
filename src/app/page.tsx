@@ -1,9 +1,10 @@
 import { HeroSection } from '@/components/landing/HeroSection';
 import { SocialProofBar } from '@/components/landing/SocialProofBar';
-import { BentoDeals } from '@/components/landing/BentoDeals';
-import { CategoryGrid } from '@/components/landing/CategoryGrid';
+import { FeaturedDeals } from '@/components/landing/FeaturedDeals';
 import { SpontiDealsShowcase } from '@/components/landing/SpontiDealsShowcase';
 import { DealsGrid } from '@/components/landing/DealsGrid';
+import { BentoDeals } from '@/components/landing/BentoDeals';
+import { CategoryGrid } from '@/components/landing/CategoryGrid';
 import { DealMapPreview } from '@/components/landing/DealMapPreview';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { CTASection } from '@/components/landing/CTASection';
@@ -23,25 +24,28 @@ export default function Home() {
       {/* 2. Social proof strip — trust metrics */}
       <SocialProofBar />
 
-      {/* 3. Deals Near You — hero deal + 4-card bento grid */}
-      <BentoDeals />
+      {/* 3. Featured Deals — top picks with tab filtering */}
+      <FeaturedDeals />
 
-      {/* 4. Category grid — visual category browsing */}
-      <CategoryGrid />
-
-      {/* 5. Sponti Deals showcase — time-limited Sponti deals with countdown */}
+      {/* 4. Sponti Deals — time-limited deals with countdown */}
       <SpontiDealsShowcase />
 
-      {/* 6. More Deals — full grid on parallax background */}
+      {/* 5. Steady Deals — regular long-running deals */}
       <DealsGrid />
 
-      {/* 7. Deal map preview — visual map with pins */}
+      {/* 6. All Deals — everything else, any location */}
+      <BentoDeals />
+
+      {/* 7. What are you looking for — category browsing */}
+      <CategoryGrid />
+
+      {/* 8. Deal map preview — visual map with pins */}
       <DealMapPreview />
 
-      {/* 8. Testimonials — consumer reviews */}
+      {/* 9. Testimonials — consumer reviews */}
       <TestimonialsSection />
 
-      {/* 9. Final CTA — urgency-driven with stats */}
+      {/* 10. Final CTA — urgency-driven with stats */}
       <CTASection />
 
       {/* Floating FOMO toast — pops up every 12s with live claim activity */}

@@ -3,11 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, MapPin } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { DealTypeLegend } from '@/components/ui/SpontiBadge';
 import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
-import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
@@ -15,17 +14,11 @@ type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean
 export function BentoDeals() {
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
-  const { lat, lng } = useGeolocation();
 
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const params = new URLSearchParams({ limit: '8' });
-        if (lat && lng) {
-          params.set('lat', String(lat));
-          params.set('lng', String(lng));
-          params.set('radius', '25');
-        }
+        const params = new URLSearchParams({ limit: '12' });
         const res = await fetch(`/api/deals?${params.toString()}`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
@@ -38,7 +31,7 @@ export function BentoDeals() {
       setLoading(false);
     }
     fetchDeals();
-  }, [lat, lng]);
+  }, []);
 
   if (loading) {
     return (
@@ -66,16 +59,15 @@ export function BentoDeals() {
         <ScrollReveal animation="fade-up">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 rounded-full px-5 py-2 mb-3 shadow-md">
-                <MapPin className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">NEAR YOU</span>
-                <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full px-5 py-2 mb-3 shadow-md">
+                <Sparkles className="w-4 h-4 text-white" />
+                <span className="text-sm font-bold text-white tracking-wide">MORE DEALS</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-secondary-500">
-                Deals Near You
+                Explore All Deals
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
-                The best Sponti &amp; Steady deals close to your location
+                Deals from everywhere — online, in-store, and more
               </p>
               <DealTypeLegend className="mt-3 flex-wrap" />
             </div>

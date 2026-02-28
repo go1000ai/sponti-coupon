@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Tag } from 'lucide-react';
 import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
@@ -19,7 +19,7 @@ export function DealsGrid() {
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const params = new URLSearchParams({ limit: '12' });
+        const params = new URLSearchParams({ limit: '12', type: 'regular' });
         if (lat && lng) {
           params.set('lat', String(lat));
           params.set('lng', String(lng));
@@ -71,22 +71,22 @@ export function DealsGrid() {
         <ScrollReveal animation="fade-up">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-full px-5 py-2 mb-3 shadow-sm border border-white/20">
-                <Sparkles className="w-4 h-4 text-primary-400" strokeWidth={1.8} />
-                <span className="text-sm font-semibold text-white">All Deals</span>
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-accent-500 to-blue-600 rounded-full px-5 py-2 mb-3 shadow-md">
+                <Tag className="w-4 h-4 text-white" />
+                <span className="text-sm font-bold text-white tracking-wide">STEADY DEALS</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                Deals Near You
+                Steady Deals Near You
               </h2>
               <p className="text-gray-300 mt-1 text-base sm:text-lg">
-                {deals.length} deals available — browse and save big
+                Long-running deals you can count on — always available
               </p>
             </div>
             <Link
               href="/deals"
               className="text-primary-400 font-semibold inline-flex items-center gap-1 hover:text-primary-300 transition-colors group"
             >
-              Browse All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              See All Steady Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </ScrollReveal>
@@ -102,7 +102,7 @@ export function DealsGrid() {
                 showCountdown={deal.deal_type === 'sponti_coupon'}
               />
             ))}
-            <ViewAllCard href="/deals" variant="dark" />
+            <ViewAllCard href="/deals?type=regular" variant="dark" />
           </DealCarousel>
         </ScrollReveal>
 

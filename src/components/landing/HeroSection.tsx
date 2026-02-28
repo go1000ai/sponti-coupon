@@ -40,7 +40,7 @@ export function HeroSection() {
     fetchStats();
   }, []);
 
-  // Very subtle hero parallax — slight movement, not much
+  // Hero parallax — background stays mostly fixed while content scrolls away
   useEffect(() => {
     const element = bgRef.current;
     if (!element) return;
@@ -51,7 +51,8 @@ export function HeroSection() {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollY = window.scrollY;
-          element.style.transform = `translate3d(0, ${scrollY * 0.15}px, 0)`;
+          // Offset most of the scroll so the background barely moves
+          element.style.transform = `translate3d(0, ${scrollY * 0.85}px, 0)`;
           ticking = false;
         });
         ticking = true;
@@ -63,7 +64,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative text-white overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-start md:items-center bg-secondary-700">
+    <section className="relative text-white overflow-hidden h-[80vh] flex items-start md:items-center bg-secondary-700">
       {/* Business collage background — moves slightly as you scroll */}
       <div
         ref={bgRef}
@@ -116,13 +117,16 @@ export function HeroSection() {
             </div>
 
             <h1
-              className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter transition-opacity duration-700 ease-out ${
+              className={`text-[1.6rem] sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tighter transition-opacity duration-700 ease-out ${
                 mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '150ms' }}
             >
-              Unbeatable Sponti Deals
-              <span className="text-primary-500"> Near You</span>
+              Unbeatable
+              <br />
+              <span className="text-primary-500">Sponti Deals</span>
+              <br />
+              Near You
             </h1>
 
             {/* Urgency badge — live deal count (always rendered, fades in when stats load) */}
