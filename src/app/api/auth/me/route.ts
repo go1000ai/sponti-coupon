@@ -10,14 +10,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
-    // Get role and name from user_profiles
+    // Get role, active_role, and name from user_profiles
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role, first_name, last_name')
+      .select('role, active_role, first_name, last_name')
       .eq('id', user.id)
       .single();
 
     let role = profile?.role || null;
+    const activeRole = profile?.active_role || null;
     const firstName = profile?.first_name || null;
     const lastName = profile?.last_name || null;
 
@@ -68,12 +69,25 @@ export async function GET() {
       subscription_tier = vendor?.subscription_tier || null;
     }
 
+    // Check if vendor also has a customer record (dual-role)
+    let isAlsoCustomer = false;
+    if (role === 'vendor') {
+      const { data: customerRecord } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+      isAlsoCustomer = !!customerRecord;
+    }
+
     const avatarUrl = user.user_metadata?.avatar_url || null;
 
     return NextResponse.json({
       id: user.id,
       email: user.email,
       role,
+      active_role: activeRole,
+      is_also_customer: isAlsoCustomer,
       first_name: firstName,
       last_name: lastName,
       avatar_url: avatarUrl,

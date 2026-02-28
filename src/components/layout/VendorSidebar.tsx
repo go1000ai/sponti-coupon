@@ -25,6 +25,8 @@ import {
   Gift,
   ImagePlus,
   Globe,
+  ArrowLeftRight,
+  ShoppingBag,
 } from 'lucide-react';
 
 interface NavChild {
@@ -71,9 +73,12 @@ interface VendorSidebarProps {
   personalName: string;
   userEmail: string;
   logoUrl?: string | null;
+  isAlsoCustomer?: boolean;
+  onSwitchToCustomer?: () => void;
+  onBecomeCustomer?: () => void;
 }
 
-export default function VendorSidebar({ onSignOut, userName, personalName, userEmail, logoUrl }: VendorSidebarProps) {
+export default function VendorSidebar({ onSignOut, userName, personalName, userEmail, logoUrl, isAlsoCustomer, onSwitchToCustomer, onBecomeCustomer }: VendorSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
@@ -134,6 +139,33 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
           />
         </a>
         <p className="text-[11px] text-secondary-300 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Vendor Portal</p>
+      </div>
+
+      {/* Role Switcher / Become a Customer */}
+      <div className="px-3 pt-3 pb-1">
+        {isAlsoCustomer ? (
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              onSwitchToCustomer?.();
+            }}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 hover:text-primary-200 transition-all duration-200 border border-primary-500/20"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>Switch to Customer</span>
+          </button>
+        ) : onBecomeCustomer ? (
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              onBecomeCustomer?.();
+            }}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-secondary-400/15 text-secondary-200 hover:bg-primary-500/15 hover:text-primary-300 transition-all duration-200 border border-secondary-400/20 hover:border-primary-500/20"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Become a Customer</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Navigation */}

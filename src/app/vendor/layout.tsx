@@ -10,7 +10,7 @@ import VendorSidebar from '@/components/layout/VendorSidebar';
 import { Ban, CreditCard } from 'lucide-react';
 
 function VendorLayoutInner({ children }: { children: React.ReactNode }) {
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, loading, signOut, isAlsoCustomer, switchRole, becomeCustomer } = useAuth();
   const { status: subscriptionStatus, loading: tierLoading } = useVendorTier();
   const router = useRouter();
   const pathname = usePathname();
@@ -121,6 +121,9 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
         personalName={user?.user_metadata?.full_name || user?.email?.split('@')[0] || ''}
         userEmail={user?.email || ''}
         logoUrl={vendorLogoUrl}
+        isAlsoCustomer={isAlsoCustomer}
+        onSwitchToCustomer={() => switchRole('customer')}
+        onBecomeCustomer={becomeCustomer}
       />
       <main className="lg:ml-64 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">

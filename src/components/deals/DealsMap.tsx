@@ -19,8 +19,9 @@ const DealsMapInner = dynamic(() => import('./DealsMapInner'), {
 interface DealsMapProps {
   deals: Deal[];
   userLocation?: { lat: number; lng: number } | null;
+  onSearchArea?: (center: { lat: number; lng: number }, radiusMiles: number) => void;
 }
 
-export function DealsMap({ deals, userLocation }: DealsMapProps) {
-  return <DealsMapInner deals={deals} userLocation={userLocation} />;
+export function DealsMap({ deals, userLocation, onSearchArea }: DealsMapProps) {
+  return <DealsMapInner deals={deals} userLocation={userLocation} onSearchArea={onSearchArea} />;
 }

@@ -8,6 +8,8 @@ import type { UserRole } from '@/lib/types/database';
 interface AuthState {
   user: User | null;
   role: UserRole | null;
+  activeRole: UserRole | null; // which mode they're in (null = primary role)
+  isAlsoCustomer: boolean; // vendor who also has a customer record
   loading: boolean;
   firstName: string | null;
   lastName: string | null;
@@ -20,20 +22,40 @@ interface AuthState {
  * deadlock if called from inside onAuthStateChange (because data queries
  * call getSession() which awaits initializePromise).
  */
-async function fetchRoleFromServer(): Promise<{ id: string; email: string; role: UserRole | null; first_name: string | null; last_name: string | null; avatar_url: string | null } | null> {
+interface ServerProfile {
+  id: string;
+  email: string;
+  role: UserRole | null;
+  active_role: UserRole | null;
+  is_also_customer: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+}
+
+async function fetchRoleFromServer(): Promise<ServerProfile | null> {
   try {
     const res = await fetch('/api/auth/me');
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.id) return null;
-    return { id: data.id, email: data.email, role: data.role as UserRole | null, first_name: data.first_name || null, last_name: data.last_name || null, avatar_url: data.avatar_url || null };
+    return {
+      id: data.id,
+      email: data.email,
+      role: data.role as UserRole | null,
+      active_role: data.active_role as UserRole | null,
+      is_also_customer: data.is_also_customer || false,
+      first_name: data.first_name || null,
+      last_name: data.last_name || null,
+      avatar_url: data.avatar_url || null,
+    };
   } catch {
     return null;
   }
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({ user: null, role: null, loading: true, firstName: null, lastName: null, avatarUrl: null });
+  const [state, setState] = useState<AuthState>({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: true, firstName: null, lastName: null, avatarUrl: null });
   const supabaseRef = useRef(createClient());
   const resolvedRef = useRef(false);
 
@@ -66,7 +88,7 @@ export function useAuth() {
 
       if (event === 'SIGNED_OUT') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
         return;
       }
 
@@ -78,6 +100,8 @@ export function useAuth() {
         setState({
           user: session.user,
           role: profile?.role ?? null,
+          activeRole: profile?.active_role ?? null,
+          isAlsoCustomer: profile?.is_also_customer ?? false,
           loading: false,
           firstName: profile?.first_name ?? null,
           lastName: profile?.last_name ?? null,
@@ -85,7 +109,7 @@ export function useAuth() {
         });
       } else if (event === 'INITIAL_SESSION') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
       }
     });
 
@@ -102,13 +126,15 @@ export function useAuth() {
         setState({
           user: { id: profile.id, email: profile.email } as User,
           role: profile.role,
+          activeRole: profile.active_role,
+          isAlsoCustomer: profile.is_also_customer,
           loading: false,
           firstName: profile.first_name,
           lastName: profile.last_name,
           avatarUrl: profile.avatar_url,
         });
       } else {
-        setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
       }
     }, 2000);
 
@@ -127,9 +153,43 @@ export function useAuth() {
       // Fallback: try browser client signout
       try { await supabaseRef.current.auth.signOut(); } catch { /* ignore */ }
     }
-    setState({ user: null, role: null, loading: false, firstName: null, lastName: null, avatarUrl: null });
+    setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
     window.location.href = '/';
   };
 
-  return { ...state, signOut, setAvatarUrl };
+  // Switch between vendor and customer mode
+  const switchRole = async (targetRole: 'vendor' | 'customer') => {
+    try {
+      const res = await fetch('/api/auth/switch-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: targetRole }),
+      });
+      if (res.ok) {
+        setState(prev => ({ ...prev, activeRole: targetRole === 'vendor' ? null : targetRole }));
+        // Redirect to the appropriate dashboard
+        window.location.href = targetRole === 'vendor' ? '/vendor/dashboard' : '/dashboard';
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  // Create customer record for a vendor (one-time "Become a Customer")
+  const becomeCustomer = async () => {
+    try {
+      const res = await fetch('/api/auth/become-customer', { method: 'POST' });
+      if (res.ok) {
+        setState(prev => ({ ...prev, isAlsoCustomer: true, activeRole: 'customer' }));
+        window.location.href = '/dashboard';
+      }
+    } catch {
+      // silently fail
+    }
+  };
+
+  // The effective role the user is currently operating as
+  const effectiveRole = state.activeRole || state.role;
+
+  return { ...state, effectiveRole, signOut, setAvatarUrl, switchRole, becomeCustomer };
 }

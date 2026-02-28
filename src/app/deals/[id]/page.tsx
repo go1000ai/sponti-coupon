@@ -172,8 +172,11 @@ export default function DealDetailPage() {
     }
   };
 
+  const isOwnDeal = !!user && !!deal && deal.vendor_id === user.id;
+
   const handleClaim = async () => {
     if (!user) { router.push(`/auth/login?redirect=/deals/${params.id}`); return; }
+    if (isOwnDeal) { setError('You cannot claim your own deal'); return; }
     if (deal?.deposit_amount && deal.deposit_amount > 0) { setShowDisclaimer(true); return; }
     await processClaim();
   };
@@ -524,17 +527,23 @@ export default function DealDetailPage() {
               )}
 
               {!isExpired && !isSoldOut && deal.status === 'active' && (
-                <button
-                  onClick={handleClaim}
-                  disabled={claiming}
-                  className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg mt-4 ${
-                    isSponti || hasDeposit
-                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
-                      : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
-                  }`}
-                >
-                  {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
-                </button>
+                isOwnDeal ? (
+                  <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100 mt-4">
+                    This is your deal
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleClaim}
+                    disabled={claiming}
+                    className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg mt-4 ${
+                      isSponti || hasDeposit
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
+                        : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
+                    }`}
+                  >
+                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
+                  </button>
+                )
               )}
 
               {isExpired && (
@@ -1040,17 +1049,23 @@ export default function DealDetailPage() {
 
                 {/* Claim Button */}
                 {!isExpired && !isSoldOut && deal.status === 'active' && (
-                  <button
-                    onClick={handleClaim}
-                    disabled={claiming}
-                    className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
-                      isSponti || hasDeposit
-                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
-                        : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
-                    }`}
-                  >
-                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
-                  </button>
+                  isOwnDeal ? (
+                    <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
+                      This is your deal
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleClaim}
+                      disabled={claiming}
+                      className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
+                        isSponti || hasDeposit
+                          ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
+                          : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
+                      }`}
+                    >
+                      {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
+                    </button>
+                  )
                 )}
 
                 {isExpired && (

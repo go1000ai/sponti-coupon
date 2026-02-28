@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, MapPin, Tag, ShieldCheck, Users } from 'lucide-react';
+import { Clock, MapPin, Tag, ShieldCheck, Users, Store } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
@@ -12,14 +12,15 @@ import type { Deal } from '@/lib/types/database';
 interface DealCardProps {
   deal: Deal;
   distance?: number;
+  isOwnDeal?: boolean;
 }
 
-export function DealCard({ deal, distance }: DealCardProps) {
+export function DealCard({ deal, distance, isOwnDeal }: DealCardProps) {
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
 
   return (
-    <Link href={`/deals/${deal.id}`} className="card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+    <Link href={`/deals/${deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'opacity-60 ring-2 ring-secondary-300' : ''}`}>
       {/* Image / Header */}
       <div className={`relative h-36 sm:h-40 md:h-48 overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
         {deal.image_url ? (
@@ -49,8 +50,15 @@ export function DealCard({ deal, distance }: DealCardProps) {
         </div>
 
         {/* Discount badge - top right */}
-        <div className="absolute top-3 right-3 bg-white text-primary-500 font-bold text-sm sm:text-lg px-2.5 sm:px-3 py-1 rounded-full shadow-lg">
-          {formatPercentage(deal.discount_percentage)} OFF
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+          <div className="bg-white text-primary-500 font-bold text-sm sm:text-lg px-2.5 sm:px-3 py-1 rounded-full shadow-lg">
+            {formatPercentage(deal.discount_percentage)} OFF
+          </div>
+          {isOwnDeal && (
+            <span className="inline-flex items-center gap-1 bg-secondary-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+              <Store className="w-2.5 h-2.5" /> Your Deal
+            </span>
+          )}
         </div>
 
         {/* Countdown overlay — shows for all active deals */}

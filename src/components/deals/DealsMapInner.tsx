@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Navigation } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { Navigation, Search } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
@@ -75,12 +75,33 @@ function DealPopupCard({ deal }: { deal: Deal }) {
   );
 }
 
+// Detects when the user pans/zooms and shows "Search this area"
+function MapMoveHandler({ onMoved }: { onMoved: (center: { lat: number; lng: number }, radiusMiles: number) => void }) {
+  useMapEvents({
+    moveend(e) {
+      const map = e.target;
+      const center = map.getCenter();
+      const bounds = map.getBounds();
+      // Calculate approximate radius in miles from center to corner
+      const ne = bounds.getNorthEast();
+      const distMeters = center.distanceTo(ne); // meters
+      const distMiles = distMeters / 1609.34;
+      onMoved({ lat: center.lat, lng: center.lng }, Math.ceil(distMiles));
+    },
+  });
+  return null;
+}
+
 interface DealsMapInnerProps {
   deals: Deal[];
   userLocation?: { lat: number; lng: number } | null;
+  onSearchArea?: (center: { lat: number; lng: number }, radiusMiles: number) => void;
 }
 
-export default function DealsMapInner({ deals, userLocation }: DealsMapInnerProps) {
+export default function DealsMapInner({ deals, userLocation, onSearchArea }: DealsMapInnerProps) {
+  const [mapMoved, setMapMoved] = useState(false);
+  const [pendingSearch, setPendingSearch] = useState<{ center: { lat: number; lng: number }; radius: number } | null>(null);
+
   const geoDeals = useMemo(
     () => deals.filter(d => d.vendor?.lat && d.vendor?.lng),
     [deals]
@@ -95,6 +116,19 @@ export default function DealsMapInner({ deals, userLocation }: DealsMapInnerProp
     }
     return [25.7617, -80.1918] as [number, number];
   }, [userLocation, geoDeals]);
+
+  const handleMapMoved = useCallback((newCenter: { lat: number; lng: number }, radiusMiles: number) => {
+    if (!onSearchArea) return;
+    setPendingSearch({ center: newCenter, radius: radiusMiles });
+    setMapMoved(true);
+  }, [onSearchArea]);
+
+  const handleSearchArea = useCallback(() => {
+    if (pendingSearch && onSearchArea) {
+      onSearchArea(pendingSearch.center, pendingSearch.radius);
+      setMapMoved(false);
+    }
+  }, [pendingSearch, onSearchArea]);
 
   return (
     <div className="relative">
@@ -119,6 +153,19 @@ export default function DealsMapInner({ deals, userLocation }: DealsMapInnerProp
         </div>
       </div>
 
+      {/* "Search this area" button — appears after user pans/zooms */}
+      {mapMoved && onSearchArea && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000]">
+          <button
+            onClick={handleSearchArea}
+            className="flex items-center gap-2 bg-white shadow-lg border border-gray-200 rounded-full px-5 py-2.5 text-sm font-semibold text-secondary-500 hover:bg-gray-50 hover:shadow-xl transition-all"
+          >
+            <Search className="w-4 h-4 text-primary-500" />
+            Search this area
+          </button>
+        </div>
+      )}
+
       {/* Map */}
       <div className="w-full h-[500px] sm:h-[600px] rounded-2xl overflow-hidden shadow-xl border border-gray-200">
         <MapContainer
@@ -131,6 +178,8 @@ export default function DealsMapInner({ deals, userLocation }: DealsMapInnerProp
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          {onSearchArea && <MapMoveHandler onMoved={handleMapMoved} />}
 
           {userLocation && (
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>

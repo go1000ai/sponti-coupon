@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { Navigation, MapPin, ArrowRight } from 'lucide-react';
 import { DealsMap } from '@/components/deals/DealsMap';
@@ -22,16 +22,11 @@ export function DealMapPreview() {
     }
   }, []);
 
+  // Fetch ALL deals on initial load
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const params = new URLSearchParams({ limit: '50' });
-        if (userLocation) {
-          params.set('lat', String(userLocation.lat));
-          params.set('lng', String(userLocation.lng));
-          params.set('radius', '50');
-        }
-        const res = await fetch(`/api/deals?${params.toString()}`);
+        const res = await fetch('/api/deals?limit=100');
         const data = await res.json();
         setDeals(data.deals || []);
       } catch {
@@ -40,7 +35,24 @@ export function DealMapPreview() {
       setLoading(false);
     }
     fetchDeals();
-  }, [userLocation]);
+  }, []);
+
+  // "Search this area" — re-fetch deals for the visible map area
+  const handleSearchArea = useCallback(async (center: { lat: number; lng: number }, radiusMiles: number) => {
+    try {
+      const params = new URLSearchParams({
+        lat: String(center.lat),
+        lng: String(center.lng),
+        radius: String(radiusMiles),
+        limit: '100',
+      });
+      const res = await fetch(`/api/deals?${params.toString()}`);
+      const data = await res.json();
+      setDeals(data.deals || []);
+    } catch {
+      // keep existing deals on error
+    }
+  }, []);
 
   return (
     <section className="py-10 sm:py-16 bg-gray-50">
@@ -49,15 +61,15 @@ export function DealMapPreview() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-50 to-blue-50 rounded-full px-5 py-2 mb-3 shadow-sm">
               <Navigation className="w-4 h-4 text-cyan-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-cyan-600">Deals Near You</span>
+              <span className="text-sm font-semibold text-cyan-600">Deal Map</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
-              Discover Local Savings
+              All Deals on the Map
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">
               {deals.length > 0
-                ? `${deals.length} verified deals from local businesses`
-                : 'Hundreds of verified businesses offering deals in your area'}
+                ? `${deals.length} deals from verified local businesses`
+                : 'Explore deals from verified businesses everywhere'}
             </p>
           </div>
         </ScrollReveal>
@@ -72,7 +84,7 @@ export function DealMapPreview() {
                 </div>
               </div>
             ) : (
-              <DealsMap deals={deals} userLocation={userLocation} />
+              <DealsMap deals={deals} userLocation={userLocation} onSearchArea={handleSearchArea} />
             )}
 
             {/* CTA overlay at bottom */}

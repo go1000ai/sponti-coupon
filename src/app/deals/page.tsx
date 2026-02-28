@@ -6,6 +6,7 @@ import { DealsMap } from '@/components/deals/DealsMap';
 import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Map, ArrowUpDown, Navigation, Store } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
+import { useAuth } from '@/lib/hooks/useAuth';
 import { geocodeAddress } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
@@ -14,6 +15,7 @@ const RADIUS_OPTIONS = [10, 25, 50, 100, 0]; // 0 = no limit
 type SortOption = 'distance' | 'newest' | 'discount';
 
 export default function DealsPage() {
+  const { user } = useAuth();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
@@ -32,14 +34,23 @@ export default function DealsPage() {
 
   const { lat, lng, loading: geoLoading, error: geoError } = useGeolocation();
 
-  // Warm up stats endpoint + fetch categories
+  // Warm up stats endpoint
   useEffect(() => {
     fetch('/api/deals/stats').catch(() => {});
-    fetch('/api/deals/categories')
+  }, []);
+
+  // Fetch categories — pass user location so only relevant categories show (250mi + online)
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (userLocation) {
+      params.set('lat', String(userLocation.lat));
+      params.set('lng', String(userLocation.lng));
+    }
+    fetch(`/api/deals/categories?${params.toString()}`)
       .then(r => r.json())
       .then(d => setCategories(d.categories || []))
       .catch(() => {});
-  }, []);
+  }, [userLocation]);
 
   // Set user location from geolocation hook
   useEffect(() => {
@@ -346,7 +357,14 @@ export default function DealsPage() {
               <p className="text-gray-400 mt-2">Try adjusting your filters or expanding your search radius</p>
             </div>
           ) : viewMode === 'map' ? (
-            <DealsMap deals={deals} userLocation={userLocation} />
+            <DealsMap
+              deals={deals}
+              userLocation={userLocation}
+              onSearchArea={async (center, radiusMiles) => {
+                setUserLocation(center);
+                setFilters(f => ({ ...f, radius: radiusMiles }));
+              }}
+            />
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {deals.map((deal, i) => (
@@ -358,6 +376,7 @@ export default function DealsPage() {
                   <DealCard
                     deal={deal}
                     distance={(deal as Deal & { distance?: number }).distance}
+                    isOwnDeal={!!user && deal.vendor_id === user.id}
                   />
                 </div>
               ))}

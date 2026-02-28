@@ -21,26 +21,26 @@ export default function Home() {
       {/* 1. Hero — parallax + search autocomplete + image accordion */}
       <HeroSection />
 
-      {/* 2. Social proof strip — trust metrics */}
-      <SocialProofBar />
-
-      {/* 3. Featured Deals — top picks with tab filtering */}
+      {/* 2. Featured Deals — top picks with tab filtering */}
       <FeaturedDeals />
 
-      {/* 4. Sponti Deals — time-limited deals with countdown */}
+      {/* 3. Sponti Deals — time-limited deals with countdown */}
       <SpontiDealsShowcase />
 
-      {/* 5. Steady Deals — regular long-running deals */}
+      {/* 4. Steady Deals — regular long-running deals */}
       <DealsGrid />
 
-      {/* 6. All Deals — everything else, any location */}
+      {/* 5. All Deals — everything else, any location */}
       <BentoDeals />
 
-      {/* 7. What are you looking for — category browsing */}
+      {/* 6. What are you looking for — category browsing */}
       <CategoryGrid />
 
-      {/* 8. Deal map preview — visual map with pins */}
+      {/* 7. Deal map preview — all deals on map */}
       <DealMapPreview />
+
+      {/* 8. Social proof strip — category partners */}
+      <SocialProofBar />
 
       {/* 9. Testimonials — consumer reviews */}
       <TestimonialsSection />

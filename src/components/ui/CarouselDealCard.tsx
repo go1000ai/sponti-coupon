@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, MapPin, Star, ArrowRight } from 'lucide-react';
+import { Clock, MapPin, Star, ArrowRight, Store } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -19,6 +19,7 @@ interface CarouselDealCardProps {
   showCountdown?: boolean;
   rank?: number;
   heightClass?: string;
+  isOwnDeal?: boolean;
 }
 
 export function CarouselDealCard({
@@ -28,6 +29,7 @@ export function CarouselDealCard({
   showCountdown = false,
   rank,
   heightClass = 'h-[320px] sm:h-[340px] lg:h-[360px]',
+  isOwnDeal,
 }: CarouselDealCardProps) {
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
@@ -45,7 +47,7 @@ export function CarouselDealCard({
       className={`snap-start shrink-0 ${CARD_WIDTH} ${heightClass} block relative rounded-2xl overflow-hidden deal-card-shine group
         shadow-lg ${glowColor} hover:shadow-xl hover:shadow-primary-500/40
         ring-1 ring-white/10 hover:ring-primary-400/50
-        hover:-translate-y-1 transition-all duration-500 ease-out`}
+        hover:-translate-y-1 transition-all duration-500 ease-out ${isOwnDeal ? 'opacity-50' : ''}`}
     >
       {/* Background image */}
       <div className={`absolute inset-0 ${fallbackGradient}`}>
@@ -80,6 +82,11 @@ export function CarouselDealCard({
         </div>
 
         <div className="flex items-center gap-1.5">
+          {isOwnDeal && (
+            <span className="inline-flex items-center gap-0.5 bg-secondary-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
+              <Store className="w-2.5 h-2.5" /> Your Deal
+            </span>
+          )}
           {rank && (
             <span className="bg-white/90 backdrop-blur-sm font-bold text-[10px] text-secondary-500 w-6 h-6 rounded-full flex items-center justify-center shadow-md">
               #{rank}

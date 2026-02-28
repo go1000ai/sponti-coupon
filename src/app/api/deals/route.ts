@@ -53,7 +53,44 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Keyword search: match across deal title, description, tags, vendor info
+  // Fuzzy match helper — checks if a keyword appears in text, allowing typos
+  function fuzzyMatch(keyword: string, text: string): boolean {
+    // Exact substring match first (fast path)
+    if (text.includes(keyword)) return true;
+
+    // Split text into words and check each for close match
+    const words = text.split(/\s+/);
+    const maxTypos = keyword.length <= 3 ? 0 : keyword.length <= 5 ? 1 : 2;
+
+    for (const word of words) {
+      // Skip words that are way too different in length
+      if (Math.abs(word.length - keyword.length) > maxTypos) continue;
+
+      // Levenshtein distance
+      const len1 = keyword.length;
+      const len2 = word.length;
+      const dp: number[][] = Array.from({ length: len1 + 1 }, (_, i) =>
+        Array.from({ length: len2 + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+      );
+      for (let i = 1; i <= len1; i++) {
+        for (let j = 1; j <= len2; j++) {
+          dp[i][j] = keyword[i - 1] === word[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      if (dp[len1][len2] <= maxTypos) return true;
+    }
+
+    // Also check if keyword is a prefix match (e.g. "auto" matches "automotive")
+    for (const word of words) {
+      if (word.startsWith(keyword) || keyword.startsWith(word)) return true;
+    }
+
+    return false;
+  }
+
+  // Keyword search: match across deal title, description, tags, vendor info (with fuzzy/typo tolerance)
   let keywordFilteredDeals = categoryFilteredDeals;
   if (searchText) {
     const keywords = searchText.toLowerCase().split(/\s+/).filter(Boolean);
@@ -68,8 +105,8 @@ export async function GET(request: NextRequest) {
         ...(deal.amenities || []),
         ...(deal.highlights || []),
       ].join(' ').toLowerCase();
-      // Every keyword must appear somewhere in the searchable text
-      return keywords.every(kw => searchableText.includes(kw));
+      // Every keyword must match somewhere (exact or fuzzy)
+      return keywords.every(kw => fuzzyMatch(kw, searchableText));
     });
   }
 

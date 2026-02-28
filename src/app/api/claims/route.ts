@@ -49,6 +49,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 
+  // Vendors cannot claim their own deals
+  if (deal.vendor?.id === user.id) {
+    return NextResponse.json({ error: 'You cannot claim your own deal' }, { status: 403 });
+  }
+
   if (deal.status !== 'active') {
     return NextResponse.json({ error: 'Deal is no longer active' }, { status: 400 });
   }

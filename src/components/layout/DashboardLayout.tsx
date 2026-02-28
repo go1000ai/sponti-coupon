@@ -18,6 +18,7 @@ import {
   X,
   User,
   Headphones,
+  ArrowLeftRight,
 } from 'lucide-react';
 
 const navItems = [
@@ -34,7 +35,8 @@ const browseItem = { label: 'Browse Deals', href: '/deals', icon: Compass, dataT
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { user, role, signOut, switchRole } = useAuth();
+  const isVendorInCustomerMode = role === 'vendor';
   const [mobileOpen, setMobileOpen] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
 
@@ -71,6 +73,22 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </a>
         <p className="text-[11px] text-secondary-300 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Customer Portal</p>
       </div>
+
+      {/* Switch to Vendor (only shown for vendors in customer mode) */}
+      {isVendorInCustomerMode && (
+        <div className="px-3 pt-3 pb-1">
+          <button
+            onClick={() => {
+              setMobileOpen(false);
+              switchRole('vendor');
+            }}
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 hover:text-primary-200 transition-all duration-200 border border-primary-500/20"
+          >
+            <ArrowLeftRight className="w-4 h-4" />
+            <span>Switch to Vendor</span>
+          </button>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav {...(enableTourAttrs ? { 'data-tour': 'customer-sidebar' } : {})} className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
