@@ -20,7 +20,7 @@ export function SocialProofBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-in">
           <p className="text-center text-gray-500 text-sm font-medium mb-6 sm:mb-8">
-            Trusted by <span className="text-secondary-500 font-bold">5,000+</span> local businesses across every category
+            Partnering with <span className="text-secondary-500 font-bold">local businesses</span> across every category
           </p>
         </ScrollReveal>
 

@@ -210,7 +210,7 @@ export function HeroSection() {
               </div>
               <div className="flex items-center gap-1.5 text-white/60 text-xs">
                 <Users className="w-4 h-4 text-blue-400" />
-                <span>50,000+ Users</span>
+                <span>Growing Community</span>
               </div>
               <div className="flex items-center gap-1 text-white/60 text-xs">
                 <div className="flex">
@@ -218,7 +218,7 @@ export function HeroSection() {
                     <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
-                <span className="ml-1">4.9 Rating</span>
+                <span className="ml-1">Top Rated</span>
               </div>
             </div>
           </div>

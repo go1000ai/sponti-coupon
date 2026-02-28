@@ -23,6 +23,7 @@ interface CarouselDealCardProps {
 
 export function CarouselDealCard({
   deal,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   variant = 'default',
   showCountdown = false,
   rank,
@@ -36,12 +37,15 @@ export function CarouselDealCard({
     ? 'bg-gradient-to-br from-primary-500 to-primary-700'
     : 'bg-gradient-to-br from-secondary-400 to-secondary-600';
 
-  const ringClass = variant === 'dark-bg' ? 'ring-1 ring-white/20' : '';
+  const glowColor = isSponti ? 'shadow-primary-500/30' : 'shadow-accent-500/20';
 
   return (
     <Link
       href={`/deals/${deal.id}`}
-      className={`snap-start shrink-0 ${CARD_WIDTH} ${heightClass} block relative rounded-2xl overflow-hidden deal-card-shine group ${ringClass}`}
+      className={`snap-start shrink-0 ${CARD_WIDTH} ${heightClass} block relative rounded-2xl overflow-hidden deal-card-shine group
+        shadow-lg ${glowColor} hover:shadow-xl hover:shadow-primary-500/40
+        ring-1 ring-white/10 hover:ring-primary-400/50
+        hover:-translate-y-1 transition-all duration-500 ease-out`}
     >
       {/* Background image */}
       <div className={`absolute inset-0 ${fallbackGradient}`}>
@@ -55,6 +59,9 @@ export function CarouselDealCard({
 
       {/* Gradient overlay — stronger at bottom for text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+
+      {/* Hover glow border overlay */}
+      <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/0 group-hover:ring-primary-400/30 transition-all duration-500 z-20 pointer-events-none" />
 
       {/* Top badges */}
       <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
@@ -128,6 +135,13 @@ export function CarouselDealCard({
           </div>
         )}
       </div>
+
+      {/* Bottom accent glow line */}
+      <div className={`absolute bottom-0 left-0 right-0 h-[2px] z-20 opacity-60 group-hover:opacity-100 transition-opacity duration-500 ${
+        isSponti
+          ? 'bg-gradient-to-r from-transparent via-primary-500 to-transparent'
+          : 'bg-gradient-to-r from-transparent via-accent-400 to-transparent'
+      }`} />
     </Link>
   );
 }
