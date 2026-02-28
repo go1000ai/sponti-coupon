@@ -188,6 +188,12 @@ export interface Redemption {
   customer_id: string;
   scanned_by: string;
   scanned_at: string;
+  deposit_amount: number | null;
+  payment_method_type: string | null;
+  remaining_balance: number | null;
+  amount_collected: number | null;
+  collection_completed: boolean;
+  collection_completed_at: string | null;
 }
 
 export interface VendorLocation {

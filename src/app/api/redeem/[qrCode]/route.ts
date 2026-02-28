@@ -105,7 +105,12 @@ export async function POST(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Create redemption record
+  // Calculate remaining balance: deal price - deposit already paid
+  const depositPaid = claim.deal?.deposit_amount || 0;
+  const dealPrice = claim.deal?.deal_price || 0;
+  const remainingBalance = Math.max(0, dealPrice - depositPaid);
+
+  // Create redemption record with payment tracking data
   const { data: redemptionRecord } = await supabase
     .from('redemptions')
     .insert({
@@ -114,14 +119,12 @@ export async function POST(
       vendor_id: user.id,
       customer_id: claim.customer_id,
       scanned_by: user.id,
+      deposit_amount: depositPaid || null,
+      payment_method_type: claim.payment_method_type || null,
+      remaining_balance: remainingBalance || null,
     })
     .select()
     .single();
-
-  // Calculate remaining balance: deal price - deposit already paid
-  const depositPaid = claim.deal?.deposit_amount || 0;
-  const dealPrice = claim.deal?.deal_price || 0;
-  const remainingBalance = Math.max(0, dealPrice - depositPaid);
 
   // === LOYALTY AWARD (non-blocking — errors don't fail the redemption) ===
   // Awards loyalty across ALL active programs for this vendor
@@ -272,6 +275,7 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
+    redemption_id: redemptionRecord?.id || null,
     customer: {
       name: `${claim.customer?.first_name || ''} ${claim.customer?.last_name || ''}`.trim(),
       email: claim.customer?.email,
@@ -284,6 +288,8 @@ export async function POST(
       discount_percentage: claim.deal?.discount_percentage,
       deposit_amount: claim.deal?.deposit_amount,
     },
+    payment_method_type: claim.payment_method_type,
+    payment_tier: claim.payment_tier,
     remaining_balance: remainingBalance,
     redeemed_at: new Date().toISOString(),
     loyalty: loyaltyInfo,
@@ -329,6 +335,10 @@ export async function GET(
       redeemed: claim.redeemed,
       redeemed_at: claim.redeemed_at,
       expires_at: claim.expires_at,
+      deposit_confirmed: claim.deposit_confirmed,
+      payment_method_type: claim.payment_method_type,
+      payment_tier: claim.payment_tier,
+      customer_id: claim.customer_id,
       deal: claim.deal,
       remaining_balance: remainingBalance,
     },

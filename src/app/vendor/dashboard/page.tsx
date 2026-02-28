@@ -64,6 +64,7 @@ function VendorDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [monthlyDeals, setMonthlyDeals] = useState<{ total: number; sponti: number; regular: number }>({ total: 0, sponti: 0, regular: 0 });
+  const [revenue, setRevenue] = useState<{ total_revenue: number; commission_savings: number; total_transactions: number } | null>(null);
 
   const [redeemDigits, setRedeemDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [redeeming, setRedeeming] = useState(false);
@@ -134,6 +135,12 @@ function VendorDashboard() {
           claims: d.claims_count,
         }));
         setRecentClaims(chartData);
+
+        // Fetch revenue analytics
+        try {
+          const revRes = await fetch('/api/vendor/revenue?period=month');
+          if (revRes.ok) setRevenue(await revRes.json());
+        } catch { /* Revenue is non-critical */ }
       } catch (err) {
         console.error('[VendorDashboard] Error:', err);
       } finally { setLoading(false); }
@@ -208,11 +215,6 @@ function VendorDashboard() {
     );
   }
 
-  const totalDepositRevenue = deals.reduce((sum, d) => {
-    if (d.deal_type === 'sponti_coupon' && d.deposit_amount) return sum + (d.deposit_amount * d.claims_count);
-    return sum;
-  }, 0);
-
   const activeDeals = deals.filter(d => d.status === 'active');
   const spontiDeals = deals.filter(d => d.deal_type === 'sponti_coupon' && d.status === 'active');
 
@@ -220,8 +222,8 @@ function VendorDashboard() {
     { label: 'Active Deals', value: analytics?.active_deals || 0, icon: <Tag className="w-5 h-5" />, color: 'from-primary-500 to-orange-500', trend: activeDeals.length > 0 ? `${activeDeals.length} live` : undefined },
     { label: 'Total Claims', value: analytics?.total_claims || 0, icon: <Users className="w-5 h-5" />, color: 'from-accent-500 to-blue-600' },
     { label: 'Redemptions', value: analytics?.total_redemptions || 0, icon: <QrCode className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
-    { label: 'Conversion', value: analytics?.conversion_rate || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-purple-500 to-violet-600', suffix: '%' },
-    { label: 'Deposit Revenue', value: totalDepositRevenue, icon: <DollarSign className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', isCurrency: true },
+    { label: 'Revenue (Month)', value: revenue?.total_revenue || 0, icon: <DollarSign className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', isCurrency: true, trend: revenue?.total_transactions ? `${revenue.total_transactions} txns` : undefined },
+    { label: 'Commission Saved', value: revenue?.commission_savings || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-purple-500 to-violet-600', isCurrency: true },
   ];
 
   return (
@@ -269,7 +271,7 @@ function VendorDashboard() {
               )}
             </div>
             <p className="text-2xl font-bold text-secondary-500">
-              {stat.isCurrency ? formatCurrency(stat.value) : stat.value}{stat.suffix || ''}
+              {stat.isCurrency ? formatCurrency(stat.value) : stat.value}
             </p>
             <p className="text-sm text-gray-500">{stat.label}</p>
           </div>
