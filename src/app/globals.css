@@ -27,6 +27,15 @@ body {
   }
 }
 
+/* Hide scrollbar cross-browser */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @layer components {
   .btn-primary {
     @apply bg-primary-500 text-white px-6 py-3 rounded-lg font-semibold

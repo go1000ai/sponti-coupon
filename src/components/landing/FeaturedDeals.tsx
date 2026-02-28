@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { DealCard } from '@/components/deals/DealCard';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { Flame, ArrowRight, Tag } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { DealCarousel } from '@/components/ui/DealCarousel';
+import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import type { Deal } from '@/lib/types/database';
 
 type DealTab = 'all' | 'sponti_coupon' | 'regular';
@@ -84,18 +85,11 @@ export function FeaturedDeals() {
           </div>
         </ScrollReveal>
 
-        {/* Deals Grid */}
+        {/* Deals Carousel */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="card animate-pulse">
-                <div className="h-48 bg-gray-200 rounded-t-xl" />
-                <div className="p-4 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  <div className="h-6 bg-gray-200 rounded w-1/3" />
-                </div>
-              </div>
+          <div className="flex gap-4 overflow-hidden">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="shrink-0 w-[calc(100vw-3rem)] sm:w-[calc(85vw-2rem)] lg:w-[calc(70vw-3rem)] lg:max-w-[900px] h-[280px] sm:h-[320px] lg:h-[360px] bg-gray-200 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : deals.length === 0 ? (
@@ -105,16 +99,17 @@ export function FeaturedDeals() {
             <p className="text-gray-400 mt-1">Check back soon for new deals!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {deals.map((deal, i) => (
-              <ScrollReveal key={deal.id} animation="fade-up" delay={i * 80}>
-                <DealCard
-                  deal={deal}
-                  distance={(deal as Deal & { distance?: number }).distance}
-                />
-              </ScrollReveal>
+          <DealCarousel showArrows arrowVariant="light" resetKey={activeTab}>
+            {deals.map((deal) => (
+              <CarouselDealCard
+                key={deal.id}
+                deal={deal}
+                variant="default"
+                showCountdown={deal.deal_type === 'sponti_coupon'}
+              />
             ))}
-          </div>
+            <ViewAllCard href="/deals" />
+          </DealCarousel>
         )}
 
         {/* View more */}

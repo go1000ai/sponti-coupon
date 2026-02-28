@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { ArrowRight, MapPin, ShieldCheck, Clock, Sparkles, Star } from 'lucide-react';
-import { DealTypeBadge } from '@/components/ui/SpontiBadge';
-import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { formatCurrency, formatPercentage } from '@/lib/utils';
-import { getDealImage } from '@/lib/constants';
+import { ArrowRight, Sparkles } from 'lucide-react';
+import { DealCarousel } from '@/components/ui/DealCarousel';
+import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
 
@@ -47,9 +44,9 @@ export function DealsGrid() {
         <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }} />
         <div className="absolute inset-0 bg-secondary-500/75" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
+          <div className="flex gap-4 overflow-hidden">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="shrink-0 w-[calc(100vw-3rem)] sm:w-[calc(85vw-2rem)] lg:w-[calc(70vw-3rem)] lg:max-w-[900px] h-[280px] sm:h-[320px] lg:h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
             ))}
           </div>
         </div>
@@ -67,7 +64,6 @@ export function DealsGrid() {
         style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-secondary-500/80 via-secondary-500/70 to-secondary-500/80 backdrop-blur-[2px]" />
-      {/* Top fade for smooth transition from previous section */}
       <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-t from-transparent via-secondary-500/70 to-secondary-500 z-[1]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -95,14 +91,20 @@ export function DealsGrid() {
           </div>
         </ScrollReveal>
 
-        {/* Deals grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-          {deals.map((deal, i) => (
-            <ScrollReveal key={deal.id} animation="fade-up" delay={i * 60}>
-              <DealGridCard deal={deal} />
-            </ScrollReveal>
-          ))}
-        </div>
+        {/* Carousel */}
+        <ScrollReveal animation="fade-up">
+          <DealCarousel showArrows arrowVariant="dark">
+            {deals.map((deal) => (
+              <CarouselDealCard
+                key={deal.id}
+                deal={deal}
+                variant="dark-bg"
+                showCountdown={deal.deal_type === 'sponti_coupon'}
+              />
+            ))}
+            <ViewAllCard href="/deals" variant="dark" />
+          </DealCarousel>
+        </ScrollReveal>
 
         {/* Browse all CTA */}
         <ScrollReveal animation="fade-up">
@@ -117,100 +119,5 @@ export function DealsGrid() {
         </ScrollReveal>
       </div>
     </section>
-  );
-}
-
-function DealGridCard({ deal }: { deal: DealWithDistance }) {
-  const isSponti = deal.deal_type === 'sponti_coupon';
-  const savings = deal.original_price - deal.deal_price;
-  const imageUrl = getDealImage(deal.image_url, deal.vendor?.category);
-
-  return (
-    <Link href={`/deals/${deal.id}`} className="block group h-full">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 deal-card-shine h-full flex flex-col ring-1 ring-white/20">
-        {/* Image */}
-        <div className="relative h-[180px] overflow-hidden">
-          <Image
-            src={imageUrl}
-            alt={deal.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-
-          {/* Type + Featured badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-1">
-            <DealTypeBadge type={deal.deal_type} size="sm" />
-            {deal.is_featured && (
-              <span className="inline-flex items-center gap-0.5 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md w-fit">
-                <Star className="w-2.5 h-2.5" /> Featured
-              </span>
-            )}
-          </div>
-
-          {/* Discount badge */}
-          <div className="absolute top-3 right-3 bg-white text-primary-500 font-bold text-xs px-2.5 py-1 rounded-full shadow-md">
-            {formatPercentage(deal.discount_percentage)} OFF
-          </div>
-
-          {/* Distance */}
-          {deal.distance != null && (
-            <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded-full">
-              <MapPin className="w-2.5 h-2.5" /> {deal.distance.toFixed(1)} mi
-            </div>
-          )}
-
-          {/* Verified badge */}
-          <div className="absolute bottom-3 left-3">
-            <span className="flex items-center gap-1 bg-green-500/80 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-              <ShieldCheck className="w-2.5 h-2.5" /> Verified
-            </span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-4 flex flex-col flex-1">
-          {/* Countdown for all deals */}
-          {deal.status === 'active' && (
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-2">
-              <Clock className={`w-3 h-3 ${isSponti ? 'text-primary-500' : 'text-secondary-400'}`} />
-              <CountdownTimer expiresAt={deal.expires_at} size="sm" />
-            </div>
-          )}
-
-          <h3 className="font-bold text-secondary-500 text-sm sm:text-base line-clamp-2 mb-1.5 group-hover:text-primary-500 transition-colors">
-            {deal.title}
-          </h3>
-
-          {deal.vendor && (
-            <p className="text-gray-400 text-xs mb-3">{deal.vendor.business_name}</p>
-          )}
-
-          {/* Pricing — pushed to bottom */}
-          <div className="mt-auto">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-gray-400 line-through text-xs">{formatCurrency(deal.original_price)}</span>
-              <span className="text-secondary-500 font-bold text-lg">{formatCurrency(deal.deal_price)}</span>
-            </div>
-            <span className="bg-green-50 text-green-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">
-              Save {formatCurrency(savings)}
-            </span>
-          </div>
-
-          {/* Claims progress */}
-          {deal.max_claims && (
-            <div className="mt-3">
-              <div className="w-full bg-gray-100 rounded-full h-1">
-                <div
-                  className="bg-primary-500 h-1 rounded-full"
-                  style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
-                />
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1">{deal.max_claims - deal.claims_count} left</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </Link>
   );
 }
