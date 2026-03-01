@@ -4,12 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
 
-/** Generate a short payment reference code like SC-4829 for manual payments */
-function generatePaymentReference(): string {
-  const num = Math.floor(1000 + Math.random() * 9000); // 4-digit number
-  return `SC-${num}`;
-}
-
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // POST /api/claims - Create a new claim on a deal
@@ -214,47 +208,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // ── TIER 2: Manual (Venmo, Zelle, Cash App) ──
+  // ── Manual processors (Venmo, Zelle, Cash App) are for in-person only ──
+  // Deposits must go through Stripe Connect or a payment link.
+  // If vendor only has manual methods, they need to connect Stripe first.
   const manualProcessors = ['venmo', 'zelle', 'cashapp'];
   if (primaryMethod && manualProcessors.includes(primaryMethod.processor_type)) {
-    const depositAmount = deal.deposit_amount || deal.deal_price;
-    const paymentReference = generatePaymentReference();
-
-    const { data: claim, error: claimError } = await supabase
-      .from('claims')
-      .insert({
-        deal_id,
-        customer_id: user.id,
-        session_token: sessionToken,
-        deposit_confirmed: false,
-        expires_at: deal.expires_at,
-        payment_method_type: primaryMethod.processor_type,
-        payment_tier: 'manual',
-        payment_reference: paymentReference,
-      })
-      .select()
-      .single();
-
-    if (claimError) {
-      return NextResponse.json({ error: claimError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      claim,
-      session_token: sessionToken,
-      redirect_url: null,
-      payment_tier: 'manual',
-      payment_instructions: {
-        processor: primaryMethod.processor_type,
-        display_name: primaryMethod.display_name,
-        payment_info: primaryMethod.payment_link,
-        qr_code_image_url: primaryMethod.qr_code_image_url,
-        amount: depositAmount,
-        deal_title: deal.title,
-        payment_reference: paymentReference,
-      },
-      deposit_amount: depositAmount,
-    });
+    return NextResponse.json(
+      { error: 'This vendor accepts Venmo, Zelle, or Cash App at their location, but deposits require Stripe. Please contact the business directly.' },
+      { status: 400 }
+    );
   }
 
   // ── TIER 3: Legacy static payment link (Stripe/Square/PayPal link) ──

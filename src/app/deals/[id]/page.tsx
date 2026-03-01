@@ -18,6 +18,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
 import type { Deal, Review, BusinessHours, VendorSocialLinks } from '@/lib/types/database';
+import { PAYMENT_PROCESSORS } from '@/lib/constants/payment-processors';
+import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 
 // Amenity icon mapping
 const AMENITY_ICONS: Record<string, React.ElementType> = {
@@ -62,6 +64,7 @@ export default function DealDetailPage() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [error, setError] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
+  const [locationPayments, setLocationPayments] = useState<{ processor_type: string; display_name: string | null }[]>([]);
   const [activeTab, setActiveTab] = useState<'vendor' | 'details' | 'reviews'>('vendor');
 
   // Reviews state
@@ -92,6 +95,17 @@ export default function DealDetailPage() {
   useEffect(() => {
     if (!deal?.vendor_id) return;
     fetchReviews();
+    // Fetch vendor's in-person payment methods (Venmo, Zelle, Cash App)
+    async function fetchLocationPayments() {
+      try {
+        const res = await fetch(`/api/deals/${deal!.id}/payment-methods`);
+        if (res.ok) {
+          const data = await res.json();
+          setLocationPayments(data.methods || []);
+        }
+      } catch { /* silent */ }
+    }
+    fetchLocationPayments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deal?.vendor_id]);
 
@@ -197,26 +211,6 @@ export default function DealDetailPage() {
       if (data.payment_tier === 'integrated' && data.redirect_url) {
         // Stripe Connect Checkout — redirect to Stripe
         window.location.href = data.redirect_url;
-        return;
-      }
-
-      if (data.payment_tier === 'manual' && data.payment_instructions) {
-        // Manual payment — show instructions page
-        const pi = data.payment_instructions;
-        const params = new URLSearchParams({
-          session_token: data.session_token,
-          processor: pi.processor,
-          payment_info: pi.payment_info,
-          amount: pi.amount.toString(),
-          deal_title: pi.deal_title || '',
-        });
-        if (pi.payment_reference) {
-          params.set('payment_reference', pi.payment_reference);
-        }
-        if (pi.qr_code_image_url) {
-          params.set('qr_code_image_url', pi.qr_code_image_url);
-        }
-        router.push(`/claim/manual-payment?${params.toString()}`);
         return;
       }
 
@@ -553,6 +547,22 @@ export default function DealDetailPage() {
                       style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Accepted at Location */}
+              {locationPayments.length > 0 && (
+                <div className="mt-4 flex items-center gap-2 flex-wrap">
+                  <span className="text-xs text-gray-400">Also accepted at location:</span>
+                  {locationPayments.map(m => {
+                    const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
+                    return proc ? (
+                      <span key={m.processor_type} className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">
+                        <Image src={proc.logo} alt={proc.name} width={14} height={14} className="object-contain" />
+                        {proc.name}
+                      </span>
+                    ) : null;
+                  })}
                 </div>
               )}
 
@@ -1069,6 +1079,24 @@ export default function DealDetailPage() {
                         <Zap className="w-3 h-3" /> Almost sold out!
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Accepted at Location */}
+                {locationPayments.length > 0 && (
+                  <div className="flex flex-col items-start gap-1.5 mb-3">
+                    <span className="text-xs text-gray-400">Also accepted at location:</span>
+                    <div className="flex flex-col gap-1.5">
+                      {locationPayments.map(m => {
+                        const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
+                        return proc ? (
+                          <span key={m.processor_type} className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-full">
+                            <Image src={proc.logo} alt={proc.name} width={16} height={16} className="object-contain" />
+                            {proc.name}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
                   </div>
                 )}
 
