@@ -55,6 +55,8 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
   const [maxClaims, setMaxClaims] = useState(initial?.max_claims?.toString() || '');
   const [imageUrl, setImageUrl] = useState(initial?.image_url || '');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [variantImageMode, setVariantImageMode] = useState<'upload' | 'url' | 'library'>('upload');
+  const [showVariantMediaPicker, setShowVariantMediaPicker] = useState(false);
   const variantFileRef = useRef<HTMLInputElement>(null);
 
   const handleVariantImageUpload = async (file: File) => {
@@ -119,8 +121,10 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
         {/* Variant Image */}
         <div className="col-span-2">
           <label className="block text-[11px] text-gray-500 mb-1">Variation Image (optional)</label>
-          <div className="flex items-center gap-3">
-            {imageUrl ? (
+
+          {/* Preview if image already selected */}
+          {imageUrl ? (
+            <div className="flex items-center gap-3 mb-2">
               <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={imageUrl} alt={name || 'Variant'} className="w-full h-full object-cover" />
@@ -129,20 +133,87 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
                   <X className="w-3 h-3" />
                 </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => variantFileRef.current?.click()}
-                disabled={uploadingImage}
-                className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex items-center justify-center transition-colors shrink-0"
-              >
-                {uploadingImage ? <Loader2 className="w-5 h-5 text-gray-400 animate-spin" /> : <ImageIcon className="w-5 h-5 text-gray-400" />}
-              </button>
-            )}
-            <input ref={variantFileRef} type="file" accept="image/*" className="hidden"
-              onChange={e => { const f = e.target.files?.[0]; if (f) handleVariantImageUpload(f); }} />
-            <p className="text-[11px] text-gray-400">When selected, this image shows in the gallery</p>
-          </div>
+              <p className="text-[11px] text-gray-400">When selected, this image shows in the gallery</p>
+            </div>
+          ) : (
+            <>
+              {/* Tab toggle */}
+              <div className="flex gap-1 mb-2 bg-gray-100 rounded-lg p-0.5 w-fit">
+                <button type="button" onClick={() => setVariantImageMode('upload')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    variantImageMode === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <Upload className="w-3 h-3" /> Upload
+                </button>
+                <button type="button" onClick={() => setVariantImageMode('url')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    variantImageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <LinkIcon className="w-3 h-3" /> Paste URL
+                </button>
+                <button type="button" onClick={() => setVariantImageMode('library')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    variantImageMode === 'library' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <ImageIcon className="w-3 h-3" /> Library
+                </button>
+              </div>
+
+              {variantImageMode === 'upload' ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => variantFileRef.current?.click()}
+                    disabled={uploadingImage}
+                    className="w-full border-2 border-dashed border-gray-200 hover:border-primary-300 rounded-lg p-4 text-center cursor-pointer transition-colors"
+                  >
+                    {uploadingImage ? (
+                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin mx-auto" />
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 text-gray-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-500">Click to upload</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">JPG, PNG, WebP, GIF</p>
+                      </>
+                    )}
+                  </button>
+                  <input ref={variantFileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleVariantImageUpload(f); }} />
+                </div>
+              ) : variantImageMode === 'url' ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={e => setImageUrl(e.target.value)}
+                    className="input-field flex-1 text-sm"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowVariantMediaPicker(true)}
+                  className="w-full border-2 border-dashed border-blue-200 rounded-lg p-4 text-center bg-blue-50/30 hover:bg-blue-50 transition-colors"
+                >
+                  <ImageIcon className="w-5 h-5 text-blue-400 mx-auto mb-1" />
+                  <p className="text-xs font-medium text-blue-700">Browse Library</p>
+                  <p className="text-[10px] text-blue-500 mt-0.5">Pick from uploaded or AI-generated images</p>
+                </button>
+              )}
+            </>
+          )}
+
+          {/* Media Picker for variant */}
+          <MediaPicker
+            open={showVariantMediaPicker}
+            onClose={() => setShowVariantMediaPicker(false)}
+            onSelect={(url) => {
+              setImageUrl(url);
+              setShowVariantMediaPicker(false);
+            }}
+            type="image"
+          />
         </div>
       </div>
       {originalPrice && price && parseFloat(price) < parseFloat(originalPrice) && (
