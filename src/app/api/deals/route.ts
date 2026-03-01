@@ -5,6 +5,7 @@ import type { SubscriptionTier } from '@/lib/types/database';
 import { rankDeals } from '@/lib/ranking/deal-ranker';
 import { loadRankingConfig } from '@/lib/ranking/ranking-weights';
 import { slugify } from '@/lib/utils';
+import { notifyNewDeal } from '@/lib/email/admin-notification';
 
 export const runtime = 'edge';
 
@@ -455,6 +456,7 @@ export async function POST(request: NextRequest) {
       how_it_works: how_it_works || null,
       highlights: highlights || [],
       fine_print: fine_print || null,
+      requires_appointment: requires_appointment || false,
       search_tags: search_tags || [],
       variants: variants || [],
     })
