@@ -37,7 +37,7 @@ export function CTASection() {
       overlay="bg-gradient-to-br from-secondary-500/90 to-primary-700/80"
       className="text-white"
     >
-      <div className="max-w-4xl mx-auto px-4 text-center py-16 sm:py-20 md:py-24">
+      <div className="max-w-4xl mx-auto px-4 text-center py-10 sm:py-16 md:py-24">
         <ScrollReveal animation="fade-up">
           <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
             Deals Expire Every 24 Hours.

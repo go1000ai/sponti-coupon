@@ -268,9 +268,9 @@ function SubscriptionContent() {
                <Rocket className="w-6 h-6" />}
             </div>
             <div>
-              <p className="text-sm text-white/80">Current Plan</p>
+              <p className="text-sm text-white opacity-90">Current Plan</p>
               <h2 className="text-2xl font-bold capitalize">{currentTier}</h2>
-              <p className="text-sm text-white/80 mt-1">
+              <p className="text-sm text-white opacity-90 mt-1">
                 {formatCurrency(SUBSCRIPTION_TIERS[currentTier as SubscriptionTier].price)}/month
               </p>
             </div>
@@ -482,7 +482,7 @@ function SubscriptionContent() {
                   </span>
                 )}
               </div>
-              <p className="text-gray-300 text-sm mt-0.5">
+              <p className="text-white text-sm mt-0.5 opacity-90">
                 For regional chains, franchises &amp; multi-location businesses
               </p>
             </div>
@@ -491,7 +491,7 @@ function SubscriptionContent() {
             <div className="text-right">
               <span className="text-3xl font-bold text-white">
                 {formatCurrency(getPrice('enterprise'))}
-                <span className="text-base font-medium text-gray-400">/mo</span>
+                <span className="text-base font-medium text-white opacity-80">/mo</span>
               </span>
               {isAnnual && (
                 <p className="text-xs text-green-300 font-medium mt-0.5">
@@ -537,9 +537,9 @@ function SubscriptionContent() {
             { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
             { label: 'Dedicated Manager', desc: 'Priority support & onboarding' },
           ].map(item => (
-            <div key={item.label} className="bg-white/10 rounded-xl p-4">
+            <div key={item.label} className="bg-white/15 rounded-xl p-4">
               <p className="font-semibold text-white text-sm">{item.label}</p>
-              <p className="text-gray-400 text-xs mt-0.5">{item.desc}</p>
+              <p className="text-white text-xs mt-0.5 opacity-90">{item.desc}</p>
             </div>
           ))}
         </div>

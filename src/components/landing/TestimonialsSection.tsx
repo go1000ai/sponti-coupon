@@ -58,7 +58,7 @@ export function TestimonialsSection() {
   }, []);
 
   return (
-    <section className="relative py-12 sm:py-16 md:py-20 bg-gray-50 overflow-hidden">
+    <section className="relative py-8 sm:py-12 md:py-16 bg-gray-50 overflow-hidden">
       {/* Parallax gradient background */}
       <div
         ref={bgRef}
@@ -70,7 +70,7 @@ export function TestimonialsSection() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-up">
-          <div className="text-center mb-10 sm:mb-16">
+          <div className="text-center mb-6 sm:mb-10">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-orange-50 rounded-full px-5 py-2 mb-4 shadow-sm">
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-primary-600">Real Stories</span>
@@ -87,7 +87,7 @@ export function TestimonialsSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {testimonials.map((t, i) => (
             <ScrollReveal key={t.name} animation="fade-up" delay={i * 150}>
-              <div className="floating-card card p-5 sm:p-6 md:p-8 h-full flex flex-col bg-white">
+              <div className="floating-card card p-4 sm:p-5 md:p-6 h-full flex flex-col bg-white">
                 <div className="bg-gradient-to-br from-primary-100 to-orange-100 rounded-xl p-2.5 mb-4 inline-flex">
                   <MessageCircleHeart className="w-6 h-6 text-primary-500" strokeWidth={1.8} />
                 </div>

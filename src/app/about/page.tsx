@@ -152,7 +152,7 @@ export default function AboutPage() {
             <Link href="/deals" className="bg-gradient-to-r from-primary-500 to-orange-500 text-white px-8 py-3.5 rounded-xl font-bold inline-flex items-center gap-2 shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 transition-all hover:scale-[1.02]">
               Browse Deals <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/for-business" className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-3.5 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-white/20 transition-all">
+            <Link href="/pricing" className="bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-3.5 rounded-xl font-bold inline-flex items-center gap-2 hover:bg-white/20 transition-all">
               <Store className="w-4 h-4" /> List Your Business
             </Link>
           </div>

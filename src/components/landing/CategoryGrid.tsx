@@ -8,18 +8,19 @@ import {
   Coffee, Scissors, Car, GraduationCap, Heart, Compass
 } from 'lucide-react';
 
+// slug values must match the vendor category values stored in the database
 const categories = [
   {
     name: 'Restaurants',
-    slug: 'restaurants',
+    slug: 'Restaurants',
     icon: UtensilsCrossed,
     gradient: 'from-orange-500 to-red-500',
     bg: 'bg-orange-50',
     count: 124,
   },
   {
-    name: 'Spa & Beauty',
-    slug: 'beauty-spa',
+    name: 'Beauty & Spa',
+    slug: 'Beauty & Spa',
     icon: Sparkles,
     gradient: 'from-pink-500 to-rose-500',
     bg: 'bg-pink-50',
@@ -27,7 +28,7 @@ const categories = [
   },
   {
     name: 'Health & Fitness',
-    slug: 'health-fitness',
+    slug: 'Health & Fitness',
     icon: Dumbbell,
     gradient: 'from-emerald-500 to-teal-500',
     bg: 'bg-emerald-50',
@@ -35,7 +36,7 @@ const categories = [
   },
   {
     name: 'Entertainment',
-    slug: 'entertainment',
+    slug: 'Entertainment',
     icon: Gamepad2,
     gradient: 'from-sky-500 to-blue-500',
     bg: 'bg-sky-50',
@@ -43,7 +44,7 @@ const categories = [
   },
   {
     name: 'Shopping',
-    slug: 'shopping',
+    slug: 'Shopping',
     icon: ShoppingBag,
     gradient: 'from-blue-500 to-blue-500',
     bg: 'bg-blue-50',
@@ -51,7 +52,7 @@ const categories = [
   },
   {
     name: 'Food & Drink',
-    slug: 'food-drink',
+    slug: 'Food & Drink',
     icon: Coffee,
     gradient: 'from-amber-500 to-orange-500',
     bg: 'bg-amber-50',
@@ -59,7 +60,7 @@ const categories = [
   },
   {
     name: 'Hair & Grooming',
-    slug: 'hair-grooming',
+    slug: 'Hair & Grooming',
     icon: Scissors,
     gradient: 'from-cyan-500 to-blue-500',
     bg: 'bg-cyan-50',
@@ -67,15 +68,15 @@ const categories = [
   },
   {
     name: 'Automotive',
-    slug: 'automotive',
+    slug: 'Automotive',
     icon: Car,
     gradient: 'from-slate-500 to-gray-600',
     bg: 'bg-slate-50',
     count: 32,
   },
   {
-    name: 'Classes & Courses',
-    slug: 'classes',
+    name: 'Education',
+    slug: 'Education',
     icon: GraduationCap,
     gradient: 'from-yellow-500 to-amber-500',
     bg: 'bg-yellow-50',
@@ -83,7 +84,7 @@ const categories = [
   },
   {
     name: 'Wellness',
-    slug: 'wellness',
+    slug: 'Wellness',
     icon: Heart,
     gradient: 'from-rose-500 to-pink-600',
     bg: 'bg-rose-50',
@@ -98,15 +99,15 @@ function TiltCategoryCard({ cat, onClick }: { cat: typeof categories[0]; onClick
     <div ref={tiltRef} className="h-full">
       <button
         onClick={onClick}
-        className="category-card w-full h-full p-4 sm:p-5 text-center bg-white border border-gray-100 rounded-2xl hover:border-transparent hover:shadow-xl group"
+        className="category-card w-full h-full p-3 sm:p-5 text-center bg-white border border-gray-100 rounded-xl sm:rounded-2xl hover:border-transparent hover:shadow-xl group"
       >
-        <div className={`inline-flex bg-gradient-to-br ${cat.gradient} rounded-xl p-3 mb-3 shadow-md group-hover:shadow-lg group-hover:animate-wiggle transition-shadow`}>
-          <cat.icon className="w-6 h-6 text-white" strokeWidth={1.8} />
+        <div className={`inline-flex bg-gradient-to-br ${cat.gradient} rounded-lg sm:rounded-xl p-2 sm:p-3 mb-2 sm:mb-3 shadow-md group-hover:shadow-lg group-hover:animate-wiggle transition-shadow`}>
+          <cat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={1.8} />
         </div>
-        <h3 className="font-semibold text-gray-900 text-sm mb-1">
+        <h3 className="font-semibold text-gray-900 text-[11px] sm:text-sm mb-0.5 sm:mb-1 leading-tight">
           {cat.name}
         </h3>
-        <p className="text-xs text-gray-400">{cat.count}+ deals</p>
+        <p className="text-[10px] sm:text-xs text-gray-400">{cat.count}+ deals</p>
       </button>
     </div>
   );
@@ -133,7 +134,7 @@ export function CategoryGrid() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
           {categories.map((cat, i) => (
             <ScrollReveal key={cat.slug} animation="scale-up" delay={i * 60}>
               <TiltCategoryCard

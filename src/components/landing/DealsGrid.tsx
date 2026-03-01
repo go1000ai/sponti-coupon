@@ -57,7 +57,7 @@ export function DealsGrid() {
   if (deals.length === 0) return null;
 
   return (
-    <section className="relative pt-16 sm:pt-24 py-10 sm:py-16 -mt-8 overflow-hidden">
+    <section className="relative pt-10 sm:pt-20 md:pt-24 py-8 sm:py-12 -mt-6 sm:-mt-8 overflow-hidden">
       {/* Parallax background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"

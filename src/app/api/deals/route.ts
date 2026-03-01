@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
     location_ids, website_url, terms_and_conditions, video_urls, amenities,
     how_it_works, highlights, fine_print, image_urls, search_tags,
-    requires_appointment,
+    requires_appointment, variants,
   } = body;
 
   // Draft mode — save the deal immediately with minimal validation
@@ -276,6 +276,7 @@ export async function POST(request: NextRequest) {
         fine_print: fine_print || null,
         requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
+        variants: (deal_type === 'sponti_coupon' ? [] : variants) || [],
       })
       .select()
       .single();
@@ -377,6 +378,7 @@ export async function POST(request: NextRequest) {
         fine_print: fine_print || null,
         requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
+        variants: [], // Sponti deals do not support variants
       })
       .select()
       .single();
@@ -427,6 +429,7 @@ export async function POST(request: NextRequest) {
       highlights: highlights || [],
       fine_print: fine_print || null,
       search_tags: search_tags || [],
+      variants: variants || [],
     })
     .select()
     .single();

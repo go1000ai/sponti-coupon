@@ -150,7 +150,7 @@ export function WhySpontiCoupon() {
               <h3 className="text-lg sm:text-xl font-bold mb-2">
                 See the Difference in Real Numbers
               </h3>
-              <p className="text-gray-400 text-sm mb-8">
+              <p className="text-white text-sm mb-8 opacity-80">
                 Imagine selling $10,000 in deals this month:
               </p>
 
@@ -158,30 +158,31 @@ export function WhySpontiCoupon() {
                 {/* Traditional */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-300">Commission-based platform (25%)</span>
-                    <span className="text-sm text-red-400 font-semibold">You keep $7,500</span>
+                    <span className="text-sm text-white opacity-90">Commission-based platform (50%)</span>
+                    <span className="text-sm text-red-400 font-semibold">You keep $5,000</span>
                   </div>
-                  <AnimatedBar targetWidth={75} color="bg-red-500/80" delay={200} />
-                  <p className="text-xs text-red-400/70 mt-1">Platform takes $2,500</p>
+                  <AnimatedBar targetWidth={50} color="bg-red-500/80" delay={200} />
+                  <p className="text-xs text-red-400 mt-1 opacity-80">Platform takes $5,000</p>
                 </div>
 
                 {/* SpontiCoupon */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-gray-300">SpontiCoupon ($49/mo flat)</span>
-                    <span className="text-sm text-green-400 font-semibold">You keep $9,951</span>
+                    <span className="text-sm text-white opacity-90">SpontiCoupon Business ($199/mo)</span>
+                    <span className="text-sm text-green-400 font-semibold">You keep $9,801</span>
                   </div>
-                  <AnimatedBar targetWidth={99.5} color="bg-gradient-to-r from-green-500 to-emerald-400" delay={600} />
-                  <p className="text-xs text-green-400/70 mt-1">Flat fee: just $49</p>
+                  <AnimatedBar targetWidth={98} color="bg-gradient-to-r from-green-500 to-emerald-400" delay={600} />
+                  <p className="text-xs text-green-400 mt-1 opacity-80">Flat fee: just $199</p>
                 </div>
               </div>
 
               <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <p className="text-gray-400 text-sm">Monthly savings with SpontiCoupon</p>
+                  <p className="text-white text-sm opacity-80">You take home more every month</p>
                   <p className="text-3xl sm:text-4xl font-bold text-primary-500">
-                    $<CountUpNumber target={2451} />
+                    $<CountUpNumber target={4801} />
                   </p>
+                  <p className="text-white text-xs mt-1 opacity-70">Annual subscription pays for itself in less than one month</p>
                 </div>
                 <Link
                   href="/auth/signup?type=vendor"

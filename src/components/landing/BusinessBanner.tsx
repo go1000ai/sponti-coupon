@@ -46,7 +46,7 @@ export function BusinessBanner() {
                     <Rocket className="w-4 h-4" /> Start Your Free Trial
                   </Link>
                   <Link
-                    href="/for-business"
+                    href="/pricing"
                     className="text-primary-400 font-semibold inline-flex items-center gap-1 px-4 py-3 hover:text-primary-300 transition-colors"
                   >
                     Learn More <ArrowRight className="w-4 h-4" />

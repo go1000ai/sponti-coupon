@@ -5,10 +5,8 @@ import { usePathname } from 'next/navigation';
 import { X, RotateCcw } from 'lucide-react';
 import { MiaChatbot, MiaAvatar } from './MiaChatbot';
 
-const ALLOWED_PATHS = ['/', '/pricing', '/for-business'];
-
 function getPageContext(pathname: string): 'general' | 'vendor-prospect' {
-  if (pathname === '/pricing' || pathname === '/for-business') return 'vendor-prospect';
+  if (pathname === '/pricing') return 'vendor-prospect';
   return 'general';
 }
 
@@ -43,9 +41,6 @@ export function MiaFloatingWidget() {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
-
-  // Don't render on non-allowed pages
-  if (!ALLOWED_PATHS.includes(pathname)) return null;
 
   const pageContext = getPageContext(pathname);
 

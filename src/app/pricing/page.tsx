@@ -269,7 +269,7 @@ export default function PricingPage() {
           </ScrollReveal>
 
           <ScrollReveal animation="fade-up" delay={200}>
-            <p className="text-lg sm:text-xl text-gray-300 mt-5 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-white mt-5 max-w-2xl mx-auto opacity-80">
               {FOUNDERS_LAUNCH.active ? (
                 <>
                   <span className="text-white font-semibold">2 months free</span> on Pro &amp; Business plans. Zero commission. Zero transaction fees.
@@ -597,13 +597,13 @@ export default function PricingPage() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white">Enterprise</h3>
-                    <p className="text-gray-300 text-sm mt-0.5">
+                    <p className="text-white text-sm mt-0.5 opacity-90">
                       For regional chains, franchises &amp; multi-location businesses
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-gray-400">/mo</span></span>
+                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-white opacity-80">/mo</span></span>
                   <button
                     onClick={() => handleCheckout('enterprise')}
                     disabled={loadingPlan !== null}
@@ -627,9 +627,9 @@ export default function PricingPage() {
                   { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
                   { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
                 ].map(item => (
-                  <div key={item.label} className="bg-white/10 rounded-xl p-3 sm:p-4 text-center sm:text-left">
+                  <div key={item.label} className="bg-white/15 rounded-xl p-3 sm:p-4 text-center sm:text-left">
                     <p className="font-semibold text-white text-sm">{item.label}</p>
-                    <p className="text-gray-400 text-xs mt-0.5">{item.desc}</p>
+                    <p className="text-white text-xs mt-0.5 opacity-90">{item.desc}</p>
                   </div>
                 ))}
               </div>
@@ -764,7 +764,7 @@ export default function PricingPage() {
                 : 'Try SpontiCoupon Free for 14 Days'
               }
             </h2>
-            <p className="text-lg text-gray-300 mb-8 max-w-xl mx-auto">
+            <p className="text-lg text-white mb-8 max-w-xl mx-auto opacity-80">
               {FOUNDERS_LAUNCH.active ? (
                 <>
                   Be one of the first {FOUNDERS_LAUNCH.totalSpots} vendors and lock in{' '}
@@ -789,7 +789,7 @@ export default function PricingPage() {
             </div>
 
             {/* Trust badges */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-gray-400 text-xs">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-white text-xs opacity-80">
               <div className="flex items-center gap-1.5">
                 <Gift className="w-4 h-4 text-primary-400" />
                 <span>{FOUNDERS_LAUNCH.active ? '2 months free' : '14-day free trial'}</span>

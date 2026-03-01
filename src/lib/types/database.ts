@@ -120,6 +120,18 @@ export interface Category {
   slug: string;
 }
 
+export interface DealVariant {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  original_price: number;
+  deposit_amount?: number;
+  max_claims?: number;
+  claims_count: number;
+  image_url?: string;
+}
+
 export interface Deal {
   id: string;
   vendor_id: string;
@@ -150,6 +162,7 @@ export interface Deal {
   requires_appointment: boolean;
   search_tags: string[];
   category_id: string | null;
+  variants: DealVariant[];
   created_at: string;
   // Joined fields
   vendor?: Vendor;

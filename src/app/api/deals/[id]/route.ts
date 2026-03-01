@@ -33,6 +33,21 @@ export async function GET(
     .order('created_at', { ascending: false })
     .limit(10);
 
+  // Fetch similar deals from OTHER vendors (same category or similar tags)
+  let similarDeals: typeof vendorDeals = [];
+  if (deal.vendor?.category) {
+    const { data: catDeals } = await supabase
+      .from('deals')
+      .select('id, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status, vendor:vendors(business_name, logo_url, city, state)')
+      .eq('status', 'active')
+      .neq('vendor_id', deal.vendor_id)
+      .neq('id', id)
+      .gte('expires_at', new Date().toISOString())
+      .order('claims_count', { ascending: false })
+      .limit(6);
+    similarDeals = catDeals || [];
+  }
+
   // Record deal view (non-blocking, fire-and-forget)
   // Use Edge-compatible Web Crypto API for IP hashing
   const forwarded = request.headers.get('x-forwarded-for');
@@ -53,7 +68,7 @@ export async function GET(
     ip_hash: ipHash,
   }).then(() => { /* ignore result */ });
 
-  return NextResponse.json({ deal, vendor_deals: vendorDeals || [] });
+  return NextResponse.json({ deal, vendor_deals: vendorDeals || [], similar_deals: similarDeals });
 }
 
 // PATCH /api/deals/[id] - Update deal (vendor only)
@@ -85,7 +100,7 @@ export async function PATCH(
     status, expires_at, title, description, original_price, deal_price,
     discount_percentage, deposit_amount, max_claims, image_url, image_urls,
     terms_and_conditions, video_urls, amenities, how_it_works, highlights, fine_print,
-    requires_appointment,
+    requires_appointment, variants,
   } = body;
 
   // If trying to edit content fields (not just status), check if deal has any claims
@@ -119,6 +134,7 @@ export async function PATCH(
   if (highlights !== undefined) updates.highlights = highlights;
   if (fine_print !== undefined) updates.fine_print = fine_print;
   if (requires_appointment !== undefined) updates.requires_appointment = requires_appointment;
+  if (variants !== undefined) updates.variants = variants;
 
   const { data: deal, error } = await supabase
     .from('deals')

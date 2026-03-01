@@ -7,22 +7,25 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage, formatDistance } from '@/lib/utils';
+import { PAYMENT_PROCESSORS } from '@/lib/constants/payment-processors';
+import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 import type { Deal } from '@/lib/types/database';
 
 interface DealCardProps {
   deal: Deal;
   distance?: number;
   isOwnDeal?: boolean;
+  paymentLogos?: string[]; // processor_type strings e.g. ['stripe', 'venmo', 'zelle']
 }
 
-export function DealCard({ deal, distance, isOwnDeal }: DealCardProps) {
+export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardProps) {
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
 
   return (
     <Link href={`/deals/${deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'ring-2 ring-primary-300 opacity-60' : ''}`}>
       {/* Image / Header */}
-      <div className={`relative h-36 sm:h-40 md:h-48 overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
+      <div className={`relative h-32 sm:h-36 md:h-40 lg:h-48 overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
         {deal.image_url ? (
           <Image
             src={deal.image_url}
@@ -104,6 +107,18 @@ export function DealCard({ deal, distance, isOwnDeal }: DealCardProps) {
           <span className="inline-flex items-center mt-2 text-xs bg-primary-50 text-primary-600 px-2 py-1 rounded-full font-medium">
             {formatCurrency(deal.deposit_amount)} deposit
           </span>
+        )}
+
+        {/* Payment logos */}
+        {paymentLogos && paymentLogos.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-2">
+            {paymentLogos.map(type => {
+              const proc = PAYMENT_PROCESSORS[type as PaymentProcessorType];
+              return proc ? (
+                <Image key={type} src={proc.logo} alt={proc.name} width={16} height={16} className="object-contain opacity-60" title={proc.name} />
+              ) : null;
+            })}
+          </div>
         )}
 
         {/* Distance & social proof row */}

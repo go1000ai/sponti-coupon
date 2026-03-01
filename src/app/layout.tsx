@@ -125,7 +125,7 @@ export default function RootLayout({
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
-      url: `${BASE_URL}/for-business`,
+      url: `${BASE_URL}/pricing`,
     },
   };
 

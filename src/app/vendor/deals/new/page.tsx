@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
-import type { Deal, VendorLocation } from '@/lib/types/database';
+import type { Deal, DealVariant, VendorLocation } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
 
@@ -40,6 +40,130 @@ const CATEGORY_FEATURES: Record<string, string[]> = {
 
 // Universal features that apply to any category
 const UNIVERSAL_FEATURES = ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'Gift Cards Available'];
+
+function VariantForm({ initial, onSave, onCancel, isEditing }: {
+  initial: DealVariant | null;
+  onSave: (v: DealVariant) => void;
+  onCancel: () => void;
+  isEditing: boolean;
+}) {
+  const [name, setName] = useState(initial?.name || '');
+  const [description, setDescription] = useState(initial?.description || '');
+  const [originalPrice, setOriginalPrice] = useState(initial?.original_price?.toString() || '');
+  const [price, setPrice] = useState(initial?.price?.toString() || '');
+  const [depositAmount, setDepositAmount] = useState(initial?.deposit_amount?.toString() || '');
+  const [maxClaims, setMaxClaims] = useState(initial?.max_claims?.toString() || '');
+  const [imageUrl, setImageUrl] = useState(initial?.image_url || '');
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const variantFileRef = useRef<HTMLInputElement>(null);
+
+  const handleVariantImageUpload = async (file: File) => {
+    if (!file) return;
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type) || file.size > 5 * 1024 * 1024) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok && data.url) setImageUrl(data.url);
+    } catch { /* ignore */ }
+    setUploadingImage(false);
+  };
+
+  const handleSave = () => {
+    if (!name.trim() || !originalPrice || !price) return;
+    onSave({
+      id: initial?.id || crypto.randomUUID(),
+      name: name.trim(),
+      description: description.trim() || undefined,
+      original_price: parseFloat(originalPrice),
+      price: parseFloat(price),
+      deposit_amount: depositAmount ? parseFloat(depositAmount) : undefined,
+      max_claims: maxClaims ? parseInt(maxClaims) : undefined,
+      claims_count: initial?.claims_count || 0,
+      image_url: imageUrl || undefined,
+    });
+    if (!isEditing) {
+      setName(''); setDescription(''); setOriginalPrice(''); setPrice(''); setDepositAmount(''); setMaxClaims(''); setImageUrl('');
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg border border-dashed border-primary-300 p-4 space-y-3">
+      <p className="text-xs font-semibold text-primary-600 uppercase tracking-wider">{isEditing ? 'Edit Variation' : 'Add Variation'}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">
+          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Variation name (e.g., Basic, Premium)" className="input-field text-sm" />
+        </div>
+        <div className="col-span-2">
+          <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description (optional)" className="input-field text-sm" />
+        </div>
+        <div>
+          <label className="block text-[11px] text-gray-500 mb-1">Original Price</label>
+          <input type="number" step="0.01" min="0" value={originalPrice} onChange={e => setOriginalPrice(e.target.value)} placeholder="0.00" className="input-field text-sm" />
+        </div>
+        <div>
+          <label className="block text-[11px] text-gray-500 mb-1">Deal Price</label>
+          <input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" className="input-field text-sm" />
+        </div>
+        <div>
+          <label className="block text-[11px] text-gray-500 mb-1">Deposit (optional)</label>
+          <input type="number" step="0.01" min="0" value={depositAmount} onChange={e => setDepositAmount(e.target.value)} placeholder="0.00" className="input-field text-sm" />
+        </div>
+        <div>
+          <label className="block text-[11px] text-gray-500 mb-1">Max Claims (optional)</label>
+          <input type="number" min="1" value={maxClaims} onChange={e => setMaxClaims(e.target.value)} placeholder="Unlimited" className="input-field text-sm" />
+        </div>
+        {/* Variant Image */}
+        <div className="col-span-2">
+          <label className="block text-[11px] text-gray-500 mb-1">Variation Image (optional)</label>
+          <div className="flex items-center gap-3">
+            {imageUrl ? (
+              <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt={name || 'Variant'} className="w-full h-full object-cover" />
+                <button type="button" onClick={() => { setImageUrl(''); if (variantFileRef.current) variantFileRef.current.value = ''; }}
+                  className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => variantFileRef.current?.click()}
+                disabled={uploadingImage}
+                className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-primary-400 flex items-center justify-center transition-colors shrink-0"
+              >
+                {uploadingImage ? <Loader2 className="w-5 h-5 text-gray-400 animate-spin" /> : <ImageIcon className="w-5 h-5 text-gray-400" />}
+              </button>
+            )}
+            <input ref={variantFileRef} type="file" accept="image/*" className="hidden"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleVariantImageUpload(f); }} />
+            <p className="text-[11px] text-gray-400">When selected, this image shows in the gallery</p>
+          </div>
+        </div>
+      </div>
+      {originalPrice && price && parseFloat(price) < parseFloat(originalPrice) && (
+        <p className="text-xs text-green-600 font-medium">
+          {formatPercentage(((parseFloat(originalPrice) - parseFloat(price)) / parseFloat(originalPrice)) * 100)} OFF — Saves {formatCurrency(parseFloat(originalPrice) - parseFloat(price))}
+        </p>
+      )}
+      <div className="flex items-center gap-2">
+        <button type="button" onClick={handleSave} disabled={!name.trim() || !originalPrice || !price}
+          className="px-4 py-2 bg-primary-500 text-white text-sm font-medium rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+          <Plus className="w-3.5 h-3.5" /> {isEditing ? 'Update' : 'Add'}
+        </button>
+        {isEditing && (
+          <button type="button" onClick={onCancel} className="px-4 py-2 text-gray-500 text-sm font-medium hover:bg-gray-100 rounded-lg transition-colors">
+            Cancel
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function NewDealPage() {
   const { user } = useAuth();
@@ -95,6 +219,10 @@ export default function NewDealPage() {
   const [draftsLoading, setDraftsLoading] = useState(false);
   const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
   const [draftToast, setDraftToast] = useState(false);
+  const [hasVariants, setHasVariants] = useState(false);
+  const [variants, setVariants] = useState<DealVariant[]>([]);
+  const [editingVariant, setEditingVariant] = useState<DealVariant | null>(null);
+  const [aiVariantsLoading, setAiVariantsLoading] = useState(false);
   const additionalFileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: '',
@@ -627,6 +755,7 @@ export default function NewDealPage() {
           fine_print: form.fine_print || null,
           requires_appointment: requiresAppointment,
           search_tags: searchTags,
+          variants: dealType === 'regular' && hasVariants ? variants : [],
         }),
       });
 
@@ -694,6 +823,7 @@ export default function NewDealPage() {
           requires_appointment: requiresAppointment,
           amenities: amenities.length > 0 ? amenities : undefined,
           search_tags: searchTags.length > 0 ? searchTags : undefined,
+          variants: dealType === 'regular' && hasVariants && variants.length > 0 ? variants : undefined,
         }),
       });
       const data = await response.json();
@@ -1430,6 +1560,135 @@ export default function NewDealPage() {
             </div>
           )}
         </div>
+
+        {/* ── Deal Variations (Steady deals only) ──────────── */}
+        {dealType === 'regular' && (
+          <div className="border border-gray-200 rounded-xl p-5 bg-gray-50/50">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800">Deal Variations</label>
+                <p className="text-xs text-gray-500 mt-0.5">Offer multiple options at different price points</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setHasVariants(!hasVariants);
+                  if (hasVariants) setVariants([]);
+                }}
+                className={`relative w-11 h-6 rounded-full transition-colors ${hasVariants ? 'bg-primary-500' : 'bg-gray-300'}`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${hasVariants ? 'translate-x-5' : ''}`} />
+              </button>
+            </div>
+
+            {hasVariants && (
+              <div className="space-y-3 mt-4">
+                {/* Ask Ava to suggest variations */}
+                {variants.length === 0 && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setAiVariantsLoading(true);
+                      try {
+                        const res = await fetch('/api/vendor/ai-assist', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            type: 'suggest_variants',
+                            context: {
+                              title: form.title,
+                              description: form.description,
+                              original_price: form.original_price,
+                              deal_price: form.deal_price,
+                            },
+                          }),
+                        });
+                        const data = await res.json();
+                        if (data.text) {
+                          const parsed = JSON.parse(data.text);
+                          if (Array.isArray(parsed)) {
+                            const newVariants: DealVariant[] = parsed.map((v: { name: string; description?: string; original_price: number; price: number }) => ({
+                              id: crypto.randomUUID(),
+                              name: v.name,
+                              description: v.description || undefined,
+                              original_price: v.original_price,
+                              price: v.price,
+                              claims_count: 0,
+                            }));
+                            setVariants(newVariants);
+                          }
+                        }
+                      } catch { /* ignore */ }
+                      setAiVariantsLoading(false);
+                    }}
+                    disabled={aiVariantsLoading}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-purple-500 to-primary-500 hover:from-purple-600 hover:to-primary-600 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-md"
+                  >
+                    {aiVariantsLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Ava is suggesting variations...</>
+                    ) : (
+                      <><Sparkles className="w-4 h-4" /> Ask Ava to Suggest Variations</>
+                    )}
+                  </button>
+                )}
+
+                {/* Existing variants */}
+                {variants.map((v) => (
+                  <div key={v.id} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3">
+                    {v.image_url && (
+                      <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={v.image_url} alt={v.name} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">{v.name}</p>
+                      {v.description && <p className="text-xs text-gray-500 truncate">{v.description}</p>}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-400 line-through">{formatCurrency(v.original_price)}</span>
+                        <span className="text-sm font-bold text-primary-500">{formatCurrency(v.price)}</span>
+                        <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                          {formatPercentage(((v.original_price - v.price) / v.original_price) * 100)} OFF
+                        </span>
+                        {v.deposit_amount != null && v.deposit_amount > 0 && (
+                          <span className="text-xs text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded">{formatCurrency(v.deposit_amount)} deposit</span>
+                        )}
+                        {v.max_claims != null && (
+                          <span className="text-xs text-gray-500">Max: {v.max_claims}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => setEditingVariant(v)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+                        <FileEdit className="w-3.5 h-3.5 text-gray-400" />
+                      </button>
+                      <button type="button" onClick={() => setVariants(prev => prev.filter(vr => vr.id !== v.id))} className="p-1.5 hover:bg-red-50 rounded-lg transition-colors">
+                        <X className="w-3.5 h-3.5 text-red-400" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Add / Edit variant form */}
+                {(editingVariant !== null || variants.length < 10) && (
+                  <VariantForm
+                    initial={editingVariant}
+                    onSave={(v) => {
+                      if (editingVariant) {
+                        setVariants(prev => prev.map(vr => vr.id === v.id ? v : vr));
+                      } else {
+                        setVariants(prev => [...prev, v]);
+                      }
+                      setEditingVariant(null);
+                    }}
+                    onCancel={() => setEditingVariant(null)}
+                    isEditing={editingVariant !== null}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Highlights ───────────────────────────────────── */}
         <div>

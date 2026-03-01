@@ -17,6 +17,7 @@ type SortOption = 'distance' | 'newest' | 'discount';
 export default function DealsPage() {
   const { user } = useAuth();
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [vendorPaymentLogos, setVendorPaymentLogos] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     type: '' as '' | 'regular' | 'sponti_coupon',
@@ -33,6 +34,15 @@ export default function DealsPage() {
   const [geocoding, setGeocoding] = useState(false);
 
   const { lat, lng, loading: geoLoading, error: geoError } = useGeolocation();
+
+  // Read URL query params on mount (e.g. ?category=restaurants from home page)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get('category');
+    const search = params.get('search');
+    if (cat) setFilters(f => ({ ...f, category: cat }));
+    if (search) setFilters(f => ({ ...f, search }));
+  }, []);
 
   // Warm up stats endpoint
   useEffect(() => {
@@ -88,6 +98,15 @@ export default function DealsPage() {
 
     setDeals(fetchedDeals);
     setLoading(false);
+
+    // Fetch payment logos for all vendor IDs in one batch
+    const vendorIds = Array.from(new Set(fetchedDeals.map((d: Deal) => d.vendor_id).filter(Boolean))) as string[];
+    if (vendorIds.length > 0) {
+      fetch(`/api/deals/payment-logos?vendor_ids=${vendorIds.join(',')}`)
+        .then(r => r.json())
+        .then(data => setVendorPaymentLogos(data.logos || {}))
+        .catch(() => {});
+    }
   }, [userLocation, filters, sortBy]);
 
   // Fetch deals immediately (no location needed when radius=All)
@@ -377,6 +396,7 @@ export default function DealsPage() {
                     deal={deal}
                     distance={(deal as Deal & { distance?: number }).distance}
                     isOwnDeal={!!user && deal.vendor_id === user.id}
+                    paymentLogos={vendorPaymentLogos[deal.vendor_id]}
                   />
                 </div>
               ))}

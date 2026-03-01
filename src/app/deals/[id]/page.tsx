@@ -8,7 +8,7 @@ import { formatCurrency, formatPercentage } from '@/lib/utils';
 import {
   MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Users,
   Star, MessageSquare, Send, Loader2, CheckCircle2, Globe, Phone, Mail,
-  ExternalLink, ChevronRight, Sparkles, Zap, Info, Heart,
+  ExternalLink, ChevronRight, Sparkles, Zap, Info,
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,
   Navigation, Copy, Check, Calendar,
 } from 'lucide-react';
@@ -17,7 +17,7 @@ import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
-import type { Deal, Review, BusinessHours, VendorSocialLinks } from '@/lib/types/database';
+import type { Deal, DealVariant, Review, BusinessHours, VendorSocialLinks } from '@/lib/types/database';
 import { PAYMENT_PROCESSORS } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 
@@ -53,19 +53,31 @@ interface VendorDeal {
   status: string;
 }
 
+interface SimilarDeal extends VendorDeal {
+  vendor?: {
+    business_name: string;
+    logo_url: string | null;
+    city: string | null;
+    state: string | null;
+  };
+}
+
 export default function DealDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const [deal, setDeal] = useState<Deal | null>(null);
   const [vendorDeals, setVendorDeals] = useState<VendorDeal[]>([]);
+  const [similarDeals, setSimilarDeals] = useState<SimilarDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [error, setError] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [locationPayments, setLocationPayments] = useState<{ processor_type: string; display_name: string | null }[]>([]);
-  const [activeTab, setActiveTab] = useState<'vendor' | 'details' | 'reviews'>('vendor');
+  const [paymentMethods, setPaymentMethods] = useState<{ processor_type: string; display_name: string | null; payment_tier: string }[]>([]);
+  const [hasStripeConnect, setHasStripeConnect] = useState(false);
+  const [activeTab, setActiveTab] = useState<'vendor' | 'details' | 'payments' | 'reviews'>('vendor');
+  const [selectedVariant, setSelectedVariant] = useState<DealVariant | null>(null);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -87,6 +99,7 @@ export default function DealDetailPage() {
       const data = await response.json();
       setDeal(data.deal);
       setVendorDeals(data.vendor_deals || []);
+      setSimilarDeals(data.similar_deals || []);
       setLoading(false);
     }
     fetchDeal();
@@ -95,17 +108,18 @@ export default function DealDetailPage() {
   useEffect(() => {
     if (!deal?.vendor_id) return;
     fetchReviews();
-    // Fetch vendor's in-person payment methods (Venmo, Zelle, Cash App)
-    async function fetchLocationPayments() {
+    // Fetch vendor's payment methods + Stripe Connect status
+    async function fetchPaymentMethods() {
       try {
         const res = await fetch(`/api/deals/${deal!.id}/payment-methods`);
         if (res.ok) {
           const data = await res.json();
-          setLocationPayments(data.methods || []);
+          setPaymentMethods(data.methods || []);
+          setHasStripeConnect(data.has_stripe_connect || false);
         }
       } catch { /* silent */ }
     }
-    fetchLocationPayments();
+    fetchPaymentMethods();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deal?.vendor_id]);
 
@@ -298,9 +312,16 @@ export default function DealDetailPage() {
   }
 
   const isSponti = deal.deal_type === 'sponti_coupon';
-  const hasDeposit = deal.deposit_amount != null && deal.deposit_amount > 0;
+  // Effective pricing — respects selectedVariant
+  const effectiveOriginalPrice = selectedVariant ? selectedVariant.original_price : deal.original_price;
+  const effectiveDealPrice = selectedVariant ? selectedVariant.price : deal.deal_price;
+  const effectiveDiscount = ((effectiveOriginalPrice - effectiveDealPrice) / effectiveOriginalPrice) * 100;
+  const effectiveDeposit = selectedVariant?.deposit_amount ?? deal.deposit_amount;
+  const hasDeposit = effectiveDeposit != null && effectiveDeposit > 0;
+  const effectiveMaxClaims = selectedVariant?.max_claims ?? deal.max_claims;
+  const effectiveClaimsCount = selectedVariant?.claims_count ?? deal.claims_count;
   const isExpired = new Date(deal.expires_at) < new Date();
-  const isSoldOut = deal.max_claims ? deal.claims_count >= deal.max_claims : false;
+  const isSoldOut = effectiveMaxClaims ? effectiveClaimsCount >= effectiveMaxClaims : false;
   const vendor = deal.vendor;
   const hours = vendor?.business_hours as BusinessHours | undefined;
   const social = vendor?.social_links as VendorSocialLinks | undefined;
@@ -313,39 +334,91 @@ export default function DealDetailPage() {
   const isOpenNow = todayHours && !todayHours.closed;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ===== HERO SECTION ===== */}
-      <div className="relative">
-        {/* Back button */}
-        <div className="absolute top-4 left-4 z-20">
-          <Link href="/deals" className="inline-flex items-center gap-1.5 bg-black/40 backdrop-blur-sm text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-black/60 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
-        </div>
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* ===== TOP: Image + Deal Info (Groupon-style) ===== */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 lg:pt-6">
+        <Link href="/deals" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-700 mb-4 text-sm font-medium transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Back to Deals
+        </Link>
 
-        {/* Image Gallery */}
-        <DealImageGallery
-          mainImage={deal.image_url}
-          images={deal.image_urls || []}
-          videoUrls={deal.video_urls || []}
-          title={deal.title}
-          fallback={
-            <div className={`w-full h-72 sm:h-96 flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-orange-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
-              {isSponti ? <SpontiIcon className="w-24 h-24 text-white/20" /> : <Tag className="w-24 h-24 text-white/20" />}
+        <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-start overflow-hidden">
+          {/* ===== LEFT: Image Gallery + Below-Image Content ===== */}
+          <div className="space-y-4 min-w-0">
+            <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+              <DealImageGallery
+                mainImage={selectedVariant?.image_url || deal.image_url}
+                images={deal.image_urls || []}
+                videoUrls={deal.video_urls || []}
+                title={selectedVariant ? `${deal.title} — ${selectedVariant.name}` : deal.title}
+                fallback={
+                  <div className={`w-full aspect-[4/3] flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-orange-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
+                    {isSponti ? <SpontiIcon className="w-24 h-24 text-white/20" /> : <Tag className="w-24 h-24 text-white/20" />}
+                  </div>
+                }
+              />
             </div>
-          }
-        />
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 relative">
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* ===== MAIN CONTENT (2 cols) ===== */}
-          <div className="lg:col-span-2 space-y-6">
+            {/* ===== BELOW IMAGE: Deal Variant Options ===== */}
+            {deal.variants && deal.variants.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Choose an option</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {deal.variants.map((v: DealVariant) => {
+                    const isSelected = selectedVariant?.id === v.id;
+                    const discount = ((v.original_price - v.price) / v.original_price) * 100;
+                    const soldOut = v.max_claims != null && v.claims_count >= v.max_claims;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVariant(isSelected ? null : v)}
+                        disabled={soldOut}
+                        className={`text-left p-3 rounded-xl border-2 transition-all ${
+                          soldOut
+                            ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                            : isSelected
+                              ? 'border-primary-500 bg-primary-50 shadow-sm'
+                              : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {v.image_url && (
+                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={v.image_url} alt={v.name} className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`text-sm font-semibold ${isSelected ? 'text-primary-700' : 'text-gray-900'}`}>{v.name}</span>
+                              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'}`}>
+                                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                              </div>
+                            </div>
+                            {v.description && <p className="text-xs text-gray-500 mt-0.5 truncate">{v.description}</p>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-xs text-gray-400 line-through">{formatCurrency(v.original_price)}</span>
+                          <span className="text-sm font-bold text-primary-500">{formatCurrency(v.price)}</span>
+                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(discount)} OFF</span>
+                        </div>
+                        {soldOut && <p className="text-[10px] text-red-500 font-medium mt-1">Sold out</p>}
+                        {!soldOut && v.max_claims != null && (
+                          <p className="text-[10px] text-gray-400 mt-1">{v.max_claims - v.claims_count} left</p>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
 
-            {/* Deal Header Card */}
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-8 animate-fade-up text-center sm:text-left">
-              {/* Badges row */}
-              <div className="flex items-center flex-wrap gap-2 mb-4 justify-center sm:justify-start">
+          {/* ===== RIGHT: Deal Info Panel (sticky) ===== */}
+          <div className="lg:sticky lg:top-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 space-y-4 animate-fade-up min-w-0 overflow-hidden">
+            {/* Badges row */}
+            <div className="flex items-center flex-wrap gap-2 mb-3">
                 <DealTypeBadge type={deal.deal_type} size="lg" />
                 {isExpired && <span className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">EXPIRED</span>}
                 {isSoldOut && <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">SOLD OUT</span>}
@@ -398,16 +471,16 @@ export default function DealDetailPage() {
                 </div>
               )}
 
-              {/* Description */}
+              {/* Description (truncated) */}
               {deal.description && (
-                <p className="text-gray-600 mt-5 leading-relaxed text-base">{deal.description}</p>
+                <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">{deal.description}</p>
               )}
 
               {/* Highlights */}
               {deal.highlights && deal.highlights.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
-                  {deal.highlights.map((h, i) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-sm px-3 py-1.5 rounded-full border border-green-200 font-medium">
+                <div className="flex flex-wrap gap-1.5">
+                  {deal.highlights.slice(0, 3).map((h, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full border border-green-200 font-medium">
                       <Sparkles className="w-3 h-3" /> {h}
                     </span>
                   ))}
@@ -416,201 +489,166 @@ export default function DealDetailPage() {
 
               {/* Appointment badge */}
               {deal.requires_appointment && (
-                <div className="mt-4 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                  <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-blue-800">Appointment Required</p>
-                    <p className="text-xs text-blue-600">Book before the deal expires — your appointment can be after expiration</p>
-                  </div>
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
+                  <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <p className="text-xs font-semibold text-blue-800">Appointment Required</p>
                 </div>
               )}
 
-              {/* What's Included */}
-              <div className="mt-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl p-5 border border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" /> What&apos;s Included
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                    {deal.title}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                    Save {formatPercentage(deal.discount_percentage)} off retail
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-700">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                    Digital QR code for redemption
-                  </div>
-                  {isSponti && (
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
-                      Exclusive time-limited pricing
-                    </div>
-                  )}
+              {/* Divider */}
+              <hr className="border-gray-200" />
+
+              {/* Price block */}
+              <div>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-gray-400 line-through text-lg">{formatCurrency(effectiveOriginalPrice)}</span>
+                  <span className="text-4xl font-bold text-primary-500">{formatCurrency(effectiveDealPrice)}</span>
+                </div>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-sm px-3 py-1 rounded-full">
+                    {formatPercentage(effectiveDiscount)} OFF
+                  </span>
+                  <span className="text-sm text-gray-400">You save {formatCurrency(effectiveOriginalPrice - effectiveDealPrice)}</span>
                 </div>
               </div>
 
-              {/* Sponti vs Steady Explanation */}
-              <div className={`mt-5 rounded-xl p-5 border ${isSponti ? 'bg-gradient-to-br from-primary-50 to-orange-50 border-primary-200' : 'bg-gradient-to-br from-secondary-50 to-blue-50 border-secondary-200'}`}>
-                <div className="flex items-start gap-3">
-                  {isSponti ? (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-500/30">
-                      <SpontiIcon className="w-5 h-5 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-secondary-500 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-secondary-500/30">
-                      <Tag className="w-5 h-5 text-white" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-bold text-gray-900">
-                      {isSponti ? 'This is a Sponti Deal' : 'This is a Steady Deal'}
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                      {isSponti
-                        ? `Sponti deals are spontaneous, time-limited offers with deep discounts — often 50-70% off. They appear without warning and expire within hours, so you need to act fast!${hasDeposit ? ` A ${formatCurrency(deal.deposit_amount!)} deposit locks in your deal.` : ' Just claim and show your QR code!'}`
-                        : `Steady deals are everyday savings that stick around longer. They offer reliable discounts from local businesses — typically 20-40% off — with more time to claim and redeem.${hasDeposit ? ` A ${formatCurrency(deal.deposit_amount!)} deposit is required to claim.` : ' No payment needed — just claim and show your QR code!'}`
-                      }
-                    </p>
-                    <div className="flex flex-wrap gap-3 mt-3 justify-center sm:justify-start">
-                      {isSponti ? (
-                        <>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <Zap className="w-3 h-3" /> Deep discounts
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <Clock className="w-3 h-3" /> Limited time
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            {hasDeposit ? <><Shield className="w-3 h-3" /> {formatCurrency(deal.deposit_amount!)} deposit</> : <><CheckCircle2 className="w-3 h-3" /> No payment needed</>}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <Tag className="w-3 h-3" /> Everyday savings
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <Clock className="w-3 h-3" /> More time to redeem
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            {hasDeposit ? <><Shield className="w-3 h-3" /> {formatCurrency(deal.deposit_amount!)} deposit</> : <><CheckCircle2 className="w-3 h-3" /> No payment needed</>}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+              {/* Deposit info */}
+              {hasDeposit && (
+                <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
+                  <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(effectiveDeposit ?? 0)}</p>
+                  <p className="text-xs text-primary-600 mt-0.5">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
                 </div>
-              </div>
+              )}
 
-              {/* Countdown for Sponti */}
+              {/* Countdown timer */}
               {!isExpired && isSponti && (
-                <div className="mt-5 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-5 text-white">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-5 h-5 text-white" />
-                    <span className="font-semibold">Deal expires in:</span>
+                <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-4 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-semibold">Deal expires in:</span>
                   </div>
                   <CountdownTimer expiresAt={deal.expires_at} size="lg" variant="sponti" />
                 </div>
               )}
-            </div>
 
-            {/* ===== MOBILE PRICE CARD (shown only below lg) ===== */}
-            <div className="lg:hidden bg-white rounded-2xl shadow-lg border border-gray-200 p-6 text-center">
-              <div className="text-gray-400 line-through text-lg">{formatCurrency(deal.original_price)}</div>
-              <div className="text-4xl font-bold text-primary-500 my-1">{formatCurrency(deal.deal_price)}</div>
-              <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-lg px-4 py-1.5 rounded-full">
-                {formatPercentage(deal.discount_percentage)} OFF
-              </div>
-              <p className="text-xs text-gray-400 mt-2">You save {formatCurrency(deal.original_price - deal.deal_price)}</p>
-
-              {hasDeposit && (
-                <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mt-4 text-left">
-                  <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
-                  <p className="text-xs text-primary-600 mt-1">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
-                </div>
-              )}
-
-              {deal.max_claims && (
-                <div className="mt-4 text-left">
+              {/* Claims progress */}
+              {effectiveMaxClaims && (
+                <div>
                   <div className="flex justify-between text-sm text-gray-500 mb-1.5">
-                    <span>{deal.claims_count} claimed</span>
-                    <span className="font-medium">{deal.max_claims - deal.claims_count} left</span>
+                    <span>{effectiveClaimsCount} claimed</span>
+                    <span className="font-medium">{effectiveMaxClaims - effectiveClaimsCount} left</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
                       className={`h-2.5 rounded-full transition-all ${
-                        (deal.claims_count / deal.max_claims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
+                        (effectiveClaimsCount / effectiveMaxClaims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
                       }`}
-                      style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((effectiveClaimsCount / effectiveMaxClaims) * 100, 100)}%` }}
                     />
                   </div>
+                  {(effectiveClaimsCount / effectiveMaxClaims) > 0.8 && (
+                    <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> Almost sold out!
+                    </p>
+                  )}
                 </div>
               )}
 
-              {/* Accepted at Location */}
-              {locationPayments.length > 0 && (
-                <div className="mt-4 flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-gray-400">Also accepted at location:</span>
-                  {locationPayments.map(m => {
-                    const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
-                    return proc ? (
-                      <span key={m.processor_type} className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-full">
-                        <Image src={proc.logo} alt={proc.name} width={14} height={14} className="object-contain" />
-                        {proc.name}
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              )}
-
+              {/* Claim Button */}
               {!isExpired && !isSoldOut && deal.status === 'active' && (
                 isOwnDeal ? (
-                  <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100 mt-4">
+                  <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
                     This is your deal
                   </div>
                 ) : (
                   <button
                     onClick={handleClaim}
                     disabled={claiming}
-                    className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg mt-4 ${
+                    className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
                       isSponti || hasDeposit
                         ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
                         : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
                     }`}
                   >
-                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
+                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(effectiveDeposit!)} Deposit` : 'Claim This Deal'}
                   </button>
                 )
               )}
 
               {isExpired && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold mt-4">This deal has expired</div>
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal has expired</div>
               )}
               {isSoldOut && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold mt-4">This deal is sold out</div>
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal is sold out</div>
               )}
 
               {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 mt-4">{error}</div>
+                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200">{error}</div>
+              )}
+
+              {/* Trust signals — competitive advantage over Groupon */}
+              <div className="flex items-center flex-wrap gap-x-4 gap-y-2 pt-2 border-t border-gray-100">
+                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> Verified Business
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> Direct Payments
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> Secure QR Code
+                </span>
+                {deal.claims_count > 0 && (
+                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <Users className="w-3.5 h-3.5 text-blue-500" /> {deal.claims_count} claimed
+                  </span>
+                )}
+              </div>
+
+              {/* Payment logos */}
+              {(hasStripeConnect || paymentMethods.length > 0) && (
+                <button
+                  onClick={() => {
+                    setActiveTab('payments');
+                    document.getElementById('deal-tabs')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-2 text-xs text-gray-400 hover:text-primary-500 transition-colors"
+                >
+                  <span>Payments accepted:</span>
+                  <div className="flex items-center gap-1">
+                    {hasStripeConnect && (
+                      <Image src="/logos/stripe.svg" alt="Stripe" width={14} height={14} className="object-contain" />
+                    )}
+                    {paymentMethods.slice(0, 4).map(m => {
+                      const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
+                      return proc ? (
+                        <Image key={m.processor_type} src={proc.logo} alt={proc.name} width={14} height={14} className="object-contain" />
+                      ) : null;
+                    })}
+                  </div>
+                  <ChevronRight className="w-3 h-3" />
+                </button>
               )}
             </div>
+          </div>
+        </div>
+
+      {/* ===== TABS & MORE DEALS ===== */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
 
             {/* ===== TAB NAVIGATION ===== */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="flex border-b border-gray-100">
-                {(['vendor', 'details', 'reviews'] as const).map(tab => (
+            <div id="deal-tabs" className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="flex border-b border-gray-100 overflow-x-auto">
+                {(['vendor', 'details', 'payments', 'reviews'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 px-4 py-3.5 text-sm font-semibold transition-colors relative ${
+                    className={`flex-1 min-w-0 px-3 py-3.5 text-xs sm:text-sm font-semibold transition-colors relative whitespace-nowrap ${
                       activeTab === tab ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    {tab === 'vendor' && 'About Business'}
-                    {tab === 'details' && 'The Nitty Gritty'}
+                    {tab === 'vendor' && 'About'}
+                    {tab === 'details' && 'Nitty Gritty'}
+                    {tab === 'payments' && 'Payments'}
                     {tab === 'reviews' && `Reviews (${totalReviews})`}
                     {activeTab === tab && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
@@ -674,6 +712,95 @@ export default function DealDetailPage() {
                           <AlertTriangle className="w-4 h-4 text-amber-500" /> Fine Print
                         </h3>
                         <p className="text-sm text-amber-700 leading-relaxed whitespace-pre-line">{deal.fine_print}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ===== PAYMENTS TAB ===== */}
+                {activeTab === 'payments' && (
+                  <div className="space-y-6">
+                    {/* Trust banner */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <Shield className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-green-800 text-sm">100% Direct Payments</p>
+                          <p className="text-xs text-green-600 mt-0.5">SpontiCoupon never holds or touches your money. Every payment goes straight to the business.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Deposit / Online Payments */}
+                    {(hasStripeConnect || paymentMethods.some(m => m.payment_tier === 'link' || m.payment_tier === 'integrated')) && (
+                      <div className="border border-gray-200 rounded-2xl p-5">
+                        <h3 className="text-sm font-bold text-gray-900 mb-1">Online Checkout</h3>
+                        <p className="text-xs text-gray-400 mb-4">Secure payment for deposits and purchases</p>
+                        <div className="flex flex-wrap gap-3">
+                          {hasStripeConnect && (
+                            <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                              <Image src="/logos/stripe.svg" alt="Stripe" width={48} height={20} className="object-contain" />
+                              <div>
+                                <p className="text-xs font-semibold text-gray-700">Stripe</p>
+                                <p className="text-[10px] text-gray-400">Integrated checkout</p>
+                              </div>
+                            </div>
+                          )}
+                          {paymentMethods
+                            .filter(m => m.payment_tier === 'link' || m.payment_tier === 'integrated')
+                            .filter(m => !(hasStripeConnect && m.processor_type === 'stripe'))
+                            .map(m => {
+                              const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
+                              if (!proc) return null;
+                              return (
+                                <div key={m.processor_type} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                                  <Image src={proc.logo} alt={proc.name} width={32} height={32} className="object-contain" />
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-700">{proc.name}</p>
+                                    <p className="text-[10px] text-gray-400">Payment link</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* At-Location Payments */}
+                    {paymentMethods.some(m => m.payment_tier === 'manual') && (
+                      <div className="border border-gray-200 rounded-2xl p-5">
+                        <h3 className="text-sm font-bold text-gray-900 mb-1">Accepted at Location</h3>
+                        <p className="text-xs text-gray-400 mb-4">Pay any remaining balance in person</p>
+                        <div className="flex flex-wrap gap-3">
+                          {paymentMethods
+                            .filter(m => m.payment_tier === 'manual')
+                            .map(m => {
+                              const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
+                              if (!proc) return null;
+                              return (
+                                <div key={m.processor_type} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                                  <Image src={proc.logo} alt={proc.name} width={32} height={32} className="object-contain" />
+                                  <div>
+                                    <p className="text-xs font-semibold text-gray-700">{proc.name}</p>
+                                    {m.display_name && <p className="text-[10px] text-gray-400">{m.display_name}</p>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!hasStripeConnect && paymentMethods.length === 0 && (
+                      <div className="text-center py-8">
+                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                          <Shield className="w-6 h-6 text-gray-300" />
+                        </div>
+                        <p className="text-sm text-gray-400">Payment information not yet configured by vendor.</p>
+                        <p className="text-xs text-gray-300 mt-1">Contact the business directly for payment details.</p>
                       </div>
                     )}
                   </div>
@@ -813,8 +940,14 @@ export default function DealDetailPage() {
                       </div>
                     </div>
 
+                    {/* About the Business */}
                     {vendor.description && (
-                      <p className="text-gray-600 leading-relaxed">{vendor.description}</p>
+                      <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
+                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                          <Info className="w-4 h-4 text-primary-500" /> About {vendor.business_name}
+                        </h4>
+                        <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">{vendor.description}</p>
+                      </div>
                     )}
 
                     {/* Amenities */}
@@ -1034,223 +1167,53 @@ export default function DealDetailPage() {
                 </div>
               </div>
             )}
-          </div>
 
-          {/* ===== SIDEBAR (1 col) ===== */}
-          <div className="lg:col-span-1 hidden lg:block">
-            <div className="sticky top-6 space-y-4">
-              {/* Price Card */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
-                {/* Price */}
-                <div className="text-center mb-5">
-                  <div className="text-gray-400 line-through text-lg">{formatCurrency(deal.original_price)}</div>
-                  <div className="text-4xl font-bold text-primary-500 my-1">{formatCurrency(deal.deal_price)}</div>
-                  <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-lg px-4 py-1.5 rounded-full">
-                    {formatPercentage(deal.discount_percentage)} OFF
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">You save {formatCurrency(deal.original_price - deal.deal_price)}</p>
-                </div>
-
-                {/* Deposit info */}
-                {hasDeposit && (
-                  <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4">
-                    <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
-                    <p className="text-xs text-primary-600 mt-1">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
-                  </div>
-                )}
-
-                {/* Claims progress */}
-                {deal.max_claims && (
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-500 mb-1.5">
-                      <span>{deal.claims_count} claimed</span>
-                      <span className="font-medium">{deal.max_claims - deal.claims_count} left</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                      <div
-                        className={`h-2.5 rounded-full transition-all ${
-                          (deal.claims_count / deal.max_claims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
-                        }`}
-                        style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
-                      />
-                    </div>
-                    {(deal.claims_count / deal.max_claims) > 0.8 && (
-                      <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
-                        <Zap className="w-3 h-3" /> Almost sold out!
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Accepted at Location */}
-                {locationPayments.length > 0 && (
-                  <div className="flex flex-col items-start gap-1.5 mb-3">
-                    <span className="text-xs text-gray-400">Also accepted at location:</span>
-                    <div className="flex flex-col gap-1.5">
-                      {locationPayments.map(m => {
-                        const proc = PAYMENT_PROCESSORS[m.processor_type as PaymentProcessorType];
-                        return proc ? (
-                          <span key={m.processor_type} className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1.5 rounded-full">
-                            <Image src={proc.logo} alt={proc.name} width={16} height={16} className="object-contain" />
-                            {proc.name}
-                          </span>
-                        ) : null;
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Claim Button */}
-                {!isExpired && !isSoldOut && deal.status === 'active' && (
-                  isOwnDeal ? (
-                    <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
-                      This is your deal
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleClaim}
-                      disabled={claiming}
-                      className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
-                        isSponti || hasDeposit
-                          ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
-                          : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
-                      }`}
-                    >
-                      {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(deal.deposit_amount!)} Deposit` : 'Claim This Deal'}
-                    </button>
-                  )
-                )}
-
-                {isExpired && (
-                  <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal has expired</div>
-                )}
-                {isSoldOut && (
-                  <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal is sold out</div>
-                )}
-
-                {error && (
-                  <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 mt-4">{error}</div>
-                )}
-
-                {/* Social proof */}
-                {deal.claims_count > 0 && (
-                  <div className="mt-4 bg-green-50 border border-green-100 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-sm text-green-700">
-                      <Users className="w-4 h-4" />
-                      <span className="font-medium">{deal.claims_count} people claimed this deal</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Deal at a Glance */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Deal at a Glance</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Type</span>
-                    <DealTypeBadge type={deal.deal_type} size="sm" />
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Discount</span>
-                    <span className="font-bold text-green-600">{formatPercentage(deal.discount_percentage)} OFF</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">You Save</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(deal.original_price - deal.deal_price)}</span>
-                  </div>
-                  {deal.max_claims && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Available</span>
-                      <span className="font-semibold text-gray-900">{deal.max_claims - deal.claims_count} of {deal.max_claims} left</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Expires</span>
-                    <span className="font-medium text-gray-700">{new Date(deal.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  </div>
-                  {vendor?.category && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Category</span>
-                      <span className="font-medium text-gray-700 capitalize">{vendor.category.replace('-', ' & ')}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Trust Signals Card */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-                <h4 className="text-sm font-semibold text-gray-900 mb-3">Why you can trust this deal</h4>
-                <div className="space-y-2.5">
-                  <div className="flex items-center gap-2.5 text-sm text-gray-500">
-                    <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span>Verified business</span>
-                  </div>
-                  {totalReviews > 0 && (
-                    <div className="flex items-center gap-2.5 text-sm text-gray-500">
-                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400 flex-shrink-0" />
-                      <span>{Number(avgRating).toFixed(1)} stars from {totalReviews} reviews</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2.5 text-sm text-gray-500">
-                    <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span>Secure QR redemption</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 text-sm text-gray-500">
-                    <Heart className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    <span>Supporting local business</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Contact */}
-              {vendor && (vendor.phone || vendor.website) && (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Contact</h4>
-                  <div className="space-y-2">
-                    {vendor.phone && (
-                      <a href={`tel:${vendor.phone}`} className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
-                        <Phone className="w-4 h-4" /> {vendor.phone}
-                      </a>
-                    )}
-                    {vendor.website && (
-                      <a href={vendor.website.startsWith('http') ? vendor.website : `https://${vendor.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
-                        <Globe className="w-4 h-4" /> Visit Website
-                      </a>
-                    )}
-                    {fullAddress && (
-                      <div className="relative">
-                        <button type="button" onClick={() => setShowDirections(prev => !prev)}
-                          className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
-                          <Navigation className="w-4 h-4" /> Get Directions
-                        </button>
-                        {showDirections && (
-                          <>
-                            <div className="fixed inset-0 z-40" onClick={() => setShowDirections(false)} />
-                            <div className="absolute left-0 top-full mt-2 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-52">
-                              <a href={getGoogleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-sm text-gray-700">
-                                <MapPin className="w-4 h-4 text-blue-600" /> Google Maps
-                              </a>
-                              <a href={getAppleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-t border-gray-100 text-sm text-gray-700">
-                                <Navigation className="w-4 h-4 text-gray-600" /> Apple Maps
-                              </a>
-                              <a href={getWazeUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
-                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-t border-gray-100 text-sm text-gray-700">
-                                <Navigation className="w-4 h-4 text-cyan-600" /> Waze
-                              </a>
+            {/* ===== SIMILAR DEALS FROM OTHER VENDORS ===== */}
+            {similarDeals.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary-500" /> Similar Deals You Might Like
+                </h3>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {similarDeals.map(sd => {
+                    const sdIsSponti = sd.deal_type === 'sponti_coupon';
+                    return (
+                      <Link
+                        key={sd.id}
+                        href={`/deals/${sd.id}`}
+                        className="rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all group overflow-hidden"
+                      >
+                        <div className={`w-full aspect-[3/2] overflow-hidden ${sdIsSponti ? 'bg-primary-100' : 'bg-gray-100'}`}>
+                          {sd.image_url ? (
+                            <Image src={sd.image_url} alt={sd.title} width={300} height={200} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              {sdIsSponti ? <SpontiIcon className="w-10 h-10 text-primary-300" /> : <Tag className="w-10 h-10 text-gray-300" />}
                             </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <DealTypeBadge type={sd.deal_type as 'regular' | 'sponti_coupon'} size="sm" />
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-500 transition-colors">{sd.title}</p>
+                          {sd.vendor && (
+                            <p className="text-xs text-gray-400 mt-0.5 truncate">
+                              {sd.vendor.business_name}{sd.vendor.city ? ` · ${sd.vendor.city}, ${sd.vendor.state}` : ''}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-gray-400 line-through">{formatCurrency(sd.original_price)}</span>
+                            <span className="text-sm font-bold text-primary-500">{formatCurrency(sd.deal_price)}</span>
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(sd.discount_percentage)} OFF</span>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          </div>
-        </div>
+              </div>
+            )}
       </div>
 
       {/* ===== DISCLAIMER MODAL ===== */}

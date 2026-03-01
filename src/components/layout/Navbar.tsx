@@ -21,7 +21,7 @@ export function Navbar() {
   return (
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-[60]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
+        <div className="flex justify-between items-center py-3">
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <Image
@@ -29,7 +29,7 @@ export function Navbar() {
               alt="SpontiCoupon"
               width={267}
               height={80}
-              className="h-20 w-auto"
+              className="h-24 w-auto"
               priority
             />
           </Link>

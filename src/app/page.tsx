@@ -1,5 +1,4 @@
 import { HeroSection } from '@/components/landing/HeroSection';
-import { SocialProofBar } from '@/components/landing/SocialProofBar';
 import { FeaturedDeals } from '@/components/landing/FeaturedDeals';
 import { SpontiDealsShowcase } from '@/components/landing/SpontiDealsShowcase';
 import { DealsGrid } from '@/components/landing/DealsGrid';
@@ -8,6 +7,7 @@ import { CategoryGrid } from '@/components/landing/CategoryGrid';
 import { DealMapPreview } from '@/components/landing/DealMapPreview';
 import { TestimonialsSection } from '@/components/landing/TestimonialsSection';
 import { CTASection } from '@/components/landing/CTASection';
+import { HowItWorks } from '@/components/landing/HowItWorks';
 import { PreferencePicker } from '@/components/ui/PreferencePicker';
 import { MobileStickyDealCTA } from '@/components/ui/MobileStickyDealCTA';
 import { LiveActivityToast } from '@/components/ui/LiveActivityToast';
@@ -21,7 +21,10 @@ export default function Home() {
       {/* 1. Hero — parallax + search autocomplete + image accordion */}
       <HeroSection />
 
-      {/* 2. Featured Deals — top picks with tab filtering */}
+      {/* 2. How It Works — 3-step explainer for new visitors */}
+      <HowItWorks />
+
+      {/* 3. Featured Deals — top picks with tab filtering */}
       <FeaturedDeals />
 
       {/* 3. Sponti Deals — time-limited deals with countdown */}
@@ -39,10 +42,7 @@ export default function Home() {
       {/* 7. Deal map preview — all deals on map */}
       <DealMapPreview />
 
-      {/* 8. Social proof strip — category partners */}
-      <SocialProofBar />
-
-      {/* 9. Testimonials — consumer reviews */}
+      {/* 8. Testimonials — consumer reviews */}
       <TestimonialsSection />
 
       {/* 10. Final CTA — urgency-driven with stats */}

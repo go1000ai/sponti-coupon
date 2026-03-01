@@ -118,7 +118,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
 
   if (allMedia.length === 1 && allMedia[0].type === 'image') {
     return (
-      <div className="relative h-72 sm:h-96">
+      <div className="relative aspect-[4/3] max-h-[500px]">
         <SafeImage src={allMedia[0].url} alt={title} fill className="object-cover" priority />
       </div>
     );
@@ -128,7 +128,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
     <div>
       {/* Main media view */}
       <div
-        className="relative h-72 sm:h-96 group"
+        className="relative aspect-[4/3] max-h-[500px] group"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >

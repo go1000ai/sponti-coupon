@@ -5,7 +5,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
 import { rateLimit } from '@/lib/rate-limit';
 
-type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_program_suggest';
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_program_suggest' | 'suggest_variants';
 
 const PROMPTS: Record<AssistType, string> = {
   business_description: `You are a marketing copywriter helping local businesses write compelling business descriptions for their profile on a coupon/deal app. Write a warm, professional, and inviting description that highlights what makes the business special. Keep it under 500 characters. Return ONLY the description text, no quotes, no labels.`,
@@ -38,6 +38,22 @@ Guidelines:
 - Suggested rewards should be 3 tiers: easy (50-100 pts), medium (200-500 pts), and aspirational (500-1000 pts).
 - Make rewards specific and enticing for the business category.
 - The program should incentivize repeat visits.`,
+  suggest_variants: `You are a deal pricing strategist for local businesses on a coupon platform. Based on the business category, deal title, description, and base pricing, suggest 2-3 deal variations at different price tiers (e.g., Basic, Premium, Deluxe).
+
+Return ONLY valid JSON (no markdown, no backticks) as an array:
+[
+  { "name": "short tier name (2-4 words)", "description": "one-sentence description of what this tier includes", "original_price": <number>, "price": <number> },
+  { "name": "short tier name (2-4 words)", "description": "one-sentence description of what this tier includes", "original_price": <number>, "price": <number> }
+]
+
+Guidelines:
+- Create 2-3 tiers from basic to premium
+- Each tier should add clear value over the previous one
+- Pricing should be realistic for the business category
+- Names should be short and descriptive (e.g., "Basic Oil Change", "Full Service Package")
+- Descriptions should be specific about what's included — never generic
+- Discount should be 20-50% off original price per tier
+- If base prices are provided, use them as the middle tier and create tiers around them`,
 };
 
 // Tone-specific system prompts for review replies
@@ -158,6 +174,13 @@ export async function POST(request: NextRequest) {
     if (context?.avg_deal_price) userMessage += `\nAverage deal price: $${context.avg_deal_price}`;
     if (context?.deals_info) userMessage += `\nExisting deals: ${context.deals_info}`;
     userMessage += `\n\nDesign an optimal loyalty rewards program for this ${category || ''} business. Consider their typical pricing to set appropriate point values and reward tiers.`;
+  } else if (type === 'suggest_variants') {
+    if (context?.title) userMessage += `\nDeal title: ${context.title}`;
+    if (context?.description) userMessage += `\nDeal description: ${context.description}`;
+    if (context?.original_price) userMessage += `\nBase original price: $${context.original_price}`;
+    if (context?.deal_price) userMessage += `\nBase deal price: $${context.deal_price}`;
+    userMessage += `\n\nSuggest 2-3 deal variations at different price tiers for this ${category || ''} business. Make them specific, creative, and realistic.`;
+    if (context?.existing_variants) userMessage += `\n\nExisting variants (improve or suggest alternatives):\n${context.existing_variants}`;
   }
 
   const anthropicKey = process.env.SPONTI_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
@@ -228,6 +251,12 @@ function getFallbackText(type: AssistType, businessName: string, category: strin
           { name: `${businessName} Grand Prize`, points_cost: 500, description: 'Our best reward for top customers' },
         ],
       });
+    case 'suggest_variants':
+      return JSON.stringify([
+        { name: 'Basic', description: `Standard ${category || 'service'} package`, original_price: 50, price: 30 },
+        { name: 'Premium', description: `Enhanced ${category || 'service'} with extras`, original_price: 80, price: 55 },
+        { name: 'Deluxe', description: `Full ${category || 'service'} experience`, original_price: 120, price: 85 },
+      ]);
     default:
       return '';
   }

@@ -63,7 +63,7 @@ export function SpontiDealsShowcase() {
         <div className="absolute inset-0 bg-gray-900/70" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center">
               <SpontiIcon className="w-12 h-12 text-primary-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-white mb-2">Sponti Deals Drop Daily</h3>
               <p className="text-gray-300 mb-6">New Sponti Coupons with 50-70% off appear every day. Check back soon!</p>
@@ -81,7 +81,7 @@ export function SpontiDealsShowcase() {
   }
 
   return (
-    <section className="relative py-10 sm:py-16 pb-16 sm:pb-24 overflow-hidden">
+    <section className="relative py-10 sm:py-16 pb-10 sm:pb-16 overflow-hidden">
       {/* Parallax background */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
