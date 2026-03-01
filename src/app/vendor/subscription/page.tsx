@@ -35,7 +35,7 @@ const PLANS = [
     gradient: 'from-primary-500 to-primary-600',
     tagline: 'Most popular for growing businesses',
     features: [
-      '6 Sponti + 12 Steady deals/mo',
+      '15 Sponti + 30 Steady deals/mo',
       'Everything in Starter, plus:',
       'Basic charts (3 charts)',
       'Custom deal scheduling',
@@ -50,7 +50,7 @@ const PLANS = [
     tagline: 'For serious local businesses',
     badge: 'BEST VALUE',
     features: [
-      '25 Sponti + 50 Steady deals/mo',
+      '50 Sponti + 100 Steady deals/mo',
       'Everything in Pro, plus:',
       'Featured on homepage + more exposure',
       'Ava — Deal Assistant & Insights',
@@ -64,8 +64,8 @@ const PLANS = [
 
 /* ─────── Feature Comparison Matrix (matches pricing page) ─────── */
 const FEATURE_MATRIX = [
-  { feature: 'Sponti deals/month', starter: '2', pro: '6', business: '25', enterprise: 'Unlimited' },
-  { feature: 'Steady deals/month', starter: '4', pro: '12', business: '50', enterprise: 'Unlimited' },
+  { feature: 'Sponti deals/month', starter: '2', pro: '15', business: '50', enterprise: 'Unlimited' },
+  { feature: 'Steady deals/month', starter: '4', pro: '30', business: '100', enterprise: 'Unlimited' },
   { feature: 'QR code redemption', starter: true, pro: true, business: true, enterprise: true },
   { feature: '6-digit backup codes', starter: true, pro: true, business: true, enterprise: true },
   { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true, enterprise: true },

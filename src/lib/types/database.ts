@@ -425,9 +425,9 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Pro',
     price: 99,
     annualPrice: 79, // ~20% off ($950/yr)
-    deals_per_month: 18, // total (sponti + regular)
-    sponti_deals_per_month: 6,
-    regular_deals_per_month: 12,
+    deals_per_month: 45, // total (sponti + regular)
+    sponti_deals_per_month: 15,
+    regular_deals_per_month: 30,
     basic_charts: true, // 3 basic charts (claims, revenue, redemption)
     advanced_analytics: false, // NO 8+ charts / data tables
     ai_insights: false, // NO AI
@@ -450,9 +450,9 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Business',
     price: 199,
     annualPrice: 159, // ~20% off ($1,910/yr)
-    deals_per_month: 75, // total (sponti + regular)
-    sponti_deals_per_month: 25,
-    regular_deals_per_month: 50,
+    deals_per_month: 150, // total (sponti + regular)
+    sponti_deals_per_month: 50,
+    regular_deals_per_month: 100,
     basic_charts: true,
     advanced_analytics: true, // Full 8+ charts + data tables
     ai_insights: true, // AI Insights & scoring

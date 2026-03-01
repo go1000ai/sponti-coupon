@@ -40,8 +40,8 @@ SPONTI DEAL PRICING:
 
 SUBSCRIPTION TIERS (monthly, ~20% off annually):
 - Starter ($49/mo, $39/yr): 6 deals/mo (2 Sponti + 4 Steady). Basic KPI cards only. No charts, no AI, no team, no multi-location, no loyalty, no branding, no API.
-- Pro ($99/mo, $79/yr): 18 deals/mo (6 Sponti + 12 Steady). 3 basic charts, custom scheduling, priority support, loyalty programs. No AI, no team, no multi-location.
-- Business ($199/mo, $159/yr): 75 deals/mo (25 Sponti + 50 Steady). Full analytics (8+ charts), AI insights, AI deal assistant, competitor data, AI deal advisor, multi-location, up to 5 team members, loyalty. No API, no custom branding.
+- Pro ($99/mo, $79/yr): 45 deals/mo (15 Sponti + 30 Steady). 3 basic charts, custom scheduling, priority support, loyalty programs. No AI, no team, no multi-location.
+- Business ($199/mo, $159/yr): 150 deals/mo (50 Sponti + 100 Steady). Full analytics (8+ charts), AI insights, AI deal assistant, competitor data, AI deal advisor, multi-location, up to 5 team members, loyalty. No API, no custom branding.
 - Enterprise ($499/mo, $399/yr): Unlimited everything. API access, custom branding, unlimited team members, all features.
 
 DEAL USAGE TRACKING:
