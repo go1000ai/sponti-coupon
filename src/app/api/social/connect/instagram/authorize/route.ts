@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/vendor/settings?social_error=not_configured', request.url));
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').trim();
   const callbackUrl = `${appUrl}/api/social/connect/instagram/callback`;
 
   const state = JSON.stringify({
