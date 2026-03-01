@@ -919,6 +919,16 @@ export default function DealDetailPage() {
                 {/* ===== VENDOR TAB ===== */}
                 {activeTab === 'vendor' && vendor && (
                   <div className="space-y-6">
+                    {/* Deal Description */}
+                    {deal.description && (
+                      <div className="bg-gradient-to-br from-primary-50/50 to-orange-50/50 rounded-xl p-5 border border-primary-100">
+                        <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                          <Tag className="w-4 h-4 text-primary-500" /> About This Deal
+                        </h4>
+                        <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-line">{deal.description}</p>
+                      </div>
+                    )}
+
                     {/* Vendor header */}
                     <div className="flex items-center gap-4">
                       {vendor.logo_url ? (
