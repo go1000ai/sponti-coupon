@@ -147,7 +147,7 @@ export default function DealsCalendarPage() {
         <div className="flex items-center gap-4">
           <Calendar className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-secondary-500">My Deals</h1>
+            <h1 className="text-3xl font-bold text-gray-900">My Deals</h1>
             <p className="text-gray-500 text-sm mt-1">Manage and visualize your deals</p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function DealsCalendarPage() {
             onClick={() => setActiveTab('deals')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               activeTab === 'deals'
-                ? 'bg-white text-secondary-500 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -173,7 +173,7 @@ export default function DealsCalendarPage() {
             onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
               activeTab === 'drafts'
-                ? 'bg-white text-secondary-500 shadow-sm'
+                ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -191,13 +191,13 @@ export default function DealsCalendarPage() {
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <Link
               href="/vendor/deals"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-secondary-500 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
               title="List View"
             >
               <List className="w-3.5 h-3.5" /> List
             </Link>
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-secondary-500 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
               title="Calendar View"
             >
               <CalendarDays className="w-3.5 h-3.5" /> Calendar
@@ -246,7 +246,7 @@ export default function DealsCalendarPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-secondary-500 truncate">
+                        <h3 className="font-bold text-gray-900 truncate">
                           {draft.title || 'Untitled Draft'}
                         </h3>
                         {draft.description && (
@@ -325,7 +325,7 @@ export default function DealsCalendarPage() {
               <ChevronLeft className="w-5 h-5 text-gray-500" />
             </button>
             <div className="text-center">
-              <h2 className="text-xl font-bold text-secondary-500">
+              <h2 className="text-xl font-bold text-gray-900">
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </h2>
               <button onClick={goToToday} className="text-xs text-primary-500 hover:text-primary-600 font-medium mt-0.5">
@@ -442,7 +442,7 @@ export default function DealsCalendarPage() {
         <div className="card p-6">
           {selectedDay ? (
             <>
-              <h3 className="font-bold text-secondary-500 mb-1">
+              <h3 className="font-bold text-gray-900 mb-1">
                 {MONTH_NAMES[currentMonth]} {selectedDay}, {currentYear}
               </h3>
               <p className="text-sm text-gray-400 mb-4">
@@ -486,7 +486,7 @@ export default function DealsCalendarPage() {
                             {deal.status}
                           </span>
                         </div>
-                        <h4 className="font-semibold text-secondary-500 text-sm line-clamp-1">{deal.title}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{deal.title}</h4>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
                           <span className="font-semibold text-primary-500">{formatCurrency(deal.deal_price)}</span>
                           <span className="line-through">{formatCurrency(deal.original_price)}</span>
@@ -517,7 +517,7 @@ export default function DealsCalendarPage() {
             <h4 className="text-xs font-semibold text-gray-400 uppercase mb-3">Month Summary</h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <p className="text-2xl font-bold text-secondary-500">{deals.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{deals.length}</p>
                 <p className="text-[10px] text-gray-400">Total Deals</p>
               </div>
               <div className="bg-green-50 rounded-lg p-3 text-center">

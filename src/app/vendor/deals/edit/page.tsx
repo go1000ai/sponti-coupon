@@ -16,6 +16,27 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import type { Deal, VendorLocation } from '@/lib/types/database';
+import { Plus } from 'lucide-react';
+
+// Category-specific suggested features/perks
+const CATEGORY_FEATURES: Record<string, string[]> = {
+  'Restaurants': ['Free WiFi', 'Outdoor Seating', 'Parking Available', 'Wheelchair Accessible', 'Pet-Friendly Patio', 'Live Music', 'Happy Hour', 'Reservations', 'Takeout', 'Delivery', 'Catering'],
+  'Food & Drink': ['Free WiFi', 'Outdoor Seating', 'Parking Available', 'Takeout', 'Delivery', 'Dine-In', 'Catering', 'Drive-Through'],
+  'Beauty & Spa': ['Free WiFi', 'Parking Available', 'Private Rooms', 'Complimentary Drinks', 'Towel Service', 'Appointment Required', 'Walk-Ins Welcome', 'Gift Cards Available', 'Couples Packages'],
+  'Health & Fitness': ['Free WiFi', 'Parking Available', 'Showers', 'Lockers', 'Personal Trainers', 'Group Classes', 'Equipment Included', 'First Session Free', 'Open 24/7'],
+  'Wellness': ['Free WiFi', 'Parking Available', 'Private Rooms', 'Appointment Required', 'Walk-Ins Welcome', 'Complimentary Drinks', 'Relaxation Lounge'],
+  'Entertainment': ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'All Ages', '21+ Only', 'Live Performances', 'Food & Drinks Available', 'Group Discounts'],
+  'Nightlife': ['Parking Available', 'VIP Area', 'Live DJ', 'Dance Floor', 'Full Bar', '21+ Only', 'Bottle Service', 'Coat Check'],
+  'Shopping': ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'Gift Wrapping', 'Returns Accepted', 'Loyalty Rewards', 'Fitting Rooms', 'Personal Shopper'],
+  'Travel': ['Free WiFi', 'Airport Shuttle', 'Pool', 'Gym Access', 'Continental Breakfast', 'Room Service', 'Concierge', 'Pet-Friendly', 'Free Cancellation'],
+  'Automotive': ['Free WiFi', 'Shuttle Service', 'Loaner Vehicles', 'Free Estimates', 'Same-Day Service', 'Appointment Required', 'Walk-Ins Welcome'],
+  'Home Services': ['Free Estimates', 'Licensed & Insured', 'Same-Day Service', 'Weekend Availability', 'Senior Discount', 'Military Discount', 'Eco-Friendly Products'],
+  'Education': ['Free WiFi', 'Parking Available', 'Online Classes', 'In-Person', 'Materials Included', 'Certificate Provided', 'Flexible Schedule', 'Group Rates'],
+  'Technology': ['Free WiFi', 'Same-Day Service', 'Free Diagnostics', 'Warranty Included', 'Remote Support', 'On-Site Service', 'Pickup & Delivery'],
+  'Pets': ['Free WiFi', 'Parking Available', 'Grooming', 'Boarding', 'Daycare', 'Vet On-Site', 'Outdoor Play Area', 'Webcam Access'],
+  'Photography': ['Free WiFi', 'Indoor Studio', 'Outdoor Shoots', 'Props Included', 'Digital Files Included', 'Prints Available', 'Same-Day Delivery', 'Weekend Availability'],
+};
+const UNIVERSAL_FEATURES = ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'Gift Cards Available'];
 
 export default function EditDealPage() {
   return (
@@ -48,7 +69,6 @@ function BentoCard({
     orange: { bg: 'bg-white', iconBg: 'bg-primary-50 text-primary-600', border: 'border-primary-200', ring: 'ring-primary-300' },
     blue: { bg: 'bg-white', iconBg: 'bg-blue-50 text-blue-600', border: 'border-blue-200', ring: 'ring-blue-300' },
     green: { bg: 'bg-white', iconBg: 'bg-green-50 text-green-600', border: 'border-green-200', ring: 'ring-green-300' },
-    purple: { bg: 'bg-white', iconBg: 'bg-purple-50 text-purple-600', border: 'border-purple-200', ring: 'ring-purple-300' },
     amber: { bg: 'bg-white', iconBg: 'bg-amber-50 text-amber-600', border: 'border-amber-200', ring: 'ring-amber-300' },
   };
   const c = colorMap[color] || colorMap.gray;
@@ -64,7 +84,7 @@ function BentoCard({
           {icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-secondary-500 text-sm">{title}</h3>
+          <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
           <p className="text-xs text-gray-400 truncate">{summary}</p>
         </div>
         <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -118,6 +138,9 @@ function EditDealPageInner() {
   const [newHighlight, setNewHighlight] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
+  const [vendorCategory, setVendorCategory] = useState<string | null>(null);
+  const [requiresAppointment, setRequiresAppointment] = useState(false);
+  const [vendorName, setVendorName] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
@@ -181,6 +204,7 @@ function EditDealPageInner() {
       setVideoUrls(data.video_urls || []);
       setHighlights(data.highlights || []);
       setAmenities(data.amenities || []);
+      setRequiresAppointment(data.requires_appointment || false);
       setSearchTags(data.search_tags || []);
       setWebsiteUrl(data.website_url || '');
 
@@ -209,6 +233,17 @@ function EditDealPageInner() {
         if (data && data.length > 0) setLocations(data);
       });
 
+    // Fetch vendor category and name for suggested features & fine print
+    supabase
+      .from('vendors')
+      .select('category, business_name')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.category) setVendorCategory(data.category);
+        if (data?.business_name) setVendorName(data.business_name);
+      });
+
     fetchDeal();
   }, [dealId, user]);
 
@@ -219,6 +254,26 @@ function EditDealPageInner() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  // Auto-generate fine print based on deal settings
+  const generateFinePrint = useCallback(() => {
+    const lines: string[] = [];
+    lines.push('One per customer. Subject to availability. Cannot be combined with other offers.');
+    const depositVal = parseFloat(form.deposit_amount);
+    if (depositVal > 0) {
+      if (deal?.deal_type === 'sponti_coupon') {
+        lines.push(`Deposit of $${depositVal.toFixed(2)} is non-refundable if not redeemed before expiration.`);
+      } else {
+        lines.push(`If not redeemed before expiration, your deposit of $${depositVal.toFixed(2)} converts to a credit with ${vendorName || 'this business'}. Credit never expires.`);
+      }
+    }
+    if (requiresAppointment) {
+      lines.push('This deal requires an appointment. The deal is honored as long as the appointment is scheduled before the deal expires — the appointment itself may be after the expiration date.');
+    } else {
+      lines.push('No appointment necessary. Walk-ins welcome.');
+    }
+    return lines.join('\n');
+  }, [form.deposit_amount, deal?.deal_type, requiresAppointment, vendorName]);
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -344,6 +399,7 @@ function EditDealPageInner() {
       terms_and_conditions: form.terms_and_conditions || null,
       how_it_works: form.how_it_works || null,
       fine_print: form.fine_print || null,
+      requires_appointment: requiresAppointment,
       highlights,
       amenities,
       search_tags: searchTags,
@@ -385,7 +441,7 @@ function EditDealPageInner() {
         <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6"><ArrowLeft className="w-4 h-4" /> Back to Deals</Link>
         <div className="card p-8 text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-secondary-500">Deal Not Found</h2>
+          <h2 className="text-xl font-bold text-gray-900">Deal Not Found</h2>
           <p className="text-gray-500 mt-2">{error || 'The deal you are looking for does not exist.'}</p>
         </div>
       </div>
@@ -399,7 +455,7 @@ function EditDealPageInner() {
         <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6"><ArrowLeft className="w-4 h-4" /> Back to Deals</Link>
         <div className="card p-8 text-center">
           <Lock className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-secondary-500">Deal Locked</h2>
+          <h2 className="text-xl font-bold text-gray-900">Deal Locked</h2>
           <p className="text-gray-500 mt-2 max-w-md mx-auto">This deal has <strong>{deal.claims_count} claim{deal.claims_count > 1 ? 's' : ''}</strong> and can no longer be edited.</p>
           <div className="flex gap-3 justify-center mt-6">
             <Link href="/vendor/deals/calendar" className="btn-outline">Back to Deals</Link>
@@ -417,7 +473,7 @@ function EditDealPageInner() {
     : 'Set your prices';
   const mediaCount = (form.image_url ? 1 : 0) + additionalImages.length;
   const mediaSummary = `${mediaCount} image${mediaCount !== 1 ? 's' : ''}${videoUrls.length > 0 ? `, ${videoUrls.length} video${videoUrls.length > 1 ? 's' : ''}` : ''}`;
-  const detailsSummary = `${highlights.length} highlights, ${amenities.length} amenities, ${searchTags.length} tags`;
+  const detailsSummary = `${highlights.length} highlights, ${amenities.length} features, ${searchTags.length} tags`;
   const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online' : 'No location';
   const termsSummary = [form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 0
     ? `${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length} section${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 1 ? 's' : ''} filled`
@@ -456,10 +512,10 @@ function EditDealPageInner() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className={`rounded-lg p-2 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-100'}`}>
-            {deal.deal_type === 'sponti_coupon' ? <SpontiIcon className="w-6 h-6 text-primary-500" /> : <Tag className="w-6 h-6 text-secondary-500" />}
+            {deal.deal_type === 'sponti_coupon' ? <SpontiIcon className="w-6 h-6 text-primary-500" /> : <Tag className="w-6 h-6 text-gray-900" />}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Edit Deal</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Deal</h1>
             <p className="text-xs text-gray-500">
               {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'} &middot;
               <span className={`font-medium ml-1 ${deal.status === 'active' ? 'text-green-600' : deal.status === 'draft' ? 'text-amber-600' : 'text-gray-500'}`}>{deal.status}</span>
@@ -749,7 +805,7 @@ function EditDealPageInner() {
           </BentoCard>
 
           {/* Details */}
-          <BentoCard icon={<Star className="w-5 h-5" />} title="Details" summary={detailsSummary} color="purple"
+          <BentoCard icon={<Star className="w-5 h-5" />} title="Details" summary={detailsSummary} color="blue"
             open={!!openSections.details} onToggle={() => toggleSection('details')}>
 
             {/* Highlights */}
@@ -770,18 +826,40 @@ function EditDealPageInner() {
               </div>
             </div>
 
-            {/* Amenities */}
+            {/* Features & Perks */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Amenities</label>
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {amenities.map((a, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
-                    {a} <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))}><X className="w-2.5 h-2.5" /></button>
-                  </span>
-                ))}
-              </div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Features & Perks</label>
+              {amenities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {amenities.map((a, i) => (
+                    <span key={i} className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 text-xs px-2.5 py-1 rounded-full border border-primary-200">
+                      <CheckCircle2 className="w-3 h-3" />
+                      {a} <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))} className="hover:text-red-500"><X className="w-2.5 h-2.5" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {/* Suggested features */}
+              {(() => {
+                const suggestions = vendorCategory ? (CATEGORY_FEATURES[vendorCategory] || UNIVERSAL_FEATURES) : UNIVERSAL_FEATURES;
+                const unselected = suggestions.filter(s => !amenities.includes(s));
+                if (unselected.length === 0) return null;
+                return (
+                  <div className="mb-2">
+                    <p className="text-[10px] text-gray-400 mb-1">{vendorCategory ? `Suggested for ${vendorCategory}` : 'Suggested'} — tap to add</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {unselected.slice(0, 8).map(feature => (
+                        <button key={feature} type="button" onClick={() => setAmenities(prev => [...prev, feature])}
+                          className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-gray-50 text-gray-500 text-xs rounded-full border border-gray-200 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 transition-colors">
+                          <Plus className="w-2.5 h-2.5" /> {feature}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               <div className="flex gap-1.5">
-                <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} className="input-field flex-1 text-sm" placeholder="e.g., Free Parking..."
+                <input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} className="input-field flex-1 text-sm" placeholder="Add a custom feature..."
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } } }} />
                 <button type="button" onClick={() => { if (newAmenity.trim()) { setAmenities(prev => [...prev, newAmenity.trim()]); setNewAmenity(''); } }}
                   className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium">Add</button>
@@ -801,7 +879,7 @@ function EditDealPageInner() {
               </div>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {searchTags.map((tag, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-xs px-2.5 py-1 rounded-full border border-purple-200">
+                  <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
                     {tag} <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}><X className="w-2.5 h-2.5" /></button>
                   </span>
                 ))}
@@ -842,7 +920,7 @@ function EditDealPageInner() {
                       <input type="checkbox" checked={isSelected} onChange={() => setSelectedLocationIds(prev => isSelected ? prev.filter(id => id !== loc.id) : [...prev, loc.id])}
                         className="w-3.5 h-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-secondary-500 truncate">{loc.name}</p>
+                        <p className="text-xs font-medium text-gray-900 truncate">{loc.name}</p>
                         <p className="text-[10px] text-gray-400 truncate">{loc.address}, {loc.city}</p>
                       </div>
                     </label>
@@ -906,10 +984,30 @@ function EditDealPageInner() {
               <textarea name="terms_and_conditions" value={form.terms_and_conditions} onChange={handleChange} className="input-field min-h-[60px] text-sm"
                 placeholder="Valid for dine-in only..." />
             </div>
+            {/* Appointment toggle */}
             <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Fine Print</label>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">Requires Appointment?</label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setRequiresAppointment(false)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border-2 transition-all ${!requiresAppointment ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500'}`}>
+                  No — Walk-ins
+                </button>
+                <button type="button" onClick={() => setRequiresAppointment(true)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold border-2 transition-all ${requiresAppointment ? 'border-primary-500 bg-primary-50 text-primary-700' : 'border-gray-200 bg-white text-gray-500'}`}>
+                  <Calendar className="w-3 h-3 inline mr-1" /> Appointment
+                </button>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-gray-700">Fine Print</label>
+                <button type="button" onClick={() => setForm(prev => ({ ...prev, fine_print: generateFinePrint() }))}
+                  className="text-[10px] text-primary-500 hover:text-primary-600 font-medium flex items-center gap-0.5">
+                  <Sparkles className="w-2.5 h-2.5" /> Auto-generate
+                </button>
+              </div>
               <textarea name="fine_print" value={form.fine_print} onChange={handleChange} className="input-field min-h-[50px] text-sm"
-                placeholder="Must be 18+. Subject to availability." />
+                placeholder="Click 'Auto-generate' or write your own..." />
             </div>
           </BentoCard>
         </div>

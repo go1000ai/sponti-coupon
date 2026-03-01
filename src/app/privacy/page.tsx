@@ -17,21 +17,21 @@ export default function PrivacyPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Home
       </Link>
 
-      <h1 className="text-4xl font-bold text-secondary-500 mb-2">Privacy Policy</h1>
+      <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
       <p className="text-gray-400 mb-10">Last updated: February 22, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-8">
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">1. Introduction</h2>
+          <h2 className="text-2xl font-bold text-gray-900">1. Introduction</h2>
           <p className="text-gray-600 leading-relaxed">
             SpontiCoupon, operated by Online Commerce Hub, LLC (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;), is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform at sponticoupon.com and any related services (collectively, the &quot;Service&quot;).
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">2. Information We Collect</h2>
+          <h2 className="text-2xl font-bold text-gray-900">2. Information We Collect</h2>
 
-          <h3 className="text-lg font-semibold text-secondary-500 mt-4">2.1 Information You Provide</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mt-4">2.1 Information You Provide</h3>
           <ul className="list-disc pl-6 text-gray-600 space-y-2 mt-2">
             <li><strong>Account Information:</strong> Name, email address, and password when you create an account.</li>
             <li><strong>Vendor Information:</strong> Business name, business address, phone number, category, and Stripe account details for payment processing.</li>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
             <li><strong>Communication Data:</strong> Messages or feedback you send to us through contact forms or email.</li>
           </ul>
 
-          <h3 className="text-lg font-semibold text-secondary-500 mt-4">2.2 Automatically Collected Information</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mt-4">2.2 Automatically Collected Information</h3>
           <ul className="list-disc pl-6 text-gray-600 space-y-2 mt-2">
             <li><strong>Device Information:</strong> Browser type, operating system, and device identifiers.</li>
             <li><strong>Usage Data:</strong> Pages visited, deals viewed, time spent on pages, and click patterns.</li>
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">3. How We Use Your Information</h2>
+          <h2 className="text-2xl font-bold text-gray-900">3. How We Use Your Information</h2>
           <p className="text-gray-600 leading-relaxed">We use the information we collect to:</p>
           <ul className="list-disc pl-6 text-gray-600 space-y-2 mt-2">
             <li>Provide, maintain, and improve the Service</li>
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">4. Information Sharing</h2>
+          <h2 className="text-2xl font-bold text-gray-900">4. Information Sharing</h2>
           <p className="text-gray-600 leading-relaxed">We may share your information only in the following circumstances:</p>
           <ul className="list-disc pl-6 text-gray-600 space-y-2 mt-2">
             <li><strong>With Vendors:</strong> When you claim a deal, the Vendor receives your name and email to verify your redemption. Vendors do not receive your payment details.</li>
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">5. Data Security</h2>
+          <h2 className="text-2xl font-bold text-gray-900">5. Data Security</h2>
           <p className="text-gray-600 leading-relaxed">
             We implement industry-standard security measures to protect your personal information, including:
           </p>
@@ -95,14 +95,14 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">6. Data Retention</h2>
+          <h2 className="text-2xl font-bold text-gray-900">6. Data Retention</h2>
           <p className="text-gray-600 leading-relaxed">
             We retain your personal information for as long as your account is active or as needed to provide you with the Service. Transaction records (deal claims, redemptions) are retained for a minimum of 3 years for accounting and legal purposes. You may request deletion of your account and associated data at any time by contacting us.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">7. Cookies &amp; Tracking</h2>
+          <h2 className="text-2xl font-bold text-gray-900">7. Cookies &amp; Tracking</h2>
           <p className="text-gray-600 leading-relaxed">
             We use the following types of cookies:
           </p>
@@ -117,7 +117,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">8. Your Rights</h2>
+          <h2 className="text-2xl font-bold text-gray-900">8. Your Rights</h2>
           <p className="text-gray-600 leading-relaxed">
             Depending on your jurisdiction, you may have the following rights:
           </p>
@@ -135,35 +135,35 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">9. California Privacy Rights (CCPA)</h2>
+          <h2 className="text-2xl font-bold text-gray-900">9. California Privacy Rights (CCPA)</h2>
           <p className="text-gray-600 leading-relaxed">
             If you are a California resident, you have the right to: (a) know what personal information is being collected about you; (b) know whether your personal information is sold or disclosed and to whom; (c) say no to the sale of personal information; (d) access your personal information; and (e) equal service and price, even if you exercise your privacy rights. We do not sell personal information as defined by the CCPA.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">10. Children&apos;s Privacy</h2>
+          <h2 className="text-2xl font-bold text-gray-900">10. Children&apos;s Privacy</h2>
           <p className="text-gray-600 leading-relaxed">
             The Service is not intended for children under the age of 13. We do not knowingly collect personal information from children under 13. If we learn that we have collected information from a child under 13, we will take steps to delete that information promptly. If you believe a child under 13 has provided us with personal data, please contact us immediately.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">11. Third-Party Links</h2>
+          <h2 className="text-2xl font-bold text-gray-900">11. Third-Party Links</h2>
           <p className="text-gray-600 leading-relaxed">
             The Service may contain links to third-party websites or services. We are not responsible for the privacy practices of these third parties. We encourage you to read the privacy policies of any third-party sites you visit.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">12. Changes to This Policy</h2>
+          <h2 className="text-2xl font-bold text-gray-900">12. Changes to This Policy</h2>
           <p className="text-gray-600 leading-relaxed">
             We may update this Privacy Policy from time to time. We will notify you of material changes by posting the new policy on this page and updating the &quot;Last updated&quot; date. Your continued use of the Service after changes are posted constitutes acceptance of the revised policy.
           </p>
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-secondary-500">13. Contact Us</h2>
+          <h2 className="text-2xl font-bold text-gray-900">13. Contact Us</h2>
           <p className="text-gray-600 leading-relaxed">
             If you have any questions about this Privacy Policy, please contact us at:
           </p>

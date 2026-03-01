@@ -105,7 +105,7 @@ export default function AdminLocationsPage() {
         <div className="flex items-center gap-3">
           <MapPin className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Locations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Locations</h1>
             <p className="text-sm text-gray-500">{locations.length} total locations</p>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function AdminLocationsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card p-4">
-          <p className="text-2xl font-bold text-secondary-500">{stats.totalLocations}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalLocations}</p>
           <p className="text-xs text-gray-500">Total Locations</p>
         </div>
         <div className="card p-4">
@@ -134,7 +134,7 @@ export default function AdminLocationsPage() {
           <p className="text-xs text-gray-500">Unique Cities</p>
         </div>
         <div className="card p-4">
-          <p className="text-2xl font-bold text-purple-500">{stats.uniqueStates}</p>
+          <p className="text-2xl font-bold text-blue-500">{stats.uniqueStates}</p>
           <p className="text-xs text-gray-500">Unique States</p>
         </div>
       </div>
@@ -193,13 +193,13 @@ export default function AdminLocationsPage() {
                         <div className="bg-primary-50 rounded-xl p-2.5">
                           <MapPin className="w-4 h-4 text-primary-500" />
                         </div>
-                        <span className="font-semibold text-secondary-500 text-sm">
+                        <span className="font-semibold text-gray-900 text-sm">
                           {loc.name || 'Unnamed Location'}
                         </span>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className="text-sm font-medium text-secondary-500">
+                      <span className="text-sm font-medium text-gray-900">
                         {loc.vendor_name}
                       </span>
                     </td>

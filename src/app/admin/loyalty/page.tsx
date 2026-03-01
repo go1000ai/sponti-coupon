@@ -107,7 +107,7 @@ function ChartTooltip({
           className="w-3 h-3 rounded-full"
           style={{ backgroundColor: item.payload.fill }}
         />
-        <p className="font-semibold text-secondary-500 capitalize">
+        <p className="font-semibold text-gray-900 capitalize">
           {item.name}
         </p>
       </div>
@@ -257,7 +257,7 @@ export default function AdminLoyaltyPage() {
   const getTypeBadge = (type: 'punch_card' | 'points') => {
     if (type === 'punch_card') {
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-purple-50 text-purple-600">
+        <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium bg-blue-50 text-blue-600">
           <Hash className="w-3 h-3" />
           Punch Card
         </span>
@@ -430,7 +430,7 @@ export default function AdminLoyaltyPage() {
       label: 'Punch Card Programs',
       value: punchCardCount,
       icon: <Hash className="w-5 h-5" />,
-      iconBg: 'bg-purple-100 text-purple-600',
+      iconBg: 'bg-blue-100 text-blue-600',
     },
     {
       label: 'Points Programs',
@@ -460,7 +460,7 @@ export default function AdminLoyaltyPage() {
           <Gift className="w-6 h-6 text-primary-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-secondary-500">
+          <h1 className="text-2xl font-bold text-gray-900">
             Loyalty Programs
           </h1>
           <p className="text-sm text-gray-500">
@@ -487,7 +487,7 @@ export default function AdminLoyaltyPage() {
                 {card.icon}
               </div>
             </div>
-            <p className="text-3xl font-bold text-secondary-500 mb-1">
+            <p className="text-3xl font-bold text-gray-900 mb-1">
               <AnimatedValue value={card.value} />
             </p>
             <p className="text-xs text-gray-500">{card.label}</p>
@@ -502,7 +502,7 @@ export default function AdminLoyaltyPage() {
           className="card p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-card-pop"
           style={{ animationDelay: '500ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-sm font-semibold text-secondary-500 mb-1">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">
             Program Types
           </h2>
           <p className="text-xs text-gray-400 mb-4">
@@ -547,7 +547,7 @@ export default function AdminLoyaltyPage() {
                   label: 'Punch Card',
                   value: punchCardCount,
                   color: '#a855f7',
-                  icon: <Hash className="w-4 h-4 text-purple-500" />,
+                  icon: <Hash className="w-4 h-4 text-blue-500" />,
                 },
                 {
                   label: 'Points',
@@ -566,11 +566,11 @@ export default function AdminLoyaltyPage() {
                       style={{ backgroundColor: item.color }}
                     />
                     {item.icon}
-                    <span className="text-sm font-medium text-secondary-500 group-hover:text-primary-500 transition-colors">
+                    <span className="text-sm font-medium text-gray-900 group-hover:text-primary-500 transition-colors">
                       {item.label}
                     </span>
                   </div>
-                  <span className="text-lg font-bold text-secondary-500">
+                  <span className="text-lg font-bold text-gray-900">
                     <AnimatedValue value={item.value} />
                   </span>
                 </div>
@@ -584,7 +584,7 @@ export default function AdminLoyaltyPage() {
           className="card p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-card-pop"
           style={{ animationDelay: '600ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-sm font-semibold text-secondary-500 mb-1">
+          <h2 className="text-sm font-semibold text-gray-900 mb-1">
             Program Status
           </h2>
           <p className="text-xs text-gray-400 mb-4">
@@ -650,11 +650,11 @@ export default function AdminLoyaltyPage() {
                       style={{ backgroundColor: item.color }}
                     />
                     {item.icon}
-                    <span className="text-sm font-medium text-secondary-500 group-hover:text-primary-500 transition-colors">
+                    <span className="text-sm font-medium text-gray-900 group-hover:text-primary-500 transition-colors">
                       {item.label}
                     </span>
                   </div>
-                  <span className="text-lg font-bold text-secondary-500">
+                  <span className="text-lg font-bold text-gray-900">
                     <AnimatedValue value={item.value} />
                   </span>
                 </div>
@@ -732,7 +732,7 @@ export default function AdminLoyaltyPage() {
                     key={program.id}
                     className={`hover:bg-gray-50 transition-all duration-200 border-l-4 ${
                       program.type === 'punch_card'
-                        ? 'border-l-purple-400'
+                        ? 'border-l-blue-400'
                         : 'border-l-blue-400'
                     } ${index < 15 ? 'animate-slide-up-fade' : ''}`}
                     style={
@@ -745,7 +745,7 @@ export default function AdminLoyaltyPage() {
                     }
                   >
                     <td className="p-4">
-                      <p className="font-medium text-secondary-500 truncate max-w-[200px]">
+                      <p className="font-medium text-gray-900 truncate max-w-[200px]">
                         {program.name}
                       </p>
                     </td>
@@ -753,13 +753,13 @@ export default function AdminLoyaltyPage() {
                       {program.vendor?.business_name || '--'}
                     </td>
                     <td className="p-4">{getTypeBadge(program.type)}</td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Award className="w-3.5 h-3.5 text-gray-400" />
                         {program.rewards_count}
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       <div className="flex items-center justify-center gap-1">
                         <Users className="w-3.5 h-3.5 text-gray-400" />
                         {program.cards_count}

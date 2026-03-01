@@ -72,7 +72,7 @@ function getTierBadgeClass(tier: SubscriptionTier): string {
     case 'business':
       return 'bg-accent-50 text-accent-600';
     case 'enterprise':
-      return 'bg-purple-50 text-purple-600';
+      return 'bg-blue-50 text-blue-600';
     default:
       return 'bg-gray-100 text-gray-500';
   }
@@ -228,7 +228,7 @@ export default function AdminSubscriptionsPage() {
         <div className="flex items-center gap-3">
           <CreditCard className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Subscription Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Subscription Management</h1>
             <p className="text-sm text-gray-500">
               {subscriptions.length} total subscription{subscriptions.length !== 1 ? 's' : ''} &middot; {totalActive} active
             </p>
@@ -243,7 +243,7 @@ export default function AdminSubscriptionsPage() {
             <Users className="w-4 h-4 text-gray-400" />
             <p className="text-xs text-gray-500 font-medium">Total</p>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{subscriptions.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{subscriptions.length}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
@@ -257,7 +257,7 @@ export default function AdminSubscriptionsPage() {
             <TrendingUp className="w-4 h-4 text-gray-400" />
             <p className="text-xs text-gray-500 font-medium">Starter</p>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{starterCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{starterCount}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
@@ -278,7 +278,7 @@ export default function AdminSubscriptionsPage() {
             <AlertCircle className="w-4 h-4 text-yellow-500" />
             <p className="text-xs text-gray-500 font-medium">Enterprise / Past Due</p>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {enterpriseCount} <span className="text-sm font-normal text-yellow-500">/ {pastDueCount}</span>
           </p>
         </div>
@@ -342,7 +342,7 @@ export default function AdminSubscriptionsPage() {
                 paginatedSubscriptions.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <p className="font-medium text-secondary-500">{sub.vendor_name}</p>
+                      <p className="font-medium text-gray-900">{sub.vendor_name}</p>
                     </td>
                     <td className="p-4">
                       <span

@@ -191,7 +191,7 @@ export default function SavingsPage() {
     { amount: 25, label: '$25 Saved!', icon: <Star className="w-6 h-6" />, color: 'text-amber-500', bgColor: 'bg-amber-100' },
     { amount: 50, label: '$50 Saved!', icon: <Trophy className="w-6 h-6" />, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
     { amount: 100, label: '$100 Saved!', icon: <Award className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
-    { amount: 250, label: '$250 Saved!', icon: <Crown className="w-6 h-6" />, color: 'text-purple-500', bgColor: 'bg-purple-100' },
+    { amount: 250, label: '$250 Saved!', icon: <Crown className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
     { amount: 500, label: '$500 Saved!', icon: <Diamond className="w-6 h-6" />, color: 'text-primary-500', bgColor: 'bg-primary-100' },
   ];
 
@@ -207,7 +207,7 @@ export default function SavingsPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-500">Savings</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Savings</h1>
         <p className="text-gray-500 mt-1">Track your savings and achievements</p>
       </div>
 
@@ -234,7 +234,7 @@ export default function SavingsPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">This Month</p>
-              <p className="text-2xl font-bold text-secondary-500">{formatCurrency(currentMonthSavings)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentMonthSavings)}</p>
             </div>
           </div>
           {previousMonthSavings > 0 && (
@@ -255,7 +255,7 @@ export default function SavingsPage() {
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500">Last Month</p>
-              <p className="text-2xl font-bold text-secondary-500">{formatCurrency(previousMonthSavings)}</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(previousMonthSavings)}</p>
             </div>
           </div>
           <p className="text-sm text-gray-400">
@@ -268,21 +268,21 @@ export default function SavingsPage() {
       {categorySavings.length > 0 && (
         <div className="card p-6 md:p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="bg-purple-500 rounded-xl p-2.5">
+            <div className="bg-blue-500 rounded-xl p-2.5">
               <BarChart3 className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-secondary-500">Savings by Category</h2>
+            <h2 className="text-lg font-bold text-gray-900">Savings by Category</h2>
           </div>
           <div className="space-y-4">
             {categorySavings.map((cat) => (
               <div key={cat.category}>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium text-secondary-500">
+                  <span className="text-sm font-medium text-gray-900">
                     {CATEGORY_LABELS[cat.category] || cat.category}
                   </span>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-gray-400">{cat.count} deal{cat.count !== 1 ? 's' : ''}</span>
-                    <span className="text-sm font-bold text-secondary-500">{formatCurrency(cat.amount)}</span>
+                    <span className="text-sm font-bold text-gray-900">{formatCurrency(cat.amount)}</span>
                   </div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3">
@@ -306,7 +306,7 @@ export default function SavingsPage() {
           <div className="bg-amber-500 rounded-xl p-2.5">
             <Trophy className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-secondary-500">Milestones</h2>
+          <h2 className="text-lg font-bold text-gray-900">Milestones</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {milestones.map((milestone) => {
@@ -323,7 +323,7 @@ export default function SavingsPage() {
                 <div className={unlocked ? milestone.color : 'text-gray-400'}>
                   {milestone.icon}
                 </div>
-                <span className={`text-xs font-bold text-center ${unlocked ? 'text-secondary-500' : 'text-gray-400'}`}>
+                <span className={`text-xs font-bold text-center ${unlocked ? 'text-gray-900' : 'text-gray-400'}`}>
                   {milestone.label}
                 </span>
                 {unlocked && (
@@ -344,7 +344,7 @@ export default function SavingsPage() {
             <div className="bg-blue-500 rounded-xl p-2.5">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-secondary-500">Redemption History</h2>
+            <h2 className="text-lg font-bold text-gray-900">Redemption History</h2>
           </div>
           <div className="space-y-0 divide-y divide-gray-50">
             {redemptionHistory.map((claim) => {
@@ -361,7 +361,7 @@ export default function SavingsPage() {
                     <DollarSign className="w-4 h-4 text-green-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-secondary-500 truncate">{deal.title}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{deal.title}</p>
                     <p className="text-xs text-gray-400">
                       {vendorName} &middot;{' '}
                       {redeemDate.toLocaleDateString('en-US', {

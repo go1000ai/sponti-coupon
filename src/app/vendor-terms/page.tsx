@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 export default function VendorTermsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-secondary-500 mb-2">Vendor Terms of Service</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Vendor Terms of Service</h1>
       <p className="text-sm text-gray-400 mb-8">Last updated: February 24, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600">
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">1. Agreement to Terms</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">1. Agreement to Terms</h2>
           <p>
             These Vendor Terms of Service (&ldquo;Vendor Terms&rdquo;) constitute a legally binding agreement
             between you (&ldquo;Vendor,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and Online Commerce
@@ -27,7 +27,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">2. Account Registration &amp; Eligibility</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">2. Account Registration &amp; Eligibility</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               You must be a legally authorized representative of the business you register on SpontiCoupon.
@@ -48,7 +48,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">3. Subscription &amp; Fees</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">3. Subscription &amp; Fees</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               Access to the SpontiCoupon vendor platform requires an active subscription. Subscription tiers,
@@ -71,7 +71,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">4. Deal Listings</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">4. Deal Listings</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Accuracy:</strong> All deal listings must be truthful and accurate. Prices, descriptions,
@@ -98,7 +98,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">5. Deposits &amp; Payments</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">5. Deposits &amp; Payments</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               Vendors may require customer deposits for Sponti Coupon deals. Deposit payments are processed
@@ -116,7 +116,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">6. Customer Reviews</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">6. Customer Reviews</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               Customers who redeem deals may leave reviews after a 24-hour waiting period. Reviews are
@@ -134,7 +134,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">7. Vendor Loyalty Programs</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">7. Vendor Loyalty Programs</h2>
           <p>
             Vendors on eligible subscription tiers may create their own loyalty programs (punch card or
             points-based) to reward repeat customers. These vendor-operated loyalty programs are separate
@@ -148,7 +148,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">8. ROI Dashboard &amp; Analytics</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">8. ROI Dashboard &amp; Analytics</h2>
           <p>
             SpontiCoupon provides analytics and ROI metrics to help you measure the effectiveness of your deals.
             Revenue estimates are calculated using your self-reported average ticket value and are provided
@@ -158,7 +158,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">9. Data &amp; Privacy</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">9. Data &amp; Privacy</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               You will receive access to customer data (names, emails) only for customers who interact
@@ -177,7 +177,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">10. Termination</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">10. Termination</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               You may terminate your vendor account at any time by canceling your subscription and
@@ -195,7 +195,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">11. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">11. Limitation of Liability</h2>
           <p>
             SpontiCoupon provides the platform on an &ldquo;as is&rdquo; basis. We are not liable for any
             indirect, incidental, special, or consequential damages arising from your use of the platform,
@@ -208,7 +208,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">12. Indemnification</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">12. Indemnification</h2>
           <p>
             You agree to indemnify and hold harmless SpontiCoupon, its officers, directors, employees, and
             agents from any claims, damages, losses, or expenses (including reasonable attorney fees) arising
@@ -217,7 +217,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">13. Governing Law &amp; Disputes</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">13. Governing Law &amp; Disputes</h2>
           <p>
             These Vendor Terms are governed by the laws of the State of Florida, United States. Any disputes
             shall be resolved through binding arbitration in accordance with the rules of the American
@@ -226,7 +226,7 @@ export default function VendorTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">14. Contact</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">14. Contact</h2>
           <p>
             For questions about these Vendor Terms, please contact us
             at <Link href="/contact" className="text-primary-500 hover:underline">our contact page</Link> or

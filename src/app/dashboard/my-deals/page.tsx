@@ -151,7 +151,7 @@ export default function DashboardMyDealsPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-secondary-500 mb-2">My Coupons</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Coupons</h1>
       <p className="text-gray-500 mb-6">View your claimed deals, deposits, and redemption codes</p>
 
       {/* ═══ GAMIFIED SAVINGS HUB ═══ */}
@@ -281,7 +281,7 @@ export default function DashboardMyDealsPage() {
                 </div>
 
                 {/* Row 2: Title + Business */}
-                <h3 className="font-semibold text-sm text-secondary-500 leading-snug line-clamp-2 group-hover:text-primary-500 transition-colors">
+                <h3 className="font-semibold text-sm text-gray-900 leading-snug line-clamp-2 group-hover:text-primary-500 transition-colors">
                   {deal.title}
                 </h3>
                 <p className="text-xs text-gray-400 mt-1 truncate">
@@ -484,21 +484,21 @@ function SavingsHub({
             <div className="flex items-center justify-center gap-1.5 text-green-500 mb-1">
               <CheckCircle2 className="w-4 h-4" />
             </div>
-            <p className="text-xl font-bold text-secondary-500">{redeemedCount}</p>
+            <p className="text-xl font-bold text-gray-900">{redeemedCount}</p>
             <p className="text-[11px] text-gray-400 font-medium">Redeemed</p>
           </div>
           <div className="p-4 text-center">
             <div className="flex items-center justify-center gap-1.5 text-primary-500 mb-1">
               <Flame className="w-4 h-4" />
             </div>
-            <p className="text-xl font-bold text-secondary-500">{activeClaims}</p>
+            <p className="text-xl font-bold text-gray-900">{activeClaims}</p>
             <p className="text-[11px] text-gray-400 font-medium">Active Now</p>
           </div>
           <div className="p-4 text-center">
-            <div className="flex items-center justify-center gap-1.5 text-purple-500 mb-1">
+            <div className="flex items-center justify-center gap-1.5 text-blue-500 mb-1">
               <ShoppingBag className="w-4 h-4" />
             </div>
-            <p className="text-xl font-bold text-secondary-500">{totalClaims}</p>
+            <p className="text-xl font-bold text-gray-900">{totalClaims}</p>
             <p className="text-[11px] text-gray-400 font-medium">Total Deals</p>
           </div>
         </div>
@@ -708,7 +708,7 @@ function DetailModal({
               {fmtPercent(deal.discount_percentage)} off
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-secondary-500 leading-tight">{deal.title}</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{deal.title}</h2>
           {vendor && (
             <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
               <Store className="w-3.5 h-3.5" />
@@ -741,7 +741,7 @@ function DetailModal({
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                   activeTab === tab.key
-                    ? 'bg-white text-secondary-500 shadow-sm'
+                    ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -826,13 +826,13 @@ function DetailModal({
 
               {/* Time Remaining */}
               {(status === 'active' || status === 'pending_deposit') && (
-                <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 rounded-xl p-4 text-white deal-modal-shine">
+                <div className={`rounded-xl p-4 text-white deal-modal-shine ${isSponti ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gradient-to-r from-secondary-500 to-secondary-600'}`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-primary-400" />
+                    <Clock className="w-4 h-4 text-white" />
                     <span className="text-sm font-semibold">Time remaining</span>
                   </div>
-                  <CountdownTimer expiresAt={claim.expires_at} size="sm" />
-                  <p className="text-xs text-secondary-300 mt-2">Expires {fmtDateTime(claim.expires_at)}</p>
+                  <CountdownTimer expiresAt={claim.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
+                  <p className="text-xs text-white/60 mt-2">Expires {fmtDateTime(claim.expires_at)}</p>
                 </div>
               )}
 
@@ -865,7 +865,7 @@ function DetailModal({
               {/* Deposit breakdown */}
               {hasDeposit && (
                 <div className="bg-primary-50/60 border border-primary-100 rounded-xl p-4">
-                  <h4 className="text-xs font-bold text-secondary-500 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <h4 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wider flex items-center gap-2">
                     <CreditCard className="w-3.5 h-3.5 text-primary-500" />
                     Payment Breakdown
                   </h4>
@@ -880,12 +880,12 @@ function DetailModal({
                     {claim.deposit_confirmed && remainingBalance > 0 && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-500">Balance due at vendor</span>
-                        <span className="font-semibold text-secondary-500">{fmtCurrency(remainingBalance)}</span>
+                        <span className="font-semibold text-gray-900">{fmtCurrency(remainingBalance)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center border-t border-primary-200/60 pt-2">
-                      <span className="font-bold text-secondary-500">Total</span>
-                      <span className="font-bold text-secondary-500">{fmtCurrency(deal.deal_price)}</span>
+                      <span className="font-bold text-gray-900">Total</span>
+                      <span className="font-bold text-gray-900">{fmtCurrency(deal.deal_price)}</span>
                     </div>
                   </div>
                   {!claim.deposit_confirmed && (
@@ -941,7 +941,7 @@ function DetailModal({
                   {claim.redemption_code.split('').map((digit, i) => (
                     <span
                       key={i}
-                      className="code-digit w-11 h-14 bg-gradient-to-b from-white to-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-center text-2xl font-extrabold text-secondary-500 shadow-sm"
+                      className="code-digit w-11 h-14 bg-gradient-to-b from-white to-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-center text-2xl font-extrabold text-gray-900 shadow-sm"
                       style={{ animationDelay: `${i * 0.08}s` }}
                     >
                       {digit}
@@ -1018,7 +1018,7 @@ function DetailModal({
 
               {showTransfer && (
                 <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4">
-                  <h4 className="text-sm font-bold text-secondary-500 mb-1.5 flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-gray-900 mb-1.5 flex items-center gap-2">
                     <Send className="w-4 h-4 text-blue-500" />
                     Transfer Coupon
                   </h4>
@@ -1199,7 +1199,7 @@ function VendorInfoCard({ vendor }: { vendor: Vendor }) {
                   <span className={isToday ? 'text-primary-500' : 'text-gray-500'}>
                     {dayLabels[day]}{isToday ? ' ●' : ''}
                   </span>
-                  <span className={hours?.closed ? 'text-red-400' : isToday ? 'text-secondary-500' : 'text-gray-600'}>
+                  <span className={hours?.closed ? 'text-red-400' : isToday ? 'text-gray-900' : 'text-gray-600'}>
                     {!hours || hours.closed ? 'Closed' : `${formatTime12(hours.open)} – ${formatTime12(hours.close)}`}
                   </span>
                 </div>
@@ -1237,7 +1237,7 @@ function InlineCountdown({ expiresAt }: { expiresAt: string }) {
 
   return (
     <p className={`text-xs font-semibold tabular-nums flex items-center gap-1.5 ${
-      isUrgent ? 'text-red-500' : 'text-secondary-500'
+      isUrgent ? 'text-red-500' : 'text-gray-900'
     }`}>
       <Clock className={`w-3.5 h-3.5 ${isUrgent ? 'text-red-500' : 'text-primary-500'}`} />
       <span>{parts.join(' ')}</span>

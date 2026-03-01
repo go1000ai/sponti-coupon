@@ -19,6 +19,28 @@ import type { Deal, VendorLocation } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
 
+// Category-specific suggested features/perks
+const CATEGORY_FEATURES: Record<string, string[]> = {
+  'Restaurants': ['Free WiFi', 'Outdoor Seating', 'Parking Available', 'Wheelchair Accessible', 'Pet-Friendly Patio', 'Live Music', 'Happy Hour', 'Reservations', 'Takeout', 'Delivery', 'Catering'],
+  'Food & Drink': ['Free WiFi', 'Outdoor Seating', 'Parking Available', 'Takeout', 'Delivery', 'Dine-In', 'Catering', 'Drive-Through'],
+  'Beauty & Spa': ['Free WiFi', 'Parking Available', 'Private Rooms', 'Complimentary Drinks', 'Towel Service', 'Appointment Required', 'Walk-Ins Welcome', 'Gift Cards Available', 'Couples Packages'],
+  'Health & Fitness': ['Free WiFi', 'Parking Available', 'Showers', 'Lockers', 'Personal Trainers', 'Group Classes', 'Equipment Included', 'First Session Free', 'Open 24/7'],
+  'Wellness': ['Free WiFi', 'Parking Available', 'Private Rooms', 'Appointment Required', 'Walk-Ins Welcome', 'Complimentary Drinks', 'Relaxation Lounge'],
+  'Entertainment': ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'All Ages', '21+ Only', 'Live Performances', 'Food & Drinks Available', 'Group Discounts'],
+  'Nightlife': ['Parking Available', 'VIP Area', 'Live DJ', 'Dance Floor', 'Full Bar', '21+ Only', 'Bottle Service', 'Coat Check'],
+  'Shopping': ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'Gift Wrapping', 'Returns Accepted', 'Loyalty Rewards', 'Fitting Rooms', 'Personal Shopper'],
+  'Travel': ['Free WiFi', 'Airport Shuttle', 'Pool', 'Gym Access', 'Continental Breakfast', 'Room Service', 'Concierge', 'Pet-Friendly', 'Free Cancellation'],
+  'Automotive': ['Free WiFi', 'Shuttle Service', 'Loaner Vehicles', 'Free Estimates', 'Same-Day Service', 'Appointment Required', 'Walk-Ins Welcome'],
+  'Home Services': ['Free Estimates', 'Licensed & Insured', 'Same-Day Service', 'Weekend Availability', 'Senior Discount', 'Military Discount', 'Eco-Friendly Products'],
+  'Education': ['Free WiFi', 'Parking Available', 'Online Classes', 'In-Person', 'Materials Included', 'Certificate Provided', 'Flexible Schedule', 'Group Rates'],
+  'Technology': ['Free WiFi', 'Same-Day Service', 'Free Diagnostics', 'Warranty Included', 'Remote Support', 'On-Site Service', 'Pickup & Delivery'],
+  'Pets': ['Free WiFi', 'Parking Available', 'Grooming', 'Boarding', 'Daycare', 'Vet On-Site', 'Outdoor Play Area', 'Webcam Access'],
+  'Photography': ['Free WiFi', 'Indoor Studio', 'Outdoor Shoots', 'Props Included', 'Digital Files Included', 'Prints Available', 'Same-Day Delivery', 'Weekend Availability'],
+};
+
+// Universal features that apply to any category
+const UNIVERSAL_FEATURES = ['Free WiFi', 'Parking Available', 'Wheelchair Accessible', 'Gift Cards Available'];
+
 export default function NewDealPage() {
   const { user } = useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
@@ -59,6 +81,9 @@ export default function NewDealPage() {
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
+  const [vendorCategory, setVendorCategory] = useState<string | null>(null);
+  const [requiresAppointment, setRequiresAppointment] = useState(false);
+  const [vendorName, setVendorName] = useState('');
   const [highlights, setHighlights] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
@@ -115,6 +140,17 @@ export default function NewDealPage() {
         if (data && data.length > 0) {
           setLocations(data);
         }
+      });
+
+    // Fetch vendor category and name for suggested features & fine print
+    supabase
+      .from('vendors')
+      .select('category, business_name')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.category) setVendorCategory(data.category);
+        if (data?.business_name) setVendorName(data.business_name);
       });
 
     // Fetch drafts
@@ -266,6 +302,29 @@ export default function NewDealPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  // Auto-generate fine print based on deal settings
+  const generateFinePrint = useCallback(() => {
+    const lines: string[] = [];
+    lines.push('One per customer. Subject to availability. Cannot be combined with other offers.');
+
+    const depositVal = parseFloat(form.deposit_amount);
+    if (depositVal > 0) {
+      if (dealType === 'sponti_coupon') {
+        lines.push(`Deposit of $${depositVal.toFixed(2)} is non-refundable if not redeemed before expiration.`);
+      } else {
+        lines.push(`If not redeemed before expiration, your deposit of $${depositVal.toFixed(2)} converts to a credit with ${vendorName || 'this business'}. Credit never expires.`);
+      }
+    }
+
+    if (requiresAppointment) {
+      lines.push('This deal requires an appointment. The deal is honored as long as the appointment is scheduled before the deal expires — the appointment itself may be after the expiration date.');
+    } else {
+      lines.push('No appointment necessary. Walk-ins welcome.');
+    }
+
+    return lines.join('\n');
+  }, [form.deposit_amount, dealType, requiresAppointment, vendorName]);
 
   // ── AI Assist ──────────────────────────────────────────────
   const handleAiAssist = async () => {
@@ -566,6 +625,7 @@ export default function NewDealPage() {
           how_it_works: form.how_it_works || null,
           highlights,
           fine_print: form.fine_print || null,
+          requires_appointment: requiresAppointment,
           search_tags: searchTags,
         }),
       });
@@ -631,6 +691,7 @@ export default function NewDealPage() {
           how_it_works: form.how_it_works || undefined,
           highlights: highlights.length > 0 ? highlights : undefined,
           fine_print: form.fine_print || undefined,
+          requires_appointment: requiresAppointment,
           amenities: amenities.length > 0 ? amenities : undefined,
           search_tags: searchTags.length > 0 ? searchTags : undefined,
         }),
@@ -669,7 +730,7 @@ export default function NewDealPage() {
         <ArrowLeft className="w-4 h-4" /> Back to Deals
       </Link>
 
-      <h1 className="text-3xl font-bold text-secondary-500 mb-6">Deals</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">Deals</h1>
 
       {/* Tabs: New Deal / Drafts */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 mb-8 w-fit">
@@ -677,7 +738,7 @@ export default function NewDealPage() {
           onClick={() => setActiveTab('new')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'new'
-              ? 'bg-white text-secondary-500 shadow-sm'
+              ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -687,7 +748,7 @@ export default function NewDealPage() {
           onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'drafts'
-              ? 'bg-white text-secondary-500 shadow-sm'
+              ? 'bg-white text-gray-900 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -744,7 +805,7 @@ export default function NewDealPage() {
                   <div className="p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-secondary-500 truncate">
+                        <h3 className="font-bold text-gray-900 truncate">
                           {draft.title || 'Untitled Draft'}
                         </h3>
                         {draft.description && (
@@ -838,9 +899,9 @@ export default function NewDealPage() {
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-gray-100 rounded-lg p-2">
-              <Tag className="w-6 h-6 text-secondary-500" />
+              <Tag className="w-6 h-6 text-gray-900" />
             </div>
-            <h3 className="font-bold text-secondary-500">Steady Deal</h3>
+            <h3 className="font-bold text-gray-900">Steady Deal</h3>
           </div>
           <p className="text-sm text-gray-500">Standard discount lasting 1-30 days. Optional deposit available. Sets your baseline discount.</p>
         </button>
@@ -1414,25 +1475,62 @@ export default function NewDealPage() {
           </div>
         </div>
 
-        {/* ── Amenities ────────────────────────────────────── */}
+        {/* ── Features & Perks ────────────────────────────────────── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Amenities (optional)</label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {amenities.map((a, i) => (
-              <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full border border-blue-200">
-                {a}
-                <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))}>
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Features & Perks (optional)</label>
+          <p className="text-xs text-gray-400 mb-3">Select what your business offers or type your own</p>
+
+          {/* Selected features */}
+          {amenities.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {amenities.map((a, i) => (
+                <span key={i} className="inline-flex items-center gap-1 bg-primary-50 text-primary-700 text-sm px-3 py-1.5 rounded-full border border-primary-200">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {a}
+                  <button type="button" onClick={() => setAmenities(prev => prev.filter((_, idx) => idx !== i))} className="ml-0.5 hover:text-red-500">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Suggested features based on vendor category */}
+          {(() => {
+            const suggestions = vendorCategory
+              ? (CATEGORY_FEATURES[vendorCategory] || UNIVERSAL_FEATURES)
+              : UNIVERSAL_FEATURES;
+            const unselected = suggestions.filter(s => !amenities.includes(s));
+            if (unselected.length === 0) return null;
+            return (
+              <div className="mb-3">
+                <p className="text-xs font-medium text-gray-500 mb-2">
+                  {vendorCategory ? `Suggested for ${vendorCategory}` : 'Suggested features'} — tap to add
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {unselected.map(feature => (
+                    <button
+                      key={feature}
+                      type="button"
+                      onClick={() => setAmenities(prev => [...prev, feature])}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-50 text-gray-600 text-sm rounded-full border border-gray-200 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      {feature}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Manual input */}
           <div className="flex gap-2">
             <input
               value={newAmenity}
               onChange={e => setNewAmenity(e.target.value)}
               className="input-field flex-1"
-              placeholder="e.g., Free Parking, WiFi, Pet Friendly, Outdoor Seating..."
+              placeholder="Add a custom feature..."
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -1487,7 +1585,7 @@ export default function NewDealPage() {
           {searchTags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-2">
               {searchTags.map((tag, i) => (
-                <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 text-sm px-3 py-1.5 rounded-full border border-purple-200">
+                <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-sm px-3 py-1.5 rounded-full border border-blue-200">
                   {tag}
                   <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}>
                     <X className="w-3 h-3" />
@@ -1764,7 +1862,7 @@ export default function NewDealPage() {
                       className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-secondary-500 truncate">{loc.name}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{loc.name}</p>
                       <p className="text-xs text-gray-400 truncate">{loc.address}, {loc.city}, {loc.state} {loc.zip}</p>
                     </div>
                   </label>
@@ -1874,17 +1972,61 @@ export default function NewDealPage() {
           />
         </div>
 
+        {/* ── Appointment Required ──────────────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Does this deal require an appointment?</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setRequiresAppointment(false)}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-all ${
+                !requiresAppointment
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              No — Walk-ins Welcome
+            </button>
+            <button
+              type="button"
+              onClick={() => setRequiresAppointment(true)}
+              className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold border-2 transition-all ${
+                requiresAppointment
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+              }`}
+            >
+              <Calendar className="w-4 h-4 inline mr-1.5" />
+              Yes — Appointment Required
+            </button>
+          </div>
+          {requiresAppointment && (
+            <p className="text-xs text-primary-600 mt-2 bg-primary-50 px-3 py-2 rounded-lg">
+              Customers must schedule their appointment before the deal expires. The appointment itself can be after the expiration date.
+            </p>
+          )}
+        </div>
+
         {/* ── Fine Print ───────────────────────────────────── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fine Print (optional)</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-medium text-gray-700">Fine Print</label>
+            <button
+              type="button"
+              onClick={() => setForm(prev => ({ ...prev, fine_print: generateFinePrint() }))}
+              className="text-xs text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1"
+            >
+              <Sparkles className="w-3 h-3" /> Auto-generate
+            </button>
+          </div>
           <textarea
             name="fine_print"
             value={form.fine_print}
             onChange={handleChange as React.ChangeEventHandler<HTMLTextAreaElement>}
-            className="input-field min-h-[60px]"
-            placeholder="e.g., Must be 18+. Gratuity not included. Subject to availability."
+            className="input-field min-h-[80px]"
+            placeholder="Click 'Auto-generate' to create fine print based on your deal settings, or write your own..."
           />
-          <p className="text-xs text-gray-400 mt-1">Short restrictions or legal notes shown prominently to customers</p>
+          <p className="text-xs text-gray-400 mt-1">Includes deposit policy, appointment requirements, and standard disclaimers. You can edit after generating.</p>
         </div>
 
         <div className="flex gap-3">

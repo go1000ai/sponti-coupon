@@ -89,7 +89,7 @@ export default function RedeemPage() {
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <SpontiIcon className="w-4 h-4 text-primary-500" />
-                <span className="font-semibold text-secondary-500">{data.claim.deal.title}</span>
+                <span className="font-semibold text-gray-900">{data.claim.deal.title}</span>
               </div>
               <p className="text-sm text-gray-500">{data.claim.deal.vendor?.business_name}</p>
               <div className="flex items-center gap-2 mt-2">
@@ -104,7 +104,7 @@ export default function RedeemPage() {
                 <Clock className="w-4 h-4" />
                 <span className="font-medium">Expires in:</span>
               </div>
-              <CountdownTimer expiresAt={data.claim.expires_at} size="md" />
+              <CountdownTimer expiresAt={data.claim.expires_at} size="md" variant="sponti" />
             </div>
           </>
         )}

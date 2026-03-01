@@ -557,7 +557,7 @@ export default function AdminDealsPage() {
             <Tag className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Deal Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Deal Management</h1>
             <p className="text-sm text-gray-500">
               {deals.length} total deals &middot; {activeCount} active &middot; {spontiCount} Sponti &middot; {steadyCount} Steady
             </p>
@@ -578,7 +578,7 @@ export default function AdminDealsPage() {
           { label: 'Total Deals', value: animatedTotal, icon: Package, color: 'text-primary-500', bg: 'bg-primary-50' },
           { label: 'Active Deals', value: animatedActive, icon: Zap, color: 'text-green-500', bg: 'bg-green-50' },
           { label: 'Total Claims', value: animatedClaims, icon: Users, color: 'text-blue-500', bg: 'bg-blue-50' },
-          { label: 'Avg Discount', value: animatedDiscount, icon: Percent, color: 'text-purple-500', bg: 'bg-purple-50', suffix: '%' },
+          { label: 'Avg Discount', value: animatedDiscount, icon: Percent, color: 'text-blue-500', bg: 'bg-blue-50', suffix: '%' },
         ].map((stat, i) => (
           <div
             key={stat.label}
@@ -591,7 +591,7 @@ export default function AdminDealsPage() {
                 <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
             </div>
-            <p className="text-2xl font-bold text-secondary-500">
+            <p className="text-2xl font-bold text-gray-900">
               {stat.value}{stat.suffix || ''}
             </p>
           </div>
@@ -613,7 +613,7 @@ export default function AdminDealsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]">
             {/* Chart A: Top 10 Deals by Claims */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <h3 className="text-sm font-semibold text-secondary-500 mb-3">Top 10 Deals by Claims</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Top 10 Deals by Claims</h3>
               {topClaimsData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={topClaimsData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
@@ -639,7 +639,7 @@ export default function AdminDealsPage() {
 
             {/* Chart B: Deal Type Performance */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <h3 className="text-sm font-semibold text-secondary-500 mb-3">Deal Type Performance</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Deal Type Performance</h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={dealTypePerformance} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -657,7 +657,7 @@ export default function AdminDealsPage() {
 
             {/* Chart C: Status Distribution */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-              <h3 className="text-sm font-semibold text-secondary-500 mb-3">Status Distribution</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Status Distribution</h3>
               {statusDistribution.length > 0 ? (
                 <ResponsiveContainer width="100%" height={250}>
                   <PieChart>
@@ -704,7 +704,7 @@ export default function AdminDealsPage() {
           onClick={() => setAiOpen(!aiOpen)}
           className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white rounded-xl border border-gray-200 hover:bg-gray-50 transition-all duration-300 hover:shadow-sm"
         >
-          <Sparkles className="w-4 h-4 text-purple-500 animate-pulse" />
+          <Sparkles className="w-4 h-4 text-blue-500 animate-pulse" />
           AI Insights
           <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${aiOpen ? 'rotate-180' : ''}`} />
         </button>
@@ -716,7 +716,7 @@ export default function AdminDealsPage() {
               <div className="text-center py-4">
                 <button
                   onClick={fetchAiInsights}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02]"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-500 text-white rounded-xl font-semibold text-sm hover:from-blue-600 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02]"
                 >
                   <Brain className="w-5 h-5" />
                   Analyze Deals
@@ -731,7 +731,7 @@ export default function AdminDealsPage() {
                 <p className="text-sm text-red-500 mb-3">{aiError}</p>
                 <button
                   onClick={() => { setAiInsights(null); setAiError(''); }}
-                  className="text-sm text-purple-500 hover:text-purple-700 font-medium"
+                  className="text-sm text-blue-500 hover:text-blue-700 font-medium"
                 >
                   Try Again
                 </button>
@@ -761,12 +761,12 @@ export default function AdminDealsPage() {
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-l-4 border-green-500">
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-4 h-4 text-green-500" />
-                    <h4 className="text-sm font-semibold text-secondary-500">Top Performers</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">Top Performers</h4>
                   </div>
                   <div className="space-y-2">
                     {aiInsights.top_performers.map((item, i) => (
                       <div key={i}>
-                        <p className="text-sm font-medium text-secondary-500">{item.title}</p>
+                        <p className="text-sm font-medium text-gray-900">{item.title}</p>
                         <p className="text-xs text-gray-400">{item.reason}</p>
                       </div>
                     ))}
@@ -780,12 +780,12 @@ export default function AdminDealsPage() {
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-l-4 border-orange-500">
                   <div className="flex items-center gap-2 mb-3">
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
-                    <h4 className="text-sm font-semibold text-secondary-500">Needs Attention</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">Needs Attention</h4>
                   </div>
                   <div className="space-y-2">
                     {aiInsights.underperformers.map((item, i) => (
                       <div key={i}>
-                        <p className="text-sm font-medium text-secondary-500">{item.title}</p>
+                        <p className="text-sm font-medium text-gray-900">{item.title}</p>
                         <p className="text-xs text-gray-400">{item.reason}</p>
                       </div>
                     ))}
@@ -799,7 +799,7 @@ export default function AdminDealsPage() {
                 <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-l-4 border-blue-500">
                   <div className="flex items-center gap-2 mb-3">
                     <BarChart3 className="w-4 h-4 text-blue-500" />
-                    <h4 className="text-sm font-semibold text-secondary-500">Trends</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">Trends</h4>
                   </div>
                   <ul className="space-y-1.5">
                     {aiInsights.trends.map((trend, i) => (
@@ -815,15 +815,15 @@ export default function AdminDealsPage() {
                 </div>
 
                 {/* Recommendations */}
-                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-l-4 border-purple-500">
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-l-4 border-blue-500">
                   <div className="flex items-center gap-2 mb-3">
-                    <Lightbulb className="w-4 h-4 text-purple-500" />
-                    <h4 className="text-sm font-semibold text-secondary-500">Recommendations</h4>
+                    <Lightbulb className="w-4 h-4 text-blue-500" />
+                    <h4 className="text-sm font-semibold text-gray-900">Recommendations</h4>
                   </div>
                   <ul className="space-y-1.5">
                     {aiInsights.recommendations.map((rec, i) => (
                       <li key={i} className="text-xs text-gray-600 flex items-start gap-1.5">
-                        <span className="text-purple-400 mt-0.5">&#x2022;</span>
+                        <span className="text-blue-400 mt-0.5">&#x2022;</span>
                         {rec}
                       </li>
                     ))}
@@ -971,7 +971,7 @@ export default function AdminDealsPage() {
 
                 {/* Content */}
                 <div className="p-4">
-                  <h3 className="font-semibold text-secondary-500 text-sm truncate mb-0.5">
+                  <h3 className="font-semibold text-gray-900 text-sm truncate mb-0.5">
                     {deal.title}
                   </h3>
                   <p className="text-xs text-gray-400 truncate mb-3">
@@ -983,7 +983,7 @@ export default function AdminDealsPage() {
                     <span className="text-xs text-gray-400 line-through">
                       {formatCurrency(deal.original_price)}
                     </span>
-                    <span className="text-lg font-bold text-secondary-500">
+                    <span className="text-lg font-bold text-gray-900">
                       {formatCurrency(deal.deal_price)}
                     </span>
                     <span className="text-xs font-semibold text-green-500 bg-green-50 px-1.5 py-0.5 rounded-full">
@@ -1068,7 +1068,7 @@ export default function AdminDealsPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-1.5">
-                        <p className="font-medium text-secondary-500 truncate max-w-[200px] text-sm">
+                        <p className="font-medium text-gray-900 truncate max-w-[200px] text-sm">
                           {deal.title}
                         </p>
                         {deal.is_featured && (
@@ -1089,7 +1089,7 @@ export default function AdminDealsPage() {
                         {deal.status}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       {deal.claims_count}
                       {deal.max_claims != null && (
                         <span className="text-gray-400">/{deal.max_claims}</span>
@@ -1099,11 +1099,11 @@ export default function AdminDealsPage() {
                       <span className="text-gray-400 line-through mr-1">
                         {formatCurrency(deal.original_price)}
                       </span>
-                      <span className="text-secondary-500 font-medium">
+                      <span className="text-gray-900 font-medium">
                         {formatCurrency(deal.deal_price)}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       {formatPercentage(deal.discount_percentage)}
                     </td>
                     <td className="p-4 text-sm text-gray-500">

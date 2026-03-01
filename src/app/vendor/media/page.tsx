@@ -182,8 +182,8 @@ export default function MediaLibraryPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500 flex items-center gap-3">
-            <div className="bg-gradient-to-br from-violet-500 to-purple-600 p-2.5 rounded-xl shadow-lg shadow-violet-500/20">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="bg-gradient-to-br from-sky-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-sky-500/20">
               <ImagePlus className="w-6 h-6 text-white" />
             </div>
             Media Library
@@ -193,7 +193,7 @@ export default function MediaLibraryPage() {
         <div className="flex gap-3">
           <button
             onClick={() => setShowGenerate(!showGenerate)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-violet-500/25 transition-all"
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-sky-500/25 transition-all"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full" /> Ava Generate
@@ -299,7 +299,7 @@ export default function MediaLibraryPage() {
             </button>
             <button
               onClick={() => setShowGenerate(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-violet-600 text-white rounded-xl font-medium text-sm"
+              className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white rounded-xl font-medium text-sm"
             >
               <Wand2 className="w-4 h-4" /> Ava Generate
             </button>
@@ -336,7 +336,7 @@ export default function MediaLibraryPage() {
                   <button
                     onClick={() => handleRegenerate(item)}
                     disabled={generating}
-                    className="p-2 bg-white rounded-lg text-violet-600 hover:bg-violet-50 transition-colors disabled:opacity-50"
+                    className="p-2 bg-white rounded-lg text-sky-600 hover:bg-sky-50 transition-colors disabled:opacity-50"
                     title="Regenerate"
                   >
                     <RefreshCw className="w-4 h-4" />

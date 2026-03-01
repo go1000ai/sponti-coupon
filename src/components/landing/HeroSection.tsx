@@ -64,7 +64,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative text-white overflow-hidden h-[80vh] flex items-start md:items-center bg-secondary-700">
+    <section className="relative text-white overflow-hidden h-[80vh] flex items-start md:items-center bg-gray-900">
       {/* Business collage background — moves slightly as you scroll */}
       <div
         ref={bgRef}
@@ -94,7 +94,7 @@ export function HeroSection() {
       </div>
 
       {/* Dark overlay with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-secondary-700/80 via-secondary-800/75 to-secondary-900/80" />
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/85 via-gray-900/80 to-gray-900/85" />
 
       {/* Animated background orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

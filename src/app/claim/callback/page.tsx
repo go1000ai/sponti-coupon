@@ -63,7 +63,7 @@ function ClaimCallbackContent() {
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-primary-500 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-secondary-500">Verifying your payment...</h2>
+          <h2 className="text-xl font-bold text-gray-900">Verifying your payment...</h2>
           <p className="text-gray-500 mt-2">This should only take a moment</p>
         </div>
       </div>
@@ -89,7 +89,7 @@ function ClaimCallbackContent() {
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="card p-8 max-w-md w-full text-center">
           <Clock className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-secondary-500 mb-2">Waiting for Payment Confirmation</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Waiting for Payment Confirmation</h2>
           <p className="text-gray-500 mb-4">
             Your payment is being processed. Your QR code will appear here once confirmed.
           </p>
@@ -116,7 +116,7 @@ function ClaimCallbackContent() {
 
         {/* QR Code */}
         <div className="bg-white border-4 border-secondary-500 rounded-xl p-6 inline-block mb-6">
-          <QrCode className="w-40 h-40 text-secondary-500" />
+          <QrCode className="w-40 h-40 text-gray-900" />
         </div>
 
         <div className="bg-gray-50 rounded-lg p-3 mb-4">
@@ -124,13 +124,13 @@ function ClaimCallbackContent() {
         </div>
 
         {claim?.deal?.title && (
-          <p className="font-semibold text-secondary-500 mb-2">{claim.deal.title}</p>
+          <p className="font-semibold text-gray-900 mb-2">{claim.deal.title}</p>
         )}
 
         {claim?.deal?.expires_at && (
           <div className="bg-primary-50 rounded-lg p-4 mb-6">
             <p className="text-sm text-primary-600 font-medium mb-2">Redeem before:</p>
-            <CountdownTimer expiresAt={claim.deal.expires_at} size="md" />
+            <CountdownTimer expiresAt={claim.deal.expires_at} size="md" variant="sponti" />
           </div>
         )}
 

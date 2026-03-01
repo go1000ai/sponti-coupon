@@ -162,7 +162,7 @@ export default function LocationsPage() {
         <div className="flex items-center gap-3">
           <MapPin className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-secondary-500">Locations</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Locations</h1>
             <p className="text-gray-500 text-sm mt-1">Manage your business locations</p>
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function LocationsPage() {
       {(showAddForm || editingId) && (
         <div className="card p-6 mb-6 border-2 border-primary-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-secondary-500">{editingId ? 'Edit Location' : 'New Location'}</h3>
+            <h3 className="font-bold text-gray-900">{editingId ? 'Edit Location' : 'New Location'}</h3>
             <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -254,7 +254,7 @@ export default function LocationsPage() {
                   <MapPin className="w-5 h-5 text-primary-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-secondary-500">{loc.name}</h3>
+                  <h3 className="font-semibold text-gray-900">{loc.name}</h3>
                   <p className="text-sm text-gray-500">{loc.address}, {loc.city}, {loc.state} {loc.zip}</p>
                   {loc.phone && (
                     <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">

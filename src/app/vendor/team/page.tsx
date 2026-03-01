@@ -175,7 +175,7 @@ export default function TeamPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-secondary-500">Team</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Team</h1>
             <p className="text-gray-500 text-sm mt-1">Manage team members and their roles</p>
           </div>
         </div>
@@ -200,7 +200,7 @@ export default function TeamPage() {
       {(showInviteForm || editingId) && (
         <div className="card p-6 mb-6 border-2 border-primary-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-secondary-500">{editingId ? 'Edit Member' : 'Invite Team Member'}</h3>
+            <h3 className="font-bold text-gray-900">{editingId ? 'Edit Member' : 'Invite Team Member'}</h3>
             <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -287,7 +287,7 @@ export default function TeamPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-secondary-500">{member.name}</h3>
+                      <h3 className="font-semibold text-gray-900">{member.name}</h3>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                         member.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                       }`}>

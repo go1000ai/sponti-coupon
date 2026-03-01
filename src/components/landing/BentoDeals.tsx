@@ -59,11 +59,11 @@ export function BentoDeals() {
         <ScrollReveal animation="fade-up">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full px-5 py-2 mb-3 shadow-md">
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-500 rounded-full px-5 py-2 mb-3 shadow-md">
                 <Sparkles className="w-4 h-4 text-white" />
                 <span className="text-sm font-bold text-white tracking-wide">MORE DEALS</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-secondary-500">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
                 Explore All Deals
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
@@ -100,7 +100,7 @@ export function BentoDeals() {
           <div className="text-center mt-10">
             <Link
               href="/deals"
-              className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base hover:scale-105 transition-transform duration-200"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
             >
               Browse All Deals <ArrowRight className="w-5 h-5" />
             </Link>

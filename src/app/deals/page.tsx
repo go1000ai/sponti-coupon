@@ -132,16 +132,16 @@ export default function DealsPage() {
       )}
 
       {/* Gradient hero header */}
-      <div className="bg-gradient-to-br from-secondary-500 via-secondary-600 to-accent-700 text-white py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-br from-secondary-600 via-secondary-700 to-accent-800 text-white py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto animate-fade-up">
           {/* Title row */}
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl sm:text-3xl font-bold">Browse Deals</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-md">Browse Deals</h1>
                 <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
               </div>
-              <p className="text-gray-300 mt-1 text-sm sm:text-base">
+              <p className="text-white/80 mt-1 text-sm sm:text-base">
                 {deals.length} deal{deals.length !== 1 ? 's' : ''} available
                 {userLocation && ` within ${filters.radius} miles`}
               </p>
@@ -164,11 +164,11 @@ export default function DealsPage() {
                 onChange={e => setSortBy(e.target.value as SortOption)}
                 className="w-full sm:w-auto appearance-none bg-white/10 border border-white/20 rounded-lg pl-8 pr-8 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
-                <option value="distance" className="text-secondary-500">Nearest</option>
-                <option value="newest" className="text-secondary-500">Newest</option>
-                <option value="discount" className="text-secondary-500">Best Discount</option>
+                <option value="distance" className="text-gray-900">Nearest</option>
+                <option value="newest" className="text-gray-900">Newest</option>
+                <option value="discount" className="text-gray-900">Best Discount</option>
               </select>
-              <ArrowUpDown className="absolute left-2.5 top-3 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+              <ArrowUpDown className="absolute left-2.5 top-3 w-3.5 h-3.5 text-white/60 pointer-events-none" />
             </div>
 
             {/* View toggle + Filters button */}
@@ -180,7 +180,7 @@ export default function DealsPage() {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                     viewMode === 'grid'
                       ? 'bg-white/20 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      : 'text-white/70 hover:text-white'
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -191,7 +191,7 @@ export default function DealsPage() {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                     viewMode === 'map'
                       ? 'bg-white/20 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      : 'text-white/70 hover:text-white'
                   }`}
                 >
                   <Map className="w-4 h-4" />
@@ -203,8 +203,8 @@ export default function DealsPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   showFilters
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                    ? 'bg-white/25 text-white'
+                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
                 }`}
               >
                 <SlidersHorizontal className="w-4 h-4" />
@@ -219,34 +219,34 @@ export default function DealsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Keyword Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-3.5 w-4 h-4 text-white/60" />
                 <input
                   value={filters.search}
                   onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
-                  className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   placeholder="game show, brunch, yoga, spa..."
                 />
               </div>
 
               {/* Business Category */}
               <div className="relative">
-                <Store className="absolute left-3 top-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+                <Store className="absolute left-3 top-3.5 w-4 h-4 text-white/60 pointer-events-none" />
                 <select
                   value={filters.category}
                   onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
-                  <option value="" className="text-secondary-500">All Categories</option>
+                  <option value="" className="text-gray-900">All Categories</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat} className="text-secondary-500">{cat}</option>
+                    <option key={cat} value={cat} className="text-gray-900">{cat}</option>
                   ))}
                 </select>
               </div>
 
               {/* City / ZIP */}
               <div className="relative">
-                <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-white/60" />
                 <input
                   value={filters.city}
                   onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
@@ -261,7 +261,7 @@ export default function DealsPage() {
                       fetchDeals();
                     }
                   }}
-                  className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
                   placeholder="City, ZIP, or address"
                 />
                 {geocoding && (
@@ -278,7 +278,7 @@ export default function DealsPage() {
                 className="w-full py-3 px-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
                 {RADIUS_OPTIONS.map(r => (
-                  <option key={r} value={r} className="text-secondary-500">{r === 0 ? 'All — No limit' : `${r} miles`}</option>
+                  <option key={r} value={r} className="text-gray-900">{r === 0 ? 'All — No limit' : `${r} miles`}</option>
                 ))}
               </select>
             </div>
@@ -289,7 +289,7 @@ export default function DealsPage() {
                 <button
                   onClick={() => setFilters(f => ({ ...f, type: '' }))}
                   className={`flex items-center gap-1 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                    filters.type === '' ? 'bg-white text-secondary-500 shadow-lg' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    filters.type === '' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
                   All Deals
@@ -297,7 +297,7 @@ export default function DealsPage() {
                 <button
                   onClick={() => setFilters(f => ({ ...f, type: 'sponti_coupon' }))}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                    filters.type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    filters.type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
                   <SpontiIcon className="w-3.5 h-3.5" /> Sponti Coupons
@@ -305,7 +305,7 @@ export default function DealsPage() {
                 <button
                   onClick={() => setFilters(f => ({ ...f, type: 'regular' }))}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all ${
-                    filters.type === 'regular' ? 'bg-gradient-to-r from-accent-500 to-blue-600 text-white shadow-lg shadow-accent-500/30' : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    filters.type === 'regular' ? 'bg-gradient-to-r from-accent-500 to-blue-600 text-white shadow-lg shadow-accent-500/30' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
                   <Tag className="w-3.5 h-3.5" /> Steady Deals

@@ -72,7 +72,7 @@ export default function VendorInsightsPage() {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <AlertTriangle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-secondary-500">Unable to load insights</h2>
+        <h2 className="text-xl font-bold text-gray-900">Unable to load insights</h2>
         <p className="text-gray-500 mt-2">Please try again later.</p>
       </div>
     );
@@ -131,7 +131,7 @@ export default function VendorInsightsPage() {
           <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500">Ava&apos;s Insights</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Ava&apos;s Insights</h1>
           <p className="text-gray-500 text-sm mt-1">Smart recommendations to optimize your deals and maximize results</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function VendorInsightsPage() {
 
         <div className="card p-5">
           <Target className="w-5 h-5 text-primary-500 mb-2" />
-          <p className="text-2xl font-bold text-secondary-500">{myStats.avgDiscount}%</p>
+          <p className="text-2xl font-bold text-gray-900">{myStats.avgDiscount}%</p>
           <p className="text-sm text-gray-500">Avg Discount</p>
           {competitors && (
             <p className="text-xs text-gray-400 mt-1">
@@ -168,7 +168,7 @@ export default function VendorInsightsPage() {
 
         <div className="card p-5">
           <Users className="w-5 h-5 text-blue-500 mb-2" />
-          <p className="text-2xl font-bold text-secondary-500">{myStats.avgClaims}</p>
+          <p className="text-2xl font-bold text-gray-900">{myStats.avgClaims}</p>
           <p className="text-sm text-gray-500">Avg Claims/Deal</p>
           {competitors && (
             <p className="text-xs text-gray-400 mt-1">
@@ -178,8 +178,8 @@ export default function VendorInsightsPage() {
         </div>
 
         <div className="card p-5">
-          <ShieldCheck className="w-5 h-5 text-purple-500 mb-2" />
-          <p className="text-2xl font-bold text-secondary-500">{data.localCompetitorCount}</p>
+          <ShieldCheck className="w-5 h-5 text-blue-500 mb-2" />
+          <p className="text-2xl font-bold text-gray-900">{data.localCompetitorCount}</p>
           <p className="text-sm text-gray-500">Local Competitors</p>
           <p className="text-xs text-gray-400 mt-1">in {data.vendor.city || 'your area'}</p>
         </div>
@@ -189,7 +189,7 @@ export default function VendorInsightsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
           <Zap className="w-5 h-5 text-primary-500" />
-          <h2 className="text-xl font-bold text-secondary-500">Recommendations</h2>
+          <h2 className="text-xl font-bold text-gray-900">Recommendations</h2>
           <span className="bg-primary-50 text-primary-600 text-xs font-bold px-2 py-0.5 rounded-full">
             {recommendations.length} tips
           </span>
@@ -198,7 +198,7 @@ export default function VendorInsightsPage() {
         {recommendations.length === 0 ? (
           <div className="card p-8 text-center">
             <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-secondary-500">You&apos;re doing great!</h3>
+            <h3 className="text-lg font-semibold text-gray-900">You&apos;re doing great!</h3>
             <p className="text-gray-500 mt-1">No critical recommendations right now. Keep monitoring your analytics.</p>
           </div>
         ) : (
@@ -216,7 +216,7 @@ export default function VendorInsightsPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-secondary-500">{rec.title}</h3>
+                        <h3 className="font-bold text-gray-900">{rec.title}</h3>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                           rec.priority === 'high' ? 'bg-red-100 text-red-600' :
                           rec.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -249,7 +249,7 @@ export default function VendorInsightsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <BarChart3 className="w-5 h-5 text-primary-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Competitor Benchmark</h2>
+            <h2 className="text-lg font-bold text-gray-900">Competitor Benchmark</h2>
           </div>
 
           {competitors ? (
@@ -259,19 +259,19 @@ export default function VendorInsightsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-gray-400">Competitors</p>
-                    <p className="text-xl font-bold text-secondary-500">{competitors.count}</p>
+                    <p className="text-xl font-bold text-gray-900">{competitors.count}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Avg Discount</p>
-                    <p className="text-xl font-bold text-secondary-500">{competitors.avgDiscount}%</p>
+                    <p className="text-xl font-bold text-gray-900">{competitors.avgDiscount}%</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Avg Claims</p>
-                    <p className="text-xl font-bold text-secondary-500">{competitors.avgClaims}</p>
+                    <p className="text-xl font-bold text-gray-900">{competitors.avgClaims}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Discount Range</p>
-                    <p className="text-xl font-bold text-secondary-500">
+                    <p className="text-xl font-bold text-gray-900">
                       {competitors.discountRange.min}-{competitors.discountRange.max}%
                     </p>
                   </div>
@@ -350,7 +350,7 @@ export default function VendorInsightsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Your Performance</h2>
+            <h2 className="text-lg font-bold text-gray-900">Your Performance</h2>
           </div>
 
           <div className="space-y-4">
@@ -360,9 +360,9 @@ export default function VendorInsightsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center">
                   <div className="inline-flex bg-secondary-100 rounded-full p-2 mb-2">
-                    <BarChart3 className="w-4 h-4 text-secondary-500" />
+                    <BarChart3 className="w-4 h-4 text-gray-900" />
                   </div>
-                  <p className="text-lg font-bold text-secondary-500">{myStats.regularAvgClaims}</p>
+                  <p className="text-lg font-bold text-gray-900">{myStats.regularAvgClaims}</p>
                   <p className="text-xs text-gray-500">Regular Avg Claims</p>
                   <p className="text-xs text-gray-400">{myStats.regularCount} deals</p>
                 </div>

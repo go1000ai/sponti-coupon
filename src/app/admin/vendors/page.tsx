@@ -513,7 +513,7 @@ export default function AdminVendorsPage() {
         <div className="flex items-center gap-3">
           <Store className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Vendor Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Vendor Management</h1>
             <p className="text-sm text-gray-500">{vendors.length} total vendors</p>
           </div>
         </div>
@@ -1348,13 +1348,13 @@ function VendorRow({
   return (
     <>
       <tr className="hover:bg-gray-50 transition-colors">
-        <td className="p-4 font-medium text-secondary-500">{vendor.business_name}</td>
+        <td className="p-4 font-medium text-gray-900">{vendor.business_name}</td>
         <td className="p-4 text-sm text-gray-500">{vendor.email}</td>
         <td className="p-4">
           <span
             className={`text-xs px-2 py-1 rounded-full font-medium capitalize ${
               vendor.subscription_tier === 'enterprise'
-                ? 'bg-purple-50 text-purple-700'
+                ? 'bg-blue-50 text-blue-700'
                 : vendor.subscription_tier === 'business'
                 ? 'bg-blue-50 text-blue-700'
                 : vendor.subscription_tier === 'pro'
@@ -1387,10 +1387,10 @@ function VendorRow({
         <td className="p-4 text-sm text-gray-500">
           {vendor.city ? `${vendor.city}, ${vendor.state}` : '--'}
         </td>
-        <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+        <td className="p-4 text-sm text-gray-900 font-medium text-center">
           {vendor.deal_count || 0}
         </td>
-        <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+        <td className="p-4 text-sm text-gray-900 font-medium text-center">
           {vendor.total_claims || 0}
         </td>
         <td className="p-4">
@@ -1442,7 +1442,7 @@ function VendorRow({
           <td colSpan={8} className="p-0">
             <div className="bg-gray-50 p-6 border-t border-gray-100">
               <div className="flex items-start justify-between mb-4">
-                <h3 className="text-lg font-bold text-secondary-500">
+                <h3 className="text-lg font-bold text-gray-900">
                   {vendor.business_name} Details
                 </h3>
                 <button

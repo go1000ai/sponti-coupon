@@ -42,7 +42,7 @@ const FAQ_SECTIONS = [
   },
   {
     title: 'Payments & Billing',
-    icon: <CreditCard className="w-5 h-5 text-purple-500" />,
+    icon: <CreditCard className="w-5 h-5 text-blue-500" />,
     items: [
       { q: 'How do customer deposits work?', a: 'Deposits are optional — each vendor decides whether to require a deposit, full prepayment, or no upfront payment at all. When a deposit is required, the customer pays directly to the business through the business\'s payment processor. The deposit is applied to their purchase when they visit. SpontiCoupon does not process or hold any customer payments.' },
       { q: 'How do I manage my subscription?', a: 'You can manage your subscription, change plans, or cancel at any time from your Vendor Dashboard under Settings > Subscription.' },
@@ -84,7 +84,7 @@ export default function FAQPage() {
             <div key={section.title}>
               <div className="flex items-center gap-2 mb-4">
                 {section.icon}
-                <h2 className="text-xl font-bold text-secondary-500">{section.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{section.title}</h2>
               </div>
               <div className="space-y-2">
                 {section.items.map((item, i) => {
@@ -96,7 +96,7 @@ export default function FAQPage() {
                         onClick={() => toggle(key)}
                         className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                       >
-                        <span className="font-medium text-secondary-500 text-sm pr-4">{item.q}</span>
+                        <span className="font-medium text-gray-900 text-sm pr-4">{item.q}</span>
                         <ChevronDown className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {isOpen && (

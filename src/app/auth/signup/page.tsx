@@ -232,11 +232,11 @@ function SignupForm() {
           <div className="inline-flex bg-green-100 rounded-full p-4 mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500 mb-3">Check Your Email</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">Check Your Email</h1>
           <p className="text-gray-500 mb-2">
             We sent a confirmation link to:
           </p>
-          <p className="text-lg font-semibold text-secondary-500 mb-6">{form.email}</p>
+          <p className="text-lg font-semibold text-gray-900 mb-6">{form.email}</p>
           <div className="card p-6">
             {accountType === 'customer' ? (
               <p className="text-sm text-gray-600 leading-relaxed">
@@ -273,7 +273,7 @@ function SignupForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">
+          <h1 className="text-3xl font-bold text-gray-900">
             {accountType === 'vendor' && hasPlanFromPricing ? 'Create Your Business Account' : 'Create Account'}
           </h1>
           <p className="text-gray-500 mt-2">
@@ -290,7 +290,7 @@ function SignupForm() {
             onClick={() => setAccountType('customer')}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold transition-all duration-300 ${
               accountType === 'customer'
-                ? 'bg-white text-secondary-500 shadow-md'
+                ? 'bg-white text-gray-900 shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -317,7 +317,7 @@ function SignupForm() {
             <div className="inline-flex bg-primary-50 rounded-full p-4 mb-5">
               <Store className="w-10 h-10 text-primary-500" />
             </div>
-            <h2 className="text-xl font-bold text-secondary-500 mb-2">Choose Your Plan First</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Choose Your Plan First</h2>
             <p className="text-gray-500 text-sm mb-6 leading-relaxed">
               Pick the plan that fits your business on our pricing page.
               {' '}You&apos;ll come right back here to complete your sign-up.
@@ -348,7 +348,7 @@ function SignupForm() {
                   <Gift className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-secondary-500">
+                  <p className="text-sm font-bold text-gray-900">
                     {planDisplayName} Plan
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">

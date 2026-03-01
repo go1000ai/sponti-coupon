@@ -57,7 +57,7 @@ const priorityBadge: Record<SupportTicketPriority, string> = {
 };
 
 const categoryBadge: Record<SupportTicketCategory, string> = {
-  billing: 'bg-purple-100 text-purple-700',
+  billing: 'bg-blue-100 text-blue-700',
   technical: 'bg-blue-100 text-blue-700',
   account: 'bg-green-100 text-green-700',
   general: 'bg-gray-100 text-gray-600',
@@ -273,7 +273,7 @@ export default function SupportTicketDetail({
                   <ArrowLeft className="w-5 h-5" />
                 </button>
               )}
-              <h2 className="text-lg font-bold text-secondary-500 line-clamp-1">
+              <h2 className="text-lg font-bold text-gray-900 line-clamp-1">
                 {ticket.subject}
               </h2>
             </div>

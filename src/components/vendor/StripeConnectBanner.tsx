@@ -69,7 +69,7 @@ export default function StripeConnectBanner() {
               <Zap className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-secondary-500 flex items-center gap-2">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 Stripe Connect
                 <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="w-3 h-3" /> CONNECTED
@@ -124,7 +124,7 @@ export default function StripeConnectBanner() {
           <Zap className="w-5 h-5" />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-secondary-500">Stripe Connect</h3>
+          <h3 className="font-semibold text-gray-900">Stripe Connect</h3>
           <p className="text-sm text-gray-500 mt-1">
             Connect your Stripe account for <span className="font-medium text-[#635BFF]">automated payments</span>.
             Customers pay the exact deposit amount through a secure Stripe checkout. Payments go directly to your account.

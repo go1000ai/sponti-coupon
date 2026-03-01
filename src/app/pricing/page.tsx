@@ -307,7 +307,7 @@ export default function PricingPage() {
                 <div className="pulse-dot">
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
                 </div>
-                <p ref={businessCountRef} className="text-lg font-bold text-secondary-500">
+                <p ref={businessCountRef} className="text-lg font-bold text-gray-900">
                   Trusted by {businessCount}+ local businesses
                 </p>
               </div>
@@ -344,7 +344,7 @@ export default function PricingPage() {
                   <p className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-orange-500 bg-clip-text text-transparent">
                     {stat.value}
                   </p>
-                  <p className="text-sm font-semibold text-secondary-500 mt-1">{stat.label}</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-1">{stat.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{stat.sublabel}</p>
                 </div>
               ))}
@@ -364,7 +364,7 @@ export default function PricingPage() {
                 onClick={() => setIsAnnual(false)}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
                   !isAnnual
-                    ? 'bg-white text-secondary-500 shadow-lg'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -374,7 +374,7 @@ export default function PricingPage() {
                 onClick={() => setIsAnnual(true)}
                 className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
                   isAnnual
-                    ? 'bg-white text-secondary-500 shadow-lg'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -413,7 +413,7 @@ export default function PricingPage() {
                 <span className="text-sm font-bold text-primary-600">Founders Launch — Limited Offer</span>
               </div>
               <p className="text-gray-600 leading-relaxed">
-                The first <span className="font-bold text-secondary-500">{FOUNDERS_LAUNCH.totalSpots} vendors</span> to sign up
+                The first <span className="font-bold text-gray-900">{FOUNDERS_LAUNCH.totalSpots} vendors</span> to sign up
                 for a Pro or Business plan get{' '}
                 <span className="font-bold text-primary-500">{FOUNDERS_LAUNCH.freeMonths} months completely free</span>,
                 then lock in a permanent{' '}
@@ -475,7 +475,7 @@ export default function PricingPage() {
                         <div className={`bg-gradient-to-br ${plan.gradient} rounded-xl p-2.5 shadow-md`}>
                           <IconComp className="w-5 h-5 text-white" strokeWidth={2} />
                         </div>
-                        <h3 className="text-xl font-bold text-secondary-500">{tier.name}</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
                       </div>
                       <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
 
@@ -533,7 +533,7 @@ export default function PricingPage() {
                             }`}>
                               <Check className={`w-3 h-3 ${isFeatured ? 'text-white' : 'text-green-600'}`} />
                             </div>
-                            <span className={isFeatured ? 'text-secondary-500 font-medium' : ''}>
+                            <span className={isFeatured ? 'text-gray-900 font-medium' : ''}>
                               {feature}
                             </span>
                           </li>
@@ -555,7 +555,7 @@ export default function PricingPage() {
                                     ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-200/50 hover:shadow-xl hover:shadow-primary-300/50 hover:scale-[1.02]'
                                     : isPromo
                                       ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-md shadow-primary-200/30 hover:shadow-lg hover:scale-[1.02]'
-                                      : 'bg-gray-100 text-secondary-500 hover:bg-gray-200 hover:scale-[1.01]'
+                                      : 'bg-gray-100 text-gray-900 hover:bg-gray-200 hover:scale-[1.01]'
                                 } ${loadingPlan !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
                               >
                                 {isLoading ? (
@@ -643,7 +643,7 @@ export default function PricingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-secondary-500">Compare Plans</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Compare Plans</h2>
               <p className="text-gray-500 mt-2">See what&apos;s included in each plan</p>
               <p className="text-xs text-gray-400 mt-1 sm:hidden">← Scroll to compare →</p>
             </div>
@@ -658,7 +658,7 @@ export default function PricingPage() {
                       <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[32%]">Feature</th>
                       <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">Starter</th>
                       <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">Pro</th>
-                      <th className="text-center py-4 px-6 font-semibold text-secondary-500 bg-secondary-50/40 w-[17%]">
+                      <th className="text-center py-4 px-6 font-semibold text-gray-900 bg-secondary-50/40 w-[17%]">
                         Business
                         <span className="block text-[10px] text-secondary-400 font-normal">Best Value</span>
                       </th>
@@ -671,7 +671,7 @@ export default function PricingPage() {
                   <tbody className="divide-y divide-gray-100">
                     {visibleFeatures.map((row) => (
                       <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-3.5 px-6 font-medium text-secondary-500">{row.feature}</td>
+                        <td className="py-3.5 px-6 font-medium text-gray-900">{row.feature}</td>
                         {(['starter', 'pro', 'business', 'enterprise'] as const).map((plan) => {
                           const val = row[plan];
                           const isBusiness = plan === 'business';
@@ -685,7 +685,7 @@ export default function PricingPage() {
                                   <span className="text-gray-300">&mdash;</span>
                                 )
                               ) : (
-                                <span className={`font-semibold ${isEnterprise ? 'text-amber-600' : isBusiness ? 'text-secondary-600' : 'text-secondary-500'}`}>{val}</span>
+                                <span className={`font-semibold ${isEnterprise ? 'text-amber-600' : isBusiness ? 'text-secondary-600' : 'text-gray-900'}`}>{val}</span>
                               )}
                             </td>
                           );
@@ -715,7 +715,7 @@ export default function PricingPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-secondary-500">Frequently Asked Questions</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
               <p className="text-gray-500 mt-2">Everything you need to know about SpontiCoupon pricing</p>
             </div>
           </ScrollReveal>
@@ -728,7 +728,7 @@ export default function PricingPage() {
                     onClick={() => setOpenFaqIndex(openFaqIndex === index ? null : index)}
                     className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
                   >
-                    <span className="font-semibold text-secondary-500 text-sm pr-4">{faq.q}</span>
+                    <span className="font-semibold text-gray-900 text-sm pr-4">{faq.q}</span>
                     <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform duration-300 ${openFaqIndex === index ? 'rotate-180' : ''}`} />
                   </button>
                   <div

@@ -183,7 +183,7 @@ export default function NotificationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-secondary-500">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Notifications
           </h1>
           <p className="text-gray-500 mt-1">
@@ -243,7 +243,7 @@ export default function NotificationsPage() {
                   <p
                     className={`text-sm ${
                       !isRead
-                        ? 'font-semibold text-secondary-500'
+                        ? 'font-semibold text-gray-900'
                         : 'text-gray-600'
                     }`}
                   >

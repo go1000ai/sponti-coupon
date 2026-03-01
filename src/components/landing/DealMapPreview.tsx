@@ -63,7 +63,7 @@ export function DealMapPreview() {
               <Navigation className="w-4 h-4 text-cyan-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-cyan-600">Deal Map</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               All Deals on the Map
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">
@@ -87,11 +87,11 @@ export function DealMapPreview() {
               <DealsMap deals={deals} userLocation={userLocation} onSearchArea={handleSearchArea} />
             )}
 
-            {/* CTA overlay at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 z-[1000] bg-gradient-to-t from-white via-white/90 to-transparent pt-12 pb-5 px-6 text-center rounded-b-2xl">
+            {/* CTA below map */}
+            <div className="z-[1000] mt-6 text-center">
               <Link
                 href="/deals?view=map"
-                className="btn-primary inline-flex items-center gap-2 px-6 py-3 hover:scale-105 transition-transform shadow-lg"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
               >
                 <MapPin className="w-4 h-4" />
                 Explore All Deals

@@ -155,7 +155,7 @@ function CompleteSignupForm() {
           <div className="inline-flex bg-red-100 rounded-full p-4 mb-6">
             <AlertCircle className="w-12 h-12 text-red-500" />
           </div>
-          <h1 className="text-2xl font-bold text-secondary-500 mb-3">Something Went Wrong</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">Something Went Wrong</h1>
           <p className="text-gray-500 mb-6">{fetchError}</p>
           <Link
             href="/pricing"
@@ -182,7 +182,7 @@ function CompleteSignupForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">Complete Your Account</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Complete Your Account</h1>
           <p className="text-gray-500 mt-2">
             Payment confirmed! Set up your password to get started.
           </p>
@@ -195,7 +195,7 @@ function CompleteSignupForm() {
               <CheckCircle className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-sm font-bold text-secondary-500">
+              <p className="text-sm font-bold text-gray-900">
                 {planName} Plan — Payment Confirmed
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -213,7 +213,7 @@ function CompleteSignupForm() {
                 <Gift className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-bold text-secondary-500">
+                <p className="text-sm font-bold text-gray-900">
                   Founders Rate Applied
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">

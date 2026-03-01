@@ -73,7 +73,7 @@ export function CompetitorComparison() {
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-primary-600">The Smart Choice</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
               Why Businesses Choose SpontiCoupon
             </h2>
             <p className="text-gray-500 mt-3 text-lg max-w-2xl mx-auto">
@@ -127,7 +127,7 @@ export function CompetitorComparison() {
                   <SpontiIcon className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-secondary-500">SpontiCoupon</h3>
+                  <h3 className="text-xl font-bold text-gray-900">SpontiCoupon</h3>
                   <p className="text-sm text-gray-400">Flat-rate model</p>
                 </div>
               </div>
@@ -137,7 +137,7 @@ export function CompetitorComparison() {
                     <div className="bg-green-50 rounded-lg p-1.5 shrink-0 mt-0.5">
                       <item.icon className="w-4 h-4 text-green-500" strokeWidth={2} />
                     </div>
-                    <p className="text-secondary-500 text-sm">{item.text}</p>
+                    <p className="text-gray-900 text-sm">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -198,7 +198,7 @@ export function CompetitorComparison() {
         {/* Feature Comparison Table */}
         <ScrollReveal animation="fade-up" delay={200}>
           <div className="mt-16">
-            <h3 className="text-2xl font-bold text-secondary-500 text-center mb-8">
+            <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
               Feature-by-Feature Comparison
             </h3>
             <div className="card overflow-hidden border-gray-200">
@@ -225,14 +225,14 @@ export function CompetitorComparison() {
                       { feature: 'Vendor dashboard', trad: 'Limited analytics', sponti: 'Real-time analytics', spontiHighlight: false },
                     ].map((row) => (
                       <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-3.5 px-6 font-medium text-secondary-500">{row.feature}</td>
+                        <td className="py-3.5 px-6 font-medium text-gray-900">{row.feature}</td>
                         <td className="py-3.5 px-6 text-center text-gray-400">
                           <span className="inline-flex items-center gap-1.5">
                             <XCircle className="w-4 h-4 text-red-300 shrink-0" />
                             {row.trad}
                           </span>
                         </td>
-                        <td className={`py-3.5 px-6 text-center bg-primary-50/30 ${row.spontiHighlight ? 'font-semibold text-primary-600' : 'text-secondary-500'}`}>
+                        <td className={`py-3.5 px-6 text-center bg-primary-50/30 ${row.spontiHighlight ? 'font-semibold text-primary-600' : 'text-gray-900'}`}>
                           <span className="inline-flex items-center gap-1.5">
                             <BadgeCheck className="w-4 h-4 text-green-500 shrink-0" />
                             {row.sponti}
@@ -250,7 +250,7 @@ export function CompetitorComparison() {
         {/* Bottom line CTA */}
         <ScrollReveal animation="scale-up" delay={100}>
           <div className="mt-12 text-center bg-gradient-to-r from-primary-50 to-orange-50 border border-primary-200 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold text-secondary-500 mb-2">
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
               Stop Giving Away Your Revenue
             </h3>
             <p className="text-gray-600 max-w-xl mx-auto mb-6">

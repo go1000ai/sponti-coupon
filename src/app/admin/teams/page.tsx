@@ -110,7 +110,7 @@ export default function AdminTeamsPage() {
         <div className="flex items-center gap-3">
           <UsersRound className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Team Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
             <p className="text-sm text-gray-500">{members.length} total team members</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function AdminTeamsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="card p-4">
-          <p className="text-2xl font-bold text-secondary-500">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-gray-500">Total Members</p>
         </div>
         <div className="card p-4">
@@ -212,7 +212,7 @@ export default function AdminTeamsPage() {
                           <div className={`rounded-xl p-2.5 ${roleConfig.color}`}>
                             <RoleIcon className="w-4 h-4" />
                           </div>
-                          <span className="font-medium text-secondary-500">{member.user_name}</span>
+                          <span className="font-medium text-gray-900">{member.user_name}</span>
                         </div>
                       </td>
                       <td className="p-4">
@@ -226,7 +226,7 @@ export default function AdminTeamsPage() {
                         )}
                       </td>
                       <td className="p-4">
-                        <span className="text-sm font-medium text-secondary-500">
+                        <span className="text-sm font-medium text-gray-900">
                           {member.vendor_name}
                         </span>
                       </td>

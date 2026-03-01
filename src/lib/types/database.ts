@@ -147,6 +147,7 @@ export interface Deal {
   how_it_works: string | null;
   highlights: string[];
   fine_print: string | null;
+  requires_appointment: boolean;
   search_tags: string[];
   category_id: string | null;
   created_at: string;
@@ -293,6 +294,7 @@ export interface LoyaltyProgram {
   punches_required: number | null;
   punch_reward: string | null;
   points_per_dollar: number | null;
+  point_value: number | null;
   created_at: string;
   updated_at: string;
   // Joined

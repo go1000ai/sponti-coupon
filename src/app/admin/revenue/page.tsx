@@ -99,7 +99,7 @@ export default function AdminRevenuePage() {
         <div className="flex items-center gap-3">
           <DollarSign className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Revenue Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Revenue Dashboard</h1>
             <p className="text-sm text-gray-500">Subscription and deposit revenue overview</p>
           </div>
         </div>
@@ -115,8 +115,8 @@ export default function AdminRevenuePage() {
               onClick={() => handleRangeChange(key)}
               className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                 range === key
-                  ? 'bg-white text-secondary-500 shadow-sm'
-                  : 'text-gray-500 hover:text-secondary-500'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               {label}
@@ -135,7 +135,7 @@ export default function AdminRevenuePage() {
               {mrrChangePercent > 0 ? '+' : ''}{mrrChangePercent.toFixed(1)}%
             </div>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(totalMRR)}</p>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalMRR)}</p>
           <p className="text-sm text-gray-500 mt-1">Monthly Recurring Revenue</p>
           <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
             <span>Last month: {formatCurrency(lastMonthMRR)}</span>
@@ -150,16 +150,16 @@ export default function AdminRevenuePage() {
           <div className="flex items-center justify-between mb-3">
             <DollarSign className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(data?.depositRevenue || 0)}</p>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(data?.depositRevenue || 0)}</p>
           <p className="text-sm text-gray-500 mt-1">Deposit Revenue</p>
           <p className="text-xs text-gray-400 mt-3">From confirmed deal claims</p>
         </div>
 
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
-            <BarChart3 className="w-6 h-6 text-purple-500" />
+            <BarChart3 className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{formatCurrency(totalMRR * 12)}</p>
+          <p className="text-3xl font-bold text-gray-900">{formatCurrency(totalMRR * 12)}</p>
           <p className="text-sm text-gray-500 mt-1">Projected Annual Revenue</p>
           <p className="text-xs text-gray-400 mt-3">Based on current MRR</p>
         </div>
@@ -168,7 +168,7 @@ export default function AdminRevenuePage() {
           <div className="flex items-center justify-between mb-3">
             <UserMinus className="w-6 h-6 text-red-400" />
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{data?.churnCount || 0}</p>
+          <p className="text-3xl font-bold text-gray-900">{data?.churnCount || 0}</p>
           <p className="text-sm text-gray-500 mt-1">Churned Subscriptions</p>
           <p className="text-xs text-gray-400 mt-3">Canceled in selected period</p>
         </div>
@@ -176,7 +176,7 @@ export default function AdminRevenuePage() {
 
       {/* MRR Trend Chart */}
       <div className="card p-6 mb-8">
-        <h2 className="text-lg font-bold text-secondary-500 mb-4">MRR Trend</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">MRR Trend</h2>
         {(data?.mrrTrend || []).length > 0 ? (
           <div className="w-full h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -226,7 +226,7 @@ export default function AdminRevenuePage() {
       <div className="grid lg:grid-cols-2 gap-6 mb-8">
         {/* MRR by Tier Breakdown */}
         <div className="card p-6">
-          <h2 className="text-lg font-bold text-secondary-500 mb-4">MRR by Tier</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">MRR by Tier</h2>
           <div className="space-y-4">
             {(data?.tierRevenue || []).map(({ tier, count, price, total }) => {
               const percentage = totalMRR > 0 ? (total / totalMRR) * 100 : 0;
@@ -234,19 +234,19 @@ export default function AdminRevenuePage() {
                 <div key={tier}>
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-secondary-500 capitalize">{tier}</span>
+                      <span className="text-sm font-medium text-gray-900 capitalize">{tier}</span>
                       <span className="text-xs text-gray-400">
                         {count} vendor{count !== 1 ? 's' : ''} x {formatCurrency(price)}/mo
                       </span>
                     </div>
-                    <span className="text-sm font-bold text-secondary-500">{formatCurrency(total)}</span>
+                    <span className="text-sm font-bold text-gray-900">{formatCurrency(total)}</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full transition-all duration-500 ${
                         tier === 'starter' ? 'bg-blue-400' :
                         tier === 'pro' ? 'bg-primary-400' :
-                        tier === 'business' ? 'bg-purple-400' :
+                        tier === 'business' ? 'bg-blue-400' :
                         'bg-amber-400'
                       }`}
                       style={{ width: `${Math.max(percentage, 2)}%` }}
@@ -258,13 +258,13 @@ export default function AdminRevenuePage() {
           </div>
           <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between">
             <span className="text-sm font-medium text-gray-500">Total MRR</span>
-            <span className="text-lg font-bold text-secondary-500">{formatCurrency(totalMRR)}</span>
+            <span className="text-lg font-bold text-gray-900">{formatCurrency(totalMRR)}</span>
           </div>
         </div>
 
         {/* Subscription Overview */}
         <div className="card p-6">
-          <h2 className="text-lg font-bold text-secondary-500 mb-4">Subscription Tier Pricing</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Subscription Tier Pricing</h2>
           <div className="space-y-3">
             {Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => (
               <div
@@ -272,7 +272,7 @@ export default function AdminRevenuePage() {
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <p className="font-medium text-secondary-500">{tier.name}</p>
+                  <p className="font-medium text-gray-900">{tier.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {tier.deals_per_month === -1 ? 'Unlimited' : tier.deals_per_month} deals/mo
                     {tier.multi_location && ' | Multi-location'}
@@ -281,7 +281,7 @@ export default function AdminRevenuePage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-secondary-500">{formatCurrency(tier.price)}</p>
+                  <p className="font-bold text-gray-900">{formatCurrency(tier.price)}</p>
                   <p className="text-xs text-gray-400">/month</p>
                 </div>
               </div>
@@ -292,7 +292,7 @@ export default function AdminRevenuePage() {
 
       {/* Top Vendors */}
       <div className="card p-6">
-        <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Store className="w-5 h-5 text-primary-500" />
           Top Vendors by Claims
         </h2>
@@ -314,13 +314,13 @@ export default function AdminRevenuePage() {
                 {(data?.topVendors || []).map((vendor, idx) => (
                   <tr key={idx} className="hover:bg-gray-50 transition-colors">
                     <td className="p-3 text-sm text-gray-400 font-medium">{idx + 1}</td>
-                    <td className="p-3 font-medium text-secondary-500">{vendor.business_name}</td>
+                    <td className="p-3 font-medium text-gray-900">{vendor.business_name}</td>
                     <td className="p-3">
                       <span className="text-xs px-2 py-1 rounded-full bg-primary-50 text-primary-600 font-medium capitalize">
                         {vendor.tier || 'none'}
                       </span>
                     </td>
-                    <td className="p-3 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-3 text-sm text-gray-900 font-medium text-center">
                       {vendor.claims_count}
                     </td>
                     <td className="p-3 text-sm text-green-600 font-medium text-right">

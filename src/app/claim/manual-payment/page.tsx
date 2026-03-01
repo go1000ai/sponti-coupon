@@ -109,24 +109,24 @@ function ManualPaymentContent() {
           <p className="text-gray-500 mb-6">The vendor has confirmed your payment. Here&apos;s your QR code:</p>
 
           <div className="bg-white border-4 border-secondary-500 rounded-xl p-6 inline-block mb-6">
-            <QrCode className="w-40 h-40 text-secondary-500" />
+            <QrCode className="w-40 h-40 text-gray-900" />
           </div>
 
           {claim?.redemption_code && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
               <p className="text-xs text-gray-400 mb-1">Redemption Code</p>
-              <p className="text-2xl font-mono font-bold text-secondary-500 tracking-widest">{claim.redemption_code}</p>
+              <p className="text-2xl font-mono font-bold text-gray-900 tracking-widest">{claim.redemption_code}</p>
             </div>
           )}
 
           {claim?.deal?.title && (
-            <p className="font-semibold text-secondary-500 mb-2">{claim.deal.title}</p>
+            <p className="font-semibold text-gray-900 mb-2">{claim.deal.title}</p>
           )}
 
           {claim?.deal?.expires_at && (
             <div className="bg-primary-50 rounded-lg p-4 mb-6">
               <p className="text-sm text-primary-600 font-medium mb-2">Redeem before:</p>
-              <CountdownTimer expiresAt={claim.deal.expires_at} size="md" />
+              <CountdownTimer expiresAt={claim.deal.expires_at} size="md" variant="sponti" />
             </div>
           )}
 
@@ -147,7 +147,7 @@ function ManualPaymentContent() {
           <div className="inline-flex bg-primary-50 rounded-full p-3 mb-3">
             <Smartphone className="w-8 h-8 text-primary-500" />
           </div>
-          <h2 className="text-xl font-bold text-secondary-500">Complete Your Payment</h2>
+          <h2 className="text-xl font-bold text-gray-900">Complete Your Payment</h2>
           {dealTitle && (
             <p className="text-sm text-gray-500 mt-1">{dealTitle}</p>
           )}
@@ -159,7 +159,7 @@ function ManualPaymentContent() {
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">1</div>
-              <p className="font-semibold text-secondary-500">Send Payment</p>
+              <p className="font-semibold text-gray-900">Send Payment</p>
             </div>
             {amount && (
               <div className="text-center py-3">
@@ -173,7 +173,7 @@ function ManualPaymentContent() {
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">2</div>
-              <p className="font-semibold text-secondary-500">
+              <p className="font-semibold text-gray-900">
                 Pay via {processor?.name || 'the vendor'}
               </p>
             </div>
@@ -188,7 +188,7 @@ function ManualPaymentContent() {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-secondary-500 text-sm truncate">{paymentInfo}</p>
+                  <p className="font-semibold text-gray-900 text-sm truncate">{paymentInfo}</p>
                   <p className="text-xs text-gray-400">{processor?.name}</p>
                 </div>
                 <button
@@ -207,7 +207,7 @@ function ManualPaymentContent() {
             <div className="bg-primary-50 rounded-xl p-5 border border-primary-200">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">3</div>
-                <p className="font-semibold text-secondary-500">Include Reference Code</p>
+                <p className="font-semibold text-gray-900">Include Reference Code</p>
               </div>
               <p className="text-sm text-gray-600 mb-3">
                 Add this code in the payment note/memo so the vendor can match your payment:
@@ -229,7 +229,7 @@ function ManualPaymentContent() {
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">{paymentReference ? '4' : '3'}</div>
-              <p className="font-semibold text-secondary-500">Wait for Confirmation</p>
+              <p className="font-semibold text-gray-900">Wait for Confirmation</p>
             </div>
             <p className="text-sm text-gray-500">
               After you send the payment, the vendor will verify it. Your QR code will appear here automatically.
@@ -250,7 +250,7 @@ function ManualPaymentContent() {
         {claim?.expires_at && (
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-400 mb-1">Deal expires in:</p>
-            <CountdownTimer expiresAt={claim.expires_at} size="sm" />
+            <CountdownTimer expiresAt={claim.expires_at} size="sm" variant="sponti" />
           </div>
         )}
 

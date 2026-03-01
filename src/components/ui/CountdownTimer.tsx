@@ -5,10 +5,11 @@ import { useCountdown } from '@/lib/hooks/useCountdown';
 interface CountdownTimerProps {
   expiresAt: string;
   size?: 'sm' | 'md' | 'lg';
+  variant?: 'sponti' | 'steady';
   onExpire?: () => void;
 }
 
-export function CountdownTimer({ expiresAt, size = 'md', onExpire }: CountdownTimerProps) {
+export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', onExpire }: CountdownTimerProps) {
   const { days, hours, minutes, seconds, expired } = useCountdown(expiresAt);
 
   if (expired) {
@@ -33,26 +34,27 @@ export function CountdownTimer({ expiresAt, size = 'md', onExpire }: CountdownTi
   };
 
   const isUrgent = days === 0 && hours < 2;
+  const variantClass = isUrgent ? 'bg-red-600 animate-pulse' : variant === 'sponti' ? 'countdown-sponti' : 'countdown-steady';
 
   return (
     <div className="flex items-center gap-1.5">
       {days > 0 && (
-        <div className={`countdown-box ${sizeClasses[size]} ${isUrgent ? 'bg-red-600 animate-pulse' : ''}`}>
+        <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
           <div className="font-bold tabular-nums">{String(days).padStart(2, '0')}</div>
           <div className={`${labelSize[size]} text-gray-300`}>Days</div>
         </div>
       )}
-      <div className={`countdown-box ${sizeClasses[size]} ${isUrgent ? 'bg-red-600 animate-pulse' : ''}`}>
+      <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(hours).padStart(2, '0')}</div>
         <div className={`${labelSize[size]} text-gray-300`}>Hrs</div>
       </div>
-      <span className={`${isUrgent ? 'text-red-500' : 'text-secondary-500'} font-bold`}>:</span>
-      <div className={`countdown-box ${sizeClasses[size]} ${isUrgent ? 'bg-red-600 animate-pulse' : ''}`}>
+      <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
+      <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(minutes).padStart(2, '0')}</div>
         <div className={`${labelSize[size]} text-gray-300`}>Min</div>
       </div>
-      <span className={`${isUrgent ? 'text-red-500' : 'text-secondary-500'} font-bold`}>:</span>
-      <div className={`countdown-box ${sizeClasses[size]} ${isUrgent ? 'bg-red-600 animate-pulse' : ''}`}>
+      <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
+      <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(seconds).padStart(2, '0')}</div>
         <div className={`${labelSize[size]} text-gray-300`}>Sec</div>
       </div>

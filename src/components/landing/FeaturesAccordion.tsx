@@ -26,13 +26,13 @@ const features = [
     icon: BadgePercent,
     title: 'Save Up to 70%',
     description: 'Our deals offer real, transparent savings — no inflated "original prices." See exactly what you\'re saving with clear pricing breakdowns on every deal.',
-    gradient: 'from-blue-500 to-indigo-600',
+    gradient: 'from-blue-500 to-blue-600',
   },
   {
     icon: Lock,
     title: 'Deposit Protection',
     description: 'Your deposit is secured through our payment partner. If a business can\'t honor your deal, you get a full refund — no questions asked.',
-    gradient: 'from-violet-500 to-purple-600',
+    gradient: 'from-sky-500 to-blue-600',
   },
   {
     icon: QrCode,
@@ -79,7 +79,7 @@ export function FeaturesAccordion() {
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-primary-600">Why SpontiCoupon</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               Everything You Need to Save Big
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">
@@ -114,7 +114,7 @@ export function FeaturesAccordion() {
                       <Icon className="w-5 h-5 text-white" strokeWidth={2} />
                     </div>
                     <span className={`flex-1 font-semibold text-base sm:text-lg transition-colors duration-200 ${
-                      isOpen ? 'text-primary-600' : 'text-secondary-500 group-hover:text-primary-500'
+                      isOpen ? 'text-primary-600' : 'text-gray-900 group-hover:text-primary-500'
                     }`}>
                       {feature.title}
                     </span>

@@ -404,7 +404,7 @@ export default function AdminSupportDetailPage() {
       {/* Back Button */}
       <button
         onClick={() => router.push('/admin/support')}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Support
@@ -418,14 +418,14 @@ export default function AdminSupportDetailPage() {
           <div className="card p-5 mb-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-secondary-500 mb-2">{ticket.subject}</h1>
+                <h1 className="text-xl font-bold text-gray-900 mb-2">{ticket.subject}</h1>
                 <div className="flex items-center gap-3 flex-wrap text-sm text-gray-500">
                   <span className="flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5" />
                     {ticket.user_email}
                   </span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    ticket.user_role === 'vendor' ? 'bg-primary-50 text-primary-600' : 'bg-indigo-50 text-indigo-600'
+                    ticket.user_role === 'vendor' ? 'bg-primary-50 text-primary-600' : 'bg-blue-50 text-blue-600'
                   }`}>
                     {ticket.user_role === 'vendor' ? 'Vendor' : 'Customer'}
                   </span>
@@ -737,7 +737,7 @@ export default function AdminSupportDetailPage() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-400">Role</span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  ticket.user_role === 'vendor' ? 'bg-primary-50 text-primary-600' : 'bg-indigo-50 text-indigo-600'
+                  ticket.user_role === 'vendor' ? 'bg-primary-50 text-primary-600' : 'bg-blue-50 text-blue-600'
                 }`}>
                   {ticket.user_role === 'vendor' ? 'Vendor' : 'Customer'}
                 </span>

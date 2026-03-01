@@ -48,7 +48,7 @@ function DealPopupCard({ deal }: { deal: Deal }) {
       </div>
       <Link
         href={`/deals/${deal.id}`}
-        className="font-bold text-sm text-secondary-500 hover:text-primary-500 transition-colors line-clamp-2 block"
+        className="font-bold text-sm text-gray-900 hover:text-primary-500 transition-colors line-clamp-2 block"
       >
         {deal.title}
       </Link>
@@ -158,7 +158,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000]">
           <button
             onClick={handleSearchArea}
-            className="flex items-center gap-2 bg-white shadow-lg border border-gray-200 rounded-full px-5 py-2.5 text-sm font-semibold text-secondary-500 hover:bg-gray-50 hover:shadow-xl transition-all"
+            className="flex items-center gap-2 bg-white shadow-lg border border-gray-200 rounded-full px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 hover:shadow-xl transition-all"
           >
             <Search className="w-4 h-4 text-primary-500" />
             Search this area

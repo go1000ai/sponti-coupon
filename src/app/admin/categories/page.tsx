@@ -224,7 +224,7 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-3">
           <LayoutGrid className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Categories Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Categories Management</h1>
             <p className="text-sm text-gray-500">
               {categories.length} total categories
             </p>
@@ -266,7 +266,7 @@ export default function AdminCategoriesPage() {
                       <span className="text-2xl">{category.icon || '--'}</span>
                     </td>
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">{category.name}</span>
+                      <span className="font-medium text-gray-900">{category.name}</span>
                     </td>
                     <td className="p-4">
                       <code className="text-sm text-gray-500 bg-gray-50 px-2 py-1 rounded">

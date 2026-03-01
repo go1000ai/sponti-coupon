@@ -31,8 +31,8 @@ export function BusinessBanner() {
                     <span className="text-sm font-medium text-gray-200">$0 Commission</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="bg-violet-500/20 rounded-lg p-1.5">
-                      <Landmark className="w-5 h-5 text-violet-400" strokeWidth={1.8} />
+                    <div className="bg-sky-500/20 rounded-lg p-1.5">
+                      <Landmark className="w-5 h-5 text-sky-400" strokeWidth={1.8} />
                     </div>
                     <span className="text-sm font-medium text-gray-200">Direct Deposits</span>
                   </div>

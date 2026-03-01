@@ -17,15 +17,15 @@ const benefits = [
   },
   {
     icon: Timer,
-    gradient: 'from-blue-500 to-indigo-600',
+    gradient: 'from-blue-500 to-blue-600',
     shadow: 'shadow-blue-200',
     title: 'Sponti Deal Urgency',
     description: 'Create 24-hour Sponti Coupons with live countdown timers that drive immediate foot traffic.',
   },
   {
     icon: Landmark,
-    gradient: 'from-violet-500 to-purple-600',
-    shadow: 'shadow-purple-200',
+    gradient: 'from-sky-500 to-blue-600',
+    shadow: 'shadow-blue-200',
     title: 'Direct Deposits',
     description: 'Customer deposits go straight to your account. We never touch customer money.',
   },
@@ -46,7 +46,7 @@ export function ForBusinesses() {
           {/* Left: Benefits */}
           <ScrollReveal animation="slide-right">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 Grow Your Business with Sponti Deals
               </h2>
               <p className="text-gray-500 mt-4 text-lg">
@@ -60,7 +60,7 @@ export function ForBusinesses() {
                       <b.icon className="w-5 h-5 text-white" strokeWidth={1.8} />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-secondary-500">{b.title}</h4>
+                      <h4 className="font-semibold text-gray-900">{b.title}</h4>
                       <p className="text-gray-500 text-sm mt-0.5">{b.description}</p>
                     </div>
                   </div>

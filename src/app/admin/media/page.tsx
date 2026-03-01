@@ -142,7 +142,7 @@ export default function AdminMediaPage() {
   const sourceBadgeClass = (source: string) => {
     switch (source) {
       case 'ai_generated': return 'bg-orange-50 text-[#E8632B]';
-      case 'ai_video': return 'bg-violet-50 text-violet-600';
+      case 'ai_video': return 'bg-sky-50 text-sky-600';
       case 'upload': return 'bg-green-50 text-green-600';
       case 'url': return 'bg-blue-50 text-blue-600';
       default: return 'bg-gray-50 text-gray-600';
@@ -151,8 +151,8 @@ export default function AdminMediaPage() {
 
   const typeBadgeClass = (type: string) => {
     switch (type) {
-      case 'image': return 'bg-indigo-50 text-indigo-600';
-      case 'video': return 'bg-purple-50 text-purple-600';
+      case 'image': return 'bg-blue-50 text-blue-600';
+      case 'video': return 'bg-blue-50 text-blue-600';
       default: return 'bg-gray-50 text-gray-600';
     }
   };
@@ -191,7 +191,7 @@ export default function AdminMediaPage() {
         <div className="flex items-center gap-3">
           <ImageIcon className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Media Library</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Media Library</h1>
             <p className="text-sm text-gray-500">{stats.totalFiles} total files</p>
           </div>
         </div>
@@ -211,28 +211,28 @@ export default function AdminMediaPage() {
           <div className="flex justify-center mb-2">
             <FolderOpen className="w-6 h-6 text-primary-500" />
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{stats.totalFiles}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.totalFiles}</p>
           <p className="text-xs text-gray-400 mt-1">Total Files</p>
         </div>
         <div className="card p-4 text-center">
           <div className="flex justify-center mb-2">
             <HardDrive className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{formatTotalStorage(stats.totalStorage)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatTotalStorage(stats.totalStorage)}</p>
           <p className="text-xs text-gray-400 mt-1">Total Storage</p>
         </div>
         <div className="card p-4 text-center">
           <div className="flex justify-center mb-2">
-            <FileImage className="w-6 h-6 text-indigo-500" />
+            <FileImage className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{stats.imagesCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.imagesCount}</p>
           <p className="text-xs text-gray-400 mt-1">Images</p>
         </div>
         <div className="card p-4 text-center">
           <div className="flex justify-center mb-2">
-            <FileVideo className="w-6 h-6 text-purple-500" />
+            <FileVideo className="w-6 h-6 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{stats.videosCount}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.videosCount}</p>
           <p className="text-xs text-gray-400 mt-1">Videos</p>
         </div>
       </div>
@@ -288,7 +288,7 @@ export default function AdminMediaPage() {
                 <div className="aspect-video bg-gray-900 relative flex items-center justify-center">
                   <Film className="w-12 h-12 text-gray-500" />
                   <div className="absolute top-2 left-2">
-                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-500/80 text-white font-medium">
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/80 text-white font-medium">
                       <Film className="w-3 h-3" />
                       Video
                     </span>
@@ -330,7 +330,7 @@ export default function AdminMediaPage() {
 
               {/* Info */}
               <div className="p-3">
-                <p className="text-sm font-medium text-secondary-500 truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {item.title || item.filename || 'Untitled'}
                 </p>
                 <p className="text-xs text-primary-500 font-medium truncate mt-0.5">

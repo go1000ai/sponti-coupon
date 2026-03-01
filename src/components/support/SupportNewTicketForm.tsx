@@ -171,7 +171,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-secondary-500">New Support Ticket</h2>
+          <h2 className="text-lg font-bold text-gray-900">New Support Ticket</h2>
           <button
             onClick={handleClose}
             disabled={submitting}
@@ -191,7 +191,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
 
           {/* Subject */}
           <div>
-            <label htmlFor="ticket-subject" className="block text-sm font-medium text-secondary-500 mb-1">
+            <label htmlFor="ticket-subject" className="block text-sm font-medium text-gray-900 mb-1">
               Subject
             </label>
             <input
@@ -207,7 +207,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
 
           {/* Category */}
           <div>
-            <label htmlFor="ticket-category" className="block text-sm font-medium text-secondary-500 mb-1">
+            <label htmlFor="ticket-category" className="block text-sm font-medium text-gray-900 mb-1">
               Category
             </label>
             <select
@@ -227,7 +227,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
 
           {/* Message */}
           <div>
-            <label htmlFor="ticket-message" className="block text-sm font-medium text-secondary-500 mb-1">
+            <label htmlFor="ticket-message" className="block text-sm font-medium text-gray-900 mb-1">
               Message
             </label>
             <textarea
@@ -243,7 +243,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
 
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-secondary-500 mb-1">
+            <label className="block text-sm font-medium text-gray-900 mb-1">
               Attachments <span className="text-gray-400 font-normal">(optional, max {MAX_FILES} images)</span>
             </label>
             <div

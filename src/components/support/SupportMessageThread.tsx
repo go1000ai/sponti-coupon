@@ -16,7 +16,7 @@ const senderConfig: Record<SupportMessageSenderType, { label: string; icon: type
     label: 'You',
     icon: User,
     containerClass: 'justify-start',
-    bubbleClass: 'bg-gray-100 text-secondary-500',
+    bubbleClass: 'bg-gray-100 text-gray-900',
     align: 'left',
   },
   admin: {
@@ -30,7 +30,7 @@ const senderConfig: Record<SupportMessageSenderType, { label: string; icon: type
     label: 'AI Assistant',
     icon: Bot,
     containerClass: 'justify-start',
-    bubbleClass: 'bg-blue-50 text-secondary-500 border border-blue-200',
+    bubbleClass: 'bg-blue-50 text-gray-900 border border-blue-200',
     align: 'left',
   },
 };
@@ -116,7 +116,7 @@ function MessageBubble({
                   e.target.style.height = 'auto';
                   e.target.style.height = e.target.scrollHeight + 'px';
                 }}
-                className="w-full bg-white text-secondary-500 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+                className="w-full bg-white text-gray-900 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 rows={2}
               />
               <div className="flex items-center gap-1.5 justify-end">

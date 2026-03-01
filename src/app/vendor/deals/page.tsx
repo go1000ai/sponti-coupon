@@ -79,17 +79,17 @@ export default function VendorDealsPage() {
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-secondary-500">My Deals</h1>
+          <h1 className="text-3xl font-bold text-gray-900">My Deals</h1>
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-secondary-500 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
               title="List View"
             >
               <List className="w-3.5 h-3.5" /> List
             </button>
             <Link
               href="/vendor/deals/calendar"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-secondary-500 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
               title="Calendar View"
             >
               <CalendarDays className="w-3.5 h-3.5" /> Calendar
@@ -106,7 +106,7 @@ export default function VendorDealsPage() {
         <div className="flex items-center gap-3">
           <TrendingUp className="w-5 h-5 text-primary-500" />
           <div>
-            <p className="text-sm font-medium text-secondary-500">
+            <p className="text-sm font-medium text-gray-900">
               {dealsPerMonth === -1
                 ? 'Unlimited deals this month'
                 : `${dealsThisMonth} of ${dealsPerMonth} deals used this month`}
@@ -174,7 +174,7 @@ export default function VendorDealsPage() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-lg text-secondary-500 truncate">{deal.title}</h3>
+                    <h3 className="font-bold text-lg text-gray-900 truncate">{deal.title}</h3>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         deal.deal_type === 'sponti_coupon' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-600'
@@ -207,7 +207,7 @@ export default function VendorDealsPage() {
                   {/* Countdown */}
                   {deal.status === 'active' && deal.deal_type === 'sponti_coupon' && (
                     <div className="hidden md:block">
-                      <CountdownTimer expiresAt={deal.expires_at} size="sm" />
+                      <CountdownTimer expiresAt={deal.expires_at} size="sm" variant="sponti" />
                     </div>
                   )}
 
@@ -222,7 +222,7 @@ export default function VendorDealsPage() {
 
                   {/* Claims */}
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-secondary-500">{deal.claims_count}</p>
+                    <p className="text-2xl font-bold text-gray-900">{deal.claims_count}</p>
                     <p className="text-xs text-gray-400">claims</p>
                   </div>
 

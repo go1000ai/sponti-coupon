@@ -18,9 +18,9 @@ const aiTools = [
     title: 'AI Deal Generator',
     description: 'Generate compelling deal descriptions, titles, and pricing suggestions for any vendor.',
     icon: Wand2,
-    color: 'from-purple-500 to-indigo-500',
-    bgColor: 'bg-purple-50',
-    iconColor: 'text-purple-600',
+    color: 'from-blue-500 to-blue-500',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-600',
     href: '/admin/deals',
     status: 'active' as const,
   },
@@ -100,18 +100,18 @@ export default function AdminAIToolsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl">
+          <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-500 rounded-xl">
             <Wand2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">AI Tools</h1>
+            <h1 className="text-2xl font-bold text-gray-900">AI Tools</h1>
             <p className="text-sm text-gray-500">AI-powered features for the platform</p>
           </div>
         </div>
       </div>
 
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600 rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-1/3 -translate-x-1/4" />
         <div className="relative">
@@ -147,7 +147,7 @@ export default function AdminAIToolsPage() {
                     Active
                   </span>
                 </div>
-                <h3 className="font-semibold text-secondary-500 mb-1 group-hover:text-primary-500 transition-colors">
+                <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-primary-500 transition-colors">
                   {tool.title}
                 </h3>
                 <p className="text-sm text-gray-500 mb-4">{tool.description}</p>

@@ -81,7 +81,7 @@ export default function DashboardSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-secondary-500 mb-8">Account Settings</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
 
       <div className="card p-8 space-y-6">
         <div className="grid grid-cols-2 gap-4">
@@ -154,7 +154,7 @@ export default function DashboardSettingsPage() {
 
         {/* Notification Preferences */}
         <div className="border-t border-gray-100 pt-6">
-          <h3 className="font-semibold text-secondary-500 mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Bell className="w-5 h-5" /> Notification Preferences
           </h3>
 
@@ -166,7 +166,7 @@ export default function DashboardSettingsPage() {
               className="w-5 h-5 text-primary-500 rounded border-gray-300 focus:ring-primary-500"
             />
             <div>
-              <p className="font-medium text-secondary-500 flex items-center gap-1">
+              <p className="font-medium text-gray-900 flex items-center gap-1">
                 <Mail className="w-4 h-4" /> Daily Deal Digest
               </p>
               <p className="text-sm text-gray-500">Receive top deals in your area every morning at 8am</p>
@@ -176,7 +176,7 @@ export default function DashboardSettingsPage() {
 
         {/* Guided Tour */}
         <div className="border-t border-gray-100 pt-6">
-          <h3 className="font-semibold text-secondary-500 mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Navigation className="w-5 h-5" /> Guided Tour
           </h3>
 

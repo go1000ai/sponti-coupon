@@ -109,7 +109,7 @@ function DistributionTooltip({ active, payload }: { active?: boolean; payload?: 
     <div className="bg-white shadow-lg rounded-lg px-3 py-2 border border-gray-100">
       <div className="flex items-center gap-2">
         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.color }} />
-        <span className="text-sm font-medium capitalize text-secondary-500">{data.name}</span>
+        <span className="text-sm font-medium capitalize text-gray-900">{data.name}</span>
       </div>
       <p className="text-xs text-gray-500 mt-0.5">{data.value.toLocaleString()} entries</p>
     </div>
@@ -236,7 +236,7 @@ export default function AdminSpontiPointsPage() {
     if (!entry.customer_name && !entry.customer_email) return '--';
     return (
       <div>
-        {entry.customer_name && <p className="font-medium text-secondary-500">{entry.customer_name}</p>}
+        {entry.customer_name && <p className="font-medium text-gray-900">{entry.customer_name}</p>}
         {entry.customer_email && <p className="text-xs text-gray-400">{entry.customer_email}</p>}
       </div>
     );
@@ -390,7 +390,7 @@ export default function AdminSpontiPointsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Coins className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-secondary-500">SpontiPoints</h1>
+          <h1 className="text-2xl font-bold text-gray-900">SpontiPoints</h1>
           <p className="text-sm text-gray-500">Platform-wide points management &middot; Click any row to adjust points</p>
         </div>
       </div>
@@ -408,7 +408,7 @@ export default function AdminSpontiPointsPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Total Issued</p>
-              <p className="text-2xl font-bold text-secondary-500">
+              <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.total_issued} />
               </p>
             </div>
@@ -426,7 +426,7 @@ export default function AdminSpontiPointsPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Total Redeemed</p>
-              <p className="text-2xl font-bold text-secondary-500">
+              <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.total_redeemed} />
               </p>
             </div>
@@ -444,7 +444,7 @@ export default function AdminSpontiPointsPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Active Balance</p>
-              <p className="text-2xl font-bold text-secondary-500">
+              <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.active_balance} />
               </p>
             </div>
@@ -468,7 +468,7 @@ export default function AdminSpontiPointsPage() {
       {/* Points Distribution Mini Chart */}
       {distributionData.length > 0 && (
         <div className="card p-6 mb-8 animate-card-pop" style={{ animationDelay: '300ms' }}>
-          <h2 className="text-lg font-bold text-secondary-500 mb-1">Points Distribution</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-1">Points Distribution</h2>
           <p className="text-xs text-gray-400 mb-4">Breakdown of ledger entry types</p>
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="w-44 h-44">
@@ -496,7 +496,7 @@ export default function AdminSpontiPointsPage() {
               {distributionData.map((entry) => (
                 <div key={entry.name} className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
-                  <span className="text-sm text-secondary-500 capitalize font-medium">{entry.name}</span>
+                  <span className="text-sm text-gray-900 capitalize font-medium">{entry.name}</span>
                   <span className="text-xs text-gray-400">({entry.value.toLocaleString()})</span>
                 </div>
               ))}
@@ -509,7 +509,7 @@ export default function AdminSpontiPointsPage() {
       <div className="card mb-8">
         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-secondary-500">Recent Ledger Entries</h2>
+            <h2 className="text-lg font-bold text-gray-900">Recent Ledger Entries</h2>
             <p className="text-xs text-gray-400">Last 50 transactions</p>
           </div>
           <div className="relative w-full sm:w-64">
@@ -592,7 +592,7 @@ export default function AdminSpontiPointsPage() {
           {/* Customer Info */}
           <div className="p-3 bg-gray-50 rounded-lg flex items-center justify-between">
             <div>
-              <p className="font-medium text-secondary-500">{pointsForm.customer_name}</p>
+              <p className="font-medium text-gray-900">{pointsForm.customer_name}</p>
               {pointsForm.customer_email && (
                 <p className="text-xs text-gray-400 mt-0.5">{pointsForm.customer_email}</p>
               )}

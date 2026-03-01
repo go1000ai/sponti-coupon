@@ -42,7 +42,7 @@ export function LiveActivity() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="pulse-dot w-2.5 h-2.5 rounded-full bg-green-500" />
-          <span className="text-sm font-semibold text-secondary-500">Live Activity</span>
+          <span className="text-sm font-semibold text-gray-900">Live Activity</span>
           <span className="text-xs text-gray-400">Real-time deal activity near you</span>
         </div>
 
@@ -62,7 +62,7 @@ export function LiveActivity() {
                 }`} />
               </div>
               <div className="min-w-0">
-                <p className="text-xs text-secondary-500 truncate">
+                <p className="text-xs text-gray-900 truncate">
                   <span className="font-semibold">{activity.name}</span>{' '}
                   {activity.action}{' '}
                   <span className="font-medium text-primary-500">{activity.deal}</span>

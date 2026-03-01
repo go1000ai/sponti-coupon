@@ -44,7 +44,7 @@ export function SpontiDealsShowcase() {
     return (
       <section className="relative py-10 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-secondary-500/70" />
+        <div className="absolute inset-0 bg-gray-900/70" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[...Array(3)].map((_, i) => (
@@ -60,7 +60,7 @@ export function SpontiDealsShowcase() {
     return (
       <section className="relative py-10 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-secondary-500/70" />
+        <div className="absolute inset-0 bg-gray-900/70" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 sm:p-12 text-center">
@@ -87,8 +87,8 @@ export function SpontiDealsShowcase() {
         className="absolute inset-0 bg-cover bg-center bg-fixed"
         style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }}
       />
-      <div className="absolute inset-0 bg-secondary-500/75 backdrop-blur-[2px]" />
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-secondary-500/70 to-secondary-500 z-[1]" />
+      <div className="absolute inset-0 bg-gray-900/75 backdrop-blur-[2px]" />
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-gray-900/70 to-gray-900 z-[1]" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}

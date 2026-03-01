@@ -102,14 +102,21 @@ IMPORTANT: Return ONLY valid JSON with these exact fields (no markdown, no code 
   "how_it_works": "Step-by-step: 1. Claim this deal on SpontiCoupon 2. Show your QR code at the business 3. Enjoy your discount",
   "highlights": ["highlight 1", "highlight 2", "highlight 3", "highlight 4"],
   "amenities": ["amenity 1", "amenity 2", "amenity 3"],
-  "fine_print": "Brief legal: not combinable with other offers, subject to availability, etc."
+  "fine_print": "Comprehensive disclaimers including deposit policy, appointment requirements, and standard legal.",
+  "requires_appointment": false
 }
 
 For highlights: 3-5 short bullet points about what makes this deal special (e.g., "Fresh ingredients daily", "Award-winning chef", "Free parking").
 For amenities: 3-6 relevant amenities for the business type (e.g., "Free Wi-Fi", "Outdoor seating", "Wheelchair accessible", "Live music").
 For terms_and_conditions: Write clear, professional terms covering the deal scope, restrictions, and validity.
-For how_it_works: Always start with claiming on SpontiCoupon, then showing QR code, then enjoying the deal.
-For fine_print: Brief, standard disclaimers.`;
+For how_it_works: Always start with claiming on SpontiCoupon, then showing QR code or 6-digit code, then enjoying the deal.
+For fine_print: MUST include ALL of these that apply:
+- "One per customer. Subject to availability. Cannot be combined with other offers."
+- If the deal has a deposit and is a Sponti deal: "Deposit is non-refundable if not redeemed before expiration."
+- If the deal has a deposit and is a Steady deal: "If not redeemed before expiration, deposit converts to a credit with the business. Credit never expires."
+- If appointment-based (salons, spas, medical, etc.): "This deal requires an appointment. The deal is honored as long as the appointment is scheduled before the deal expires."
+- If walk-in: "No appointment necessary. Walk-ins welcome."
+For requires_appointment: Set to true for businesses that typically require appointments (spas, salons, medical offices, dental, photography studios, etc.). Set to false for walk-in businesses (restaurants, retail, entertainment, etc.).`;
 
       const userPrompt = `Business: ${businessName}
 Category: ${category}
@@ -246,6 +253,7 @@ function generateTemplateSuggestion(
     how_it_works: `1. Claim this deal on SpontiCoupon\n2. Visit ${businessName} during business hours\n3. Show your QR code to the staff\n4. Enjoy your discount!`,
     highlights: ['Great value for money', 'Premium quality guaranteed', 'Perfect for any occasion', 'Limited availability'],
     amenities: ['Free Wi-Fi', 'Parking available', 'Wheelchair accessible'],
-    fine_print: `Subject to availability. Not valid on holidays or special events. ${businessName} reserves the right to limit quantities. Gratuity not included.`,
+    fine_print: `One per customer. Subject to availability. Cannot be combined with other offers. Not valid on holidays or special events. ${businessName} reserves the right to limit quantities. Gratuity not included.${isSponti ? ' Deposit is non-refundable if not redeemed before expiration.' : ''} No appointment necessary. Walk-ins welcome.`,
+    requires_appointment: false,
   };
 }

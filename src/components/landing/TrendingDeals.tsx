@@ -60,11 +60,11 @@ export function TrendingDeals() {
         <ScrollReveal animation="fade-up">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-violet-50 to-purple-50 rounded-full px-5 py-2 mb-3 shadow-sm">
-                <TrendingUp className="w-4 h-4 text-violet-500" strokeWidth={1.8} />
-                <span className="text-sm font-semibold text-violet-600">Trending Now</span>
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-50 to-blue-50 rounded-full px-5 py-2 mb-3 shadow-sm">
+                <TrendingUp className="w-4 h-4 text-sky-500" strokeWidth={1.8} />
+                <span className="text-sm font-semibold text-sky-600">Trending Now</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-secondary-500">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Most Popular Deals
               </h2>
             </div>

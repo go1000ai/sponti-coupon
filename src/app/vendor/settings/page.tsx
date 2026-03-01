@@ -369,7 +369,7 @@ export default function VendorSettingsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500">Settings</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-500 mt-1">Manage your business profile and preferences</p>
         </div>
       </div>
@@ -380,7 +380,7 @@ export default function VendorSettingsPage() {
           <div className="card p-4 flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Current Plan</p>
-              <p className="text-lg font-bold text-secondary-500 capitalize">
+              <p className="text-lg font-bold text-gray-900 capitalize">
                 {vendor.subscription_tier} Plan
               </p>
             </div>
@@ -413,7 +413,7 @@ export default function VendorSettingsPage() {
                   />
                 ))}
               </div>
-              <span className="text-lg font-bold text-secondary-500">
+              <span className="text-lg font-bold text-gray-900">
                 {vendor?.avg_rating ? Number(vendor.avg_rating).toFixed(1) : '0.0'}
               </span>
             </div>
@@ -437,7 +437,7 @@ export default function VendorSettingsPage() {
 
       {/* Logo & Cover Upload */}
       <div className="card p-6 mb-6">
-        <h2 className="text-lg font-bold text-secondary-500 border-b border-gray-100 pb-3 mb-4">
+        <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">
           Branding
         </h2>
         <div className="grid sm:grid-cols-2 gap-6">
@@ -516,7 +516,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Building2 className="w-5 h-5 text-primary-500" />
-              <h2 className="text-lg font-bold text-secondary-500">Business Information</h2>
+              <h2 className="text-lg font-bold text-gray-900">Business Information</h2>
             </div>
             {expandedSection === 'business' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -729,7 +729,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <LinkIcon className="w-5 h-5 text-pink-500" />
-              <h2 className="text-lg font-bold text-secondary-500">Social Media</h2>
+              <h2 className="text-lg font-bold text-gray-900">Social Media</h2>
             </div>
             {expandedSection === 'social' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -829,7 +829,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Clock className="w-5 h-5 text-blue-500" />
-              <h2 className="text-lg font-bold text-secondary-500">Business Hours</h2>
+              <h2 className="text-lg font-bold text-gray-900">Business Hours</h2>
             </div>
             {expandedSection === 'hours' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -907,7 +907,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Bell className="w-5 h-5 text-amber-500" />
-              <h2 className="text-lg font-bold text-secondary-500">Notification Preferences</h2>
+              <h2 className="text-lg font-bold text-gray-900">Notification Preferences</h2>
             </div>
             {expandedSection === 'notifications' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -948,7 +948,7 @@ export default function VendorSettingsPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ava.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-sm" />
               <div className="text-left">
-                <h2 className="text-lg font-bold text-secondary-500">Ava Auto-Response</h2>
+                <h2 className="text-lg font-bold text-gray-900">Ava Auto-Response</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Let Ava automatically reply to customer reviews</p>
               </div>
             </div>
@@ -967,7 +967,7 @@ export default function VendorSettingsPage() {
                   {/* Enable Toggle */}
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="font-medium text-secondary-500">Enable Auto-Response</p>
+                      <p className="font-medium text-gray-900">Enable Auto-Response</p>
                       <p className="text-sm text-gray-500 mt-0.5">Ava will automatically reply to new reviews after a delay</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -977,7 +977,7 @@ export default function VendorSettingsPage() {
                         onChange={(e) => setAutoResponseForm(prev => ({ ...prev, enabled: e.target.checked }))}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-100 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                     </label>
                   </div>
 
@@ -990,7 +990,7 @@ export default function VendorSettingsPage() {
                           key={value}
                           className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
                             autoResponseForm.tone === value
-                              ? 'border-purple-500 bg-purple-50'
+                              ? 'border-blue-500 bg-blue-50'
                               : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                           }`}
                         >
@@ -1000,10 +1000,10 @@ export default function VendorSettingsPage() {
                             value={value}
                             checked={autoResponseForm.tone === value}
                             onChange={() => setAutoResponseForm(prev => ({ ...prev, tone: value }))}
-                            className="mt-0.5 text-purple-500 focus:ring-purple-500"
+                            className="mt-0.5 text-blue-500 focus:ring-blue-500"
                           />
                           <div>
-                            <p className="text-sm font-medium text-secondary-500">{label}</p>
+                            <p className="text-sm font-medium text-gray-900">{label}</p>
                             <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
                           </div>
                         </label>
@@ -1038,7 +1038,7 @@ export default function VendorSettingsPage() {
                         className="mt-0.5 w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-secondary-500">Auto-respond to negative reviews</p>
+                        <p className="text-sm font-medium text-gray-900">Auto-respond to negative reviews</p>
                         <p className="text-xs text-gray-500 mt-0.5">Include 1-2 star reviews in auto-responses</p>
                         {autoResponseForm.include_negative && (
                           <div className="flex items-start gap-2 mt-2 text-xs text-amber-700 bg-amber-100 rounded-lg p-2">
@@ -1096,7 +1096,7 @@ export default function VendorSettingsPage() {
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-primary-500" />
               <div className="text-left">
-                <h2 className="text-lg font-bold text-secondary-500">Guided Tour</h2>
+                <h2 className="text-lg font-bold text-gray-900">Guided Tour</h2>
                 <p className="text-xs text-gray-400 mt-0.5">Dashboard walkthrough settings</p>
               </div>
             </div>

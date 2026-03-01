@@ -77,9 +77,9 @@ function getStatusBadge(status: string) {
 
 function getCategoryBadge(category: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    billing: { bg: 'bg-purple-50', text: 'text-purple-600', label: 'Billing' },
+    billing: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Billing' },
     technical: { bg: 'bg-cyan-50', text: 'text-cyan-600', label: 'Technical' },
-    account: { bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'Account' },
+    account: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Account' },
     general: { bg: 'bg-gray-50', text: 'text-gray-500', label: 'General' },
   };
   const c = map[category] || map.general;
@@ -167,7 +167,7 @@ function NewTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-secondary-500">New Support Ticket</h2>
+          <h2 className="text-lg font-bold text-gray-900">New Support Ticket</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -409,7 +409,7 @@ function TicketDetailView({
       {/* Back button */}
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 mb-4 transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to tickets
@@ -417,7 +417,7 @@ function TicketDetailView({
 
       {/* Ticket header */}
       <div className="card p-5 mb-4">
-        <h2 className="text-lg font-bold text-secondary-500 mb-2">{ticket.subject}</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-2">{ticket.subject}</h2>
         <div className="flex items-center gap-3 flex-wrap">
           {getStatusBadge(ticket.status)}
           {getCategoryBadge(ticket.category)}
@@ -675,7 +675,7 @@ export default function CustomerSupportPage() {
       <div className="flex items-center gap-3 mb-6">
         <Headphones className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-secondary-500">Support & Help</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Support & Help</h1>
           <p className="text-sm text-gray-500">Chat with Mia or open a support ticket</p>
         </div>
       </div>
@@ -708,7 +708,7 @@ export default function CustomerSupportPage() {
       {/* Ticket List */}
       {tickets.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-secondary-500 mb-4">Your Tickets</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Your Tickets</h2>
           <div className="space-y-3">
             {tickets.map((ticket) => (
               <button
@@ -719,7 +719,7 @@ export default function CustomerSupportPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <h3 className="font-semibold text-secondary-500 truncate group-hover:text-primary-500 transition-colors">
+                      <h3 className="font-semibold text-gray-900 truncate group-hover:text-primary-500 transition-colors">
                         {ticket.subject}
                       </h3>
                     </div>

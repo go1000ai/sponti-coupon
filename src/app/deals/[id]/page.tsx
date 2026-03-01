@@ -10,7 +10,7 @@ import {
   Star, MessageSquare, Send, Loader2, CheckCircle2, Globe, Phone, Mail,
   ExternalLink, ChevronRight, Sparkles, Zap, Info, Heart,
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,
-  Navigation, Copy, Check,
+  Navigation, Copy, Check, Calendar,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
@@ -62,7 +62,7 @@ export default function DealDetailPage() {
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [error, setError] = useState('');
   const [copiedAddress, setCopiedAddress] = useState(false);
-  const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'vendor'>('details');
+  const [activeTab, setActiveTab] = useState<'vendor' | 'details' | 'reviews'>('vendor');
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -253,10 +253,26 @@ export default function DealDetailPage() {
     setTimeout(() => setCopiedAddress(false), 2000);
   };
 
+  const [showDirections, setShowDirections] = useState(false);
+
   const getGoogleMapsUrl = (vendor: Deal['vendor']) => {
     if (!vendor) return '';
     const query = encodeURIComponent(`${vendor.address || ''}, ${vendor.city || ''}, ${vendor.state || ''} ${vendor.zip || ''}`);
     return `https://www.google.com/maps/dir/?api=1&destination=${query}`;
+  };
+
+  const getWazeUrl = (vendor: Deal['vendor']) => {
+    if (!vendor) return '';
+    if (vendor.lat && vendor.lng) return `https://waze.com/ul?ll=${vendor.lat},${vendor.lng}&navigate=yes`;
+    const query = encodeURIComponent(`${vendor.address || ''}, ${vendor.city || ''}, ${vendor.state || ''} ${vendor.zip || ''}`);
+    return `https://waze.com/ul?q=${query}&navigate=yes`;
+  };
+
+  const getAppleMapsUrl = (vendor: Deal['vendor']) => {
+    if (!vendor) return '';
+    if (vendor.lat && vendor.lng) return `https://maps.apple.com/?daddr=${vendor.lat},${vendor.lng}&dirflg=d`;
+    const query = encodeURIComponent(`${vendor.address || ''}, ${vendor.city || ''}, ${vendor.state || ''} ${vendor.zip || ''}`);
+    return `https://maps.apple.com/?daddr=${query}&dirflg=d`;
   };
 
   const getGoogleMapsEmbedUrl = (vendor: Deal['vendor']) => {
@@ -317,7 +333,7 @@ export default function DealDetailPage() {
           videoUrls={deal.video_urls || []}
           title={deal.title}
           fallback={
-            <div className={`w-full h-72 sm:h-96 flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-purple-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
+            <div className={`w-full h-72 sm:h-96 flex items-center justify-center ${isSponti ? 'bg-gradient-to-br from-primary-500 via-primary-600 to-orange-700' : 'bg-gradient-to-br from-secondary-400 via-secondary-500 to-secondary-700'}`}>
               {isSponti ? <SpontiIcon className="w-24 h-24 text-white/20" /> : <Tag className="w-24 h-24 text-white/20" />}
             </div>
           }
@@ -330,7 +346,7 @@ export default function DealDetailPage() {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Deal Header Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-8 animate-fade-up text-center sm:text-left">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-8 animate-fade-up text-center sm:text-left">
               {/* Badges row */}
               <div className="flex items-center flex-wrap gap-2 mb-4 justify-center sm:justify-start">
                 <DealTypeBadge type={deal.deal_type} size="lg" />
@@ -344,7 +360,7 @@ export default function DealDetailPage() {
               </div>
 
               {/* Title */}
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-secondary-500 leading-tight break-words">{deal.title}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight break-words">{deal.title}</h1>
 
               {/* Vendor row */}
               {vendor && (
@@ -357,7 +373,7 @@ export default function DealDetailPage() {
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-secondary-500">{vendor.business_name}</p>
+                    <p className="font-semibold text-gray-900">{vendor.business_name}</p>
                     <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-sm text-gray-500 justify-center sm:justify-start">
                       {totalReviews > 0 && (
                         <button onClick={() => setActiveTab('reviews')} className="flex items-center gap-1 hover:text-primary-500 transition-colors">
@@ -401,9 +417,20 @@ export default function DealDetailPage() {
                 </div>
               )}
 
+              {/* Appointment badge */}
+              {deal.requires_appointment && (
+                <div className="mt-4 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                  <Calendar className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800">Appointment Required</p>
+                    <p className="text-xs text-blue-600">Book before the deal expires — your appointment can be after expiration</p>
+                  </div>
+                </div>
+              )}
+
               {/* What's Included */}
               <div className="mt-5 bg-gradient-to-r from-gray-50 to-gray-100/50 rounded-xl p-5 border border-gray-100">
-                <h3 className="text-sm font-bold text-secondary-500 mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-500" /> What&apos;s Included
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -441,13 +468,13 @@ export default function DealDetailPage() {
                     </div>
                   )}
                   <div>
-                    <h3 className="font-bold text-secondary-500">
+                    <h3 className="font-bold text-gray-900">
                       {isSponti ? 'This is a Sponti Deal' : 'This is a Steady Deal'}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                       {isSponti
-                        ? 'Sponti deals are spontaneous, time-limited offers with deep discounts — often 50-70% off. They appear without warning and expire within hours, so you need to act fast! A small deposit locks in your deal, which you pay when you visit the business.'
-                        : 'Steady deals are everyday savings that stick around longer. They offer reliable discounts from local businesses — typically 20-40% off — with more time to claim and redeem. No deposit required, just claim and show your QR code!'
+                        ? `Sponti deals are spontaneous, time-limited offers with deep discounts — often 50-70% off. They appear without warning and expire within hours, so you need to act fast!${hasDeposit ? ` A ${formatCurrency(deal.deposit_amount!)} deposit locks in your deal.` : ' Just claim and show your QR code!'}`
+                        : `Steady deals are everyday savings that stick around longer. They offer reliable discounts from local businesses — typically 20-40% off — with more time to claim and redeem.${hasDeposit ? ` A ${formatCurrency(deal.deposit_amount!)} deposit is required to claim.` : ' No payment needed — just claim and show your QR code!'}`
                       }
                     </p>
                     <div className="flex flex-wrap gap-3 mt-3 justify-center sm:justify-start">
@@ -460,7 +487,7 @@ export default function DealDetailPage() {
                             <Clock className="w-3 h-3" /> Limited time
                           </span>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <Shield className="w-3 h-3" /> Small deposit to claim
+                            {hasDeposit ? <><Shield className="w-3 h-3" /> {formatCurrency(deal.deposit_amount!)} deposit</> : <><CheckCircle2 className="w-3 h-3" /> No payment needed</>}
                           </span>
                         </>
                       ) : (
@@ -472,7 +499,7 @@ export default function DealDetailPage() {
                             <Clock className="w-3 h-3" /> More time to redeem
                           </span>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary-700 bg-white/70 px-2.5 py-1 rounded-full">
-                            <CheckCircle2 className="w-3 h-3" /> No deposit needed
+                            {hasDeposit ? <><Shield className="w-3 h-3" /> {formatCurrency(deal.deposit_amount!)} deposit</> : <><CheckCircle2 className="w-3 h-3" /> No payment needed</>}
                           </span>
                         </>
                       )}
@@ -483,18 +510,18 @@ export default function DealDetailPage() {
 
               {/* Countdown for Sponti */}
               {!isExpired && isSponti && (
-                <div className="mt-5 bg-gradient-to-r from-secondary-500 to-secondary-600 rounded-xl p-5 text-white">
+                <div className="mt-5 bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-5 text-white">
                   <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-5 h-5 text-primary-400" />
+                    <Clock className="w-5 h-5 text-white" />
                     <span className="font-semibold">Deal expires in:</span>
                   </div>
-                  <CountdownTimer expiresAt={deal.expires_at} size="lg" />
+                  <CountdownTimer expiresAt={deal.expires_at} size="lg" variant="sponti" />
                 </div>
               )}
             </div>
 
             {/* ===== MOBILE PRICE CARD (shown only below lg) ===== */}
-            <div className="lg:hidden bg-white rounded-2xl shadow-lg p-6 text-center">
+            <div className="lg:hidden bg-white rounded-2xl shadow-lg border border-gray-200 p-6 text-center">
               <div className="text-gray-400 line-through text-lg">{formatCurrency(deal.original_price)}</div>
               <div className="text-4xl font-bold text-primary-500 my-1">{formatCurrency(deal.deal_price)}</div>
               <div className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-lg px-4 py-1.5 rounded-full">
@@ -505,7 +532,7 @@ export default function DealDetailPage() {
               {hasDeposit && (
                 <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mt-4 text-left">
                   <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
-                  <p className="text-xs text-primary-600 mt-1">Paid directly to the business. Non-refundable if not redeemed.</p>
+                  <p className="text-xs text-primary-600 mt-1">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
                 </div>
               )}
 
@@ -559,9 +586,9 @@ export default function DealDetailPage() {
             </div>
 
             {/* ===== TAB NAVIGATION ===== */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="flex border-b border-gray-100">
-                {(['details', 'reviews', 'vendor'] as const).map(tab => (
+                {(['vendor', 'details', 'reviews'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -569,9 +596,9 @@ export default function DealDetailPage() {
                       activeTab === tab ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
+                    {tab === 'vendor' && 'About Business'}
                     {tab === 'details' && 'The Nitty Gritty'}
                     {tab === 'reviews' && `Reviews (${totalReviews})`}
-                    {tab === 'vendor' && 'About Business'}
                     {activeTab === tab && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
                     )}
@@ -582,151 +609,58 @@ export default function DealDetailPage() {
               <div className="p-6 sm:p-8">
                 {/* ===== DETAILS TAB ===== */}
                 {activeTab === 'details' && (
-                  <div className="space-y-8">
+                  <div className="space-y-5">
                     {/* How It Works */}
-                    {deal.how_it_works && (
-                      <div>
-                        <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
-                          <Info className="w-5 h-5 text-primary-500" /> How It Works
-                        </h3>
-                        <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
-                          <p className="text-gray-700 leading-relaxed whitespace-pre-line">{deal.how_it_works}</p>
-                        </div>
-                      </div>
-                    )}
+                    <div className="border border-gray-200 rounded-2xl p-5 sm:p-6">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Info className="w-5 h-5 text-primary-500" /> How It Works
+                      </h3>
 
-                    {/* Default How It Works if vendor didn't provide one */}
-                    {!deal.how_it_works && (
-                      <div>
-                        <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
-                          <Info className="w-5 h-5 text-primary-500" /> How It Works
-                        </h3>
-                        <div className="grid sm:grid-cols-3 gap-4">
-                          {[
-                            { step: '1', title: 'Claim the Deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to lock in your deal` : 'Click claim to get your QR code' },
-                            { step: '2', title: 'Show QR Code', desc: 'Present your QR code at the business' },
-                            { step: '3', title: 'Enjoy Savings!', desc: `Save ${formatPercentage(deal.discount_percentage)} on your purchase` },
-                          ].map((s, i) => (
-                            <div key={i} className="text-center p-4 bg-gray-50 rounded-xl">
-                              <div className="w-10 h-10 rounded-full bg-primary-500 text-white font-bold text-lg flex items-center justify-center mx-auto mb-3">{s.step}</div>
-                              <p className="font-semibold text-secondary-500 text-sm">{s.title}</p>
-                              <p className="text-xs text-gray-500 mt-1">{s.desc}</p>
+                      {/* Vendor's custom instructions */}
+                      {deal.how_it_works && (
+                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 mb-4">
+                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{deal.how_it_works}</p>
+                        </div>
+                      )}
+
+                      {/* Step-by-step flow */}
+                      <ol className="space-y-4">
+                        {[
+                          { title: 'Claim this deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to secure your spot` : 'Click the claim button — no payment required' },
+                          { title: 'Get your code', desc: 'A unique QR code and 6-digit code will appear in your "My Coupons" dashboard' },
+                          deal.requires_appointment
+                            ? { title: `Book with ${vendor?.business_name || 'the business'}`, desc: 'Schedule your appointment before the deal expires — the appointment itself can be after expiration' }
+                            : { title: `Visit ${vendor?.business_name || 'the business'}`, desc: 'Head there before the deal expires' },
+                          { title: 'Show your code', desc: `Show your QR code or give the 6-digit code to the staff — you save ${formatPercentage(deal.discount_percentage)}!` },
+                        ].map((step, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-primary-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</div>
+                            <div className="pt-1">
+                              <p className="font-semibold text-gray-900 text-sm">{step.title}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Amenities */}
-                    {deal.amenities && deal.amenities.length > 0 && (
-                      <div>
-                        <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-primary-500" /> Amenities
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                          {deal.amenities.map((a, i) => {
-                            const Icon = getAmenityIcon(a);
-                            return (
-                              <div key={i} className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-lg">
-                                <Icon className="w-4 h-4 text-primary-500 flex-shrink-0" />
-                                <span className="text-sm text-gray-700">{a}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
 
                     {/* Terms & Conditions */}
                     {deal.terms_and_conditions && (
-                      <div>
-                        <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
+                      <div className="border border-gray-200 rounded-2xl p-5 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <Shield className="w-5 h-5 text-primary-500" /> Terms & Conditions
                         </h3>
-                        <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
-                          <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{deal.terms_and_conditions}</p>
-                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{deal.terms_and_conditions}</p>
                       </div>
                     )}
-
-                    {/* Redemption Instructions */}
-                    <div>
-                      <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-primary-500" /> How to Redeem
-                      </h3>
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
-                        <ol className="space-y-3">
-                          {[
-                            { title: 'Claim this deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to secure your spot` : 'Click the claim button — no payment required' },
-                            { title: 'Get your QR code', desc: 'A unique QR code will appear in your "My Coupons" dashboard' },
-                            { title: 'Visit the business', desc: `Head to ${vendor?.business_name || 'the business'} before the deal expires` },
-                            { title: 'Show your QR code', desc: 'The staff will scan it to apply your discount' },
-                          ].map((step, i) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <div className="w-7 h-7 rounded-full bg-green-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</div>
-                              <div>
-                                <p className="font-semibold text-secondary-500 text-sm">{step.title}</p>
-                                <p className="text-xs text-gray-600 mt-0.5">{step.desc}</p>
-                              </div>
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    </div>
 
                     {/* Fine Print */}
                     {deal.fine_print && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                        <p className="text-sm text-amber-800 leading-relaxed">
-                          <span className="font-semibold">Fine Print: </span>
-                          {deal.fine_print}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Map Section */}
-                    {vendor && fullAddress && (
-                      <div>
-                        <h3 className="text-lg font-bold text-secondary-500 mb-3 flex items-center gap-2">
-                          <MapPin className="w-5 h-5 text-primary-500" /> Location
+                      <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 sm:p-6">
+                        <h3 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-amber-500" /> Fine Print
                         </h3>
-                        <div className="rounded-xl overflow-hidden border border-gray-200">
-                          {/* Map embed */}
-                          {getGoogleMapsEmbedUrl(vendor) && (
-                            <div className="w-full h-48 sm:h-56">
-                              <iframe
-                                src={getGoogleMapsEmbedUrl(vendor)!}
-                                className="w-full h-full border-0"
-                                loading="lazy"
-                                referrerPolicy="no-referrer-when-downgrade"
-                                title="Business location"
-                              />
-                            </div>
-                          )}
-                          <div className="p-4 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            <div className="flex items-start gap-2 min-w-0">
-                              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                              <p className="text-sm text-gray-600 truncate">{fullAddress}</p>
-                            </div>
-                            <div className="flex gap-2 shrink-0">
-                              <button
-                                onClick={() => copyAddress(fullAddress)}
-                                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 flex items-center gap-1"
-                              >
-                                {copiedAddress ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                                {copiedAddress ? 'Copied' : 'Copy'}
-                              </button>
-                              <a
-                                href={getGoogleMapsUrl(vendor)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs px-3 py-1.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600 flex items-center gap-1 font-medium"
-                              >
-                                <Navigation className="w-3 h-3" /> Get Directions
-                              </a>
-                            </div>
-                          </div>
-                        </div>
+                        <p className="text-sm text-amber-700 leading-relaxed whitespace-pre-line">{deal.fine_print}</p>
                       </div>
                     )}
                   </div>
@@ -738,7 +672,7 @@ export default function DealDetailPage() {
                     {/* Review header */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-bold text-secondary-500">Customer Reviews</h3>
+                        <h3 className="text-lg font-bold text-gray-900">Customer Reviews</h3>
                         {totalReviews > 0 && <p className="text-sm text-gray-400">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>}
                       </div>
                       {user && canReview && !showReviewForm && (
@@ -764,7 +698,7 @@ export default function DealDetailPage() {
                     {/* Review Form */}
                     {showReviewForm && (
                       <div className="bg-gray-50 rounded-xl p-6">
-                        <h4 className="font-semibold text-secondary-500 mb-3">How was your experience?</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">How was your experience?</h4>
                         <div className="flex items-center gap-1 mb-4">
                           {[1, 2, 3, 4, 5].map(star => (
                             <button key={star} type="button" onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} onClick={() => setReviewRating(star)} className="p-1 transition-transform hover:scale-110">
@@ -788,7 +722,7 @@ export default function DealDetailPage() {
                     {totalReviews > 0 && (
                       <div className="flex items-center gap-6 p-5 bg-gray-50 rounded-xl">
                         <div className="text-center">
-                          <p className="text-5xl font-bold text-secondary-500">{Number(avgRating).toFixed(1)}</p>
+                          <p className="text-5xl font-bold text-gray-900">{Number(avgRating).toFixed(1)}</p>
                           <div className="flex items-center gap-0.5 mt-1 justify-center">
                             {[1, 2, 3, 4, 5].map(star => (
                               <Star key={star} className={`w-4 h-4 ${star <= Math.round(avgRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
@@ -817,7 +751,7 @@ export default function DealDetailPage() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-medium text-secondary-500 text-sm">{getCustomerName(review)}</span>
+                                  <span className="font-medium text-gray-900 text-sm">{getCustomerName(review)}</span>
                                   {review.is_verified && <span className="inline-flex items-center gap-0.5 text-xs text-green-600"><CheckCircle2 className="w-3 h-3" /> Verified</span>}
                                   <span className="text-xs text-gray-400">{timeAgo(review.created_at)}</span>
                                 </div>
@@ -829,7 +763,7 @@ export default function DealDetailPage() {
                                 {review.comment && <p className="text-sm text-gray-600 mt-2 leading-relaxed">{review.comment}</p>}
                                 {review.vendor_reply && (
                                   <div className="mt-3 bg-white rounded-lg p-3 border-l-3 border-primary-500">
-                                    <p className="text-xs font-semibold text-secondary-500 mb-1">Business Response</p>
+                                    <p className="text-xs font-semibold text-gray-900 mb-1">Business Response</p>
                                     <p className="text-sm text-gray-600">{review.vendor_reply}</p>
                                   </div>
                                 )}
@@ -855,7 +789,7 @@ export default function DealDetailPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="text-xl font-bold text-secondary-500">{vendor.business_name}</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{vendor.business_name}</h3>
                         {vendor.category && <p className="text-sm text-gray-500 capitalize">{vendor.category.replace('-', ' & ')}</p>}
                         {totalReviews > 0 && (
                           <div className="flex items-center gap-1 mt-1">
@@ -870,16 +804,103 @@ export default function DealDetailPage() {
                       <p className="text-gray-600 leading-relaxed">{vendor.description}</p>
                     )}
 
+                    {/* Amenities */}
+                    {deal.amenities && deal.amenities.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-primary-500" /> Features & Perks
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {deal.amenities.map((amenity: string, i: number) => {
+                            const Icon = getAmenityIcon(amenity);
+                            return (
+                              <span key={i} className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-100">
+                                <Icon className="w-4 h-4 text-primary-500" />
+                                {amenity}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location & Map */}
+                    {fullAddress && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary-500" /> Location
+                        </h4>
+                        {getGoogleMapsEmbedUrl(vendor) && (
+                          <div className="rounded-xl overflow-hidden mb-3 border border-gray-100">
+                            <iframe
+                              src={getGoogleMapsEmbedUrl(vendor)!}
+                              width="100%"
+                              height="200"
+                              style={{ border: 0 }}
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              className="w-full"
+                            />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                            <MapPin className="w-4 h-4 text-primary-500 flex-shrink-0" />
+                            <span className="text-sm text-gray-700">{fullAddress}</span>
+                          </div>
+                          <button
+                            onClick={() => copyAddress(fullAddress)}
+                            className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                            title="Copy address"
+                          >
+                            {copiedAddress ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
+                          </button>
+                        </div>
+                        <div className="mt-3 relative">
+                          <button
+                            type="button"
+                            onClick={() => setShowDirections(prev => !prev)}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold hover:bg-primary-600 transition-colors shadow-sm"
+                          >
+                            <Navigation className="w-4 h-4" /> Get Directions
+                          </button>
+                          {showDirections && (
+                            <>
+                              <div className="fixed inset-0 z-40" onClick={() => setShowDirections(false)} />
+                              <div className="absolute left-0 top-full mt-2 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-56">
+                                <a href={getGoogleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                                  <span className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <MapPin className="w-4 h-4 text-blue-600" />
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-700">Google Maps</span>
+                                </a>
+                                <a href={getAppleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                                  <span className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                    <Navigation className="w-4 h-4 text-gray-700" />
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-700">Apple Maps</span>
+                                </a>
+                                <a href={getWazeUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-t border-gray-100">
+                                  <span className="w-8 h-8 rounded-lg bg-cyan-50 flex items-center justify-center flex-shrink-0">
+                                    <Navigation className="w-4 h-4 text-cyan-600" />
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-700">Waze</span>
+                                </a>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Contact info */}
+                    {(vendor.phone || vendor.email || vendor.website) && (
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-secondary-500">Contact Information</h4>
-                      {fullAddress && (
-                        <a href={getGoogleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                          <MapPin className="w-5 h-5 text-primary-500 flex-shrink-0" />
-                          <span className="text-sm text-gray-700">{fullAddress}</span>
-                          <Navigation className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0" />
-                        </a>
-                      )}
+                      <h4 className="font-semibold text-gray-900">Contact Information</h4>
                       {vendor.phone && (
                         <a href={`tel:${vendor.phone}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <Phone className="w-5 h-5 text-primary-500 flex-shrink-0" />
@@ -900,11 +921,12 @@ export default function DealDetailPage() {
                         </a>
                       )}
                     </div>
+                    )}
 
                     {/* Business Hours */}
                     {hours && Object.keys(hours).length > 0 && (
                       <div>
-                        <h4 className="font-semibold text-secondary-500 mb-3 flex items-center gap-2">
+                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                           <Clock className="w-4 h-4" /> Business Hours
                         </h4>
                         <div className="bg-gray-50 rounded-xl overflow-hidden">
@@ -929,10 +951,10 @@ export default function DealDetailPage() {
                     {/* Social Links */}
                     {social && Object.values(social).some(Boolean) && (
                       <div>
-                        <h4 className="font-semibold text-secondary-500 mb-3">Follow Us</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">Follow Us</h4>
                         <div className="flex flex-wrap gap-2">
                           {social.instagram && (
-                            <a href={social.instagram.startsWith('http') ? social.instagram : `https://instagram.com/${social.instagram}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Instagram</a>
+                            <a href={social.instagram.startsWith('http') ? social.instagram : `https://instagram.com/${social.instagram}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-gradient-to-r from-blue-500 to-pink-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Instagram</a>
                           )}
                           {social.facebook && (
                             <a href={social.facebook.startsWith('http') ? social.facebook : `https://facebook.com/${social.facebook}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Facebook</a>
@@ -959,8 +981,8 @@ export default function DealDetailPage() {
 
             {/* ===== VENDOR'S OTHER DEALS ===== */}
             {vendorDeals.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8">
-                <h3 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <Store className="w-5 h-5 text-primary-500" /> More Deals from {vendor?.business_name}
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -985,7 +1007,7 @@ export default function DealDetailPage() {
                           <div className="flex items-center gap-1.5 mb-1">
                             <DealTypeBadge type={vd.deal_type as 'regular' | 'sponti_coupon'} size="sm" />
                           </div>
-                          <p className="text-sm font-semibold text-secondary-500 truncate group-hover:text-primary-500 transition-colors">{vd.title}</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-500 transition-colors">{vd.title}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-gray-400 line-through">{formatCurrency(vd.original_price)}</span>
                             <span className="text-sm font-bold text-primary-500">{formatCurrency(vd.deal_price)}</span>
@@ -1005,7 +1027,7 @@ export default function DealDetailPage() {
           <div className="lg:col-span-1 hidden lg:block">
             <div className="sticky top-6 space-y-4">
               {/* Price Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 animate-fade-up" style={{ animationDelay: '100ms' }}>
                 {/* Price */}
                 <div className="text-center mb-5">
                   <div className="text-gray-400 line-through text-lg">{formatCurrency(deal.original_price)}</div>
@@ -1020,7 +1042,7 @@ export default function DealDetailPage() {
                 {hasDeposit && (
                   <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-4">
                     <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(deal.deposit_amount ?? 0)}</p>
-                    <p className="text-xs text-primary-600 mt-1">Paid directly to the business. Non-refundable if not redeemed.</p>
+                    <p className="text-xs text-primary-600 mt-1">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
                   </div>
                 )}
 
@@ -1091,8 +1113,8 @@ export default function DealDetailPage() {
               </div>
 
               {/* Deal at a Glance */}
-              <div className="bg-white rounded-2xl shadow-sm p-5">
-                <h4 className="text-sm font-semibold text-secondary-500 mb-3">Deal at a Glance</h4>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Deal at a Glance</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">Type</span>
@@ -1104,12 +1126,12 @@ export default function DealDetailPage() {
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-500">You Save</span>
-                    <span className="font-semibold text-secondary-500">{formatCurrency(deal.original_price - deal.deal_price)}</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(deal.original_price - deal.deal_price)}</span>
                   </div>
                   {deal.max_claims && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Available</span>
-                      <span className="font-semibold text-secondary-500">{deal.max_claims - deal.claims_count} of {deal.max_claims} left</span>
+                      <span className="font-semibold text-gray-900">{deal.max_claims - deal.claims_count} of {deal.max_claims} left</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">
@@ -1126,8 +1148,8 @@ export default function DealDetailPage() {
               </div>
 
               {/* Trust Signals Card */}
-              <div className="bg-white rounded-2xl shadow-sm p-5">
-                <h4 className="text-sm font-semibold text-secondary-500 mb-3">Why you can trust this deal</h4>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                <h4 className="text-sm font-semibold text-gray-900 mb-3">Why you can trust this deal</h4>
                 <div className="space-y-2.5">
                   <div className="flex items-center gap-2.5 text-sm text-gray-500">
                     <Shield className="w-4 h-4 text-green-500 flex-shrink-0" />
@@ -1152,8 +1174,8 @@ export default function DealDetailPage() {
 
               {/* Quick Contact */}
               {vendor && (vendor.phone || vendor.website) && (
-                <div className="bg-white rounded-2xl shadow-sm p-5">
-                  <h4 className="text-sm font-semibold text-secondary-500 mb-3">Quick Contact</h4>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Quick Contact</h4>
                   <div className="space-y-2">
                     {vendor.phone && (
                       <a href={`tel:${vendor.phone}`} className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
@@ -1166,9 +1188,31 @@ export default function DealDetailPage() {
                       </a>
                     )}
                     {fullAddress && (
-                      <a href={getGoogleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
-                        <Navigation className="w-4 h-4" /> Get Directions
-                      </a>
+                      <div className="relative">
+                        <button type="button" onClick={() => setShowDirections(prev => !prev)}
+                          className="flex items-center gap-2 text-sm text-primary-500 hover:text-primary-600 font-medium">
+                          <Navigation className="w-4 h-4" /> Get Directions
+                        </button>
+                        {showDirections && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowDirections(false)} />
+                            <div className="absolute left-0 top-full mt-2 z-50 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden w-52">
+                              <a href={getGoogleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors text-sm text-gray-700">
+                                <MapPin className="w-4 h-4 text-blue-600" /> Google Maps
+                              </a>
+                              <a href={getAppleMapsUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-t border-gray-100 text-sm text-gray-700">
+                                <Navigation className="w-4 h-4 text-gray-600" /> Apple Maps
+                              </a>
+                              <a href={getWazeUrl(vendor)} target="_blank" rel="noopener noreferrer" onClick={() => setShowDirections(false)}
+                                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-t border-gray-100 text-sm text-gray-700">
+                                <Navigation className="w-4 h-4 text-cyan-600" /> Waze
+                              </a>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1184,16 +1228,24 @@ export default function DealDetailPage() {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-fade-up">
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
-              <h3 className="text-xl font-bold text-secondary-500">Confirm Your Claim</h3>
+              <h3 className="text-xl font-bold text-gray-900">Confirm Your Claim</h3>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-amber-800">
-                This deal expires in <strong>{getTimeRemainingText(deal.expires_at)}</strong>. The deposit of{' '}
-                <strong>{formatCurrency(deal.deposit_amount!)}</strong> is non-refundable if not redeemed in time.
+                This deal expires in <strong>{getTimeRemainingText(deal.expires_at)}</strong>.
               </p>
+              {isSponti ? (
+                <p className="text-sm text-amber-800 mt-2">
+                  The deposit of <strong>{formatCurrency(deal.deposit_amount!)}</strong> is <strong>non-refundable</strong> if not redeemed before expiration. Sponti deals are time-sensitive flash offers — act fast!
+                </p>
+              ) : (
+                <p className="text-sm text-amber-800 mt-2">
+                  If not redeemed before expiration, your deposit of <strong>{formatCurrency(deal.deposit_amount!)}</strong> will be converted to a <strong>credit</strong> with {vendor?.business_name || 'this business'} — your money is never lost.
+                </p>
+              )}
             </div>
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="font-semibold text-secondary-500">{deal.title}</p>
+              <p className="font-semibold text-gray-900">{deal.title}</p>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-gray-400 line-through text-sm">{formatCurrency(deal.original_price)}</span>
                 <span className="text-primary-500 font-bold">{formatCurrency(deal.deal_price)}</span>

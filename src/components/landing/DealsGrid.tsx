@@ -42,7 +42,7 @@ export function DealsGrid() {
     return (
       <section className="relative py-10 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-secondary-500/75" />
+        <div className="absolute inset-0 bg-gray-900/75" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[...Array(3)].map((_, i) => (
@@ -111,7 +111,7 @@ export function DealsGrid() {
           <div className="text-center mt-10">
             <Link
               href="/deals"
-              className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base hover:scale-105 transition-transform duration-200 shadow-xl"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
             >
               Browse All Deals <ArrowRight className="w-5 h-5" />
             </Link>

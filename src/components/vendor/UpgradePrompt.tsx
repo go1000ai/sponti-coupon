@@ -41,7 +41,7 @@ export function UpgradePrompt({
           <div className={`inline-flex bg-gradient-to-br ${style.gradient} rounded-2xl p-5 mb-6 shadow-lg`}>
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-secondary-500 mb-2">{featureName}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{featureName}</h2>
           <p className="text-gray-500 mb-6">
             {description || `This feature is available on the ${tierConfig.name} plan and above. Upgrade to unlock it.`}
           </p>
@@ -68,7 +68,7 @@ export function UpgradePrompt({
           <Lock className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-secondary-500">{featureName}</h4>
+          <h4 className="font-semibold text-gray-900">{featureName}</h4>
           <p className="text-sm text-gray-500 mt-0.5">
             {description || `Available on the ${tierConfig.name} plan and above.`}
           </p>
@@ -90,7 +90,7 @@ export function UpgradePrompt({
         <div className="bg-gray-100 rounded-full p-3 w-fit mx-auto mb-3">
           <Lock className="w-6 h-6 text-gray-400" />
         </div>
-        <h3 className="font-bold text-secondary-500 text-base">{featureName}</h3>
+        <h3 className="font-bold text-gray-900 text-base">{featureName}</h3>
         <p className="text-xs text-gray-500 mt-1">
           {description || `Available on ${tierConfig.name} and above.`}
         </p>

@@ -119,7 +119,7 @@ export default function ApiKeysPage() {
         <div className="flex items-center gap-3">
           <Key className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-secondary-500">API Access</h1>
+            <h1 className="text-3xl font-bold text-gray-900">API Access</h1>
             <p className="text-gray-500 text-sm mt-1">Manage API keys for your integrations</p>
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function ApiKeysPage() {
       {/* Create Form */}
       {showCreateForm && !newSecret && (
         <div className="card p-6 mb-6 border-2 border-primary-200">
-          <h3 className="font-bold text-secondary-500 mb-4">Create New API Key</h3>
+          <h3 className="font-bold text-gray-900 mb-4">Create New API Key</h3>
           <div className="flex gap-3">
             <input
               value={newKeyName}
@@ -192,7 +192,7 @@ export default function ApiKeysPage() {
       <div className="card p-6 mb-6 bg-gradient-to-br from-gray-50 to-white">
         <div className="flex items-center gap-2 mb-3">
           <Code className="w-5 h-5 text-primary-500" />
-          <h3 className="font-bold text-secondary-500">Quick Reference</h3>
+          <h3 className="font-bold text-gray-900">Quick Reference</h3>
         </div>
         <div className="space-y-3 text-sm">
           <div>
@@ -246,7 +246,7 @@ export default function ApiKeysPage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-secondary-500">{key.name}</h3>
+                    <h3 className="font-semibold text-gray-900">{key.name}</h3>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       key.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     }`}>

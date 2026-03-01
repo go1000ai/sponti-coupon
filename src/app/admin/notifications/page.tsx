@@ -59,15 +59,15 @@ const TYPE_COLORS: Record<string, string> = {
   deal_claimed: 'bg-green-50 text-green-700',
   deal_expiring: 'bg-yellow-50 text-yellow-700',
   review_request: 'bg-blue-50 text-blue-700',
-  deal_near_you: 'bg-purple-50 text-purple-700',
-  welcome: 'bg-indigo-50 text-indigo-700',
+  deal_near_you: 'bg-blue-50 text-blue-700',
+  welcome: 'bg-blue-50 text-blue-700',
   points_earned: 'bg-orange-50 text-orange-700',
   loyalty_reward: 'bg-pink-50 text-pink-700',
 };
 
 const CHANNEL_COLORS: Record<string, string> = {
   in_app: 'bg-cyan-50 text-cyan-700',
-  push: 'bg-violet-50 text-violet-700',
+  push: 'bg-sky-50 text-sky-700',
   email: 'bg-rose-50 text-rose-700',
 };
 
@@ -321,7 +321,7 @@ export default function AdminNotificationsPage() {
         <div className="flex items-center gap-3">
           <Bell className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Notification Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Notification Management</h1>
             <p className="text-sm text-gray-500">{total} total notifications</p>
           </div>
         </div>
@@ -393,7 +393,7 @@ export default function AdminNotificationsPage() {
                 notifications.map((notification) => (
                   <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">
+                      <span className="font-medium text-gray-900">
                         {notification.customer_name}
                       </span>
                     </td>
@@ -406,7 +406,7 @@ export default function AdminNotificationsPage() {
                         {formatTypeName(notification.type)}
                       </span>
                     </td>
-                    <td className="p-4 text-sm text-secondary-500">
+                    <td className="p-4 text-sm text-gray-900">
                       {notification.title}
                     </td>
                     <td className="p-4 text-sm text-gray-500 max-w-[200px]">

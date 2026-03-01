@@ -20,7 +20,7 @@ export function DealCard({ deal, distance, isOwnDeal }: DealCardProps) {
   const savings = deal.original_price - deal.deal_price;
 
   return (
-    <Link href={`/deals/${deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'opacity-60 ring-2 ring-secondary-300' : ''}`}>
+    <Link href={`/deals/${deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'ring-2 ring-primary-300 opacity-60' : ''}`}>
       {/* Image / Header */}
       <div className={`relative h-36 sm:h-40 md:h-48 overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
         {deal.image_url ? (
@@ -68,14 +68,14 @@ export function DealCard({ deal, distance, isOwnDeal }: DealCardProps) {
               <Clock className="w-3 h-3" />
               <span>{isSponti ? 'Sponti expires:' : 'Steady ends:'}</span>
             </div>
-            <CountdownTimer expiresAt={deal.expires_at} size="sm" />
+            <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
           </div>
         )}
       </div>
 
       {/* Content */}
       <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-base sm:text-lg text-secondary-500 group-hover:text-primary-500 transition-colors line-clamp-2">
+        <h3 className="font-bold text-base sm:text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
           {deal.title}
         </h3>
 

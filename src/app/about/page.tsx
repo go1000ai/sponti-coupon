@@ -31,7 +31,7 @@ export default function AboutPage() {
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-orange-50 text-primary-600 px-4 py-2 rounded-full text-sm font-medium mb-4 border border-primary-100">
               <Sparkles className="w-4 h-4" /> Our Mission
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-secondary-500 mb-4">Why We Built SpontiCoupon</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Why We Built SpontiCoupon</h2>
             <p className="text-gray-600 text-lg leading-relaxed max-w-3xl mx-auto">
               SpontiCoupon is the bridge between getting amazing deals and helping vendors make a real profit. We collect a simple flat rate to keep small businesses successful — no hidden fees, no large commissions, no long payment waits.
             </p>
@@ -52,8 +52,8 @@ export default function AboutPage() {
                 desc: 'Real discounts on local businesses you love, with transparent terms and verified reviews.',
               },
               {
-                icon: <Users className="w-7 h-7 text-purple-600" />,
-                bg: 'from-purple-100 to-violet-100',
+                icon: <Users className="w-7 h-7 text-blue-600" />,
+                bg: 'from-blue-100 to-sky-100',
                 title: 'Building Loyalty',
                 desc: 'Our loyalty program turns deal hunters into regulars, creating lasting relationships.',
               },
@@ -62,7 +62,7 @@ export default function AboutPage() {
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${item.bg} flex items-center justify-center mx-auto mb-4 shadow-lg`}>
                   {item.icon}
                 </div>
-                <h3 className="font-bold text-secondary-500 mb-2">{item.title}</h3>
+                <h3 className="font-bold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-500">{item.desc}</p>
               </div>
             ))}
@@ -74,7 +74,7 @@ export default function AboutPage() {
       <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-accent-50/30">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-secondary-500">What Makes Us Different</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">What Makes Us Different</h2>
             <p className="text-gray-500 mt-2">Built from the ground up to be fair, transparent, and effective</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
@@ -87,7 +87,7 @@ export default function AboutPage() {
               <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 tilt-card">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center shadow-sm">{item.icon}</div>
-                  <h3 className="font-bold text-secondary-500">{item.title}</h3>
+                  <h3 className="font-bold text-gray-900">{item.title}</h3>
                 </div>
                 <p className="text-sm text-gray-600">{item.desc}</p>
               </div>
@@ -100,7 +100,7 @@ export default function AboutPage() {
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-secondary-500">Why Not the Old Way?</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Why Not the Old Way?</h2>
             <p className="text-gray-500 mt-2">Traditional deal platforms hurt the businesses they claim to help</p>
           </div>
           <div className="grid sm:grid-cols-2 gap-8">

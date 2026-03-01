@@ -125,7 +125,7 @@ export default function AdminApiKeysPage() {
         <div className="flex items-center gap-3">
           <Key className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">API Keys</h1>
+            <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
             <p className="text-sm text-gray-500">{totalKeys} total keys</p>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default function AdminApiKeysPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-secondary-500">{totalKeys}</p>
+          <p className="text-2xl font-bold text-gray-900">{totalKeys}</p>
           <p className="text-xs text-gray-500">Total Keys</p>
         </div>
         <div className="card p-4 text-center">
@@ -204,7 +204,7 @@ export default function AdminApiKeysPage() {
                 apiKeys.map((apiKey) => (
                   <tr key={apiKey.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">{apiKey.vendor_name}</span>
+                      <span className="font-medium text-gray-900">{apiKey.vendor_name}</span>
                     </td>
                     <td className="p-4">
                       <span className="text-sm text-gray-600">{apiKey.key_name || '--'}</span>

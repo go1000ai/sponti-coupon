@@ -106,9 +106,9 @@ function getPriorityBadge(priority: string) {
 
 function getCategoryBadge(category: string) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    billing: { bg: 'bg-purple-50', text: 'text-purple-600', label: 'Billing' },
+    billing: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Billing' },
     technical: { bg: 'bg-cyan-50', text: 'text-cyan-600', label: 'Technical' },
-    account: { bg: 'bg-indigo-50', text: 'text-indigo-600', label: 'Account' },
+    account: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Account' },
     general: { bg: 'bg-gray-50', text: 'text-gray-500', label: 'General' },
   };
   const c = map[category] || map.general;
@@ -166,7 +166,7 @@ function StatusCard({
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-secondary-500">{count}</p>
+      <p className="text-2xl font-bold text-gray-900">{count}</p>
       <p className="text-xs text-gray-400 font-medium">{label}</p>
     </button>
   );
@@ -281,7 +281,7 @@ export default function AdminSupportPage() {
         <div className="flex items-center gap-3">
           <Headphones className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Support Tickets</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
             <p className="text-sm text-gray-500">
               {statusCounts.total} total &middot; {statusCounts.open} open &middot; {statusCounts.in_progress} in progress
             </p>
@@ -427,7 +427,7 @@ export default function AdminSupportPage() {
                         {ticket.priority === 'urgent' && (
                           <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                         )}
-                        <p className="font-medium text-secondary-500 truncate max-w-[250px]">
+                        <p className="font-medium text-gray-900 truncate max-w-[250px]">
                           {ticket.subject}
                         </p>
                       </div>
@@ -439,7 +439,7 @@ export default function AdminSupportPage() {
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         ticket.user_role === 'vendor'
                           ? 'bg-primary-50 text-primary-600'
-                          : 'bg-indigo-50 text-indigo-600'
+                          : 'bg-blue-50 text-blue-600'
                       }`}>
                         {ticket.user_role === 'vendor' ? 'Vendor' : 'Customer'}
                       </span>

@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">Reset Password</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Reset Password</h1>
           <p className="text-gray-500 mt-2">
             {sent ? 'Check your email for a reset link' : 'Enter your email to receive a password reset link'}
           </p>
@@ -58,7 +58,7 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold text-secondary-500">Email Sent!</h2>
+            <h2 className="text-xl font-semibold text-gray-900">Email Sent!</h2>
             <p className="text-gray-500 text-sm">
               If an account exists for <strong>{email}</strong>, you&apos;ll receive a password reset link shortly.
               Check your inbox and spam folder.

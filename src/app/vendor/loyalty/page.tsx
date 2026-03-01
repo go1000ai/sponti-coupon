@@ -21,6 +21,7 @@ interface ProgramForm {
   punches_required: number;
   punch_reward: string;
   points_per_dollar: number;
+  point_value: number;
 }
 
 interface RewardForm {
@@ -57,6 +58,7 @@ const emptyProgramForm: ProgramForm = {
   punches_required: 10,
   punch_reward: '',
   points_per_dollar: 1,
+  point_value: 1.00,
 };
 
 const emptyRewardForm: RewardForm = { name: '', description: '', points_cost: 100 };
@@ -110,7 +112,7 @@ function ProgramCard({
       <div className={`relative px-5 pt-5 pb-8 ${
         isPunch
           ? 'bg-gradient-to-br from-primary-500 via-orange-500 to-amber-400'
-          : 'bg-gradient-to-br from-secondary-500 via-blue-600 to-indigo-500'
+          : 'bg-gradient-to-br from-secondary-500 via-blue-600 to-blue-500'
       }`}>
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />
@@ -146,7 +148,7 @@ function ProgramCard({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
-              <span className="text-sm font-bold text-secondary-500">{program.member_count}</span>
+              <span className="text-sm font-bold text-gray-900">{program.member_count}</span>
               <span className="text-xs text-gray-400">members</span>
             </div>
             {isPunch && (
@@ -156,7 +158,7 @@ function ProgramCard({
             )}
             {!isPunch && (
               <span className="text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                {program.points_per_dollar}x pts/$
+                {program.points_per_dollar}pt / ${Number(program.point_value) || 1}
               </span>
             )}
           </div>
@@ -332,7 +334,7 @@ function ProgramModal({
         <div className={`sticky top-0 z-10 relative px-6 py-5 ${
           isPunch
             ? 'bg-gradient-to-br from-primary-500 via-orange-500 to-amber-400'
-            : 'bg-gradient-to-br from-secondary-500 via-blue-600 to-indigo-500'
+            : 'bg-gradient-to-br from-secondary-500 via-blue-600 to-blue-500'
         }`}>
           <FloatingParticles count={4} />
           <div className="relative flex items-start justify-between">
@@ -350,7 +352,7 @@ function ProgramModal({
                   )}
                 </div>
                 <p className="text-white/70 text-sm">
-                  {isPunch ? `${program.punches_required} stamps → ${program.punch_reward}` : `${program.points_per_dollar} pt${Number(program.points_per_dollar) !== 1 ? 's' : ''} per $1`}
+                  {isPunch ? `${program.punches_required} stamps → ${program.punch_reward}` : `${program.points_per_dollar} pt${Number(program.points_per_dollar) !== 1 ? 's' : ''} per $${Number(program.point_value) || 1}`}
                 </p>
               </div>
             </div>
@@ -359,7 +361,7 @@ function ProgramModal({
               <button onClick={handleToggleActive} disabled={saving} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
                 {program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </button>
-              <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1 }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
+              <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1 }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
                 <Pencil className="w-4 h-4" />
               </button>
               <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
@@ -391,36 +393,61 @@ function ProgramModal({
             <div className="bg-gray-50 rounded-2xl p-5 space-y-4 animate-slide-up-fade">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-secondary-500">Program Name</label>
+                  <label className="text-sm font-semibold text-gray-900">Program Name</label>
                   <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={t => setForm(f => ({ ...f, name: t }))} label="Suggest Name" />
                 </div>
-                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 font-medium" />
+                <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-secondary-500">Description</label>
+                  <label className="text-sm font-semibold text-gray-900">Description</label>
                   <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={t => setForm(f => ({ ...f, description: t }))} label="Write Description" />
                 </div>
-                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 resize-none" rows={2} />
+                <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 resize-none" rows={2} />
               </div>
               {isPunch ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-secondary-500 mb-2">Stamps Required</label>
-                    <input type="number" min={1} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 font-medium" />
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Stamps Required</label>
+                    <input type="number" min={1} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-semibold text-secondary-500">Reward</label>
+                      <label className="text-sm font-semibold text-gray-900">Reward</label>
                       <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={t => setForm(f => ({ ...f, punch_reward: t }))} label="Suggest" />
                     </div>
-                    <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 font-medium" />
+                    <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                 </div>
               ) : (
-                <div>
-                  <label className="block text-sm font-semibold text-secondary-500 mb-2">Points Per Dollar</label>
-                  <input type="number" min={0.1} step={0.1} value={form.points_per_dollar} onChange={e => setForm(f => ({ ...f, points_per_dollar: parseFloat(e.target.value) || 1 }))} className="w-32 px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 font-medium" />
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold text-gray-900">Points Configuration</label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      type="number"
+                      min={0.01}
+                      step="any"
+                      value={form.points_per_dollar}
+                      onChange={e => setForm(f => ({ ...f, points_per_dollar: parseFloat(e.target.value) || 0 }))}
+                      onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, points_per_dollar: 1 })); }}
+                      className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <span className="text-sm text-gray-500">pt{form.points_per_dollar !== 1 ? 's' : ''} per</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg font-bold text-gray-400">$</span>
+                      <input
+                        type="number"
+                        min={0.01}
+                        step="any"
+                        value={form.point_value}
+                        onChange={e => setForm(f => ({ ...f, point_value: parseFloat(e.target.value) || 0 }))}
+                        onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, point_value: 0.01 })); }}
+                        className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      <span className="text-sm text-gray-500">spent</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400">$50 purchase = <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points &middot; 1 pt = ${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</p>
                 </div>
               )}
               <div className="flex gap-3 pt-1">
@@ -441,7 +468,7 @@ function ProgramModal({
                 { icon: Award, label: 'Redeemed', value: stats.rewards_redeemed, color: 'amber' },
                 { icon: Gift, label: 'Active Rewards', value: rewards.filter(r => r.is_active).length || (isPunch ? 1 : 0), color: 'primary' },
               ].map((s, i) => {
-                const colorMap: Record<string, string> = { blue: 'from-blue-500/10 to-indigo-500/10 text-blue-600', green: 'from-emerald-500/10 to-green-500/10 text-emerald-600', amber: 'from-amber-500/10 to-yellow-500/10 text-amber-600', primary: 'from-primary-500/10 to-orange-500/10 text-primary-600' };
+                const colorMap: Record<string, string> = { blue: 'from-blue-500/10 to-blue-500/10 text-blue-600', green: 'from-emerald-500/10 to-green-500/10 text-emerald-600', amber: 'from-amber-500/10 to-yellow-500/10 text-amber-600', primary: 'from-primary-500/10 to-orange-500/10 text-primary-600' };
                 const iconColor: Record<string, string> = { blue: 'text-blue-500', green: 'text-emerald-500', amber: 'text-amber-500', primary: 'text-primary-500' };
                 return (
                   <div key={i} className={`bg-gradient-to-br ${colorMap[s.color]} rounded-2xl p-4 text-center`}>
@@ -458,7 +485,7 @@ function ProgramModal({
           {!isPunch && (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-secondary-500 text-sm flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-500" /> Reward Tiers
                 </h3>
                 <button onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }} className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 transition-all">
@@ -492,7 +519,7 @@ function ProgramModal({
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${reward.is_active ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white' : 'bg-gray-100 text-gray-400'}`}>{i + 1}</div>
                           <div>
-                            <p className={`font-semibold text-sm ${reward.is_active ? 'text-secondary-500' : 'text-gray-400 line-through'}`}>{reward.name}</p>
+                            <p className={`font-semibold text-sm ${reward.is_active ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{reward.name}</p>
                             {reward.description && <p className="text-[10px] text-gray-400">{reward.description}</p>}
                           </div>
                         </div>
@@ -532,7 +559,7 @@ function ProgramModal({
           {/* Members */}
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <button onClick={() => { setShowMembers(!showMembers); if (!showMembers && members.length === 0) fetchMembers(); }} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
-              <h3 className="font-bold text-secondary-500 text-sm flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
                 <Users className="w-4 h-4 text-blue-500" /> Members {stats && <span className="text-gray-400 font-normal">({stats.total_members})</span>}
               </h3>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${showMembers ? 'rotate-180' : ''}`} />
@@ -565,7 +592,7 @@ function ProgramModal({
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="font-semibold text-secondary-500 text-xs truncate">
+                                <p className="font-semibold text-gray-900 text-xs truncate">
                                   {m.customer?.first_name || ''} {m.customer?.last_name || ''}
                                 </p>
                                 {rewardReady && (
@@ -621,7 +648,7 @@ function ProgramModal({
           {/* Activity */}
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <button onClick={() => { setShowActivity(!showActivity); if (!showActivity && transactions.length === 0) fetchTransactions(); }} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
-              <h3 className="font-bold text-secondary-500 text-sm flex items-center gap-2">
+              <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
                 <Activity className="w-4 h-4 text-green-500" /> Recent Activity
               </h3>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${showActivity ? 'rotate-180' : ''}`} />
@@ -638,7 +665,7 @@ function ProgramModal({
                           {t.transaction_type.startsWith('earn') ? <TrendingUp className="w-3.5 h-3.5 text-green-600" /> : <Award className="w-3.5 h-3.5 text-amber-600" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-secondary-500 truncate">{t.description}</p>
+                          <p className="text-xs font-medium text-gray-900 truncate">{t.description}</p>
                         </div>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.transaction_type.startsWith('earn') ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
                           {t.transaction_type.includes('punch') ? `${t.punches_amount > 0 ? '+' : ''}${t.punches_amount}` : `${t.points_amount > 0 ? '+' : ''}${t.points_amount} pts`}
@@ -688,6 +715,66 @@ function CreateProgramModal({
   const [form, setForm] = useState<ProgramForm>(emptyProgramForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [aiSuggesting, setAiSuggesting] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<{ name: string; points_cost: number; description: string }[] | null>(null);
+
+  const handleAiSuggest = async () => {
+    setAiSuggesting(true);
+    setError('');
+    try {
+      // Fetch vendor's deals for pricing context (non-blocking — AI works without it)
+      let avgPrice = '';
+      let dealsInfo = '';
+      try {
+        const dealsRes = await fetch('/api/vendor/deals?limit=10');
+        if (dealsRes.ok) {
+          const dealsData = await dealsRes.json();
+          const deals = dealsData.deals || [];
+          avgPrice = deals.length > 0
+            ? (deals.reduce((sum: number, d: { deal_price: number }) => sum + (d.deal_price || 0), 0) / deals.length).toFixed(2)
+            : '';
+          dealsInfo = deals.slice(0, 5).map((d: { title: string; deal_price: number }) => `${d.title} ($${d.deal_price})`).join(', ');
+        }
+      } catch { /* proceed without deals context */ }
+
+      const res = await fetch('/api/vendor/ai-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'loyalty_program_suggest',
+          context: { avg_deal_price: avgPrice, deals_info: dealsInfo },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'AI suggestion failed.'); setAiSuggesting(false); return; }
+
+      // Parse the JSON response
+      let suggestion;
+      try {
+        suggestion = typeof data.text === 'string' ? JSON.parse(data.text) : data.text;
+      } catch {
+        setError('AI returned an invalid response. Please try again.');
+        setAiSuggesting(false);
+        return;
+      }
+
+      // Apply the suggestion to the form
+      setForm(f => ({
+        ...f,
+        program_type: suggestion.program_type || 'points',
+        name: suggestion.name || f.name,
+        description: suggestion.description || f.description,
+        points_per_dollar: suggestion.points_per_dollar || f.points_per_dollar,
+        point_value: suggestion.point_value || f.point_value,
+      }));
+
+      // Store suggested rewards for display
+      if (suggestion.suggested_rewards) {
+        setAiSuggestions(suggestion.suggested_rewards);
+      }
+    } catch { setError('Network error during AI suggestion.'); }
+    setAiSuggesting(false);
+  };
 
   const handleCreate = async () => {
     if (!form.name.trim()) { setError('Program name is required.'); return; }
@@ -730,11 +817,11 @@ function CreateProgramModal({
           <div className="grid grid-cols-2 gap-3">
             {[
               { type: 'punch_card' as const, icon: Stamp, label: 'Punch Card', desc: 'Buy X, get Y free', color: 'primary', tag: 'Popular', tagIcon: Zap },
-              { type: 'points' as const, icon: Star, label: 'Points System', desc: 'Earn points per $1', color: 'blue', tag: 'Premium', tagIcon: Crown },
+              { type: 'points' as const, icon: Star, label: 'Points System', desc: 'Flexible points per purchase', color: 'blue', tag: 'Premium', tagIcon: Crown },
             ].map(t => {
               const sel = form.program_type === t.type;
-              const grad = t.color === 'primary' ? 'from-primary-500 to-orange-500' : 'from-blue-500 to-indigo-500';
-              const bg = t.color === 'primary' ? 'from-primary-50 to-orange-50' : 'from-blue-50 to-indigo-50';
+              const grad = t.color === 'primary' ? 'from-primary-500 to-orange-500' : 'from-blue-500 to-blue-500';
+              const bg = t.color === 'primary' ? 'from-primary-50 to-orange-50' : 'from-blue-50 to-blue-50';
               const ring = t.color === 'primary' ? 'ring-primary-500' : 'ring-blue-500';
               return (
                 <button
@@ -748,7 +835,7 @@ function CreateProgramModal({
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${sel ? `bg-gradient-to-br ${grad} shadow-lg` : 'bg-gray-100'}`}>
                     <t.icon className={`w-5 h-5 ${sel ? 'text-white' : 'text-gray-400'}`} />
                   </div>
-                  <h3 className={`font-bold text-sm ${sel ? 'text-secondary-500' : 'text-gray-600'}`}>{t.label}</h3>
+                  <h3 className={`font-bold text-sm ${sel ? 'text-gray-900' : 'text-gray-600'}`}>{t.label}</h3>
                   <p className="text-[10px] text-gray-500 mt-0.5">{t.desc}</p>
                   {sel && <div className="mt-2 flex items-center gap-1 text-[10px] font-bold" style={{ color: t.color === 'primary' ? '#E8632B' : '#3B82F6' }}><t.tagIcon className="w-3 h-3" /> {t.tag}</div>}
                 </button>
@@ -756,29 +843,61 @@ function CreateProgramModal({
             })}
           </div>
 
+          {/* AI Suggest Full Program */}
+          {form.program_type === 'points' && (
+            <button
+              onClick={handleAiSuggest}
+              disabled={aiSuggesting}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-secondary-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              {aiSuggesting ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing your business...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> AI: Build My Program</>
+              )}
+            </button>
+          )}
+
+          {/* AI Suggested Rewards Preview */}
+          {aiSuggestions && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2 animate-slide-up-fade">
+              <p className="text-xs font-semibold text-blue-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Suggested Reward Tiers</p>
+              {aiSuggestions.map((r, i) => (
+                <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-900">{r.name}</span>
+                    {r.description && <span className="text-gray-400 text-xs ml-2">{r.description}</span>}
+                  </div>
+                  <span className="text-blue-600 font-bold text-xs">{r.points_cost} pts</span>
+                </div>
+              ))}
+              <p className="text-[10px] text-gray-400">You can add these as rewards after creating the program.</p>
+            </div>
+          )}
+
           {/* Name */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-secondary-500">Program Name</label>
+              <label className="text-sm font-semibold text-gray-900">Program Name</label>
               <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={t => setForm(f => ({ ...f, name: t }))} label="Suggest Name" />
             </div>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-secondary-500 font-medium transition-all" placeholder={form.program_type === 'punch_card' ? 'e.g., Coffee Stamp Card' : 'e.g., Rewards Points'} />
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all" placeholder={form.program_type === 'punch_card' ? 'e.g., Coffee Stamp Card' : 'e.g., Rewards Points'} />
           </div>
 
           {/* Description */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-secondary-500">Description <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="text-sm font-semibold text-gray-900">Description <span className="text-gray-400 font-normal">(optional)</span></label>
               <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={t => setForm(f => ({ ...f, description: t }))} label="Write Description" />
             </div>
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-secondary-500 resize-none transition-all" rows={2} placeholder="A short description for your customers" />
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 resize-none transition-all" rows={2} placeholder="A short description for your customers" />
           </div>
 
           {/* Type-specific */}
           {form.program_type === 'punch_card' ? (
             <div className="bg-gradient-to-br from-primary-50 to-orange-50 rounded-2xl p-5 border border-primary-100/50 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-secondary-500 mb-2">Stamps Required</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Stamps Required</label>
                 <div className="flex items-center gap-3">
                   <input type="number" min={1} max={50} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-20 px-3 py-2.5 bg-white border-2 border-primary-200 rounded-xl text-center text-xl font-extrabold text-primary-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                   <span className="text-sm text-gray-500">stamps to earn reward</span>
@@ -786,20 +905,51 @@ function CreateProgramModal({
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-secondary-500">Reward</label>
+                  <label className="text-sm font-semibold text-gray-900">Reward</label>
                   <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={t => setForm(f => ({ ...f, punch_reward: t }))} label="Suggest Reward" />
                 </div>
-                <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-secondary-500 font-medium" placeholder="e.g., Free Medium Coffee" />
+                <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" placeholder="e.g., Free Medium Coffee" />
               </div>
             </div>
           ) : (
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100/50">
-              <label className="block text-sm font-semibold text-secondary-500 mb-2">Points Per Dollar</label>
-              <div className="flex items-center gap-3">
-                <input type="number" min={0.1} step={0.1} value={form.points_per_dollar} onChange={e => setForm(f => ({ ...f, points_per_dollar: parseFloat(e.target.value) || 1 }))} className="w-20 px-3 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-center text-xl font-extrabold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                <span className="text-sm text-gray-500">point{form.points_per_dollar !== 1 ? 's' : ''} per $1</span>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-5 border border-blue-100/50 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">Points Earned Per Purchase</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    min={0.01}
+                    step="any"
+                    value={form.points_per_dollar}
+                    onChange={e => setForm(f => ({ ...f, points_per_dollar: parseFloat(e.target.value) || 0 }))}
+                    onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, points_per_dollar: 1 })); }}
+                    className="w-28 px-4 py-3 bg-white border-2 border-blue-200 rounded-xl text-center text-xl font-extrabold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <span className="text-sm font-medium text-gray-500">point{form.points_per_dollar !== 1 ? 's' : ''} per</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-bold text-gray-400">$</span>
+                    <input
+                      type="number"
+                      min={0.01}
+                      step="any"
+                      value={form.point_value}
+                      onChange={e => setForm(f => ({ ...f, point_value: parseFloat(e.target.value) || 0 }))}
+                      onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, point_value: 0.01 })); }}
+                      className="w-28 px-4 py-3 bg-white border-2 border-blue-200 rounded-xl text-center text-xl font-extrabold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <span className="text-sm font-medium text-gray-500">spent</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2 bg-white/60 rounded-lg px-3 py-1.5">A $50 deal earns <span className="font-bold text-blue-600">{Math.floor(50 * form.points_per_dollar)}</span> points</p>
+              <div className="bg-white/60 rounded-lg px-3 py-2.5 space-y-1">
+                <p className="text-xs text-gray-500">
+                  A <span className="font-bold text-gray-700">$50</span> purchase earns{' '}
+                  <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points
+                </p>
+                <p className="text-[11px] text-gray-400">
+                  1 point = <span className="font-semibold text-gray-600">${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</span> in value
+                </p>
+              </div>
             </div>
           )}
 
@@ -912,7 +1062,7 @@ export default function LoyaltyPage() {
                   <Sparkles className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
-              <h3 className="text-2xl font-extrabold text-secondary-500 mb-3">No Loyalty Programs Yet</h3>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-3">No Loyalty Programs Yet</h3>
               <p className="text-gray-400 text-sm mb-8 max-w-md mx-auto leading-relaxed">
                 Create punch cards or points programs to reward repeat customers. You can create multiple programs for different product lines or promotions.
               </p>

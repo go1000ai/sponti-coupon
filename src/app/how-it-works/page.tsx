@@ -30,7 +30,7 @@ export default function HowItWorksPage() {
               <div key={i} className="bg-white rounded-2xl shadow-lg p-8 text-center relative tilt-card">
                 <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${s.gradient} text-white font-bold text-xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>{s.step}</div>
                 <div className="mb-4 flex justify-center">{s.icon}</div>
-                <h3 className="text-lg font-bold text-secondary-500 mb-2">{s.title}</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{s.title}</h3>
                 <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
               </div>
             ))}
@@ -41,12 +41,12 @@ export default function HowItWorksPage() {
       {/* Deal Types */}
       <section className="py-20 px-4 bg-gradient-to-br from-gray-50 to-accent-50/30">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-secondary-500 text-center mb-10">Two Types of Deals</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-10">Two Types of Deals</h2>
           <div className="grid sm:grid-cols-2 gap-6">
             <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 tilt-card">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-gradient-to-br from-accent-100 to-blue-100 rounded-xl p-3"><Tag className="w-6 h-6 text-accent-600" /></div>
-                <h3 className="text-xl font-bold text-secondary-500">Steady Deals</h3>
+                <h3 className="text-xl font-bold text-gray-900">Steady Deals</h3>
               </div>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li className="flex items-start gap-2"><Star className="w-4 h-4 text-accent-400 mt-0.5 flex-shrink-0" /> Last 1-30 days</li>
@@ -77,7 +77,7 @@ export default function HowItWorksPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-500 to-amber-400 mb-6 shadow-lg shadow-primary-200">
             <Gift className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-secondary-500 mb-3">Earn Rewards Automatically</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Earn Rewards Automatically</h2>
           <p className="text-gray-500 max-w-2xl mx-auto mb-8">
             Every time you redeem a deal, you may earn stamps or points in the business&apos;s loyalty program. Collect enough and redeem free rewards — it happens automatically!
           </p>

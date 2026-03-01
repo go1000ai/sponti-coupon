@@ -107,7 +107,7 @@ export default function AdminAnalyticsPage() {
         <div className="flex items-center gap-3">
           <BarChart3 className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Analytics</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
             <p className="text-sm text-gray-500">Platform performance overview</p>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function AdminAnalyticsPage() {
             <Eye className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">Deal Views</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {data.deal_views_over_time.reduce((sum, d) => sum + d.views, 0).toLocaleString()}
           </p>
         </div>
@@ -144,16 +144,16 @@ export default function AdminAnalyticsPage() {
             <TrendingUp className="w-4 h-4 text-green-500" />
             <span className="text-xs text-gray-500">Total Claims</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {data.claims_vs_redemptions.total_claims.toLocaleString()}
           </p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Users className="w-4 h-4 text-purple-500" />
+            <Users className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">New Customers</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {data.customer_signups.reduce((sum, d) => sum + d.count, 0).toLocaleString()}
           </p>
         </div>
@@ -162,7 +162,7 @@ export default function AdminAnalyticsPage() {
             <Store className="w-4 h-4 text-orange-500" />
             <span className="text-xs text-gray-500">New Vendors</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {data.vendor_signups.reduce((sum, d) => sum + d.count, 0).toLocaleString()}
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function AdminAnalyticsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <Eye className="w-5 h-5 text-blue-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Deal Views</h2>
+            <h2 className="text-lg font-bold text-gray-900">Deal Views</h2>
           </div>
           {data.deal_views_over_time.length === 0 ? (
             <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
@@ -226,7 +226,7 @@ export default function AdminAnalyticsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-5 h-5 text-green-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Claims vs Redemptions</h2>
+            <h2 className="text-lg font-bold text-gray-900">Claims vs Redemptions</h2>
           </div>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={claimsRedemptionsData}>
@@ -264,7 +264,7 @@ export default function AdminAnalyticsPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-violet-500" />
+              <div className="w-3 h-3 rounded-full bg-sky-500" />
               <span className="text-sm text-gray-500">
                 Redemptions ({data.claims_vs_redemptions.total_redemptions.toLocaleString()})
               </span>
@@ -275,8 +275,8 @@ export default function AdminAnalyticsPage() {
         {/* Customer Signups Chart */}
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-purple-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Customer Signups</h2>
+            <Users className="w-5 h-5 text-blue-500" />
+            <h2 className="text-lg font-bold text-gray-900">Customer Signups</h2>
           </div>
           {data.customer_signups.length === 0 ? (
             <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
@@ -324,7 +324,7 @@ export default function AdminAnalyticsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-4">
             <Store className="w-5 h-5 text-orange-500" />
-            <h2 className="text-lg font-bold text-secondary-500">Vendor Signups</h2>
+            <h2 className="text-lg font-bold text-gray-900">Vendor Signups</h2>
           </div>
           {data.vendor_signups.length === 0 ? (
             <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
@@ -373,7 +373,7 @@ export default function AdminAnalyticsPage() {
       <div className="card">
         <div className="flex items-center gap-2 p-6 border-b border-gray-100">
           <Trophy className="w-5 h-5 text-yellow-500" />
-          <h2 className="text-lg font-bold text-secondary-500">Top 10 Deals</h2>
+          <h2 className="text-lg font-bold text-gray-900">Top 10 Deals</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -400,12 +400,12 @@ export default function AdminAnalyticsPage() {
                       {index + 1}
                     </td>
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">{deal.title}</span>
+                      <span className="font-medium text-gray-900">{deal.title}</span>
                     </td>
                     <td className="p-4 text-sm text-gray-500">
                       {deal.vendor_name}
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       {deal.claims_count.toLocaleString()}
                     </td>
                     <td className="p-4 text-center">

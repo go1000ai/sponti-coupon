@@ -74,7 +74,7 @@ export function WhySpontiCoupon() {
               <ShieldCheck className="w-4 h-4 text-emerald-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-emerald-600">Why Choose Us</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               Not Your Typical Deal Platform
             </h2>
             <p className="text-gray-500 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
@@ -118,7 +118,7 @@ export function WhySpontiCoupon() {
               <div className="absolute top-4 right-4 bg-primary-500 text-white text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
                 <SpontiIcon className="w-3 h-3" /> SpontiCoupon
               </div>
-              <h3 className="text-lg sm:text-xl font-bold text-secondary-500 mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-6">
                 SpontiCoupon
               </h3>
               <div className="space-y-4">
@@ -132,7 +132,7 @@ export function WhySpontiCoupon() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-secondary-500 text-sm font-medium">{item}</span>
+                    <span className="text-gray-900 text-sm font-medium">{item}</span>
                   </div>
                 ))}
               </div>
@@ -213,13 +213,13 @@ export function WhySpontiCoupon() {
               icon: QrCode,
               title: 'Instant QR Redemption',
               description: 'No vouchers to print. Customers show a QR code, you scan it. Done in seconds.',
-              gradient: 'from-blue-500 to-indigo-600',
+              gradient: 'from-blue-500 to-blue-600',
             },
             {
               icon: Smartphone,
               title: 'Mobile-First Design',
               description: 'Beautiful experience on any device. PWA support means customers can install it like an app.',
-              gradient: 'from-violet-500 to-purple-600',
+              gradient: 'from-sky-500 to-blue-600',
             },
             {
               icon: HeartHandshake,
@@ -239,7 +239,7 @@ export function WhySpontiCoupon() {
                 <div className={`inline-flex bg-gradient-to-br ${feature.gradient} rounded-xl p-3 mb-4 shadow-md`}>
                   <feature.icon className="w-6 h-6 text-white" strokeWidth={1.8} />
                 </div>
-                <h3 className="font-bold text-secondary-500 text-base mb-2">{feature.title}</h3>
+                <h3 className="font-bold text-gray-900 text-base mb-2">{feature.title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{feature.description}</p>
               </div>
             </ScrollReveal>

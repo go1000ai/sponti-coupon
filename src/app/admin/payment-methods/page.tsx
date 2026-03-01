@@ -144,7 +144,7 @@ export default function AdminPaymentMethodsPage() {
         <div className="flex items-center gap-3">
           <Wallet className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Payment Methods</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Payment Methods</h1>
             <p className="text-sm text-gray-500">{methods.length} total payment methods</p>
           </div>
         </div>
@@ -161,7 +161,7 @@ export default function AdminPaymentMethodsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card p-4 text-center">
-          <p className="text-2xl font-bold text-secondary-500">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
           <p className="text-xs text-gray-500">Total Methods</p>
         </div>
         <div className="card p-4 text-center">
@@ -251,7 +251,7 @@ export default function AdminPaymentMethodsPage() {
                   <tr key={method.id} className="hover:bg-gray-50 transition-colors">
                     {/* Vendor */}
                     <td className="p-4">
-                      <span className="font-medium text-secondary-500">{method.vendor_name}</span>
+                      <span className="font-medium text-gray-900">{method.vendor_name}</span>
                     </td>
 
                     {/* Method Type Badge */}

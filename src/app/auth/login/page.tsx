@@ -75,7 +75,7 @@ function LoginForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
           <p className="text-gray-500 mt-2">Sign in to access your deals</p>
         </div>
 

@@ -88,7 +88,7 @@ export function CarouselDealCard({
             </span>
           )}
           {rank && (
-            <span className="bg-white/90 backdrop-blur-sm font-bold text-[10px] text-secondary-500 w-6 h-6 rounded-full flex items-center justify-center shadow-md">
+            <span className="bg-white/90 backdrop-blur-sm font-bold text-[10px] text-gray-900 w-6 h-6 rounded-full flex items-center justify-center shadow-md">
               #{rank}
             </span>
           )}
@@ -104,7 +104,7 @@ export function CarouselDealCard({
         {(showCountdown || (isSponti && deal.status === 'active')) && (
           <div className="flex items-center gap-1.5 text-white/80 text-[11px] mb-2">
             <Clock className="w-3 h-3 text-primary-400" />
-            <CountdownTimer expiresAt={deal.expires_at} size="sm" />
+            <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
           </div>
         )}
 

@@ -231,7 +231,7 @@ function SubscriptionContent() {
         <div className="flex items-center gap-3">
           <CreditCard className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-secondary-500">Subscription</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Subscription</h1>
             <p className="text-gray-500 text-sm mt-1">Manage your plan and unlock more features</p>
           </div>
         </div>
@@ -300,7 +300,7 @@ function SubscriptionContent() {
             onClick={() => setIsAnnual(false)}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 ${
               !isAnnual
-                ? 'bg-white text-secondary-500 shadow-md'
+                ? 'bg-white text-gray-900 shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -310,7 +310,7 @@ function SubscriptionContent() {
             onClick={() => setIsAnnual(true)}
             className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
               isAnnual
-                ? 'bg-white text-secondary-500 shadow-md'
+                ? 'bg-white text-gray-900 shadow-md'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -370,7 +370,7 @@ function SubscriptionContent() {
                   <div className={`bg-gradient-to-br ${plan.gradient} rounded-xl p-2.5 shadow-md`}>
                     <IconComp className="w-5 h-5 text-white" strokeWidth={2} />
                   </div>
-                  <h3 className="text-xl font-bold text-secondary-500">{tier.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
                 </div>
                 <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
 
@@ -409,7 +409,7 @@ function SubscriptionContent() {
                           isFeatured || isCurrent ? 'text-white' : 'text-green-600'
                         }`} />
                       </div>
-                      <span className={isFeatured ? 'text-secondary-500 font-medium' : ''}>
+                      <span className={isFeatured ? 'text-gray-900 font-medium' : ''}>
                         {feature}
                       </span>
                     </li>
@@ -548,7 +548,7 @@ function SubscriptionContent() {
       {/* Feature Comparison Table (matches pricing page) */}
       <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-secondary-500">Compare Plans</h2>
+          <h2 className="text-lg font-bold text-gray-900">Compare Plans</h2>
           <p className="text-sm text-gray-500 mt-1">See what&apos;s included in each plan</p>
         </div>
         <div className="overflow-x-auto">
@@ -565,7 +565,7 @@ function SubscriptionContent() {
                   {currentTier === 'pro' && <span className="block text-[10px] text-green-500 font-normal">Current</span>}
                 </th>
                 <th className={`text-center py-4 px-6 font-semibold w-[18%] ${
-                  currentTier === 'business' ? 'text-green-600 bg-green-50/40' : 'text-secondary-500 bg-secondary-50/40'
+                  currentTier === 'business' ? 'text-green-600 bg-green-50/40' : 'text-gray-900 bg-secondary-50/40'
                 }`}>
                   Business
                   {currentTier === 'business'
@@ -573,7 +573,7 @@ function SubscriptionContent() {
                     : <span className="block text-[10px] text-secondary-400 font-normal">Best Value</span>
                   }
                 </th>
-                <th className={`text-center py-4 px-6 font-semibold w-[18%] ${currentTier === 'enterprise' ? 'text-green-600 bg-green-50/40' : 'text-secondary-500'}`}>
+                <th className={`text-center py-4 px-6 font-semibold w-[18%] ${currentTier === 'enterprise' ? 'text-green-600 bg-green-50/40' : 'text-gray-900'}`}>
                   Enterprise
                   {currentTier === 'enterprise' && <span className="block text-[10px] text-green-500 font-normal">Current</span>}
                 </th>
@@ -582,7 +582,7 @@ function SubscriptionContent() {
             <tbody className="divide-y divide-gray-100">
               {FEATURE_MATRIX.map((row) => (
                 <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="py-3.5 px-6 font-medium text-secondary-500">{row.feature}</td>
+                  <td className="py-3.5 px-6 font-medium text-gray-900">{row.feature}</td>
                   {(['starter', 'pro', 'business', 'enterprise'] as const).map((plan) => {
                     const val = row[plan];
                     const isCurr = plan === currentTier;
@@ -599,7 +599,7 @@ function SubscriptionContent() {
                           )
                         ) : (
                           <span className={`font-semibold ${
-                            isCurr ? 'text-green-600' : isBusiness ? 'text-secondary-600' : 'text-secondary-500'
+                            isCurr ? 'text-green-600' : isBusiness ? 'text-secondary-600' : 'text-gray-900'
                           }`}>{val}</span>
                         )}
                       </td>

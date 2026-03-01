@@ -123,7 +123,7 @@ function AnimatedStat({ icon: Icon, value, label, suffix = '', color }: {
       <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
         <Icon className="w-4 h-4" />
       </div>
-      <span className="text-xl font-bold text-secondary-500">
+      <span className="text-xl font-bold text-gray-900">
         {animatedValue}{suffix}
       </span>
       <span className="text-xs text-gray-500">{label}</span>
@@ -517,7 +517,7 @@ export default function AdminDealDetailPage() {
   if (error || !deal) {
     return (
       <div className="max-w-7xl mx-auto p-6">
-        <Link href="/admin/deals" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 transition-colors mb-6">
+        <Link href="/admin/deals" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" /> Back to Deals
         </Link>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
@@ -544,7 +544,7 @@ export default function AdminDealDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-up">
-            <h3 className="text-lg font-bold text-secondary-500 mb-2">Delete Deal</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Deal</h3>
             <p className="text-gray-600 text-sm mb-6">
               Are you sure you want to delete &quot;{deal.title}&quot;? This will permanently remove the deal and all associated claims. This action cannot be undone.
             </p>
@@ -573,7 +573,7 @@ export default function AdminDealDetailPage() {
       <div className="flex items-center justify-between mb-6 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]">
         <Link
           href="/admin/deals"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 transition-colors group"
+          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Back to Deals
@@ -730,7 +730,7 @@ export default function AdminDealDetailPage() {
               name="title"
               value={formData.title as string}
               onChange={handleInputChange}
-              className="w-full text-2xl font-bold text-secondary-500 border-0 border-b-2 border-transparent focus:border-primary-500 bg-transparent px-0 py-2 outline-none transition-all duration-200 placeholder:text-gray-300"
+              className="w-full text-2xl font-bold text-gray-900 border-0 border-b-2 border-transparent focus:border-primary-500 bg-transparent px-0 py-2 outline-none transition-all duration-200 placeholder:text-gray-300"
               placeholder="Deal title..."
             />
             <textarea
@@ -970,7 +970,7 @@ export default function AdminDealDetailPage() {
               {deal.vendor && (
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">Vendor</label>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-500 rounded-lg text-sm font-medium">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-gray-900 rounded-lg text-sm font-medium">
                     {deal.vendor.business_name}
                   </div>
                 </div>
@@ -1084,7 +1084,7 @@ export default function AdminDealDetailPage() {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Claims Count</label>
-                <div className="text-xl font-bold text-secondary-500 px-1">
+                <div className="text-xl font-bold text-gray-900 px-1">
                   {deal.claims_count}
                   {deal.max_claims != null && (
                     <span className="text-gray-400 text-sm font-normal"> / {deal.max_claims}</span>
@@ -1128,7 +1128,7 @@ export default function AdminDealDetailPage() {
           {/* 7. Performance Stats Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.45s_forwards]">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-purple-500 to-purple-300" />
+              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-300" />
               <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Performance</span>
             </div>
 
@@ -1156,7 +1156,7 @@ export default function AdminDealDetailPage() {
                 value={analytics?.conversion_rate ? Math.round(analytics.conversion_rate * 100) : 0}
                 label="Conversion"
                 suffix="%"
-                color="bg-purple-50 text-purple-600"
+                color="bg-blue-50 text-blue-600"
               />
             </div>
           </div>

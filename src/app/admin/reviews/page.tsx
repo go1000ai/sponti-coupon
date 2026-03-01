@@ -256,7 +256,7 @@ export default function AdminReviewsPage() {
         <div className="flex items-center gap-3">
           <MessageSquare className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Reviews</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
             <p className="text-sm text-gray-500">{reviews.length} total reviews</p>
           </div>
         </div>
@@ -274,7 +274,7 @@ export default function AdminReviewsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         {/* Average rating card */}
         <div className="col-span-2 lg:col-span-1 card p-4 text-center">
-          <p className="text-3xl font-bold text-secondary-500">{avgRating}</p>
+          <p className="text-3xl font-bold text-gray-900">{avgRating}</p>
           <div className="flex justify-center mt-1">{renderStars(Math.round(Number(avgRating)))}</div>
           <p className="text-xs text-gray-400 mt-1">Average</p>
         </div>
@@ -288,7 +288,7 @@ export default function AdminReviewsPage() {
             }`}
           >
             <div className="flex justify-center mb-1">{renderStars(rating)}</div>
-            <p className="text-lg font-bold text-secondary-500">{count}</p>
+            <p className="text-lg font-bold text-gray-900">{count}</p>
             <p className="text-xs text-gray-400">{rating} star{rating !== 1 ? 's' : ''}</p>
           </button>
         ))}
@@ -362,7 +362,7 @@ export default function AdminReviewsPage() {
                   <tr key={review.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div>
-                        <span className="font-medium text-secondary-500">{review.customer_name}</span>
+                        <span className="font-medium text-gray-900">{review.customer_name}</span>
                         {review.customer_email && (
                           <p className="text-xs text-gray-400 truncate max-w-[160px]">{review.customer_email}</p>
                         )}
@@ -397,7 +397,7 @@ export default function AdminReviewsPage() {
                           </span>
                         )}
                         {review.is_auto_response && (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-medium w-fit">
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium w-fit">
                             <Bot className="w-3 h-3" />
                             Auto-reply
                           </span>
@@ -419,7 +419,7 @@ export default function AdminReviewsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => setViewTarget(review)}
-                          className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
+                          className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
                           title="View Details"
                         >
                           <Eye className="w-4 h-4" />
@@ -482,7 +482,7 @@ export default function AdminReviewsPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-primary-500" />
                   Review Details
                 </h3>
@@ -497,7 +497,7 @@ export default function AdminReviewsPage() {
               {/* Customer & Rating */}
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="font-medium text-secondary-500">{viewTarget.customer_name}</p>
+                  <p className="font-medium text-gray-900">{viewTarget.customer_name}</p>
                   {viewTarget.customer_email && (
                     <p className="text-xs text-gray-400">{viewTarget.customer_email}</p>
                   )}
@@ -516,11 +516,11 @@ export default function AdminReviewsPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-gray-400">Vendor</p>
-                    <p className="font-medium text-secondary-500">{viewTarget.vendor_name}</p>
+                    <p className="font-medium text-gray-900">{viewTarget.vendor_name}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Deal</p>
-                    <p className="font-medium text-secondary-500">{viewTarget.deal_title}</p>
+                    <p className="font-medium text-gray-900">{viewTarget.deal_title}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Verified</p>
@@ -552,7 +552,7 @@ export default function AdminReviewsPage() {
                     <Reply className="w-3 h-3" />
                     Vendor Reply
                     {viewTarget.is_auto_response && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 font-medium ml-1">
+                      <span className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium ml-1">
                         <Bot className="w-2.5 h-2.5" />
                         Auto
                       </span>
@@ -586,7 +586,7 @@ export default function AdminReviewsPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Pencil className="w-5 h-5 text-primary-500" />
                   Edit Review
                 </h3>
@@ -603,11 +603,11 @@ export default function AdminReviewsPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-gray-400">Customer</p>
-                    <p className="font-medium text-secondary-500">{editTarget.customer_name}</p>
+                    <p className="font-medium text-gray-900">{editTarget.customer_name}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Vendor</p>
-                    <p className="font-medium text-secondary-500">{editTarget.vendor_name}</p>
+                    <p className="font-medium text-gray-900">{editTarget.vendor_name}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Deal</p>
@@ -690,7 +690,7 @@ export default function AdminReviewsPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Reply className="w-5 h-5 text-primary-500" />
                   {replyTarget.vendor_reply ? 'Edit Vendor Reply' : 'Reply as Vendor'}
                 </h3>
@@ -705,7 +705,7 @@ export default function AdminReviewsPage() {
               {/* Original review */}
               <div className="bg-gray-50 rounded-xl p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="font-medium text-secondary-500 text-sm">{replyTarget.customer_name}</p>
+                  <p className="font-medium text-gray-900 text-sm">{replyTarget.customer_name}</p>
                   {renderStars(replyTarget.rating)}
                 </div>
                 <p className="text-sm text-gray-600 whitespace-pre-wrap">

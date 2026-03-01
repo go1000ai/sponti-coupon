@@ -233,7 +233,7 @@ export default function VendorPaymentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-secondary-500 flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <Wallet className="w-7 h-7 text-primary-500" />
             Payment Methods
           </h1>
@@ -292,7 +292,7 @@ export default function VendorPaymentsPage() {
       {/* Add Form */}
       {showAddForm && (
         <div className="card p-6 mb-6 border-primary-200 ring-1 ring-primary-100">
-          <h3 className="font-semibold text-secondary-500 mb-4 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Plus className="w-4 h-4 text-primary-500" />
             Add Payment Method
           </h3>
@@ -456,7 +456,7 @@ export default function VendorPaymentsPage() {
                     ) : (
                       <>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-secondary-500 text-sm">
+                          <h3 className="font-semibold text-gray-900 text-sm">
                             {method.display_name || processor?.name}
                           </h3>
                           {method.is_primary && (
@@ -552,7 +552,7 @@ export default function VendorPaymentsPage() {
       {/* Pending Manual Payments */}
       {pendingPayments.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5 text-amber-500" />
             Pending Manual Payments
             <span className="ml-2 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-0.5 rounded-full">
@@ -565,7 +565,7 @@ export default function VendorPaymentsPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-secondary-500 text-sm">
+                      <h4 className="font-semibold text-gray-900 text-sm">
                         {claim.deal?.title || 'Deal'}
                       </h4>
                       {claim.payment_reference && (

@@ -240,7 +240,7 @@ export default function AdminCustomersPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Customer Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Customer Management</h1>
             <p className="text-sm text-gray-500">{customers.length} total customers</p>
           </div>
         </div>
@@ -264,17 +264,17 @@ export default function AdminCustomersPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Users className="w-4 h-4 text-purple-500" />
+            <Users className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">Total Customers</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{customers.length}</p>
+          <p className="text-2xl font-bold text-gray-900">{customers.length}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
             <QrCode className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">Total Claims</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {customers.reduce((sum, c) => sum + c.total_claims, 0)}
           </p>
         </div>
@@ -283,7 +283,7 @@ export default function AdminCustomersPage() {
             <CheckCircle className="w-4 h-4 text-green-500" />
             <span className="text-xs text-gray-500">Total Redeemed</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {customers.reduce((sum, c) => sum + c.total_redeemed, 0)}
           </p>
         </div>
@@ -292,7 +292,7 @@ export default function AdminCustomersPage() {
             <DollarSign className="w-4 h-4 text-green-500" />
             <span className="text-xs text-gray-500">Total Savings</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">
+          <p className="text-2xl font-bold text-gray-900">
             {formatCurrency(customers.reduce((sum, c) => sum + c.total_saved, 0))}
           </p>
         </div>
@@ -331,7 +331,7 @@ export default function AdminCustomersPage() {
                             {(customer.first_name?.[0] || customer.email[0]).toUpperCase()}
                           </span>
                         </div>
-                        <span className="font-medium text-secondary-500">
+                        <span className="font-medium text-gray-900">
                           {customer.first_name || ''} {customer.last_name || ''}
                           {!customer.first_name && !customer.last_name && (
                             <span className="text-gray-400 italic">No name</span>
@@ -355,10 +355,10 @@ export default function AdminCustomersPage() {
                         <span className="text-sm text-gray-400">--</span>
                       )}
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       {customer.total_claims}
                     </td>
-                    <td className="p-4 text-sm text-secondary-500 font-medium text-center">
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
                       {customer.total_redeemed}
                     </td>
                     <td className="p-4 text-sm text-green-600 font-medium text-right">

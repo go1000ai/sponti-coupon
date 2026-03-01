@@ -137,8 +137,8 @@ export default function ConsumerDashboardPage() {
       value: redeemedCount,
       formatted: String(redeemedCount),
       icon: <CheckCircle2 className="w-5 h-5 text-white" />,
-      bgGradient: 'from-blue-50 to-indigo-50 border-blue-100',
-      iconBg: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+      bgGradient: 'from-blue-50 to-blue-50 border-blue-100',
+      iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
       textColor: 'text-blue-700',
       labelColor: 'text-blue-600',
     },
@@ -147,10 +147,10 @@ export default function ConsumerDashboardPage() {
       value: Math.round(pendingSavings * 100),
       formatted: formatCurrency(pendingSavings),
       icon: <TrendingUp className="w-5 h-5 text-white" />,
-      bgGradient: 'from-purple-50 to-violet-50 border-purple-100',
-      iconBg: 'bg-gradient-to-br from-purple-500 to-violet-600',
-      textColor: 'text-purple-700',
-      labelColor: 'text-purple-600',
+      bgGradient: 'from-blue-50 to-sky-50 border-blue-100',
+      iconBg: 'bg-gradient-to-br from-blue-500 to-sky-600',
+      textColor: 'text-blue-700',
+      labelColor: 'text-blue-600',
     },
   ];
 
@@ -172,7 +172,7 @@ export default function ConsumerDashboardPage() {
       {/* Welcome header */}
       <div className="animate-fade-up">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold text-secondary-500">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Welcome back, <span className="gradient-text">{firstName}</span>!
           </h1>
           <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
@@ -210,7 +210,7 @@ export default function ConsumerDashboardPage() {
             <Compass className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-secondary-500">Browse Deals</h3>
+            <h3 className="font-semibold text-gray-900">Browse Deals</h3>
             <p className="text-sm text-gray-500">Discover new deals near you</p>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
@@ -221,7 +221,7 @@ export default function ConsumerDashboardPage() {
             <QrCode className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-secondary-500">View My QR Codes</h3>
+            <h3 className="font-semibold text-gray-900">View My QR Codes</h3>
             <p className="text-sm text-gray-500">See your active deals and codes</p>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
@@ -237,7 +237,7 @@ export default function ConsumerDashboardPage() {
               <div className="bg-gradient-to-br from-primary-500 to-amber-400 rounded-lg p-1.5">
                 <Gift className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-lg font-bold text-secondary-500">Loyalty Rewards</h2>
+              <h2 className="text-lg font-bold text-gray-900">Loyalty Rewards</h2>
             </div>
             <Link href="/dashboard/loyalty" className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 group">
               View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -268,7 +268,7 @@ export default function ConsumerDashboardPage() {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-secondary-500 truncate">{vendorName}</p>
+                        <p className="text-sm font-semibold text-gray-900 truncate">{vendorName}</p>
                         <p className="text-xs text-gray-400 truncate">{program.name}</p>
                       </div>
                       {isReady && (
@@ -301,23 +301,23 @@ export default function ConsumerDashboardPage() {
                     {vendorLogo ? (
                       <Image src={vendorLogo} alt={vendorName} width={36} height={36} className="rounded-lg object-cover" />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-100 to-violet-100 flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-purple-600" />
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-blue-100 to-sky-100 flex items-center justify-center">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-secondary-500 truncate">{vendorName}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{vendorName}</p>
                       <p className="text-xs text-gray-400 truncate">{program.name}</p>
                     </div>
                   </div>
                   <div className="text-center mb-2">
-                    <p className="text-3xl font-bold bg-gradient-to-br from-purple-600 to-violet-500 bg-clip-text text-transparent">{card.current_points}</p>
+                    <p className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-sky-500 bg-clip-text text-transparent">{card.current_points}</p>
                     <p className="text-xs text-gray-400">points</p>
                   </div>
                   {nextReward && (
                     <>
                       <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                        <div className="h-2.5 rounded-full bg-gradient-to-r from-purple-500 to-violet-500 progress-fill" style={{ width: `${pointsProgress}%` }} />
+                        <div className="h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-sky-500 progress-fill" style={{ width: `${pointsProgress}%` }} />
                       </div>
                       <p className="text-xs text-gray-500 mt-1.5">
                         {card.current_points >= nextReward.points_cost ? `Redeem: ${nextReward.name}` : `${nextReward.points_cost - card.current_points} pts to ${nextReward.name}`}
@@ -339,22 +339,22 @@ export default function ConsumerDashboardPage() {
             <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1.5">
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-secondary-500">My Savings</h2>
+            <h2 className="text-lg font-bold text-gray-900">My Savings</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="card p-5 tilt-card">
-              <h3 className="text-sm font-semibold text-secondary-500 mb-1">Savings Over Time</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Savings Over Time</h3>
               <p className="text-xs text-gray-400 mb-4">How much you&apos;ve saved each month</p>
               <SavingsChart data={analytics.savings_over_time} />
             </div>
             <div className="card p-5 tilt-card">
-              <h3 className="text-sm font-semibold text-secondary-500 mb-1">Deals by Category</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Deals by Category</h3>
               <p className="text-xs text-gray-400 mb-4">Where you shop the most</p>
               <CategoryChart data={analytics.category_breakdown} />
             </div>
           </div>
           <div className="card p-5 mt-4 tilt-card">
-            <h3 className="text-sm font-semibold text-secondary-500 mb-1">Coupon Activity</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Coupon Activity</h3>
             <p className="text-xs text-gray-400 mb-4">Claimed vs. redeemed vs. expired</p>
             <ActivityChart data={analytics.redemption_activity} />
           </div>
@@ -365,7 +365,7 @@ export default function ConsumerDashboardPage() {
       {activeClaims.length > 0 && (
         <div className="animate-fade-up" style={{ animationDelay: '800ms' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-secondary-500">Active Deals</h2>
+            <h2 className="text-lg font-bold text-gray-900">Active Deals</h2>
             <Link href="/dashboard/my-deals" className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 group">
               View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -382,20 +382,20 @@ export default function ConsumerDashboardPage() {
                         {deal.deal_type === 'sponti_coupon' ? <SpontiIcon className="w-6 h-6 text-primary-500" /> : <Tag className="w-6 h-6 text-primary-500" />}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-secondary-500 truncate">{deal.title}</h3>
+                        <h3 className="font-semibold text-gray-900 truncate">{deal.title}</h3>
                         <p className="text-sm text-gray-500 truncate">{(deal.vendor as Deal['vendor'])?.business_name}</p>
                       </div>
                     </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
                       <div className="flex items-center justify-between sm:gap-6">
                         <span className="text-primary-500 font-bold text-lg">{formatPercentage(deal.discount_percentage)} off</span>
-                        <div className="hidden sm:block"><CountdownTimer expiresAt={claim.expires_at} size="sm" /></div>
+                        <div className="hidden sm:block"><CountdownTimer expiresAt={claim.expires_at} size="sm" variant={deal.deal_type === 'sponti_coupon' ? 'sponti' : 'steady'} /></div>
                       </div>
                       <div className="sm:hidden">
                         <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><Clock className="w-3 h-3" /><span>Expires in:</span></div>
-                        <CountdownTimer expiresAt={claim.expires_at} size="sm" />
+                        <CountdownTimer expiresAt={claim.expires_at} size="sm" variant={deal.deal_type === 'sponti_coupon' ? 'sponti' : 'steady'} />
                       </div>
-                      <Link href="/dashboard/my-deals" className="bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-3 py-2.5 rounded-lg text-sm font-medium hover:from-secondary-600 hover:to-secondary-700 transition-all flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto">
+                      <Link href="/dashboard/my-deals" className={`text-white px-3 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto ${deal.deal_type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700' : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700'}`}>
                         <QrCode className="w-4 h-4" /> QR Code
                       </Link>
                     </div>
@@ -410,7 +410,7 @@ export default function ConsumerDashboardPage() {
       {/* Recent activity */}
       {recentActivity.length > 0 && (
         <div className="animate-fade-up" style={{ animationDelay: '900ms' }}>
-          <h2 className="text-lg font-bold text-secondary-500 mb-4">Recent Activity</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
           <div className="card divide-y divide-gray-50">
             {recentActivity.map((claim) => {
               const deal = claim.deal;
@@ -425,7 +425,7 @@ export default function ConsumerDashboardPage() {
                     {isRedeemed ? <CheckCircle2 className="w-4 h-4" /> : status === 'expired' ? <Clock className="w-4 h-4" /> : <Gift className="w-4 h-4" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-secondary-500">
+                    <p className="text-sm text-gray-900">
                       {isRedeemed ? <>You redeemed <span className="font-semibold">{deal.title}</span></> : status === 'expired' ? <><span className="font-semibold">{deal.title}</span> expired</> : <>You claimed <span className="font-semibold">{deal.title}</span></>}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -450,7 +450,7 @@ export default function ConsumerDashboardPage() {
               <SpontiIcon className="w-8 h-8 text-primary-500" />
             </div>
           </div>
-          <h3 className="text-lg font-semibold text-secondary-500">No deals yet</h3>
+          <h3 className="text-lg font-semibold text-gray-900">No deals yet</h3>
           <p className="text-gray-400 mt-1 mb-6">Start saving by claiming your first deal!</p>
           <Link href="/deals" className="btn-primary inline-flex items-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all">
             <Compass className="w-4 h-4" /> Browse Deals

@@ -223,7 +223,7 @@ function VendorDashboard() {
     { label: 'Total Claims', value: analytics?.total_claims || 0, icon: <Users className="w-5 h-5" />, color: 'from-accent-500 to-blue-600' },
     { label: 'Redemptions', value: analytics?.total_redemptions || 0, icon: <QrCode className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
     { label: 'Revenue (Month)', value: revenue?.total_revenue || 0, icon: <DollarSign className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', isCurrency: true, trend: revenue?.total_transactions ? `${revenue.total_transactions} txns` : undefined },
-    { label: 'Commission Saved', value: revenue?.commission_savings || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-purple-500 to-violet-600', isCurrency: true },
+    { label: 'Commission Saved', value: revenue?.commission_savings || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-blue-500 to-sky-600', isCurrency: true },
   ];
 
   return (
@@ -232,7 +232,7 @@ function VendorDashboard() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 animate-fade-up">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl sm:text-3xl font-bold text-secondary-500">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Welcome back, <span className="gradient-text">{vendor?.business_name}</span>
             </h1>
             <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
@@ -270,7 +270,7 @@ function VendorDashboard() {
                 </span>
               )}
             </div>
-            <p className="text-2xl font-bold text-secondary-500">
+            <p className="text-2xl font-bold text-gray-900">
               {stat.isCurrency ? formatCurrency(stat.value) : stat.value}
             </p>
             <p className="text-sm text-gray-500">{stat.label}</p>
@@ -293,7 +293,7 @@ function VendorDashboard() {
         return (
           <div className="card p-4 sm:p-5 mb-8 animate-fade-up" style={{ animationDelay: '600ms' }}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-secondary-500 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary-500" />
                 Deals This Month
               </h3>
@@ -304,7 +304,7 @@ function VendorDashboard() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-500">Total</span>
-                  <span className="font-medium text-secondary-500">
+                  <span className="font-medium text-gray-900">
                     {monthlyDeals.total}{isUnlimited ? '' : ` / ${totalLimit}`}
                   </span>
                 </div>
@@ -319,7 +319,7 @@ function VendorDashboard() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-500">Sponti</span>
-                  <span className="font-medium text-secondary-500">
+                  <span className="font-medium text-gray-900">
                     {monthlyDeals.sponti}{isUnlimited ? '' : ` / ${spontiLimit}`}
                   </span>
                 </div>
@@ -334,7 +334,7 @@ function VendorDashboard() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-gray-500">Steady</span>
-                  <span className="font-medium text-secondary-500">
+                  <span className="font-medium text-gray-900">
                     {monthlyDeals.regular}{isUnlimited ? '' : ` / ${regularLimit}`}
                   </span>
                 </div>
@@ -364,7 +364,7 @@ function VendorDashboard() {
             <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1.5">
               <Hash className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-secondary-500">Quick Redeem</h2>
+            <h2 className="text-lg font-bold text-gray-900">Quick Redeem</h2>
           </div>
           <p className="text-sm text-gray-500 mb-4">Enter the customer&apos;s 6-digit code</p>
 
@@ -433,7 +433,7 @@ function VendorDashboard() {
               <div className="bg-gradient-to-br from-accent-500 to-blue-600 rounded-lg p-1.5">
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-lg font-bold text-secondary-500">Claims by Deal</h2>
+              <h2 className="text-lg font-bold text-gray-900">Claims by Deal</h2>
             </div>
             <Link href="/vendor/analytics" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
               Full Analytics <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -467,11 +467,11 @@ function VendorDashboard() {
       {/* Quick Actions */}
       <div data-tour="vendor-actions" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Link href="/vendor/analytics" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card animate-fade-up" style={{ animationDelay: '700ms' }}>
-          <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-xl p-3 text-white shadow-lg shadow-purple-200 group-hover:scale-110 transition-transform">
+          <div className="bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl p-3 text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
             <BarChart3 className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-secondary-500 group-hover:text-primary-500 transition-colors">Analytics</h3>
+            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Analytics</h3>
             <p className="text-xs text-gray-500">Charts &amp; performance data</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
@@ -483,7 +483,7 @@ function VendorDashboard() {
             <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-secondary-500 group-hover:text-primary-500 transition-colors">Ava&apos;s Insights</h3>
+            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Ava&apos;s Insights</h3>
             <p className="text-xs text-gray-500">Smart recommendations</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
@@ -505,7 +505,7 @@ function VendorDashboard() {
               <Plus className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-secondary-500 group-hover:text-primary-500 transition-colors">Create a Deal</h3>
+              <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Create a Deal</h3>
               <p className="text-xs text-gray-500">Start attracting customers</p>
             </div>
             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
@@ -521,7 +521,7 @@ function VendorDashboard() {
       {/* Recent Deals */}
       <div data-tour="vendor-deals" className="card animate-fade-up" style={{ animationDelay: '1000ms' }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-secondary-500">Recent Deals</h2>
+          <h2 className="text-xl font-bold text-gray-900">Recent Deals</h2>
           <Link href="/vendor/deals" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
             View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
@@ -557,7 +557,7 @@ function VendorDashboard() {
                     </div>
                   )}
                   <div className="min-w-0">
-                    <h3 className="font-semibold text-secondary-500 truncate">{deal.title}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate">{deal.title}</h3>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         deal.status === 'active' ? 'bg-gradient-to-r from-green-50 to-emerald-50 text-green-600 border border-green-100' :
@@ -577,7 +577,7 @@ function VendorDashboard() {
                   {deal.status === 'active' && deal.deal_type === 'sponti_coupon' && (
                     <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Clock className="w-3 h-3" />
-                      <CountdownTimer expiresAt={deal.expires_at} size="sm" />
+                      <CountdownTimer expiresAt={deal.expires_at} size="sm" variant="sponti" />
                     </div>
                   )}
                   <div className="text-right">
@@ -585,7 +585,7 @@ function VendorDashboard() {
                     <p className="text-xs text-gray-400 line-through">{formatCurrency(deal.original_price)}</p>
                   </div>
                   <div className="text-right text-sm">
-                    <p className="font-medium text-secondary-500">{deal.claims_count}</p>
+                    <p className="font-medium text-gray-900">{deal.claims_count}</p>
                     <p className="text-xs text-gray-400">claims</p>
                   </div>
                 </div>

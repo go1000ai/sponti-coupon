@@ -118,7 +118,7 @@ export default function AdminWebsiteImportPage() {
         <div className="flex items-center gap-3">
           <Globe className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Website Import</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Website Import</h1>
             <p className="text-sm text-gray-500">Import deals from vendor websites</p>
           </div>
         </div>
@@ -193,7 +193,7 @@ export default function AdminWebsiteImportPage() {
           {result.business_name && (
             <div className="card p-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-1">Business Info</h3>
-              <p className="font-medium text-secondary-500">{result.business_name}</p>
+              <p className="font-medium text-gray-900">{result.business_name}</p>
               {result.description && <p className="text-sm text-gray-500 mt-1">{result.description}</p>}
             </div>
           )}
@@ -211,7 +211,7 @@ export default function AdminWebsiteImportPage() {
                     {deal.image_url && (
                       <img src={deal.image_url} alt={deal.title} className="w-full h-32 object-cover rounded-lg mb-3" />
                     )}
-                    <h4 className="font-medium text-secondary-500 text-sm">{deal.title}</h4>
+                    <h4 className="font-medium text-gray-900 text-sm">{deal.title}</h4>
                     <p className="text-xs text-gray-500 mt-1 line-clamp-2">{deal.description}</p>
                     {deal.discount_percentage && (
                       <span className="inline-block mt-2 px-2 py-0.5 bg-green-50 text-green-600 text-xs font-medium rounded-full">

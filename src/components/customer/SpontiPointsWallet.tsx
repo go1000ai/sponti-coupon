@@ -203,7 +203,7 @@ export function SpontiPointsWallet() {
       {showRedeem && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-secondary-500">Redeem SpontiPoints</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Redeem SpontiPoints</h3>
             <span className="text-xs text-gray-400">100 pts = $1.00</span>
           </div>
 
@@ -265,7 +265,7 @@ export function SpontiPointsWallet() {
       {data.transactions.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="text-sm font-semibold text-secondary-500">Recent Activity</h3>
+            <h3 className="text-sm font-semibold text-gray-900">Recent Activity</h3>
             <span className="text-xs text-gray-400">{data.transactions.length} entries</span>
           </div>
           <div className="divide-y divide-gray-50">
@@ -281,7 +281,7 @@ export function SpontiPointsWallet() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-secondary-500 truncate">
+                  <p className="text-sm font-medium text-gray-900 truncate">
                     {tx.vendor?.business_name || reasonLabels[tx.reason] || tx.reason}
                   </p>
                   <p className="text-xs text-gray-400 truncate">

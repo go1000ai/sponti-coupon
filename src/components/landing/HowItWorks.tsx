@@ -18,7 +18,7 @@ const steps = [
     title: '2. Claim & Deposit',
     description:
       'Claim your deal and pay a small deposit directly to the business. Get a unique QR code instantly upon payment confirmation.',
-    gradient: 'from-blue-500 to-indigo-600',
+    gradient: 'from-blue-500 to-blue-600',
     shadow: 'shadow-blue-200',
   },
   {
@@ -41,14 +41,14 @@ export function HowItWorks() {
       {/* Floating parallax orbs for depth */}
       <div className="absolute inset-0 pointer-events-none hidden md:block">
         <div ref={orb1Ref} className="absolute -top-10 -left-20 w-72 h-72 bg-gradient-to-br from-primary-500/8 to-orange-500/5 rounded-full blur-3xl" />
-        <div ref={orb2Ref} className="absolute top-1/3 -right-16 w-56 h-56 bg-gradient-to-br from-blue-500/6 to-indigo-500/4 rounded-full blur-3xl" />
+        <div ref={orb2Ref} className="absolute top-1/3 -right-16 w-56 h-56 bg-gradient-to-br from-blue-500/6 to-blue-500/4 rounded-full blur-3xl" />
         <div ref={orb3Ref} className="absolute -bottom-10 left-1/3 w-64 h-64 bg-gradient-to-br from-emerald-500/6 to-teal-500/4 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">How It Works</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">How It Works</h2>
             <p className="text-gray-500 mt-3 text-lg">Three simple steps to incredible savings</p>
           </div>
         </ScrollReveal>
@@ -61,7 +61,7 @@ export function HowItWorks() {
                 <div className={`inline-flex bg-gradient-to-br ${step.gradient} rounded-2xl p-5 mb-6 shadow-lg ${step.shadow}`}>
                   <step.icon className="w-10 h-10 text-white" strokeWidth={1.8} />
                 </div>
-                <h3 className="text-xl font-bold text-secondary-500 mb-3">{step.title}</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
                 <p className="text-gray-500 leading-relaxed">{step.description}</p>
 
                 {/* Arrow connector (hidden on last item and mobile) */}

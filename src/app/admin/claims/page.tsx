@@ -434,7 +434,7 @@ export default function AdminClaimsPage() {
         <div className="flex items-center gap-3">
           <QrCode className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Claims Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Claims Management</h1>
             <p className="text-sm text-gray-500">{totalAll} total claims</p>
           </div>
         </div>
@@ -466,7 +466,7 @@ export default function AdminClaimsPage() {
             <div className={`inline-flex p-2 rounded-lg ${bg} ${color} mb-2`}>
               {icon}
             </div>
-            <p className="text-2xl font-bold text-secondary-500">{count}</p>
+            <p className="text-2xl font-bold text-gray-900">{count}</p>
             <p className="text-sm text-gray-500">{label}</p>
           </button>
         ))}
@@ -540,14 +540,14 @@ export default function AdminClaimsPage() {
                   <tr key={claim.id} className="hover:bg-gray-50 transition-colors">
                     <td className="p-4">
                       <div>
-                        <span className="font-medium text-secondary-500">{claim.customer_name}</span>
+                        <span className="font-medium text-gray-900">{claim.customer_name}</span>
                         {claim.customer_email && (
                           <p className="text-xs text-gray-400 truncate max-w-[160px]">{claim.customer_email}</p>
                         )}
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm text-secondary-500 truncate max-w-[180px]">
+                      <p className="text-sm text-gray-900 truncate max-w-[180px]">
                         {claim.deal_title}
                       </p>
                       <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
@@ -571,7 +571,7 @@ export default function AdminClaimsPage() {
                       {claim.redemption_code ? (
                         <button
                           onClick={() => openCodeDialog(claim)}
-                          className="inline-flex items-center gap-1.5 text-xs font-mono bg-gray-100 text-secondary-500 px-2.5 py-1.5 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-colors"
+                          className="inline-flex items-center gap-1.5 text-xs font-mono bg-gray-100 text-gray-900 px-2.5 py-1.5 rounded-lg hover:bg-primary-50 hover:text-primary-600 transition-colors"
                         >
                           <QrCode className="w-3.5 h-3.5" />
                           {claim.redemption_code}
@@ -591,7 +591,7 @@ export default function AdminClaimsPage() {
                     <td className="p-4">
                       {claim.status === 'redeemed' && claim.redeemed_by_name ? (
                         <div>
-                          <p className="text-sm font-medium text-secondary-500">{claim.redeemed_by_name}</p>
+                          <p className="text-sm font-medium text-gray-900">{claim.redeemed_by_name}</p>
                           {claim.scanned_at && (
                             <p className="text-xs text-gray-400">
                               {new Date(claim.scanned_at).toLocaleDateString()}{' '}
@@ -622,7 +622,7 @@ export default function AdminClaimsPage() {
                         {claim.qr_code && (
                           <button
                             onClick={() => openCodeDialog(claim)}
-                            className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
+                            className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors"
                             title="View QR Code"
                           >
                             <Eye className="w-4 h-4" />
@@ -683,7 +683,7 @@ export default function AdminClaimsPage() {
                               <button
                                 onClick={() => handleGenerateCodes(claim)}
                                 disabled={actionLoading === claim.id}
-                                className="text-indigo-500 hover:bg-indigo-50 p-2 rounded-lg transition-colors disabled:opacity-50"
+                                className="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors disabled:opacity-50"
                                 title="Generate QR & Code"
                               >
                                 <KeyRound className="w-4 h-4" />
@@ -743,7 +743,7 @@ export default function AdminClaimsPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <QrCode className="w-5 h-5 text-primary-500" />
                   Claim Codes
                 </h3>
@@ -757,7 +757,7 @@ export default function AdminClaimsPage() {
 
               <div className="text-center mb-5">
                 <p className="text-sm text-gray-500 mb-1">{codeTarget.customer_name}</p>
-                <p className="text-sm font-medium text-secondary-500">{codeTarget.deal_title}</p>
+                <p className="text-sm font-medium text-gray-900">{codeTarget.deal_title}</p>
               </div>
 
               {/* QR Code Image */}
@@ -784,7 +784,7 @@ export default function AdminClaimsPage() {
                 <div className="bg-gray-50 rounded-xl p-4 mb-4">
                   <p className="text-xs text-gray-500 mb-1 text-center">6-Digit Redemption Code</p>
                   <div className="flex items-center justify-center gap-3">
-                    <span className="text-3xl font-mono font-bold tracking-[0.3em] text-secondary-500">
+                    <span className="text-3xl font-mono font-bold tracking-[0.3em] text-gray-900">
                       {codeTarget.redemption_code}
                     </span>
                     <button
@@ -850,7 +850,7 @@ export default function AdminClaimsPage() {
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-secondary-500 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                   <Pencil className="w-5 h-5 text-primary-500" />
                   Edit Claim
                 </h3>
@@ -867,14 +867,14 @@ export default function AdminClaimsPage() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <p className="text-xs text-gray-400">Customer</p>
-                    <p className="font-medium text-secondary-500">{editTarget.customer_name}</p>
+                    <p className="font-medium text-gray-900">{editTarget.customer_name}</p>
                     {editTarget.customer_email && (
                       <p className="text-xs text-gray-400">{editTarget.customer_email}</p>
                     )}
                   </div>
                   <div>
                     <p className="text-xs text-gray-400">Deal</p>
-                    <p className="font-medium text-secondary-500 truncate">{editTarget.deal_title}</p>
+                    <p className="font-medium text-gray-900 truncate">{editTarget.deal_title}</p>
                     <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
                       editTarget.deal_type === 'sponti_coupon'
                         ? 'bg-orange-50 text-orange-600'
@@ -1028,7 +1028,7 @@ export default function AdminClaimsPage() {
                 <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-50">
                   <CalendarPlus className="w-5 h-5 text-blue-500" />
                 </div>
-                <h3 className="text-lg font-bold text-secondary-500">Extend Expiry</h3>
+                <h3 className="text-lg font-bold text-gray-900">Extend Expiry</h3>
               </div>
               <p className="text-sm text-gray-600 mb-2">
                 Extend the claim by <strong>{extendTarget.customer_name}</strong> for &quot;{extendTarget.deal_title}&quot;.

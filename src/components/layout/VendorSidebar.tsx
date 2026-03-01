@@ -128,7 +128,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
   const renderSidebarContent = (enableTourAttrs: boolean) => (
     <div className="flex flex-col h-full">
       {/* Branding — Actual Logo */}
-      <div className="p-5 border-b border-secondary-400/30">
+      <div className="p-5 border-b border-gray-700/30">
         <a href="/" target="_blank" rel="noopener noreferrer" className="block">
           <Image
             src="/logo.png"
@@ -138,7 +138,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             className="h-11 w-auto brightness-110 hover:opacity-80 transition-opacity"
           />
         </a>
-        <p className="text-[11px] text-secondary-300 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Vendor Portal</p>
+        <p className="text-[11px] text-gray-400 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Vendor Portal</p>
       </div>
 
       {/* Role Switcher / Become a Customer */}
@@ -160,7 +160,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
               setMobileOpen(false);
               onBecomeCustomer?.();
             }}
-            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-secondary-400/15 text-secondary-200 hover:bg-primary-500/15 hover:text-primary-300 transition-all duration-200 border border-secondary-400/20 hover:border-primary-500/20"
+            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-700/15 text-gray-300 hover:bg-primary-500/15 hover:text-primary-300 transition-all duration-200 border border-secondary-400/20 hover:border-primary-500/20"
           >
             <ShoppingBag className="w-4 h-4" />
             <span>Become a Customer</span>
@@ -187,8 +187,8 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
                     active
                       ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
                       : groupActive
-                        ? 'bg-secondary-400/30 text-white'
-                        : 'text-secondary-200 hover:bg-secondary-400/20 hover:text-white'
+                        ? 'bg-gray-700/30 text-white'
+                        : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
                   }`}
                 >
                   {item.icon}
@@ -197,7 +197,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
                 {hasChildren && (
                   <button
                     onClick={() => toggleGroup(item.href)}
-                    className="p-2 text-secondary-300 hover:text-white transition-colors rounded-lg hover:bg-secondary-400/20"
+                    className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700/20"
                     aria-label={expanded ? 'Collapse' : 'Expand'}
                   >
                     <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
@@ -218,7 +218,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
                         className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                           childActive
                             ? 'bg-primary-500/20 text-primary-300'
-                            : 'text-secondary-300 hover:bg-secondary-400/15 hover:text-white'
+                            : 'text-gray-400 hover:bg-gray-700/15 hover:text-white'
                         }`}
                       >
                         {child.icon}
@@ -234,28 +234,28 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
       </nav>
 
       {/* User Info + Sign Out */}
-      <div className="border-t border-secondary-400/30">
+      <div className="border-t border-gray-700/30">
         {/* User profile info */}
         <div className="px-4 pt-4 pb-2 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-secondary-400/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-9 h-9 rounded-full bg-gray-700/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <User className="w-4 h-4 text-secondary-200" />
+              <User className="w-4 h-4 text-gray-300" />
             )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-white truncate">{userName}</p>
-            <p className="text-[11px] text-secondary-300 truncate">{personalName}</p>
-            <p className="text-[10px] text-secondary-400 truncate">{userEmail}</p>
+            <p className="text-[11px] text-gray-400 truncate">{personalName}</p>
+            <p className="text-[10px] text-gray-500 truncate">{userEmail}</p>
           </div>
         </div>
         {/* Sign Out button */}
         <div className="px-4 pb-4 pt-1">
           <button
             onClick={onSignOut}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-secondary-200 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
           >
             <LogOut className="w-5 h-5" />
             <span>Sign Out</span>
@@ -270,7 +270,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
       {/* Mobile hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-secondary-500 text-white rounded-xl shadow-lg shadow-secondary-500/30 ring-1 ring-white/10"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 bg-gray-900 text-white rounded-xl shadow-lg shadow-gray-900/30 ring-1 ring-white/10"
         aria-label="Open menu"
       >
         <Menu className="w-6 h-6" />
@@ -286,13 +286,13 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
 
       {/* Mobile sidebar — no data-tour attrs so Joyride targets the desktop sidebar */}
       <aside
-        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-secondary-500 transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <button
           onClick={() => setMobileOpen(false)}
-          className="absolute top-4 right-4 p-1 text-secondary-200 hover:text-white"
+          className="absolute top-4 right-4 p-1 text-gray-300 hover:text-white"
           aria-label="Close menu"
         >
           <X className="w-5 h-5" />
@@ -301,7 +301,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
       </aside>
 
       {/* Desktop sidebar — has data-tour attrs for guided tour */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-secondary-500 z-30">
+      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-gray-900 z-30">
         {renderSidebarContent(true)}
       </aside>
     </>

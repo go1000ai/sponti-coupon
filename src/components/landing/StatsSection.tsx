@@ -21,7 +21,7 @@ export function StatsSection() {
     <ParallaxSection
       imageUrl="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop"
       speed={0.8}
-      overlay="bg-secondary-500/85"
+      overlay="bg-gray-900/85"
       className="text-white"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

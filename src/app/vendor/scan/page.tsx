@@ -248,7 +248,7 @@ export default function ScanPage() {
         <div className="inline-flex bg-primary-50 rounded-full p-4 mb-4">
           <QrCode className="w-10 h-10 text-primary-500" />
         </div>
-        <h1 className="text-3xl font-bold text-secondary-500">Redeem Deal</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Redeem Deal</h1>
         <p className="text-gray-500 mt-2">Enter the customer&apos;s 6-digit code or scan their QR code</p>
       </div>
 
@@ -364,7 +364,7 @@ export default function ScanPage() {
             <div className="inline-flex bg-amber-50 rounded-full p-3 mb-3">
               <AlertCircle className="w-8 h-8 text-amber-500" />
             </div>
-            <h2 className="text-xl font-bold text-secondary-500">Confirm Redemption</h2>
+            <h2 className="text-xl font-bold text-gray-900">Confirm Redemption</h2>
             <p className="text-sm text-gray-500 mt-1">Review the details before redeeming</p>
           </div>
 
@@ -406,7 +406,7 @@ export default function ScanPage() {
           <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5 mb-4">
             <div className="flex items-center gap-2 mb-3">
               <DollarSign className="w-5 h-5 text-primary-500" />
-              <h3 className="font-bold text-secondary-500">Payment Summary</h3>
+              <h3 className="font-bold text-gray-900">Payment Summary</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -421,7 +421,7 @@ export default function ScanPage() {
               )}
               <div className="border-t border-primary-200 pt-2 mt-2">
                 <div className="flex justify-between">
-                  <span className="font-bold text-secondary-500 text-base">
+                  <span className="font-bold text-gray-900 text-base">
                     {preview.claim.remaining_balance > 0 ? 'To Collect' : 'Total'}
                   </span>
                   <span className="font-bold text-primary-500 text-xl">
@@ -471,7 +471,7 @@ export default function ScanPage() {
 
             {result.customer && (
               <div className="bg-gray-50 rounded-lg p-4 mt-4 text-left">
-                <h3 className="font-semibold text-secondary-500 mb-2">Customer</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Customer</h3>
                 <p className="text-gray-700">{result.customer.name || 'Customer'}</p>
                 <p className="text-gray-500 text-sm">{result.customer.email}</p>
               </div>
@@ -479,7 +479,7 @@ export default function ScanPage() {
 
             {result.deal && (
               <div className="bg-gray-50 rounded-lg p-4 mt-3 text-left">
-                <h3 className="font-semibold text-secondary-500 mb-2">Deal</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">Deal</h3>
                 <div className="flex items-center gap-2 mb-1">
                   {result.deal.deal_type === 'sponti_coupon' && (
                     <span className="bg-primary-50 text-primary-600 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -503,15 +503,15 @@ export default function ScanPage() {
 
             {/* Loyalty Awards */}
             {result.loyalty_awards && result.loyalty_awards.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mt-3 text-left">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-3 text-left">
                 <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-4 h-4 text-purple-500" />
-                  <h3 className="font-semibold text-purple-700 text-sm">Loyalty Rewards</h3>
+                  <Star className="w-4 h-4 text-blue-500" />
+                  <h3 className="font-semibold text-blue-700 text-sm">Loyalty Rewards</h3>
                 </div>
                 {result.loyalty_awards.map((award, i) => (
                   <div key={i} className="flex justify-between text-sm mt-1">
-                    <span className="text-purple-600">{award.program_name}</span>
-                    <span className="font-medium text-purple-700">{award.earned} ({award.current})</span>
+                    <span className="text-blue-600">{award.program_name}</span>
+                    <span className="font-medium text-blue-700">{award.earned} ({award.current})</span>
                   </div>
                 ))}
               </div>
@@ -533,7 +533,7 @@ export default function ScanPage() {
             <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5 mt-4">
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="w-5 h-5 text-primary-500" />
-                <h3 className="font-bold text-secondary-500">Payment Summary</h3>
+                <h3 className="font-bold text-gray-900">Payment Summary</h3>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
@@ -548,7 +548,7 @@ export default function ScanPage() {
                 )}
                 <div className="border-t border-primary-200 pt-2 mt-2">
                   <div className="flex justify-between">
-                    <span className="font-bold text-secondary-500 text-base">
+                    <span className="font-bold text-gray-900 text-base">
                       {(result.remaining_balance || 0) > 0 ? 'Collect from Customer' : 'Amount to Collect'}
                     </span>
                     <span className="font-bold text-primary-500 text-xl">
@@ -613,7 +613,7 @@ export default function ScanPage() {
                   </div>
                   <div className="border-t border-green-200 pt-2 mt-2">
                     <div className="flex justify-between">
-                      <span className="font-bold text-secondary-500">Total Collected</span>
+                      <span className="font-bold text-gray-900">Total Collected</span>
                       <span className="font-bold text-green-600 text-lg">
                         {formatCurrency(result.deal.deal_price)}
                       </span>

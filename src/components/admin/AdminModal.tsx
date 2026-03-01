@@ -54,7 +54,7 @@ export default function AdminModal({ isOpen, onClose, title, size = 'md', childr
     >
       <div className={`bg-white rounded-xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-secondary-500">{title}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{title}</h2>
           <button
             onClick={onClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"

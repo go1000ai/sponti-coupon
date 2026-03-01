@@ -13,7 +13,7 @@ interface ParallaxSectionProps {
 export function ParallaxSection({
   imageUrl,
   speed = 0.5,
-  overlay = 'bg-secondary-500/80',
+  overlay = 'bg-gray-900/80',
   children,
   className = '',
 }: ParallaxSectionProps) {

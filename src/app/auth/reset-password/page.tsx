@@ -69,7 +69,7 @@ function ResetPasswordForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-secondary-500">
+          <h1 className="text-3xl font-bold text-gray-900">
             {success ? 'Password Updated!' : 'Set New Password'}
           </h1>
           <p className="text-gray-500 mt-2">
@@ -82,7 +82,7 @@ function ResetPasswordForm() {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold text-secondary-500">All Set!</h2>
+            <h2 className="text-xl font-semibold text-gray-900">All Set!</h2>
             <p className="text-gray-500 text-sm">
               Your password has been successfully updated. You can now sign in with your new password.
             </p>

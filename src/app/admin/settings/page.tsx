@@ -33,7 +33,7 @@ const SUBSCRIPTION_TIERS = [
   { name: 'Starter', price: '$49/mo', icon: Zap, color: 'bg-gray-100 text-gray-600', borderColor: 'border-gray-200' },
   { name: 'Pro', price: '$99/mo', icon: Crown, color: 'bg-primary-50 text-primary-600', borderColor: 'border-primary-200' },
   { name: 'Business', price: '$199/mo', icon: Building2, color: 'bg-accent-50 text-accent-600', borderColor: 'border-accent-200' },
-  { name: 'Enterprise', price: '$499/mo', icon: Gem, color: 'bg-purple-50 text-purple-600', borderColor: 'border-purple-200' },
+  { name: 'Enterprise', price: '$499/mo', icon: Gem, color: 'bg-blue-50 text-blue-600', borderColor: 'border-blue-200' },
 ];
 
 // ─── Toast ───────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ function EditableSettingsCard({ title, icon, settingKey, data, labels, onSave }:
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           {icon}
-          <h2 className="text-lg font-semibold text-secondary-500">{title}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
         </div>
         {!editing ? (
           <button
@@ -136,10 +136,10 @@ function EditableSettingsCard({ title, icon, settingKey, data, labels, onSave }:
                 type="text"
                 value={form[fieldKey] || ''}
                 onChange={(e) => setForm({ ...form, [fieldKey]: e.target.value })}
-                className="text-sm font-semibold text-secondary-500 bg-transparent border-none outline-none focus:ring-0 p-0"
+                className="text-sm font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0 p-0"
               />
             ) : (
-              <span className="text-sm font-semibold text-secondary-500">{data[fieldKey] || '--'}</span>
+              <span className="text-sm font-semibold text-gray-900">{data[fieldKey] || '--'}</span>
             )}
           </div>
         ))}
@@ -362,7 +362,7 @@ export default function AdminSettingsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-secondary-500">Settings</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="text-sm text-gray-500">Manage your profile and platform configuration</p>
         </div>
       </div>
@@ -373,7 +373,7 @@ export default function AdminSettingsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
             <User className="w-5 h-5 text-primary-500" />
-            <h2 className="text-lg font-semibold text-secondary-500">My Profile</h2>
+            <h2 className="text-lg font-semibold text-gray-900">My Profile</h2>
           </div>
           <div className="space-y-4">
             {/* Avatar Upload */}
@@ -408,7 +408,7 @@ export default function AdminSettingsPage() {
                 </label>
               </div>
               <div>
-                <p className="text-sm font-medium text-secondary-500">
+                <p className="text-sm font-medium text-gray-900">
                   {[profileForm.first_name, profileForm.last_name].filter(Boolean).join(' ') || 'Admin'}
                 </p>
                 <p className="text-xs text-gray-400">Hover over the image to change</p>
@@ -465,7 +465,7 @@ export default function AdminSettingsPage() {
         <div className="card p-6">
           <div className="flex items-center gap-2 mb-5">
             <Lock className="w-5 h-5 text-primary-500" />
-            <h2 className="text-lg font-semibold text-secondary-500">Change Password</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
           </div>
           <div className="space-y-4">
             <div>
@@ -532,7 +532,7 @@ export default function AdminSettingsPage() {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="w-5 h-5 text-primary-500" />
-          <h2 className="text-lg font-semibold text-secondary-500">Subscription Tiers</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Subscription Tiers</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {SUBSCRIPTION_TIERS.map((tier) => {
@@ -547,7 +547,7 @@ export default function AdminSettingsPage() {
                     {tier.name}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-secondary-500">{tier.price}</p>
+                <p className="text-2xl font-bold text-gray-900">{tier.price}</p>
               </div>
             );
           })}

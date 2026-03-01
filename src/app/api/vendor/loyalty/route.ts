@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { program_type, name, description, punches_required, punch_reward, points_per_dollar } = body;
+  const { program_type, name, description, punches_required, punch_reward, points_per_dollar, point_value } = body;
 
   if (!program_type || !name) {
     return NextResponse.json({ error: 'Program type and name are required.' }, { status: 400 });
@@ -172,6 +172,9 @@ export async function POST(request: NextRequest) {
   } else if (program_type === 'points') {
     if (!points_per_dollar || points_per_dollar <= 0) {
       return NextResponse.json({ error: 'Points program requires points_per_dollar (>0).' }, { status: 400 });
+    }
+    if (point_value !== undefined && point_value <= 0) {
+      return NextResponse.json({ error: 'Point value must be greater than 0.' }, { status: 400 });
     }
   } else {
     return NextResponse.json({ error: 'Invalid program type. Use "punch_card" or "points".' }, { status: 400 });
@@ -188,6 +191,7 @@ export async function POST(request: NextRequest) {
       punches_required: program_type === 'punch_card' ? punches_required : null,
       punch_reward: program_type === 'punch_card' ? punch_reward : null,
       points_per_dollar: program_type === 'points' ? points_per_dollar : null,
+      point_value: program_type === 'points' ? (point_value || 1) : null,
     })
     .select()
     .single();
@@ -217,6 +221,7 @@ export async function PUT(request: NextRequest) {
   if (body.punches_required !== undefined) updates.punches_required = body.punches_required;
   if (body.punch_reward !== undefined) updates.punch_reward = body.punch_reward;
   if (body.points_per_dollar !== undefined) updates.points_per_dollar = body.points_per_dollar;
+  if (body.point_value !== undefined) updates.point_value = body.point_value;
 
   const serviceClient = await createServiceRoleClient();
 

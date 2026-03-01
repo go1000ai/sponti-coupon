@@ -77,7 +77,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <Ban className="w-16 h-16 text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-secondary-500">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Access Denied</h1>
           <p className="text-gray-400 mt-2">You do not have vendor privileges.</p>
         </div>
       </div>
@@ -92,7 +92,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-6">
           <CreditCard className="w-16 h-16 text-primary-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-secondary-500">Subscription Required</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Subscription Required</h1>
           <p className="text-gray-500 mt-2 mb-6">
             Complete your subscription to access the vendor dashboard and start creating deals.
           </p>

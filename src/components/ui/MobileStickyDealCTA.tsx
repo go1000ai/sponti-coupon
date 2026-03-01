@@ -44,7 +44,7 @@ export function MobileStickyDealCTA() {
             <div className="bg-primary-100 rounded-full p-1.5 shrink-0">
               <Flame className="w-4 h-4 text-primary-500" />
             </div>
-            <span className="text-sm font-semibold text-secondary-500 truncate">
+            <span className="text-sm font-semibold text-gray-900 truncate">
               {dealCount} deals near you
             </span>
           </div>

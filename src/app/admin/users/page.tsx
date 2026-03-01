@@ -314,7 +314,7 @@ export default function AdminUsersPage() {
     switch (role) {
       case 'admin':
         return (
-          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-600 font-medium">
+          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
             <Shield className="w-3 h-3" />
             Admin
           </span>
@@ -376,7 +376,7 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Users &amp; Roles</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Users &amp; Roles</h1>
             <p className="text-sm text-gray-500">Manage user accounts and role assignments</p>
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function AdminUsersPage() {
             <Users className="w-6 h-6 text-gray-500" />
             <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Total</span>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{summaryStats.total}</p>
+          <p className="text-3xl font-bold text-gray-900">{summaryStats.total}</p>
           <p className="text-sm text-gray-500 mt-1">Total Users</p>
         </div>
         <div className="card p-6">
@@ -404,7 +404,7 @@ export default function AdminUsersPage() {
             <Store className="w-6 h-6 text-blue-500" />
             <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Vendors</span>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{summaryStats.vendors}</p>
+          <p className="text-3xl font-bold text-gray-900">{summaryStats.vendors}</p>
           <p className="text-sm text-gray-500 mt-1">Vendor Accounts</p>
         </div>
         <div className="card p-6">
@@ -412,15 +412,15 @@ export default function AdminUsersPage() {
             <UserCircle className="w-6 h-6 text-primary-500" />
             <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-1 rounded-full">Customers</span>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{summaryStats.customers}</p>
+          <p className="text-3xl font-bold text-gray-900">{summaryStats.customers}</p>
           <p className="text-sm text-gray-500 mt-1">Customer Accounts</p>
         </div>
         <div className="card p-6">
           <div className="flex items-center justify-between mb-3">
-            <Shield className="w-6 h-6 text-purple-500" />
-            <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">Admins</span>
+            <Shield className="w-6 h-6 text-blue-500" />
+            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Admins</span>
           </div>
-          <p className="text-3xl font-bold text-secondary-500">{summaryStats.admins}</p>
+          <p className="text-3xl font-bold text-gray-900">{summaryStats.admins}</p>
           <p className="text-sm text-gray-500 mt-1">Admin Accounts</p>
         </div>
       </div>
@@ -480,7 +480,7 @@ export default function AdminUsersPage() {
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
                     onClick={() => router.push(`/admin/users/${userRecord.id}`)}
                   >
-                    <td className="p-4 text-sm text-secondary-500 font-medium">
+                    <td className="p-4 text-sm text-gray-900 font-medium">
                       {userRecord.email || '--'}
                     </td>
                     <td className="p-4 text-sm text-gray-600">

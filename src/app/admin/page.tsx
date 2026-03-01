@@ -197,7 +197,7 @@ function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-bold text-secondary-500">{value}</span>
+        <span className="text-sm font-bold text-gray-900">{value}</span>
       </div>
     </div>
   );
@@ -258,7 +258,7 @@ function TierTooltip({ active, payload }: { active?: boolean; payload?: Array<{ 
   const item = payload[0];
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
-      <p className="font-semibold text-secondary-500 capitalize">{item.name}</p>
+      <p className="font-semibold text-gray-900 capitalize">{item.name}</p>
       <p className="text-sm text-gray-500">
         {item.value} vendor{item.value !== 1 ? 's' : ''}
       </p>
@@ -321,7 +321,7 @@ export default function AdminOverviewPage() {
     switch (type) {
       case 'claim': return <QrCode className="w-4 h-4 text-blue-500" />;
       case 'redemption': return <TrendingUp className="w-4 h-4 text-green-500" />;
-      case 'signup': return <UserPlus className="w-4 h-4 text-purple-500" />;
+      case 'signup': return <UserPlus className="w-4 h-4 text-blue-500" />;
       case 'deal': return <Tag className="w-4 h-4 text-primary-500" />;
       default: return <Clock className="w-4 h-4 text-gray-400" />;
     }
@@ -331,7 +331,7 @@ export default function AdminOverviewPage() {
     switch (type) {
       case 'claim': return 'border-l-blue-400';
       case 'redemption': return 'border-l-green-400';
-      case 'signup': return 'border-l-purple-400';
+      case 'signup': return 'border-l-blue-400';
       case 'deal': return 'border-l-primary-400';
       default: return 'border-l-gray-300';
     }
@@ -341,7 +341,7 @@ export default function AdminOverviewPage() {
     switch (type) {
       case 'claim': return { bg: 'bg-blue-50 text-blue-600', label: 'Claim' };
       case 'redemption': return { bg: 'bg-green-50 text-green-600', label: 'Redeemed' };
-      case 'signup': return { bg: 'bg-purple-50 text-purple-600', label: 'Signup' };
+      case 'signup': return { bg: 'bg-blue-50 text-blue-600', label: 'Signup' };
       case 'deal': return { bg: 'bg-primary-50 text-primary-600', label: 'Deal' };
       default: return { bg: 'bg-gray-50 text-gray-500', label: type };
     }
@@ -406,7 +406,7 @@ export default function AdminOverviewPage() {
       label: 'Total Customers',
       value: data?.totalCustomers || 0,
       icon: <Users className="w-5 h-5" />,
-      iconBg: 'bg-purple-100 text-purple-600',
+      iconBg: 'bg-blue-100 text-blue-600',
       sparklineData: data?.sparklines.customers || [],
       sparklineKey: 'count',
       sparklineColor: '#a855f7',
@@ -450,7 +450,7 @@ export default function AdminOverviewPage() {
             <LayoutDashboard className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Dashboard Overview</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
             <p className="text-sm text-gray-500">Platform performance at a glance</p>
           </div>
         </div>
@@ -466,8 +466,8 @@ export default function AdminOverviewPage() {
               onClick={() => handleRangeChange(key)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                 range === key
-                  ? 'bg-white text-secondary-500 shadow-sm'
-                  : 'text-gray-500 hover:text-secondary-500'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900'
               }`}
             >
               {label}
@@ -494,7 +494,7 @@ export default function AdminOverviewPage() {
                 </span>
               )}
             </div>
-            <p className="text-3xl font-bold text-secondary-500 mb-1">
+            <p className="text-3xl font-bold text-gray-900 mb-1">
               {card.prefix ? (
                 <AnimatedValue value={card.value} prefix={card.prefix} />
               ) : (
@@ -545,7 +545,7 @@ export default function AdminOverviewPage() {
           >
             <div className="flex items-center justify-between mb-3">
               <div>
-                <h3 className="text-sm font-semibold text-secondary-500">{metric.label}</h3>
+                <h3 className="text-sm font-semibold text-gray-900">{metric.label}</h3>
                 <p className="text-xs text-gray-400">{metric.subtitle}</p>
               </div>
               <div className={`flex items-center gap-1 text-sm font-semibold px-2.5 py-1 rounded-full ${
@@ -559,7 +559,7 @@ export default function AdminOverviewPage() {
             </div>
             <div className="flex items-end gap-6 mb-3">
               <div>
-                <p className="text-2xl font-bold text-secondary-500">
+                <p className="text-2xl font-bold text-gray-900">
                   <AnimatedValue value={metric.thisWeek} />
                 </p>
                 <p className="text-xs text-gray-400">This week</p>
@@ -588,7 +588,7 @@ export default function AdminOverviewPage() {
           className="card p-6 animate-card-pop"
           style={{ animationDelay: '600ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-lg font-bold text-secondary-500 mb-5 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary-500" />
             Today&apos;s Activity
           </h2>
@@ -606,7 +606,7 @@ export default function AdminOverviewPage() {
                 value: data?.todayActivity.signups || 0,
                 goal: DAILY_GOALS.signups,
                 color: '#a855f7',
-                icon: <UserPlus className="w-4 h-4 text-purple-500" />,
+                icon: <UserPlus className="w-4 h-4 text-blue-500" />,
               },
               {
                 label: 'Deals',
@@ -639,7 +639,7 @@ export default function AdminOverviewPage() {
           className="card p-6 lg:col-span-2 animate-card-pop"
           style={{ animationDelay: '700ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-lg font-bold text-secondary-500 mb-4">Active Subscriptions by Tier</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Active Subscriptions by Tier</h2>
           <div className="flex items-center gap-8">
             <div className="flex-shrink-0">
               <ResponsiveContainer width={180} height={180}>
@@ -671,12 +671,12 @@ export default function AdminOverviewPage() {
                   <div key={tier} className="flex items-center justify-between group cursor-default">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                      <span className="text-sm font-medium text-secondary-500 capitalize group-hover:text-primary-500 transition-colors">
+                      <span className="text-sm font-medium text-gray-900 capitalize group-hover:text-primary-500 transition-colors">
                         {tier}
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-secondary-500">
+                      <span className="text-sm font-bold text-gray-900">
                         <AnimatedValue value={count} />
                       </span>
                       <span className="text-xs text-gray-400 w-16 text-right">{formatCurrency(price)}/mo</span>
@@ -696,7 +696,7 @@ export default function AdminOverviewPage() {
           className="card p-6 animate-card-pop"
           style={{ animationDelay: '800ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-primary-500" />
             Quick Actions
           </h2>
@@ -705,7 +705,7 @@ export default function AdminOverviewPage() {
               { href: '/admin/deals', icon: <Plus className="w-5 h-5 text-primary-600" />, iconBg: 'bg-primary-100 group-hover:bg-primary-200', label: 'Create Deal', sub: 'New deal listing' },
               { href: '/admin/featured', icon: <Star className="w-5 h-5 text-amber-600" />, iconBg: 'bg-amber-100 group-hover:bg-amber-200', label: 'Manage Featured', sub: 'Featured deals' },
               { href: '/admin/claims?status=pending', icon: <ClipboardList className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: 'Pending Claims', sub: 'Review claims' },
-              { href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5 text-purple-600" />, iconBg: 'bg-purple-100 group-hover:bg-purple-200', label: 'Manage Categories', sub: 'Deal categories' },
+              { href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: 'Manage Categories', sub: 'Deal categories' },
             ].map((action) => (
               <Link
                 key={action.href}
@@ -716,7 +716,7 @@ export default function AdminOverviewPage() {
                   {action.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-secondary-500">{action.label}</p>
+                  <p className="text-sm font-medium text-gray-900">{action.label}</p>
                   <p className="text-xs text-gray-400">{action.sub}</p>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors" />
@@ -730,7 +730,7 @@ export default function AdminOverviewPage() {
           className="card p-6 animate-card-pop"
           style={{ animationDelay: '900ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-primary-500" />
             System Health
           </h2>
@@ -750,7 +750,7 @@ export default function AdminOverviewPage() {
                     <div className="flex items-center gap-2">
                       <span className={iconColor}>{item.icon}</span>
                       <div>
-                        <p className="text-sm font-medium text-secondary-500">{item.label}</p>
+                        <p className="text-sm font-medium text-gray-900">{item.label}</p>
                         <p className="text-xs text-gray-400">{item.subtitle}</p>
                       </div>
                     </div>
@@ -779,7 +779,7 @@ export default function AdminOverviewPage() {
         className="card p-6 animate-card-pop"
         style={{ animationDelay: '1000ms', animationFillMode: 'both' }}
       >
-        <h2 className="text-lg font-bold text-secondary-500 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary-500" />
           Recent Activity
         </h2>
@@ -799,7 +799,7 @@ export default function AdminOverviewPage() {
                     {getActivityIcon(item.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-secondary-500 truncate">{item.description}</p>
+                    <p className="text-sm text-gray-900 truncate">{item.description}</p>
                   </div>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badge.bg}`}>
                     {badge.label}

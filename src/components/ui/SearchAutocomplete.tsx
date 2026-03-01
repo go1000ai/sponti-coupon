@@ -84,7 +84,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
               onChange={e => setSearchQuery(e.target.value)}
               onFocus={() => results.length > 0 && setShowDropdown(true)}
               placeholder="Search deals, restaurants, spas..."
-              className={`w-full pl-10 pr-3 py-3 rounded-xl text-secondary-500 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 ${
+              className={`w-full pl-10 pr-3 py-3 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 ${
                 isHero ? 'text-base sm:text-sm' : 'text-base sm:text-sm'
               }`}
             />
@@ -96,7 +96,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
               value={cityQuery}
               onChange={e => setCityQuery(e.target.value)}
               placeholder="City or ZIP"
-              className="w-full pl-10 pr-3 py-3 rounded-xl text-secondary-500 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-base sm:text-sm"
+              className="w-full pl-10 pr-3 py-3 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500/30 text-base sm:text-sm"
             />
           </div>
           <button
@@ -140,7 +140,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-secondary-500 truncate">{deal.title}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{deal.title}</p>
                       <p className="text-xs text-gray-400 truncate">
                         {deal.vendor?.business_name}
                         {deal.vendor?.city && ` · ${deal.vendor.city}`}

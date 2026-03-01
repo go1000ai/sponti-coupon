@@ -190,7 +190,7 @@ export default function AdminRecommendationsPage() {
         <div className="flex items-center gap-3">
           <Heart className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Recommendations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Recommendations</h1>
             <p className="text-sm text-gray-500">Deals currently being recommended to customers, ranked by engagement</p>
           </div>
         </div>
@@ -211,21 +211,21 @@ export default function AdminRecommendationsPage() {
             <TrendingUp className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">Active Deals Recommended</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
             <Percent className="w-4 h-4 text-green-500" />
             <span className="text-xs text-gray-500">Avg Conversion Rate</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500">{stats.avgConversion}%</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.avgConversion}%</p>
         </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Tag className="w-4 h-4 text-purple-500" />
+            <Tag className="w-4 h-4 text-blue-500" />
             <span className="text-xs text-gray-500">Top Category</span>
           </div>
-          <p className="text-2xl font-bold text-secondary-500 truncate">{stats.topCategory}</p>
+          <p className="text-2xl font-bold text-gray-900 truncate">{stats.topCategory}</p>
         </div>
       </div>
 
@@ -296,7 +296,7 @@ export default function AdminRecommendationsPage() {
 
                     {/* Deal Title */}
                     <td className="p-4">
-                      <p className="font-medium text-secondary-500 truncate max-w-[220px]">{rec.title}</p>
+                      <p className="font-medium text-gray-900 truncate max-w-[220px]">{rec.title}</p>
                       <p className="text-xs text-gray-400 mt-0.5">
                         Created {new Date(rec.created_at).toLocaleDateString()}
                       </p>
@@ -324,17 +324,17 @@ export default function AdminRecommendationsPage() {
                     </td>
 
                     {/* Discount */}
-                    <td className="p-4 text-center text-sm font-medium text-secondary-500">
+                    <td className="p-4 text-center text-sm font-medium text-gray-900">
                       {rec.discount_percentage != null ? `${rec.discount_percentage}%` : '--'}
                     </td>
 
                     {/* Claims */}
-                    <td className="p-4 text-center text-sm font-medium text-secondary-500">
+                    <td className="p-4 text-center text-sm font-medium text-gray-900">
                       {rec.claims_count.toLocaleString()}
                     </td>
 
                     {/* Redemptions */}
-                    <td className="p-4 text-center text-sm font-medium text-secondary-500">
+                    <td className="p-4 text-center text-sm font-medium text-gray-900">
                       {rec.redemption_count.toLocaleString()}
                     </td>
 

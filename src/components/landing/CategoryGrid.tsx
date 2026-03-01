@@ -37,15 +37,15 @@ const categories = [
     name: 'Entertainment',
     slug: 'entertainment',
     icon: Gamepad2,
-    gradient: 'from-violet-500 to-purple-500',
-    bg: 'bg-violet-50',
+    gradient: 'from-sky-500 to-blue-500',
+    bg: 'bg-sky-50',
     count: 93,
   },
   {
     name: 'Shopping',
     slug: 'shopping',
     icon: ShoppingBag,
-    gradient: 'from-blue-500 to-indigo-500',
+    gradient: 'from-blue-500 to-blue-500',
     bg: 'bg-blue-50',
     count: 156,
   },
@@ -103,7 +103,7 @@ function TiltCategoryCard({ cat, onClick }: { cat: typeof categories[0]; onClick
         <div className={`inline-flex bg-gradient-to-br ${cat.gradient} rounded-xl p-3 mb-3 shadow-md group-hover:shadow-lg group-hover:animate-wiggle transition-shadow`}>
           <cat.icon className="w-6 h-6 text-white" strokeWidth={1.8} />
         </div>
-        <h3 className="font-semibold text-secondary-500 text-sm mb-1">
+        <h3 className="font-semibold text-gray-900 text-sm mb-1">
           {cat.name}
         </h3>
         <p className="text-xs text-gray-400">{cat.count}+ deals</p>
@@ -120,11 +120,11 @@ export function CategoryGrid() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-full px-5 py-2 mb-3 shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-50 rounded-full px-5 py-2 mb-3 shadow-sm">
               <Compass className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-blue-600">Explore Categories</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-secondary-500">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
               What Are You Looking For?
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">

@@ -146,14 +146,23 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
   const userMessageCount = messages.filter(m => m.role === 'user').length;
   const isAtLimit = userMessageCount >= MAX_USER_MESSAGES;
 
-  // Scroll the chat container (not the page) to bottom on new messages
+  // Scroll to the start of the latest assistant message so the user reads from the top
+  const lastAssistantRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const container = messagesContainerRef.current;
-    if (container) {
-      requestAnimationFrame(() => {
+    if (!container) return;
+
+    requestAnimationFrame(() => {
+      const lastMsg = messages[messages.length - 1];
+      // If the latest message is from Mia, scroll so it starts at the top of the chat area
+      if (lastMsg?.role === 'assistant' && lastAssistantRef.current) {
+        lastAssistantRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // User message — scroll to bottom as usual
         container.scrollTop = container.scrollHeight;
-      });
-    }
+      }
+    });
   }, [messages, loading]);
 
   const handleNewChat = () => {
@@ -231,23 +240,31 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
           isFloating ? 'flex-1' : 'h-[400px] sm:h-[450px]'
         }`}
       >
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            {msg.role === 'assistant' && <MiaAvatar size={28} />}
+        {messages.map((msg, i) => {
+          // Find the last assistant message index for scroll targeting
+          const isLastAssistant =
+            msg.role === 'assistant' &&
+            i === messages.reduce((lastIdx, m, idx) => (m.role === 'assistant' ? idx : lastIdx), -1);
+
+          return (
             <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-gradient-to-r from-primary-500 to-orange-400 text-white rounded-tr-sm'
-                  : 'bg-white border border-gray-100 text-gray-700 shadow-sm rounded-tl-sm'
-              }`}
+              key={i}
+              ref={isLastAssistant ? lastAssistantRef : undefined}
+              className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.role === 'assistant' ? linkifyText(msg.content) : msg.content}
+              {msg.role === 'assistant' && <MiaAvatar size={28} />}
+              <div
+                className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                  msg.role === 'user'
+                    ? 'bg-gradient-to-r from-primary-500 to-orange-400 text-white rounded-tr-sm'
+                    : 'bg-white border border-gray-100 text-gray-700 shadow-sm rounded-tl-sm'
+                }`}
+              >
+                {msg.role === 'assistant' ? linkifyText(msg.content) : msg.content}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {/* Typing indicator */}
         {loading && (

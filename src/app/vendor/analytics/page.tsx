@@ -30,14 +30,13 @@ const COLORS = {
   secondaryLight: '#2D2D4A',
   positive: '#10B981',
   negative: '#EF4444',
-  purple: '#8B5CF6',
   blue: '#3B82F6',
   amber: '#F59E0B',
   cyan: '#06B6D4',
   pink: '#EC4899',
 };
 
-const CHART_COLORS = [COLORS.primary, COLORS.purple, COLORS.blue, COLORS.positive, COLORS.amber, COLORS.pink, COLORS.cyan];
+const CHART_COLORS = [COLORS.primary, COLORS.blue, COLORS.positive, COLORS.amber, COLORS.pink, COLORS.cyan];
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -219,7 +218,7 @@ function DealTypeBadge({ type }: { type: string }) {
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
       <Tag className="w-3 h-3" /> Steady
     </span>
   );
@@ -593,7 +592,7 @@ export default function VendorAnalyticsPage() {
         icon: Clock,
         label: 'Peak Hour',
         value: `${bestHour.hour} (${bestHour.claims} claims)`,
-        color: COLORS.purple,
+        color: COLORS.blue,
       });
     }
 
@@ -775,7 +774,7 @@ export default function VendorAnalyticsPage() {
         />
         <KPICard
           icon={QrCode}
-          iconColor={COLORS.purple}
+          iconColor={COLORS.blue}
           label="Redemptions"
           value={kpis.totalRedemptions}
           trend={kpis.redemptionsTrend}
@@ -925,7 +924,7 @@ export default function VendorAnalyticsPage() {
                 <p className="text-xs text-gray-500">{Math.round(dealTypePerformance.sponti.avgRedemptionRate)}% redeemed</p>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 rounded-xl p-4 text-center border border-indigo-100">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 text-center border border-blue-100">
               <Tag className="w-6 h-6 text-[#1A1A2E] mx-auto mb-2" />
               <p className="text-2xl font-bold text-[#1A1A2E]">{dealTypePerformance.steady.claims}</p>
               <p className="text-xs text-gray-500 mt-1">Steady Claims</p>
@@ -1045,7 +1044,7 @@ export default function VendorAnalyticsPage() {
                     return (
                       <Cell
                         key={`cell-${index}`}
-                        fill={intensity > 0.7 ? COLORS.purple : intensity > 0.4 ? '#A78BFA' : intensity > 0 ? '#C4B5FD' : '#F3F4F6'}
+                        fill={intensity > 0.7 ? COLORS.blue : intensity > 0.4 ? '#A78BFA' : intensity > 0 ? '#C4B5FD' : '#F3F4F6'}
                       />
                     );
                   })}
@@ -1077,7 +1076,7 @@ export default function VendorAnalyticsPage() {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} stroke="#9ca3af" allowDecimals={false} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar yAxisId="left" dataKey="totalClaims" fill={COLORS.purple} radius={[4, 4, 0, 0]} name="Total Claims" opacity={0.8} />
+                <Bar yAxisId="left" dataKey="totalClaims" fill={COLORS.blue} radius={[4, 4, 0, 0]} name="Total Claims" opacity={0.8} />
                 <Line yAxisId="right" type="monotone" dataKey="avgClaims" stroke={COLORS.primary} strokeWidth={2} dot={{ r: 4, fill: COLORS.primary }} name="Avg Claims/Deal" />
               </ComposedChart>
             </ResponsiveContainer>
@@ -1244,8 +1243,8 @@ export default function VendorAnalyticsPage() {
 
                   {/* Competitor info */}
                   {aiInsights?.competitors && (
-                    <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 rounded-xl p-4 border border-purple-500/20">
-                      <p className="text-xs text-purple-300 font-semibold mb-2">Competitive Landscape</p>
+                    <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/10 rounded-xl p-4 border border-blue-500/20">
+                      <p className="text-xs text-blue-300 font-semibold mb-2">Competitive Landscape</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <p className="text-lg font-bold text-white">{aiInsights.competitors.count}</p>

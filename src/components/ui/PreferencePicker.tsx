@@ -12,8 +12,8 @@ const CATEGORIES = [
   { name: 'Restaurants', slug: 'restaurants', icon: UtensilsCrossed, gradient: 'from-orange-500 to-red-500', bg: 'bg-orange-50', ring: 'ring-orange-500', text: 'text-orange-600' },
   { name: 'Spa & Beauty', slug: 'beauty-spa', icon: Sparkles, gradient: 'from-pink-500 to-rose-500', bg: 'bg-pink-50', ring: 'ring-pink-500', text: 'text-pink-600' },
   { name: 'Fitness', slug: 'health-fitness', icon: Dumbbell, gradient: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', ring: 'ring-emerald-500', text: 'text-emerald-600' },
-  { name: 'Entertainment', slug: 'entertainment', icon: Gamepad2, gradient: 'from-violet-500 to-purple-500', bg: 'bg-violet-50', ring: 'ring-violet-500', text: 'text-violet-600' },
-  { name: 'Shopping', slug: 'shopping', icon: ShoppingBag, gradient: 'from-blue-500 to-indigo-500', bg: 'bg-blue-50', ring: 'ring-blue-500', text: 'text-blue-600' },
+  { name: 'Entertainment', slug: 'entertainment', icon: Gamepad2, gradient: 'from-sky-500 to-blue-500', bg: 'bg-sky-50', ring: 'ring-sky-500', text: 'text-sky-600' },
+  { name: 'Shopping', slug: 'shopping', icon: ShoppingBag, gradient: 'from-blue-500 to-blue-500', bg: 'bg-blue-50', ring: 'ring-blue-500', text: 'text-blue-600' },
   { name: 'Food & Drink', slug: 'food-drink', icon: Coffee, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', ring: 'ring-amber-500', text: 'text-amber-600' },
   { name: 'Hair & Grooming', slug: 'hair-grooming', icon: Scissors, gradient: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-50', ring: 'ring-cyan-500', text: 'text-cyan-600' },
   { name: 'Automotive', slug: 'automotive', icon: Car, gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', ring: 'ring-slate-500', text: 'text-slate-600' },
@@ -177,12 +177,12 @@ export function PreferencePicker() {
               </div>
             </div>
 
-            <h3 className="text-2xl font-extrabold text-secondary-500 mb-2">
+            <h3 className="text-2xl font-extrabold text-gray-900 mb-2">
               You&apos;re all set!
             </h3>
             <p className="text-gray-500 text-sm mb-1 leading-relaxed">
               We&apos;ll prioritize{' '}
-              <span className="font-bold text-secondary-500">
+              <span className="font-bold text-gray-900">
                 {selected.map(s => CATEGORIES.find(c => c.slug === s)?.name).join(', ')}
               </span>{' '}
               deals for you.

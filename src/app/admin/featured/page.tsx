@@ -235,7 +235,7 @@ export default function AdminFeaturedPage() {
         <div className="flex items-center gap-3">
           <Star className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Featured Deals</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Featured Deals</h1>
             <p className="text-sm text-gray-500">Manage which deals appear in the featured section on the homepage</p>
           </div>
         </div>
@@ -251,7 +251,7 @@ export default function AdminFeaturedPage() {
       {/* Featured Deals Table */}
       <div className="card">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-secondary-500">Current Featured Deals</h2>
+          <h2 className="text-lg font-bold text-gray-900">Current Featured Deals</h2>
           <p className="text-xs text-gray-400">{featured.length} deal{featured.length !== 1 ? 's' : ''} featured &middot; Use arrows to reorder</p>
         </div>
         <div className="overflow-x-auto">
@@ -291,7 +291,7 @@ export default function AdminFeaturedPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <p className="font-medium text-secondary-500">{item.deal_title}</p>
+                      <p className="font-medium text-gray-900">{item.deal_title}</p>
                     </td>
                     <td className="p-4 text-sm text-gray-500">{item.vendor_name}</td>
                     <td className="p-4 text-center">
@@ -375,7 +375,7 @@ export default function AdminFeaturedPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <Tag className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     <div className="min-w-0">
-                      <p className="font-medium text-secondary-500 text-sm truncate">{deal.title}</p>
+                      <p className="font-medium text-gray-900 text-sm truncate">{deal.title}</p>
                       <p className="text-xs text-gray-400">{deal.vendor_name}</p>
                     </div>
                     <span className={`flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded font-medium ${

@@ -45,7 +45,7 @@ export default function AdminConfirmDialog({
                 <AlertTriangle className="w-5 h-5 text-yellow-500" />
               )}
             </div>
-            <h3 className="text-lg font-bold text-secondary-500">{title}</h3>
+            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
           </div>
           <p className="text-sm text-gray-600 mb-6">{message}</p>
           <div className="flex items-center justify-end gap-3">

@@ -220,7 +220,7 @@ export default function VendorReviewsPage() {
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-primary-500 flex-shrink-0" />
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-secondary-500">Reviews</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reviews</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-0.5 sm:mt-1">Manage customer reviews and reputation</p>
         </div>
       </div>
@@ -231,7 +231,7 @@ export default function VendorReviewsPage() {
         <div className="card p-4 sm:p-5">
           <div className="flex items-center gap-1 mb-1 sm:mb-2">
             <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 fill-yellow-400" />
-            <span className="text-2xl sm:text-3xl font-bold text-secondary-500">
+            <span className="text-2xl sm:text-3xl font-bold text-gray-900">
               {data?.avg_rating ? Number(data.avg_rating).toFixed(1) : '0.0'}
             </span>
           </div>
@@ -241,14 +241,14 @@ export default function VendorReviewsPage() {
         {/* Total Reviews */}
         <div className="card p-4 sm:p-5">
           <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold text-secondary-500">{data?.total_reviews || 0}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">{data?.total_reviews || 0}</p>
           <p className="text-xs sm:text-sm text-gray-500">Total Reviews</p>
         </div>
 
         {/* Response Rate */}
         <div className="card p-4 sm:p-5">
           <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold text-secondary-500">
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
             {data?.reviews.length
               ? `${Math.round((data.reviews.filter(r => r.vendor_reply).length / data.reviews.length) * 100)}%`
               : '0%'}
@@ -258,8 +258,8 @@ export default function VendorReviewsPage() {
 
         {/* 5-Star Reviews */}
         <div className="card p-4 sm:p-5">
-          <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500 mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold text-secondary-500">
+          <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900">
             {data?.distribution?.[5] || 0}
           </p>
           <p className="text-xs sm:text-sm text-gray-500">5-Star Reviews</p>
@@ -269,7 +269,7 @@ export default function VendorReviewsPage() {
       {/* Rating Distribution */}
       {data && data.total_reviews > 0 && (
         <div className="card p-4 sm:p-6 mb-6 sm:mb-8">
-          <h2 className="text-base sm:text-lg font-bold text-secondary-500 mb-3 sm:mb-4">Rating Distribution</h2>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Rating Distribution</h2>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map(stars => {
               const count = data.distribution?.[stars] || 0;
@@ -333,7 +333,7 @@ export default function VendorReviewsPage() {
                 <div className="flex-1 min-w-0">
                   {/* Name, verified, time — wraps on mobile */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                    <span className="font-semibold text-secondary-500 text-sm sm:text-base">{getCustomerName(review)}</span>
+                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{getCustomerName(review)}</span>
                     <div className="flex items-center gap-2">
                       {review.is_verified && (
                         <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
@@ -399,11 +399,11 @@ export default function VendorReviewsPage() {
                   {review.vendor_reply && (
                     <div className={`mt-3 sm:mt-4 rounded-lg p-3 sm:p-4 border-l-4 ${
                       review.is_auto_response
-                        ? 'bg-purple-50 border-purple-400'
+                        ? 'bg-blue-50 border-blue-400'
                         : 'bg-gray-50 border-primary-500'
                     }`}>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
-                        <span className="text-sm font-semibold text-secondary-500">Your Reply</span>
+                        <span className="text-sm font-semibold text-gray-900">Your Reply</span>
                         <div className="flex items-center gap-2 flex-wrap">
                           {review.is_auto_response && (
                             <span className="inline-flex items-center gap-1 text-xs font-medium bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
@@ -435,10 +435,10 @@ export default function VendorReviewsPage() {
                               type="button"
                               onClick={() => setToneDropdownOpen(toneDropdownOpen === review.id ? null : review.id)}
                               disabled={generatingTone}
-                              className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors border border-purple-200 ${
+                              className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors border border-blue-200 ${
                                 generatingTone
-                                  ? 'bg-purple-100 text-purple-400 cursor-wait'
-                                  : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                                  ? 'bg-blue-100 text-blue-400 cursor-wait'
+                                  : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
                               }`}
                             >
                               {generatingTone ? (
@@ -468,7 +468,7 @@ export default function VendorReviewsPage() {
                                     }}
                                     className={`w-full text-left px-3 py-2 sm:py-1.5 text-xs transition-colors ${
                                       selectedTone === toneOption
-                                        ? 'bg-purple-50 text-purple-700 font-medium'
+                                        ? 'bg-blue-50 text-blue-700 font-medium'
                                         : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                                   >
@@ -485,8 +485,8 @@ export default function VendorReviewsPage() {
                             disabled={generatingTone}
                             className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 ${
                               generatingTone
-                                ? 'bg-purple-100 text-purple-400 cursor-wait'
-                                : 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600 hover:shadow-md hover:shadow-purple-200/50 active:scale-95'
+                                ? 'bg-blue-100 text-blue-400 cursor-wait'
+                                : 'bg-gradient-to-r from-blue-500 to-blue-500 text-white hover:from-blue-600 hover:to-blue-600 hover:shadow-md hover:shadow-blue-200/50 active:scale-95'
                             }`}
                           >
                             {generatingTone ? (

@@ -60,7 +60,7 @@ function ContactForm() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 mb-5">
           <Check className="w-8 h-8 text-green-500" />
         </div>
-        <h2 className="text-2xl font-bold text-secondary-500 mb-2">
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
           Message Sent!
         </h2>
         <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -85,7 +85,7 @@ function ContactForm() {
         <div className="bg-gradient-to-br from-primary-500 to-orange-500 rounded-xl p-2.5 shadow-md">
           <Send className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-xl font-bold text-secondary-500">
+        <h2 className="text-xl font-bold text-gray-900">
           Send Us a Message
         </h2>
       </div>
@@ -262,7 +262,7 @@ export default function ContactPage() {
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-100 to-blue-100 flex items-center justify-center shrink-0">
                     <HelpCircle className="w-5 h-5 text-accent-600" />
                   </div>
-                  <h3 className="font-bold text-secondary-500">Quick Answers</h3>
+                  <h3 className="font-bold text-gray-900">Quick Answers</h3>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
                   Check our FAQ for answers to the most common questions about pricing, features, and getting started.

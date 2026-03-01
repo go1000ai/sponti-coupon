@@ -25,7 +25,7 @@ const priorityConfig: Record<SupportTicketPriority, { label: string; className: 
 };
 
 const categoryConfig: Record<SupportTicketCategory, { label: string; className: string }> = {
-  billing: { label: 'Billing', className: 'bg-purple-100 text-purple-700' },
+  billing: { label: 'Billing', className: 'bg-blue-100 text-blue-700' },
   technical: { label: 'Technical', className: 'bg-blue-100 text-blue-700' },
   account: { label: 'Account', className: 'bg-green-100 text-green-700' },
   general: { label: 'General', className: 'bg-gray-100 text-gray-600' },
@@ -62,17 +62,17 @@ export default function SupportTicketList({ tickets, loading, onSelectTicket, sh
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left font-semibold text-secondary-500">Subject</th>
-                <th className="px-4 py-3 text-left font-semibold text-secondary-500">Category</th>
-                <th className="px-4 py-3 text-left font-semibold text-secondary-500">Status</th>
-                <th className="px-4 py-3 text-left font-semibold text-secondary-500">Priority</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900">Subject</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900">Category</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900">Priority</th>
                 {showUserInfo && (
                   <>
-                    <th className="px-4 py-3 text-left font-semibold text-secondary-500">Email</th>
-                    <th className="px-4 py-3 text-left font-semibold text-secondary-500">Role</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-900">Email</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-900">Role</th>
                   </>
                 )}
-                <th className="px-4 py-3 text-left font-semibold text-secondary-500">Created</th>
+                <th className="px-4 py-3 text-left font-semibold text-gray-900">Created</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -92,7 +92,7 @@ export default function SupportTicketList({ tickets, loading, onSelectTicket, sh
         <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
           <Headphones className="w-8 h-8 text-gray-400" />
         </div>
-        <h3 className="text-lg font-semibold text-secondary-500 mb-1">No tickets found</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">No tickets found</h3>
         <p className="text-sm text-gray-500">
           {showUserInfo
             ? 'No support tickets match your current filters.'
@@ -108,17 +108,17 @@ export default function SupportTicketList({ tickets, loading, onSelectTicket, sh
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-4 py-3 text-left font-semibold text-secondary-500">Subject</th>
-              <th className="px-4 py-3 text-left font-semibold text-secondary-500">Category</th>
-              <th className="px-4 py-3 text-left font-semibold text-secondary-500">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-secondary-500">Priority</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-900">Subject</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-900">Category</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-900">Status</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-900">Priority</th>
               {showUserInfo && (
                 <>
-                  <th className="px-4 py-3 text-left font-semibold text-secondary-500">Email</th>
-                  <th className="px-4 py-3 text-left font-semibold text-secondary-500">Role</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-900">Email</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-900">Role</th>
                 </>
               )}
-              <th className="px-4 py-3 text-left font-semibold text-secondary-500">Created</th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-900">Created</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -134,7 +134,7 @@ export default function SupportTicketList({ tickets, loading, onSelectTicket, sh
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
-                    <span className="font-medium text-secondary-500 line-clamp-1">
+                    <span className="font-medium text-gray-900 line-clamp-1">
                       {ticket.subject}
                     </span>
                   </td>

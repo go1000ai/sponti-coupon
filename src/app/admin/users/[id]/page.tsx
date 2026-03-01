@@ -180,7 +180,7 @@ function RoleBadge({ role }: { role: UserRole }) {
   switch (role) {
     case 'admin':
       return (
-        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-purple-50 text-purple-600 font-medium">
+        <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
           <Shield className="w-3 h-3" />
           Admin
         </span>
@@ -548,7 +548,7 @@ export default function AdminUserDetailPage() {
   if (error || !userData || !formData) {
     return (
       <div className="max-w-7xl mx-auto p-6">
-        <Link href="/admin/users" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 transition-colors mb-6">
+        <Link href="/admin/users" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6">
           <ArrowLeft className="w-4 h-4" /> Back to Users
         </Link>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
@@ -587,13 +587,13 @@ export default function AdminUserDetailPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/admin/users"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-secondary-500 transition-colors group"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
             Back to Users
           </Link>
           <div className="hidden sm:block w-px h-6 bg-gray-200" />
-          <h1 className="text-xl font-bold text-secondary-500 truncate max-w-md">
+          <h1 className="text-xl font-bold text-gray-900 truncate max-w-md">
             {userData.email}
           </h1>
           <RoleBadge role={formData.role} />
@@ -1038,7 +1038,7 @@ export default function AdminUserDetailPage() {
                       className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500/20 transition-colors"
                     />
                     <div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-secondary-500 transition-colors">
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
                         Email Digest Opt In
                       </span>
                       <p className="text-xs text-gray-400">Receives weekly email digest of deals</p>
@@ -1053,7 +1053,7 @@ export default function AdminUserDetailPage() {
                       className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500/20 transition-colors"
                     />
                     <div>
-                      <span className="text-sm font-medium text-gray-700 group-hover:text-secondary-500 transition-colors">
+                      <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
                         Review Email Opt Out
                       </span>
                       <p className="text-xs text-gray-400">Opted out of review request emails</p>
@@ -1194,7 +1194,7 @@ export default function AdminUserDetailPage() {
             className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300"
             style={{ opacity: 0, animation: 'fadeIn 0.5s ease-out 0.25s forwards' }}
           >
-            <SectionHeader label="Stats" color="from-purple-500 to-purple-300" />
+            <SectionHeader label="Stats" color="from-blue-500 to-blue-300" />
 
             <div className="grid grid-cols-2 gap-3">
               {formData.role === 'vendor' ? (
@@ -1203,14 +1203,14 @@ export default function AdminUserDetailPage() {
                     <div className="w-9 h-9 rounded-lg bg-blue-100 flex items-center justify-center mx-auto mb-2">
                       <BarChart3 className="w-4 h-4 text-blue-600" />
                     </div>
-                    <span className="text-xl font-bold text-secondary-500">{userData.deals_count}</span>
+                    <span className="text-xl font-bold text-gray-900">{userData.deals_count}</span>
                     <p className="text-xs text-gray-500 mt-0.5">Deals</p>
                   </div>
                   <div className="bg-primary-50 rounded-xl p-4 text-center">
                     <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center mx-auto mb-2">
                       <UserCircle className="w-4 h-4 text-primary-600" />
                     </div>
-                    <span className="text-xl font-bold text-secondary-500">{userData.claims_count}</span>
+                    <span className="text-xl font-bold text-gray-900">{userData.claims_count}</span>
                     <p className="text-xs text-gray-500 mt-0.5">Total Claims</p>
                   </div>
                 </>
@@ -1220,14 +1220,14 @@ export default function AdminUserDetailPage() {
                     <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center mx-auto mb-2">
                       <Tag className="w-4 h-4 text-primary-600" />
                     </div>
-                    <span className="text-xl font-bold text-secondary-500">{userData.claims_count}</span>
+                    <span className="text-xl font-bold text-gray-900">{userData.claims_count}</span>
                     <p className="text-xs text-gray-500 mt-0.5">Claims</p>
                   </div>
                   <div className="bg-green-50 rounded-xl p-4 text-center">
                     <div className="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center mx-auto mb-2">
                       <CheckCircle className="w-4 h-4 text-green-600" />
                     </div>
-                    <span className="text-xl font-bold text-secondary-500">{userData.deals_count}</span>
+                    <span className="text-xl font-bold text-gray-900">{userData.deals_count}</span>
                     <p className="text-xs text-gray-500 mt-0.5">Redeemed</p>
                   </div>
                 </>
@@ -1257,7 +1257,7 @@ export default function AdminUserDetailPage() {
                           <Ticket className="w-3.5 h-3.5 text-amber-500" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm text-gray-700 truncate max-w-[180px] group-hover:text-secondary-500 transition-colors">
+                          <p className="text-sm text-gray-700 truncate max-w-[180px] group-hover:text-gray-900 transition-colors">
                             {ticket.subject}
                           </p>
                           <p className="text-xs text-gray-400">

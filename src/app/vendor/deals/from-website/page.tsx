@@ -340,7 +340,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-secondary-500 flex items-center gap-3">
+        <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
@@ -484,7 +484,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
 
       {/* Go1000.ai CTA — shown when no URL entered and no analysis yet */}
       {!analysis && !loading && !url.trim() && (
-        <div className="card p-5 mb-6 bg-gradient-to-r from-[#0f0b2e] via-[#1a1145] to-[#0f0b2e] border-indigo-800/40">
+        <div className="card p-5 mb-6 bg-gradient-to-r from-[#0f0b2e] via-[#1a1145] to-[#0f0b2e] border-blue-800/40">
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -496,7 +496,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-white text-sm">Don&apos;t have a website yet?</h3>
-              <p className="text-xs text-indigo-200 mt-0.5">
+              <p className="text-xs text-blue-200 mt-0.5">
                 Our sister company <strong className="text-cyan-300">Go1000.ai</strong> builds AI-powered websites, automations, and digital solutions for businesses.
               </p>
             </div>
@@ -523,7 +523,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
             </div>
           </div>
           {/* Go1000.ai CTA after error */}
-          <div className="mt-3 bg-[#0f0b2e] border border-indigo-800/40 rounded-xl p-4 flex items-center gap-3">
+          <div className="mt-3 bg-[#0f0b2e] border border-blue-800/40 rounded-xl p-4 flex items-center gap-3">
             <div className="flex-shrink-0 w-8 h-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -532,7 +532,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                 className="w-full h-full object-contain"
               />
             </div>
-            <p className="text-xs text-indigo-200 flex-1">
+            <p className="text-xs text-blue-200 flex-1">
               Need a professional website? <a href="https://go1000.ai" target="_blank" rel="noopener noreferrer" className="text-cyan-400 font-semibold hover:underline">Go1000.ai</a> — AI-powered websites & automations by the SpontiCoupon team.
             </p>
           </div>
@@ -851,7 +851,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                                 <button
                                   onClick={() => setImageTab(prev => ({ ...prev, [idx]: 'ai' }))}
                                   className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-all border-b-2 ${
-                                    imageTab[idx] === 'ai' ? 'border-violet-500 text-violet-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
+                                    imageTab[idx] === 'ai' ? 'border-sky-500 text-sky-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700'
                                   }`}
                                 >
                                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -973,7 +973,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                               {/* AI Generate tab */}
                               {imageTab[idx] === 'ai' && deal.suggested_image_prompt && (
                                 <div>
-                                  <p className="text-xs text-violet-600 mb-2">{deal.suggested_image_prompt}</p>
+                                  <p className="text-xs text-sky-600 mb-2">{deal.suggested_image_prompt}</p>
                                   <button
                                     onClick={() => handleGenerateImage(idx, deal.suggested_image_prompt!)}
                                     disabled={generatingImage !== null}

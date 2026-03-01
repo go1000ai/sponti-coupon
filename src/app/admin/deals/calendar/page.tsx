@@ -326,7 +326,7 @@ export default function AdminDealCalendarPage() {
         <div className="flex items-center gap-3">
           <Calendar className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-secondary-500">Deal Calendar</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Deal Calendar</h1>
             <p className="text-sm text-gray-500">
               Monthly view of all deals &mdash; {deals.length} total
             </p>
@@ -354,7 +354,7 @@ export default function AdminDealCalendarPage() {
           </button>
 
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-secondary-500">
+            <h2 className="text-xl font-bold text-gray-900">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </h2>
             <button
@@ -409,7 +409,7 @@ export default function AdminDealCalendarPage() {
         <div className="card">
           <div className="flex items-center gap-2 p-6 border-b border-gray-100">
             <Clock className="w-5 h-5 text-primary-500" />
-            <h2 className="text-lg font-bold text-secondary-500">
+            <h2 className="text-lg font-bold text-gray-900">
               Deals on{' '}
               {selectedDate.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -452,7 +452,7 @@ export default function AdminDealCalendarPage() {
 
                   {/* Deal info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-secondary-500 truncate">
+                    <p className="font-medium text-gray-900 truncate">
                       {deal.title}
                     </p>
                     <p className="text-sm text-gray-500 truncate">

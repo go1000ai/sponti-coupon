@@ -97,7 +97,7 @@ export function WhyChooseUs() {
         {/* ── Two-Column Header ── */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start mb-16">
           <ScrollReveal animation="fade-up" delay={100}>
-            <h2 className="font-bebas text-5xl sm:text-6xl lg:text-7xl leading-[0.95] text-secondary-500 tracking-wide text-center md:text-left">
+            <h2 className="font-bebas text-5xl sm:text-6xl lg:text-7xl leading-[0.95] text-gray-900 tracking-wide text-center md:text-left">
               Every Dollar You Earn
               <br />
               Should Be{' '}
@@ -115,7 +115,7 @@ export function WhyChooseUs() {
               <p className="text-lg text-gray-600 leading-relaxed mt-3">
                 We built SpontiCoupon to fix that.
               </p>
-              <p className="text-lg font-semibold text-secondary-500 leading-relaxed mt-3">
+              <p className="text-lg font-semibold text-gray-900 leading-relaxed mt-3">
                 Zero commission. Zero hidden fees. You keep everything.
               </p>
             </div>
@@ -125,7 +125,7 @@ export function WhyChooseUs() {
         {/* ── Pain Points Title ── */}
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-10">
-            <h3 className="font-bebas text-3xl sm:text-4xl text-secondary-500 tracking-wide">
+            <h3 className="font-bebas text-3xl sm:text-4xl text-gray-900 tracking-wide">
               What&apos;s Wrong With Other Platforms
             </h3>
             <p className="text-gray-500 mt-2 max-w-xl mx-auto">
@@ -153,7 +153,7 @@ export function WhyChooseUs() {
                   {/* Front content (always visible) */}
                   <div className="relative z-10 flex flex-col h-full">
                     <span className="text-3xl block mb-2">{item.emoji}</span>
-                    <h3 className="text-base font-bold text-secondary-500 mb-auto">{item.title}</h3>
+                    <h3 className="text-base font-bold text-gray-900 mb-auto">{item.title}</h3>
 
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center gap-2">
@@ -201,12 +201,12 @@ export function WhyChooseUs() {
             </div>
 
             <div className="text-center max-w-3xl mx-auto mb-8">
-              <h3 className="font-bebas text-3xl sm:text-4xl text-secondary-500 tracking-wide mb-3">
+              <h3 className="font-bebas text-3xl sm:text-4xl text-gray-900 tracking-wide mb-3">
                 Automated Social Media Posts
               </h3>
               <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
                 Soon you&apos;ll be able to publish your coupons directly to your social media platforms
-                <span className="font-semibold text-secondary-500"> and </span>
+                <span className="font-semibold text-gray-900"> and </span>
                 our SpontiCoupon channels — all with a single click.
                 No more hiring a social media manager or spending hours creating posts.
               </p>
@@ -218,7 +218,7 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-orange-50 mb-3">
                   <Megaphone className="w-6 h-6 text-primary-500" />
                 </div>
-                <h4 className="text-sm font-bold text-secondary-500 mb-1.5">Create Your Deal</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">Create Your Deal</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Build a coupon from your dashboard — we auto-generate a professional, branded social media post for you.
                 </p>
@@ -228,7 +228,7 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-orange-50 mb-3">
                   <Share2 className="w-6 h-6 text-primary-500" />
                 </div>
-                <h4 className="text-sm font-bold text-secondary-500 mb-1.5">One-Click Publish</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">One-Click Publish</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Post to your Instagram, Facebook, and TikTok — plus get featured on SpontiCoupon&apos;s own social channels for extra exposure.
                 </p>
@@ -238,7 +238,7 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 mb-3">
                   <DollarSign className="w-6 h-6 text-green-500" />
                 </div>
-                <h4 className="text-sm font-bold text-secondary-500 mb-1.5">Save Thousands</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">Save Thousands</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Skip the $500–$2,000/mo social media manager. Your deals get professional posts and maximum reach — included in your plan.
                 </p>
@@ -257,7 +257,7 @@ export function WhyChooseUs() {
               <div className="flex items-center justify-center gap-2 mt-4">
                 <SpontiIcon className="w-4 h-4" />
                 <span className="text-xs font-semibold text-gray-500">
-                  Available on <span className="text-secondary-500">Business</span> &amp; <span className="text-secondary-500">Enterprise</span> plans
+                  Available on <span className="text-gray-900">Business</span> &amp; <span className="text-gray-900">Enterprise</span> plans
                 </span>
               </div>
             </div>

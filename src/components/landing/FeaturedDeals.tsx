@@ -50,7 +50,7 @@ export function FeaturedDeals() {
                 <Flame className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
                 <span className="text-sm font-semibold text-primary-600">Hot Right Now</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
                 Today&apos;s Best Deals
               </h2>
               <p className="text-gray-500 mt-2 text-lg">
@@ -69,19 +69,25 @@ export function FeaturedDeals() {
         {/* Tabs */}
         <ScrollReveal animation="fade-up" delay={100}>
           <div className="flex flex-wrap gap-2 mb-8">
-            {tabs.map(tab => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-1.5 px-4 sm:px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
-                  activeTab === tab.key
-                    ? 'bg-primary-500 text-white shadow-md shadow-primary-200'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {tab.icon} {tab.label}
-              </button>
-            ))}
+            {tabs.map(tab => {
+              const isActive = activeTab === tab.key;
+              const isSteady = tab.key === 'regular';
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-1.5 px-4 sm:px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 ${
+                    isActive
+                      ? isSteady
+                        ? 'bg-secondary-500 text-white shadow-md shadow-secondary-200'
+                        : 'bg-primary-500 text-white shadow-md shadow-primary-200'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:border-primary-300 hover:text-primary-500'
+                  }`}
+                >
+                  {tab.icon} {tab.label}
+                </button>
+              );
+            })}
           </div>
         </ScrollReveal>
 
@@ -118,7 +124,7 @@ export function FeaturedDeals() {
             <div className="text-center mt-10">
               <Link
                 href="/deals"
-                className="btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base hover:scale-105 transition-transform duration-200"
+                className="inline-flex items-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
               >
                 Browse All Deals <ArrowRight className="w-5 h-5" />
               </Link>

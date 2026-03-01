@@ -55,7 +55,7 @@ function DealCard({ deal, showDistance }: { deal: DealWithDistance; showDistance
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-secondary-500 truncate group-hover:text-primary-500 transition-colors">
+        <h3 className="font-semibold text-gray-900 truncate group-hover:text-primary-500 transition-colors">
           {deal.title}
         </h3>
         <p className="text-sm text-gray-500 truncate mt-0.5">
@@ -175,7 +175,7 @@ export default function DealsForYouPage() {
     <div className="max-w-6xl mx-auto space-y-10">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-secondary-500">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
           Deals For You
         </h1>
         <p className="text-gray-500 mt-1">
@@ -188,7 +188,7 @@ export default function DealsForYouPage() {
           <div className="bg-primary-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <Compass className="w-8 h-8 text-primary-500" />
           </div>
-          <h3 className="text-lg font-semibold text-secondary-500">No deals available</h3>
+          <h3 className="text-lg font-semibold text-gray-900">No deals available</h3>
           <p className="text-gray-400 mt-1 mb-6">
             Check back soon for new deals in your area!
           </p>
@@ -202,11 +202,11 @@ export default function DealsForYouPage() {
           {recommendedDeals.length > 0 && (
             <section>
               <div className="flex items-center gap-3 mb-5">
-                <div className="bg-purple-500 rounded-xl p-2.5">
+                <div className="bg-blue-500 rounded-xl p-2.5">
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-secondary-500">Recommended for You</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Recommended for You</h2>
                   <p className="text-sm text-gray-400">
                     {hasHistory
                       ? 'Based on your purchase history'
@@ -230,7 +230,7 @@ export default function DealsForYouPage() {
                   <MapPin className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-secondary-500">Near You</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Near You</h2>
                   <p className="text-sm text-gray-400">Deals closest to your location</p>
                 </div>
               </div>
@@ -250,7 +250,7 @@ export default function DealsForYouPage() {
                   <Flame className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-secondary-500">Trending</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Trending</h2>
                   <p className="text-sm text-gray-400">Most popular deals right now</p>
                 </div>
               </div>
@@ -270,7 +270,7 @@ export default function DealsForYouPage() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-secondary-500">Just Added</h2>
+                  <h2 className="text-lg font-bold text-gray-900">Just Added</h2>
                   <p className="text-sm text-gray-400">Fresh deals you haven&apos;t seen yet</p>
                 </div>
               </div>

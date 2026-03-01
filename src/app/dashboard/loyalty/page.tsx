@@ -122,11 +122,11 @@ export default function CustomerLoyaltyPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* ═══ HERO HEADER ═══ */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-6 sm:p-8 mb-8 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-600 to-blue-600 p-6 sm:p-8 mb-8 shadow-xl">
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-purple-400/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-400/10 rounded-full blur-3xl" />
           <div className="absolute top-1/2 left-1/3 w-32 h-32 bg-amber-300/10 rounded-full blur-2xl" />
         </div>
 
@@ -144,7 +144,7 @@ export default function CustomerLoyaltyPage() {
           {/* Stats row */}
           {totalPrograms > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <StatCard icon={<Store className="w-4 h-4" />} value={totalPrograms} label="Programs" color="purple" />
+              <StatCard icon={<Store className="w-4 h-4" />} value={totalPrograms} label="Programs" color="blue" />
               <StatCard icon={<Stamp className="w-4 h-4" />} value={totalStampsEarned} label="Stamps Earned" color="orange" />
               <StatCard icon={<Star className="w-4 h-4" />} value={totalPointsEarned.toLocaleString()} label="Points Earned" color="blue" />
               <StatCard icon={<Trophy className="w-4 h-4" />} value={rewardsRedeemed} label="Rewards Claimed" color="green" />
@@ -170,7 +170,7 @@ export default function CustomerLoyaltyPage() {
           onClick={() => setActiveTab('business')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all ${
             activeTab === 'business'
-              ? 'bg-white text-indigo-600 shadow-sm'
+              ? 'bg-white text-blue-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -202,8 +202,8 @@ export default function CustomerLoyaltyPage() {
       {/* ═══ EMPTY STATE ═══ */}
       {cards.length === 0 ? (
         <div className="card p-12 text-center">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center mx-auto mb-4">
-            <Gift className="w-10 h-10 text-purple-400" />
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-100 flex items-center justify-center mx-auto mb-4">
+            <Gift className="w-10 h-10 text-blue-400" />
           </div>
           <h2 className="text-xl font-bold text-gray-700 mb-2">No Loyalty Programs Yet</h2>
           <p className="text-gray-400 max-w-md mx-auto">
@@ -211,7 +211,7 @@ export default function CustomerLoyaltyPage() {
           </p>
           <a
             href="/deals"
-            className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-200/50 transition-all"
+            className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 transition-all"
           >
             <Sparkles className="w-4 h-4" />
             Browse Deals
@@ -251,13 +251,13 @@ export default function CustomerLoyaltyPage() {
           <div className="card overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-indigo-500" />
-                <h2 className="font-bold text-secondary-500">Activity History</h2>
+                <History className="w-5 h-5 text-blue-500" />
+                <h2 className="font-bold text-gray-900">Activity History</h2>
               </div>
               {transactions.length > 5 && (
                 <button
                   onClick={() => setShowAllHistory(!showAllHistory)}
-                  className="text-xs font-medium text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
+                  className="text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1"
                 >
                   {showAllHistory ? 'Show Less' : `Show All (${transactions.length})`}
                   {showAllHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -356,12 +356,11 @@ function StatCard({ icon, value, label, color }: {
   icon: React.ReactNode;
   value: string | number;
   label: string;
-  color: 'purple' | 'orange' | 'blue' | 'green';
+  color: 'blue' | 'orange' | 'green';
 }) {
   const colors = {
-    purple: 'bg-purple-400/20 text-purple-200',
-    orange: 'bg-orange-400/20 text-orange-200',
     blue: 'bg-blue-400/20 text-blue-200',
+    orange: 'bg-orange-400/20 text-orange-200',
     green: 'bg-green-400/20 text-green-200',
   };
 
@@ -474,11 +473,11 @@ function PunchCardFull({
         {/* Stats */}
         <div className="grid grid-cols-2 gap-2 mt-3">
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold text-secondary-500">{card.total_punches_earned}</p>
+            <p className="text-lg font-bold text-gray-900">{card.total_punches_earned}</p>
             <p className="text-[10px] text-gray-400">Lifetime Stamps</p>
           </div>
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold text-secondary-500">{required - current > 0 ? required - current : 0}</p>
+            <p className="text-lg font-bold text-gray-900">{required - current > 0 ? required - current : 0}</p>
             <p className="text-[10px] text-gray-400">Until Reward</p>
           </div>
         </div>
@@ -526,7 +525,7 @@ function PointsCardFull({
   return (
     <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group" onClick={onSelect}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-5 py-4 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600 px-5 py-4 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -545,7 +544,7 @@ function PointsCardFull({
         {/* Points Balance */}
         <div className="text-center mb-4">
           <div className="inline-flex items-baseline gap-1">
-            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+            <p className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">
               {card.current_points.toLocaleString()}
             </p>
             <span className="text-xs text-gray-400 font-bold uppercase">pts</span>
@@ -560,11 +559,11 @@ function PointsCardFull({
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
               <span className="truncate flex-1">Next: <span className="font-medium text-gray-600">{nextReward.name}</span></span>
-              <span className="font-semibold text-indigo-500 ml-2">{nextReward.points_cost} pts</span>
+              <span className="font-semibold text-blue-500 ml-2">{nextReward.points_cost} pts</span>
             </div>
             <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-500 rounded-full transition-all duration-700"
                 style={{ width: `${progressToNext}%` }}
               />
             </div>
@@ -613,7 +612,7 @@ function PointsCardFull({
               );
             })}
             {rewards.length > 3 && (
-              <p className="text-[11px] text-indigo-500 font-medium text-center pt-1">
+              <p className="text-[11px] text-blue-500 font-medium text-center pt-1">
                 +{rewards.length - 3} more rewards available
               </p>
             )}
@@ -623,11 +622,11 @@ function PointsCardFull({
         {/* Lifetime stats */}
         <div className="grid grid-cols-2 gap-2 mt-4">
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold text-secondary-500">{card.total_points_earned.toLocaleString()}</p>
+            <p className="text-lg font-bold text-gray-900">{card.total_points_earned.toLocaleString()}</p>
             <p className="text-[10px] text-gray-400">Lifetime Earned</p>
           </div>
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
-            <p className="text-lg font-bold text-secondary-500">{card.total_points_redeemed.toLocaleString()}</p>
+            <p className="text-lg font-bold text-gray-900">{card.total_points_redeemed.toLocaleString()}</p>
             <p className="text-[10px] text-gray-400">Redeemed</p>
           </div>
         </div>
@@ -644,7 +643,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
   const isEarn = tx.transaction_type === 'earn_punch' || tx.transaction_type === 'earn_points';
   const isPunch = tx.transaction_type === 'earn_punch' || tx.transaction_type === 'redeem_punch_reward';
 
-  const iconBg = isEarn ? 'bg-green-100 text-green-600' : 'bg-purple-100 text-purple-600';
+  const iconBg = isEarn ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600';
   const Icon = isEarn
     ? (isPunch ? Stamp : TrendingUp)
     : Award;
@@ -653,7 +652,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
     ? `${isEarn ? '+' : ''}${tx.punches_amount} stamp${Math.abs(tx.punches_amount) !== 1 ? 's' : ''}`
     : `${isEarn ? '+' : ''}${tx.points_amount.toLocaleString()} pts`;
 
-  const amountColor = isEarn ? 'text-green-600' : 'text-purple-600';
+  const amountColor = isEarn ? 'text-green-600' : 'text-blue-600';
 
   const timeAgo = getTimeAgo(tx.created_at);
 
@@ -732,7 +731,7 @@ function CardDetailModal({
         <div className={`px-6 py-5 relative overflow-hidden ${
           isPunch
             ? 'bg-gradient-to-r from-orange-500 via-primary-500 to-amber-500'
-            : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600'
+            : 'bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600'
         }`}>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
           <button onClick={onClose} className="absolute top-3 right-3 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all backdrop-blur-sm">
@@ -763,7 +762,7 @@ function CardDetailModal({
           {isPunch ? (
             <>
               <div className="text-center">
-                <p className="text-4xl font-extrabold text-secondary-500">
+                <p className="text-4xl font-extrabold text-gray-900">
                   {card.current_punches} / {required}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
@@ -809,7 +808,7 @@ function CardDetailModal({
           ) : (
             <>
               <div className="text-center">
-                <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">
                   {card.current_points.toLocaleString()}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">current points</p>
@@ -853,7 +852,7 @@ function CardDetailModal({
                           <div className="mt-2">
                             <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-400 to-indigo-400 rounded-full transition-all duration-500"
+                                className="h-full bg-gradient-to-r from-blue-400 to-blue-400 rounded-full transition-all duration-500"
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
@@ -873,19 +872,19 @@ function CardDetailModal({
           {/* Lifetime Stats */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-secondary-500">
+              <p className="text-xl font-bold text-gray-900">
                 {isPunch ? card.total_punches_earned : card.total_points_earned.toLocaleString()}
               </p>
               <p className="text-[10px] text-gray-400">Total Earned</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-secondary-500">
+              <p className="text-xl font-bold text-gray-900">
                 {isPunch ? card.current_punches : card.current_points.toLocaleString()}
               </p>
               <p className="text-[10px] text-gray-400">Current</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
-              <p className="text-xl font-bold text-secondary-500">
+              <p className="text-xl font-bold text-gray-900">
                 {isPunch
                   ? card.total_punches_earned > 0 ? Math.floor(card.total_punches_earned / (program.punches_required || 10)) : 0
                   : card.total_points_redeemed.toLocaleString()

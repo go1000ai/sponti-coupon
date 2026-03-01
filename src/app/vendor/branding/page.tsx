@@ -165,7 +165,7 @@ export default function BrandingPage() {
       <div className="flex items-center gap-3 mb-8">
         <Palette className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-3xl font-bold text-secondary-500">Custom Branding</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Custom Branding</h1>
           <p className="text-gray-500 text-sm mt-1">Customize the look and feel of your deal pages</p>
         </div>
       </div>
@@ -182,7 +182,7 @@ export default function BrandingPage() {
       <div className="space-y-6">
         {/* Brand Colors */}
         <div className="card p-6">
-          <h3 className="font-bold text-secondary-500 mb-4 flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Palette className="w-5 h-5 text-primary-500" /> Brand Colors
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -253,7 +253,7 @@ export default function BrandingPage() {
 
         {/* Custom Logo — Upload + URL */}
         <div className="card p-6">
-          <h3 className="font-bold text-secondary-500 mb-1 flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
             <ImageIcon className="w-5 h-5 text-primary-500" /> Custom Logo for Deal Pages
           </h3>
           <p className="text-sm text-gray-500 mb-4">This logo will appear on your customer-facing deal pages instead of the SpontiCoupon logo.</p>
@@ -400,7 +400,7 @@ export default function BrandingPage() {
 
         {/* Custom Domain */}
         <div className="card p-6">
-          <h3 className="font-bold text-secondary-500 mb-4 flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Globe className="w-5 h-5 text-primary-500" /> Custom Domain
           </h3>
           <p className="text-sm text-gray-500 mb-3">
@@ -419,7 +419,7 @@ export default function BrandingPage() {
         <div className="card p-6">
           <label className="flex items-center justify-between cursor-pointer">
             <div>
-              <h3 className="font-bold text-secondary-500">Hide SpontiCoupon Branding</h3>
+              <h3 className="font-bold text-gray-900">Hide SpontiCoupon Branding</h3>
               <p className="text-sm text-gray-500 mt-0.5">Remove &quot;Powered by SpontiCoupon&quot; from your deal pages</p>
             </div>
             <div className="relative">

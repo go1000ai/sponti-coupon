@@ -138,8 +138,8 @@ export function ROIDashboard() {
       sub: `@ ${formatCurrency(metrics.estimated_revenue.avg_ticket || 50)}/ticket`,
     },
     {
-      icon: <Eye className="w-5 h-5 text-purple-600" />,
-      bg: 'bg-purple-50',
+      icon: <Eye className="w-5 h-5 text-blue-600" />,
+      bg: 'bg-blue-50',
       label: metrics.deal_views.label,
       value: metrics.deal_views.value.toLocaleString(),
       delta: metrics.deal_views.delta,
@@ -159,7 +159,7 @@ export function ROIDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-xl font-bold text-secondary-500">ROI Dashboard</h2>
+          <h2 className="text-xl font-bold text-gray-900">ROI Dashboard</h2>
           <p className="text-sm text-gray-500">Track the return on your SpontiCoupon investment</p>
         </div>
         <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export function ROIDashboard() {
               <span className="text-sm font-medium text-gray-500">{card.label}</span>
             </div>
             <div className="flex items-end gap-2">
-              <span className="text-2xl font-bold text-secondary-500">{card.value}</span>
+              <span className="text-2xl font-bold text-gray-900">{card.value}</span>
               {card.delta !== undefined && <DeltaBadge delta={card.delta} />}
             </div>
             <p className="text-xs text-gray-400 mt-1">{card.sub}</p>
@@ -231,7 +231,7 @@ export function ROIDashboard() {
           ) : (
             <button
               onClick={() => setEditingTicket(true)}
-              className="flex items-center gap-1.5 text-sm font-medium text-secondary-500 hover:text-primary-500 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-900 hover:text-primary-500 transition-colors"
             >
               {formatCurrency(parseFloat(ticketValue) || 50)}
               <Pencil className="w-3.5 h-3.5" />
@@ -246,7 +246,7 @@ export function ROIDashboard() {
       {/* Revenue Chart */}
       {revenue_chart && revenue_chart.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-secondary-500 mb-4">Estimated Monthly Revenue</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">Estimated Monthly Revenue</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenue_chart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

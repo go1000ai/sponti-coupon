@@ -239,6 +239,7 @@ export async function POST(request: NextRequest) {
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
     location_ids, website_url, terms_and_conditions, video_urls, amenities,
     how_it_works, highlights, fine_print, image_urls, search_tags,
+    requires_appointment,
   } = body;
 
   // Draft mode — save the deal immediately with minimal validation
@@ -273,6 +274,7 @@ export async function POST(request: NextRequest) {
         how_it_works: how_it_works || null,
         highlights: highlights || [],
         fine_print: fine_print || null,
+        requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
       })
       .select()
@@ -373,6 +375,7 @@ export async function POST(request: NextRequest) {
         how_it_works: how_it_works || null,
         highlights: highlights || [],
         fine_print: fine_print || null,
+        requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
       })
       .select()

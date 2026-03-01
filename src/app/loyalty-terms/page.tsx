@@ -9,12 +9,12 @@ export const metadata: Metadata = {
 export default function LoyaltyTermsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold text-secondary-500 mb-2">SpontiPoints Loyalty Program Terms &amp; Conditions</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">SpontiPoints Loyalty Program Terms &amp; Conditions</h1>
       <p className="text-sm text-gray-400 mb-8">Last updated: February 24, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-6 text-gray-600">
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">1. Program Overview</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">1. Program Overview</h2>
           <p>
             SpontiPoints is the official customer loyalty rewards program operated by Online Commerce Hub, LLC
             DBA SpontiCoupon (&ldquo;SpontiCoupon,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;).
@@ -28,7 +28,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">2. Eligibility</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">2. Eligibility</h2>
           <p>
             All registered SpontiCoupon customers with an active account in good standing are automatically
             enrolled in the SpontiPoints program at no additional cost. You must be at least 18 years of
@@ -37,7 +37,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">3. Earning SpontiPoints</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">3. Earning SpontiPoints</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Deal Redemptions:</strong> You earn 25 SpontiPoints each time you successfully redeem
@@ -56,7 +56,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">4. Redeeming SpontiPoints</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">4. Redeeming SpontiPoints</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               <strong>Conversion Rate:</strong> 100 SpontiPoints = $1.00 USD in account credit.
@@ -80,7 +80,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">5. Point Expiration</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">5. Point Expiration</h2>
           <p>
             SpontiPoints expire 12 months after the date they are earned. Expired points are automatically
             removed from your balance and cannot be restored. We recommend redeeming your points regularly
@@ -94,7 +94,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">6. Account &amp; Points Balance</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">6. Account &amp; Points Balance</h2>
           <ul className="list-disc pl-5 space-y-2">
             <li>
               SpontiPoints are linked to your SpontiCoupon account and cannot be transferred between accounts.
@@ -111,7 +111,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">7. Program Modifications</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">7. Program Modifications</h2>
           <p>
             SpontiCoupon reserves the right to modify, suspend, or terminate the SpontiPoints program, in
             whole or in part, at any time with reasonable notice. This includes changes to earning rates,
@@ -124,7 +124,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">8. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">8. Limitation of Liability</h2>
           <p>
             SpontiPoints have no cash value and do not constitute property. SpontiCoupon is not responsible
             for any loss, damage, or inconvenience resulting from program participation, including but not
@@ -133,7 +133,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">9. Contact</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">9. Contact</h2>
           <p>
             For questions or concerns about the SpontiPoints program, please contact us
             at <Link href="/contact" className="text-primary-500 hover:underline">our contact page</Link> or
@@ -142,7 +142,7 @@ export default function LoyaltyTermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-secondary-500 mt-8 mb-3">10. Governing Law</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mt-8 mb-3">10. Governing Law</h2>
           <p>
             These terms are governed by and construed in accordance with the laws of the State of Florida,
             United States. Any disputes arising from the SpontiPoints program shall be resolved in the

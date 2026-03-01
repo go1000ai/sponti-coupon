@@ -75,7 +75,7 @@ export function TestimonialsSection() {
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
               <span className="text-sm font-semibold text-primary-600">Real Stories</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-500">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
               Loved by Savvy Shoppers
             </h2>
             <p className="text-gray-500 mt-3 text-lg">
@@ -98,7 +98,7 @@ export function TestimonialsSection() {
                       <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                     ))}
                   </div>
-                  <p className="font-semibold text-secondary-500">{t.name}</p>
+                  <p className="font-semibold text-gray-900">{t.name}</p>
                   <p className="text-sm text-gray-400">{t.role}</p>
                 </div>
               </div>

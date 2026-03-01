@@ -68,7 +68,7 @@ export function LoyaltyCards() {
     <div className="mb-8">
       <div className="flex items-center gap-2 mb-4">
         <Gift className="w-5 h-5 text-primary-500" />
-        <h2 className="text-lg font-bold text-secondary-500">My Loyalty Rewards</h2>
+        <h2 className="text-lg font-bold text-gray-900">My Loyalty Rewards</h2>
       </div>
 
       {message && (
@@ -156,7 +156,7 @@ function PunchCardView({
         </div>
 
         {/* Progress text */}
-        <p className="text-center text-sm font-medium text-secondary-500">
+        <p className="text-center text-sm font-medium text-gray-900">
           {canClaim ? (
             <span className="text-green-600">Reward ready!</span>
           ) : (
@@ -223,7 +223,7 @@ function PointsCardView({
       <div className="p-4">
         {/* Points Balance */}
         <div className="text-center mb-3">
-          <p className="text-3xl font-extrabold text-secondary-500">{card.current_points.toLocaleString()}</p>
+          <p className="text-3xl font-extrabold text-gray-900">{card.current_points.toLocaleString()}</p>
           <p className="text-xs text-gray-400 font-medium">POINTS</p>
         </div>
 
@@ -261,7 +261,7 @@ function PointsCardView({
                     {canAfford ? <Star className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium truncate ${canAfford ? 'text-secondary-500' : 'text-gray-400'}`}>{reward.name}</p>
+                    <p className={`text-xs font-medium truncate ${canAfford ? 'text-gray-900' : 'text-gray-400'}`}>{reward.name}</p>
                     <p className="text-[10px] text-gray-400">{reward.points_cost} pts</p>
                   </div>
                   {canAfford && (

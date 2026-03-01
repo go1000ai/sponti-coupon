@@ -89,7 +89,7 @@ function SubscribeContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-secondary-500 mb-2">Sign In Required</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h1>
           <p className="text-gray-500 mb-6">Please sign in to continue with your subscription.</p>
           <Link href="/auth/login?redirect=/vendor/subscribe" className="btn-primary inline-flex items-center gap-2">
             Sign In <ArrowRight className="w-4 h-4" />
@@ -105,7 +105,7 @@ function SubscribeContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="text-center max-w-md">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-secondary-500 mb-2">Checkout Error</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Checkout Error</h1>
           <p className="text-gray-500 mb-2">We couldn&apos;t set up your checkout session.</p>
           {errorMessage && (
             <p className="text-sm text-red-500 bg-red-50 rounded-lg p-3 mb-6">{errorMessage}</p>
@@ -141,7 +141,7 @@ function SubscribeContent() {
             <Loader2 className="w-6 h-6 text-primary-400 absolute -bottom-1 -right-1 animate-spin" />
           </div>
         </div>
-        <h1 className="text-2xl font-bold text-secondary-500 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Setting Up Your {tierNames[tier] || 'Pro'} Plan
         </h1>
         <p className="text-gray-500 mb-4">

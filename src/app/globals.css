@@ -8,7 +8,7 @@
   --background: #ffffff;
   --foreground: #1A1A2E;
   --primary: #E8632B;
-  --secondary: #1A1A2E;
+  --secondary: #29ABE2;
   --accent: #29ABE2;
   --amber: #F5A623;
 }
@@ -73,7 +73,13 @@ body {
   }
 
   .countdown-box {
-    @apply bg-secondary-500 text-white rounded-lg px-3 py-2 text-center min-w-[60px];
+    @apply text-white rounded-lg px-3 py-2 text-center min-w-[60px];
+  }
+  .countdown-box.countdown-sponti {
+    @apply bg-primary-500;
+  }
+  .countdown-box.countdown-steady {
+    @apply bg-secondary-500;
   }
 
   .floating-card {

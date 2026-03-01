@@ -5,7 +5,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
 import { rateLimit } from '@/lib/rate-limit';
 
-type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name';
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_program_suggest';
 
 const PROMPTS: Record<AssistType, string> = {
   business_description: `You are a marketing copywriter helping local businesses write compelling business descriptions for their profile on a coupon/deal app. Write a warm, professional, and inviting description that highlights what makes the business special. Keep it under 500 characters. Return ONLY the description text, no quotes, no labels.`,
@@ -16,6 +16,28 @@ const PROMPTS: Record<AssistType, string> = {
   loyalty_description: `You are a marketing copywriter helping a local business write a short description for their customer loyalty program. Make it exciting and clear — explain the benefit to the customer in 1-2 sentences. Be specific to the business category. Use action words and make the customer feel like they're getting an exclusive deal. Keep it under 200 characters. Return ONLY the description text, no quotes, no labels.`,
   loyalty_reward: `You are a marketing expert helping a local business decide what free reward to offer customers who complete their loyalty punch card. Suggest a specific, enticing, and realistic reward that matches the business category and would motivate repeat visits. Be concrete — not "free item" but "Free Large Iced Coffee" or "Free 30-Minute Massage". Return ONLY the reward text, no quotes, no labels, no explanation.`,
   loyalty_reward_name: `You are a marketing expert helping a local business name a points reward tier for their loyalty program. Create a short, appealing reward name (2-6 words) that sounds exclusive and desirable. Match the business category. Examples: "Free Signature Smoothie", "VIP Styling Session", "Premium Car Wash". Return ONLY the reward name, no quotes, no labels, no explanation.`,
+  loyalty_program_suggest: `You are a loyalty program strategist for local businesses. Based on the business category, typical pricing, and any website/deal info provided, design an optimal loyalty rewards program.
+
+Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
+{
+  "program_type": "points",
+  "name": "catchy program name (2-5 words)",
+  "description": "exciting 1-2 sentence description under 200 chars",
+  "points_per_dollar": <number - how many points per dollar-unit spent>,
+  "point_value": <number - dollar amount each point represents, e.g. 0.50 means 1 point per $0.50>,
+  "suggested_rewards": [
+    { "name": "reward name", "points_cost": <number>, "description": "short description" },
+    { "name": "reward name", "points_cost": <number>, "description": "short description" },
+    { "name": "reward name", "points_cost": <number>, "description": "short description" }
+  ]
+}
+
+Guidelines:
+- Make point_value match the business price range. High-ticket businesses ($50+) might use $1 per point. Budget businesses ($5-15) might use $0.25 or $0.50 per point.
+- points_per_dollar is how many points the customer earns per point_value spent. Usually 1-2.
+- Suggested rewards should be 3 tiers: easy (50-100 pts), medium (200-500 pts), and aspirational (500-1000 pts).
+- Make rewards specific and enticing for the business category.
+- The program should incentivize repeat visits.`,
 };
 
 // Tone-specific system prompts for review replies
@@ -131,6 +153,11 @@ export async function POST(request: NextRequest) {
     if (context?.current_text) {
       userMessage += `\n\nHere is the current reward name (improve or suggest an alternative):\n${context.current_text}`;
     }
+  } else if (type === 'loyalty_program_suggest') {
+    if (context?.website_url) userMessage += `\nBusiness website: ${context.website_url}`;
+    if (context?.avg_deal_price) userMessage += `\nAverage deal price: $${context.avg_deal_price}`;
+    if (context?.deals_info) userMessage += `\nExisting deals: ${context.deals_info}`;
+    userMessage += `\n\nDesign an optimal loyalty rewards program for this ${category || ''} business. Consider their typical pricing to set appropriate point values and reward tiers.`;
   }
 
   const anthropicKey = process.env.SPONTI_ANTHROPIC_KEY || process.env.ANTHROPIC_API_KEY;
@@ -188,6 +215,19 @@ function getFallbackText(type: AssistType, businessName: string, category: strin
       return `Free ${category || 'item'} of your choice`;
     case 'loyalty_reward_name':
       return `${businessName} Special Reward`;
+    case 'loyalty_program_suggest':
+      return JSON.stringify({
+        program_type: 'points',
+        name: `${businessName} Rewards`,
+        description: `Earn rewards every time you shop with ${businessName}! The more you visit, the more you save.`,
+        points_per_dollar: 1,
+        point_value: 1,
+        suggested_rewards: [
+          { name: `Free ${category || 'Item'}`, points_cost: 100, description: 'Earn 100 points for a free item' },
+          { name: `VIP ${category || 'Experience'}`, points_cost: 300, description: 'Premium reward for loyal customers' },
+          { name: `${businessName} Grand Prize`, points_cost: 500, description: 'Our best reward for top customers' },
+        ],
+      });
     default:
       return '';
   }

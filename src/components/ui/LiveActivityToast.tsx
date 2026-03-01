@@ -138,7 +138,7 @@ export function LiveActivityToast() {
           </div>
 
           <div className="min-w-0 pt-0.5">
-            <p className="text-[13px] text-secondary-500 leading-snug">
+            <p className="text-[13px] text-gray-900 leading-snug">
               <span className="font-bold">{activity.name}</span>{' '}
               <span className="text-gray-400">{activity.action}</span>{' '}
               <span className="font-semibold text-primary-500">{activity.deal}</span>
