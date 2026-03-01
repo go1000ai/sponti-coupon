@@ -213,6 +213,9 @@ export default function DealDetailPage() {
         if (pi.payment_reference) {
           params.set('payment_reference', pi.payment_reference);
         }
+        if (pi.qr_code_image_url) {
+          params.set('qr_code_image_url', pi.qr_code_image_url);
+        }
         router.push(`/claim/manual-payment?${params.toString()}`);
         return;
       }

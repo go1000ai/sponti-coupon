@@ -62,6 +62,9 @@ export default function VendorPaymentsPage() {
   const [newProcessorType, setNewProcessorType] = useState<PaymentProcessorType>('stripe');
   const [newPaymentLink, setNewPaymentLink] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
+  const [newQrCodeImage, setNewQrCodeImage] = useState<File | null>(null);
+  const [newQrCodePreview, setNewQrCodePreview] = useState<string | null>(null);
+  const [uploadingQr, setUploadingQr] = useState(false);
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,6 +146,20 @@ export default function VendorPaymentsPage() {
     setError('');
 
     try {
+      // Upload QR code image if provided
+      let qrCodeImageUrl: string | null = null;
+      if (newQrCodeImage) {
+        setUploadingQr(true);
+        const formData = new FormData();
+        formData.append('file', newQrCodeImage);
+        formData.append('bucket', 'vendor-assets');
+        const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+        const uploadData = await uploadRes.json();
+        if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to upload QR code');
+        qrCodeImageUrl = uploadData.url;
+        setUploadingQr(false);
+      }
+
       const res = await fetch('/api/vendor/payment-methods', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,6 +168,7 @@ export default function VendorPaymentsPage() {
           payment_link: newPaymentLink,
           display_name: newDisplayName || PAYMENT_PROCESSORS[newProcessorType].name,
           is_primary: methods.length === 0,
+          qr_code_image_url: qrCodeImageUrl,
         }),
       });
 
@@ -160,10 +178,13 @@ export default function VendorPaymentsPage() {
       setShowAddForm(false);
       setNewPaymentLink('');
       setNewDisplayName('');
+      setNewQrCodeImage(null);
+      setNewQrCodePreview(null);
       showSuccessMessage(`${PAYMENT_PROCESSORS[newProcessorType].name} added!`);
       fetchMethods();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add payment method');
+      setUploadingQr(false);
     } finally {
       setSaving(false);
     }
@@ -438,6 +459,49 @@ export default function VendorPaymentsPage() {
               </p>
             </div>
 
+            {/* QR Code upload — only for manual processors */}
+            {PAYMENT_PROCESSORS[newProcessorType].supportedTiers.includes('manual') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Payment QR Code (optional)
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Upload your {PAYMENT_PROCESSORS[newProcessorType].name} QR code so customers can scan and pay instantly.
+                </p>
+                {newQrCodePreview ? (
+                  <div className="flex items-start gap-3">
+                    <div className="w-24 h-24 rounded-lg border-2 border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                      <Image src={newQrCodePreview} alt="QR Preview" width={96} height={96} className="object-contain" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setNewQrCodeImage(null); setNewQrCodePreview(null); }}
+                      className="text-xs text-red-500 hover:text-red-700 mt-1"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-colors">
+                    <Plus className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">Upload QR Code Image</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setNewQrCodeImage(file);
+                          setNewQrCodePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            )}
+
             {/* Display name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Display Name (optional)</label>
@@ -458,15 +522,17 @@ export default function VendorPaymentsPage() {
                   setShowAddForm(false);
                   setNewPaymentLink('');
                   setNewDisplayName('');
+                  setNewQrCodeImage(null);
+                  setNewQrCodePreview(null);
                   setError('');
                 }}
                 className="btn-outline flex-1"
               >
                 Cancel
               </button>
-              <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {saving ? 'Adding...' : 'Add Method'}
+              <button type="submit" disabled={saving || uploadingQr} className="btn-primary flex-1 flex items-center justify-center gap-2">
+                {saving || uploadingQr ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {uploadingQr ? 'Uploading QR...' : saving ? 'Adding...' : 'Add Method'}
               </button>
             </div>
           </form>
@@ -587,9 +653,16 @@ export default function VendorPaymentsPage() {
                           )}
                         </div>
                         <p className="text-sm text-gray-500 mt-0.5 truncate">{method.payment_link}</p>
-                        <p className="text-[11px] text-gray-400 mt-1">
-                          {processor?.name} &middot; Added {new Date(method.created_at).toLocaleDateString()}
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[11px] text-gray-400">
+                            {processor?.name} &middot; Added {new Date(method.created_at).toLocaleDateString()}
+                          </p>
+                          {method.qr_code_image_url && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                              QR Code
+                            </span>
+                          )}
+                        </div>
                       </>
                     )}
                   </div>

@@ -126,12 +126,12 @@ export async function POST(request: NextRequest) {
     && deal.vendor?.stripe_connect_charges_enabled;
 
   // Check vendor's primary payment method
-  let primaryMethod: { processor_type: string; payment_link: string; payment_tier: string; display_name: string | null } | null = null;
+  let primaryMethod: { processor_type: string; payment_link: string; payment_tier: string; display_name: string | null; qr_code_image_url: string | null } | null = null;
 
   if (vendorId) {
     const { data } = await supabase
       .from('vendor_payment_methods')
-      .select('processor_type, payment_link, payment_tier, display_name')
+      .select('processor_type, payment_link, payment_tier, display_name, qr_code_image_url')
       .eq('vendor_id', vendorId)
       .eq('is_primary', true)
       .eq('is_active', true)
@@ -248,6 +248,7 @@ export async function POST(request: NextRequest) {
         processor: primaryMethod.processor_type,
         display_name: primaryMethod.display_name,
         payment_info: primaryMethod.payment_link,
+        qr_code_image_url: primaryMethod.qr_code_image_url,
         amount: depositAmount,
         deal_title: deal.title,
         payment_reference: paymentReference,

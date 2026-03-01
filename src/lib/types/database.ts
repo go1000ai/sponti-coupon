@@ -257,6 +257,7 @@ export interface VendorPaymentMethod {
   is_primary: boolean;
   is_active: boolean;
   payment_tier: PaymentTier;
+  qr_code_image_url: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { processor_type, payment_link, display_name, is_primary } = await request.json();
+  const { processor_type, payment_link, display_name, is_primary, qr_code_image_url } = await request.json();
 
   if (!processor_type || !payment_link) {
     return NextResponse.json({ error: 'Processor type and payment link are required' }, { status: 400 });
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       is_primary: shouldBePrimary,
       is_active: true,
       payment_tier: paymentTier,
+      qr_code_image_url: qr_code_image_url || null,
     })
     .select()
     .single();
@@ -99,7 +100,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id, payment_link, display_name, is_primary, is_active } = await request.json();
+  const { id, payment_link, display_name, is_primary, is_active, qr_code_image_url } = await request.json();
 
   if (!id) {
     return NextResponse.json({ error: 'Payment method ID is required' }, { status: 400 });
@@ -131,6 +132,7 @@ export async function PUT(request: NextRequest) {
   if (display_name !== undefined) updates.display_name = display_name;
   if (is_primary !== undefined) updates.is_primary = is_primary;
   if (is_active !== undefined) updates.is_active = is_active;
+  if (qr_code_image_url !== undefined) updates.qr_code_image_url = qr_code_image_url || null;
 
   const { data: method, error } = await supabase
     .from('vendor_payment_methods')
