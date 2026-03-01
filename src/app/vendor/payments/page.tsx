@@ -1,16 +1,50 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
-  CreditCard, Plus, Star, Trash2, Pencil, Check, X,
-  ToggleLeft, ToggleRight, Loader2, AlertCircle, Wallet,
-  Clock, CheckCircle2, Zap, Smartphone,
+  DollarSign, Plus, Star, Trash2, Pencil, Check, X,
+  ToggleLeft, ToggleRight, Loader2, AlertCircle,
+  Clock, CheckCircle2, Zap, Smartphone, ShieldCheck,
+  ExternalLink,
 } from 'lucide-react';
 import { PAYMENT_PROCESSORS, PROCESSOR_LIST } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 import type { VendorPaymentMethod } from '@/lib/types/database';
 import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
 import { formatCurrency } from '@/lib/utils';
+
+function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?: number }) {
+  const processor = PAYMENT_PROCESSORS[type];
+  const [imgError, setImgError] = useState(false);
+
+  if (imgError) {
+    return (
+      <div
+        className="rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0"
+        style={{ backgroundColor: processor.color, width: size, height: size }}
+      >
+        {processor.name.charAt(0)}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center justify-center shrink-0"
+      style={{ width: size, height: size }}
+    >
+      <Image
+        src={processor.logo}
+        alt={processor.name}
+        width={size}
+        height={size}
+        className="object-contain w-full h-full"
+        onError={() => setImgError(true)}
+      />
+    </div>
+  );
+}
 
 export default function VendorPaymentsPage() {
   const [methods, setMethods] = useState<VendorPaymentMethod[]>([]);
@@ -122,7 +156,7 @@ export default function VendorPaymentsPage() {
       setShowAddForm(false);
       setNewPaymentLink('');
       setNewDisplayName('');
-      showSuccessMessage(`${PAYMENT_PROCESSORS[newProcessorType].name} payment method added!`);
+      showSuccessMessage(`${PAYMENT_PROCESSORS[newProcessorType].name} added!`);
       fetchMethods();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add payment method');
@@ -208,18 +242,6 @@ export default function VendorPaymentsPage() {
     }
   };
 
-  const getProcessorIcon = (type: PaymentProcessorType) => {
-    const processor = PAYMENT_PROCESSORS[type];
-    return (
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md"
-        style={{ backgroundColor: processor.color }}
-      >
-        {processor.name.charAt(0)}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -229,16 +251,16 @@ export default function VendorPaymentsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Wallet className="w-7 h-7 text-primary-500" />
-            Payment Methods
+            <DollarSign className="w-7 h-7 text-green-500" />
+            Get Paid
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Manage how customers pay deposits directly to you
+            Set up how you receive payments from customers — directly to your account
           </p>
         </div>
         <button
@@ -250,26 +272,93 @@ export default function VendorPaymentsPage() {
         </button>
       </div>
 
-      {/* Stripe Connect Banner */}
-      <StripeConnectBanner />
-
-      {/* Info banner */}
-      <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 mb-6">
-        <div className="flex items-start gap-3">
-          <CreditCard className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
+      {/* Trust Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 border border-green-200/60 p-6 mb-6">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/20 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/20 rounded-full translate-y-1/2 -translate-x-1/2" />
+        <div className="relative flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-green-500/20">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
           <div>
-            <p className="text-sm font-semibold text-primary-700">How it works</p>
-            <p className="text-sm text-primary-600 mt-0.5">
-              <span className="font-medium">Integrated</span> (Stripe Connect) — automated payments with the exact deal price. Customers pay through secure checkout.
-              <br />
-              <span className="font-medium">Manual</span> (Venmo, Zelle, Cash App) — customers see your payment info and send payment directly. You confirm receipt to release the deal.
-              <br />
-              <span className="font-medium">Link</span> (Static payment links) — customers are redirected to your existing Stripe/Square/PayPal checkout link.
-              <br />
-              <span className="font-medium mt-1 block">SpontiCoupon never touches your money — it goes directly to you.</span>
+            <h2 className="font-bold text-gray-900 text-lg">100% Direct Payments</h2>
+            <p className="text-gray-600 mt-1">
+              SpontiCoupon <span className="font-semibold text-green-700">never holds or touches your money</span>. Every payment from customers goes straight to your account — no middleman, no delays, no fees from us.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Stripe Connect Banner */}
+      <StripeConnectBanner />
+
+      {/* How You Get Paid — 3 Cards */}
+      <div className="mb-8">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">How You Get Paid</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Automated */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-5 h-5 text-[#635BFF]" />
+              <h3 className="font-semibold text-gray-900 text-sm">Automated</h3>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <ProcessorLogo type="stripe" size={80} />
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Customers pay through secure Stripe checkout. Money goes directly to your Stripe account instantly.
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full w-fit">
+              <CheckCircle2 className="w-3 h-3" />
+              Fully automated
+            </div>
+          </div>
+
+          {/* Manual */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-3">
+              <Smartphone className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-gray-900 text-sm">Manual Verification</h3>
+            </div>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <ProcessorLogo type="venmo" size={70} />
+              <ProcessorLogo type="zelle" size={70} />
+              <ProcessorLogo type="cashapp" size={70} />
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Customers send payment directly to you. You confirm receipt from your dashboard to release the deal.
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full w-fit">
+              <CheckCircle2 className="w-3 h-3" />
+              You confirm payment
+            </div>
+          </div>
+
+          {/* Payment Links */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-3">
+              <ExternalLink className="w-5 h-5 text-gray-500" />
+              <h3 className="font-semibold text-gray-900 text-sm">Payment Links</h3>
+            </div>
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <ProcessorLogo type="stripe" size={70} />
+              <ProcessorLogo type="square" size={70} />
+              <ProcessorLogo type="paypal" size={70} />
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Redirect customers to your existing checkout link on Stripe, Square, or PayPal.
+            </p>
+            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit">
+              <ExternalLink className="w-3 h-3" />
+              External checkout
+            </div>
+          </div>
+        </div>
+
+        {/* Coming soon note */}
+        <p className="text-xs text-gray-400 mt-3 text-center">
+          We currently integrate with Stripe for automated checkout. More payment processors coming soon.
+        </p>
       </div>
 
       {/* Success/Error messages */}
@@ -297,7 +386,7 @@ export default function VendorPaymentsPage() {
             Add Payment Method
           </h3>
           <form onSubmit={handleAdd} className="space-y-4">
-            {/* Processor selector */}
+            {/* Processor selector with logos */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Payment Processor</label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -312,12 +401,7 @@ export default function VendorPaymentsPage() {
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-                      style={{ backgroundColor: processor.color }}
-                    >
-                      {processor.name.charAt(0)}
-                    </div>
+                    <ProcessorLogo type={key} size={48} />
                     <span className="text-[10px] font-medium text-gray-600">{processor.name}</span>
                   </button>
                 ))}
@@ -333,9 +417,9 @@ export default function VendorPaymentsPage() {
             {/* Payment link / info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {PAYMENT_PROCESSORS[newProcessorType].supportsDeposit
-                  ? `${PAYMENT_PROCESSORS[newProcessorType].name} Payment Link`
-                  : `${PAYMENT_PROCESSORS[newProcessorType].name} Info`}
+                {PAYMENT_PROCESSORS[newProcessorType].supportedTiers.includes('manual')
+                  ? `${PAYMENT_PROCESSORS[newProcessorType].name} Info`
+                  : `${PAYMENT_PROCESSORS[newProcessorType].name} Payment Link`}
               </label>
               <input
                 type="text"
@@ -378,20 +462,29 @@ export default function VendorPaymentsPage() {
               </button>
               <button type="submit" disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {saving ? 'Adding...' : 'Add Payment Method'}
+                {saving ? 'Adding...' : 'Add Method'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Payment Methods List */}
+      {/* Your Payment Methods */}
+      <div className="mb-2">
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Your Payment Methods</h2>
+      </div>
+
       {methods.length === 0 && !showAddForm ? (
         <div className="card p-12 text-center">
-          <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="font-semibold text-gray-600 mb-2">No payment methods yet</h3>
-          <p className="text-sm text-gray-400 mb-6">
-            Add a payment method so customers can pay deposits directly to you when claiming Sponti Coupons.
+          <div className="flex justify-center gap-3 mb-5">
+            <ProcessorLogo type="stripe" size={64} />
+            <ProcessorLogo type="venmo" size={64} />
+            <ProcessorLogo type="zelle" size={64} />
+            <ProcessorLogo type="cashapp" size={64} />
+          </div>
+          <h3 className="font-semibold text-gray-700 mb-2">Set up how you get paid</h3>
+          <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
+            Connect Stripe for automated payments, or add Venmo, Zelle, or Cash App so customers can pay you directly when claiming deals.
           </p>
           <button
             onClick={() => setShowAddForm(true)}
@@ -415,8 +508,8 @@ export default function VendorPaymentsPage() {
                 } ${!method.is_active ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-start gap-4">
-                  {/* Processor icon */}
-                  {getProcessorIcon(method.processor_type as PaymentProcessorType)}
+                  {/* Processor logo */}
+                  <ProcessorLogo type={method.processor_type as PaymentProcessorType} />
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
@@ -455,7 +548,7 @@ export default function VendorPaymentsPage() {
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-semibold text-gray-900 text-sm">
                             {method.display_name || processor?.name}
                           </h3>
@@ -468,7 +561,7 @@ export default function VendorPaymentsPage() {
                           {method.payment_tier === 'integrated' && (
                             <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                               <Zap className="w-3 h-3" />
-                              INTEGRATED
+                              AUTOMATED
                             </span>
                           )}
                           {method.payment_tier === 'manual' && (
@@ -479,6 +572,7 @@ export default function VendorPaymentsPage() {
                           )}
                           {method.payment_tier === 'link' && (
                             <span className="inline-flex items-center gap-1 bg-gray-50 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                              <ExternalLink className="w-3 h-3" />
                               LINK
                             </span>
                           )}
@@ -568,6 +662,9 @@ export default function VendorPaymentsPage() {
                       <h4 className="font-semibold text-gray-900 text-sm">
                         {claim.deal?.title || 'Deal'}
                       </h4>
+                      {claim.payment_method_type && (
+                        <ProcessorLogo type={claim.payment_method_type as PaymentProcessorType} size={28} />
+                      )}
                       {claim.payment_reference && (
                         <span className="inline-flex items-center bg-primary-100 text-primary-700 text-xs font-mono font-bold px-2 py-0.5 rounded-md">
                           {claim.payment_reference}

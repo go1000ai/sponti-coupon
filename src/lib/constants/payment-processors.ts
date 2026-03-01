@@ -8,6 +8,7 @@ export interface PaymentProcessorInfo {
   color: string;
   bgColor: string;
   helpText: string;
+  logo: string;
   linkPrefix?: string;
   /** Whether this processor supports deposit collection (online or manual) */
   supportsDeposit: boolean;
@@ -25,6 +26,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: 'https://buy.stripe.com/your-link',
     color: '#635BFF',
     bgColor: 'bg-[#635BFF]',
+    logo: '/logos/stripe.svg',
     helpText: 'Connect your Stripe account for automated payments, or paste a Stripe Payment Link.',
     linkPrefix: 'https://buy.stripe.com/',
     supportsDeposit: true,
@@ -36,6 +38,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: 'https://square.link/u/your-link',
     color: '#006AFF',
     bgColor: 'bg-[#006AFF]',
+    logo: '/logos/square.svg',
     helpText: 'Paste your Square checkout link. Create one at squareup.com/dashboard/checkout-links.',
     linkPrefix: 'https://square.link/',
     supportsDeposit: true,
@@ -47,6 +50,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: 'https://paypal.me/yourbusiness',
     color: '#003087',
     bgColor: 'bg-[#003087]',
+    logo: '/logos/paypal.svg',
     helpText: 'Paste your PayPal.me link or PayPal checkout URL.',
     linkPrefix: 'https://paypal.me/',
     supportsDeposit: true,
@@ -58,6 +62,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: '@yourbusiness',
     color: '#3D95CE',
     bgColor: 'bg-[#3D95CE]',
+    logo: '/logos/venmo.svg',
     helpText: 'Enter your Venmo username. Customers will be instructed to send payment via Venmo. You confirm receipt to release the deal.',
     supportsDeposit: true,
     integratable: false,
@@ -69,6 +74,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: 'business@email.com or (555) 123-4567',
     color: '#6D1ED4',
     bgColor: 'bg-[#6D1ED4]',
+    logo: '/logos/zelle.svg',
     helpText: 'Enter your Zelle email or phone number. Customers will send payment via Zelle. You confirm receipt to release the deal.',
     supportsDeposit: true,
     integratable: false,
@@ -80,6 +86,7 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     placeholder: '$yourbusiness',
     color: '#00D632',
     bgColor: 'bg-[#00D632]',
+    logo: '/logos/cashapp.svg',
     helpText: 'Enter your Cash App tag. Customers will send payment via Cash App. You confirm receipt to release the deal.',
     supportsDeposit: true,
     integratable: false,

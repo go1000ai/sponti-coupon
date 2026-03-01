@@ -148,7 +148,7 @@ export const VENDOR_DASHBOARD_STEPS: Step[] = [
     target: '[data-tour="vendor-sidebar"]',
     title: "You're All Set!",
     content:
-      "You also have access to Analytics, AI Insights, Locations, Team Management, API keys, Subscription, and Payment Methods in the sidebar. Explore at your own pace — you've got this!",
+      "You also have access to Analytics, AI Insights, Locations, Team Management, API keys, Subscription, and Get Paid in the sidebar. Explore at your own pace — you've got this!",
     placement: 'right',
     disableBeacon: true,
   },
