@@ -11,10 +11,14 @@ export async function GET(
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
 
+  // Accept UUID or SEO slug
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const column = isUUID ? 'id' : 'slug';
+
   const { data: deal, error } = await supabase
     .from('deals')
     .select('*, vendor:vendors(*)')
-    .eq('id', id)
+    .eq(column, id)
     .single();
 
   if (error || !deal) {
@@ -24,10 +28,10 @@ export async function GET(
   // Fetch other active deals from the same vendor (for "More from this vendor" section)
   const { data: vendorDeals } = await supabase
     .from('deals')
-    .select('id, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status')
+    .select('id, slug, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status')
     .eq('vendor_id', deal.vendor_id)
     .eq('status', 'active')
-    .neq('id', id)
+    .neq('id', deal.id)
     .gte('expires_at', new Date().toISOString())
     .order('deal_type', { ascending: true })
     .order('created_at', { ascending: false })
@@ -38,10 +42,10 @@ export async function GET(
   if (deal.vendor?.category) {
     const { data: catDeals } = await supabase
       .from('deals')
-      .select('id, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status, vendor:vendors(business_name, logo_url, city, state)')
+      .select('id, slug, title, deal_type, original_price, deal_price, discount_percentage, image_url, expires_at, claims_count, max_claims, status, vendor:vendors(business_name, logo_url, city, state)')
       .eq('status', 'active')
       .neq('vendor_id', deal.vendor_id)
-      .neq('id', id)
+      .neq('id', deal.id)
       .gte('expires_at', new Date().toISOString())
       .order('claims_count', { ascending: false })
       .limit(6);
@@ -56,14 +60,14 @@ export async function GET(
 
   // Hash IP for privacy (no raw IPs stored)
   const encoder = new TextEncoder();
-  const data = encoder.encode(ip + id); // combine IP + deal_id for per-deal dedup
+  const data = encoder.encode(ip + deal.id); // combine IP + deal_id for per-deal dedup
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const ipHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
   // Fire-and-forget: don't await, don't block response
   supabase.from('deal_views').insert({
-    deal_id: id,
+    deal_id: deal.id,
     viewer_id: user?.id || null,
     ip_hash: ipHash,
   }).then(() => { /* ignore result */ });

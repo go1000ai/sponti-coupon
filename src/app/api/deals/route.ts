@@ -4,6 +4,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { rankDeals } from '@/lib/ranking/deal-ranker';
 import { loadRankingConfig } from '@/lib/ranking/ranking-weights';
+import { slugify } from '@/lib/utils';
 
 export const runtime = 'edge';
 
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
   // Check subscription status and location
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('subscription_tier, subscription_status, lat, lng')
+    .select('subscription_tier, subscription_status, lat, lng, business_name')
     .eq('id', user.id)
     .single();
 
@@ -284,6 +285,12 @@ export async function POST(request: NextRequest) {
     if (draftErr) {
       return NextResponse.json({ error: draftErr.message }, { status: 500 });
     }
+    // Generate SEO slug
+    if (draft) {
+      const slug = slugify((vendor.business_name || '') + ' ' + (title || 'deal')) + '-' + draft.id.slice(0, 8);
+      await supabase.from('deals').update({ slug }).eq('id', draft.id);
+      draft.slug = slug;
+    }
     return NextResponse.json({ deal: draft });
   }
 
@@ -387,6 +394,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
+    // Generate SEO slug
+    if (deal) {
+      const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
+      await supabase.from('deals').update({ slug }).eq('id', deal.id);
+      deal.slug = slug;
+    }
+
     // Fire-and-forget: trigger social media auto-posting for active deals
     if (deal && deal.status === 'active') {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -449,6 +463,13 @@ export async function POST(request: NextRequest) {
 
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 500 });
+  }
+
+  // Generate SEO slug
+  if (deal) {
+    const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
+    await supabase.from('deals').update({ slug }).eq('id', deal.id);
+    deal.slug = slug;
   }
 
   // Fire-and-forget: trigger social media auto-posting for active deals

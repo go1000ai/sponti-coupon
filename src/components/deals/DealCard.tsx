@@ -23,7 +23,7 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
   const savings = deal.original_price - deal.deal_price;
 
   return (
-    <Link href={`/deals/${deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'ring-2 ring-primary-300 opacity-60' : ''}`}>
+    <Link href={`/deals/${deal.slug || deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'ring-2 ring-primary-300 opacity-60' : ''}`}>
       {/* Image / Header */}
       <div className={`relative h-32 sm:h-36 md:h-40 lg:h-48 overflow-hidden ${isSponti ? 'bg-gradient-to-br from-primary-500 to-primary-700' : 'bg-gradient-to-br from-secondary-400 to-secondary-600'}`}>
         {deal.image_url ? (

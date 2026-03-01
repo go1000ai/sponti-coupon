@@ -817,7 +817,7 @@ function DetailModal({
 
               {/* View Full Deal Link */}
               <Link
-                href={`/deals/${deal.id}`}
+                href={`/deals/${deal.slug || deal.id}`}
                 className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-600 transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />

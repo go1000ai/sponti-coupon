@@ -43,7 +43,7 @@ export function CarouselDealCard({
 
   return (
     <Link
-      href={`/deals/${deal.id}`}
+      href={`/deals/${deal.slug || deal.id}`}
       className={`snap-start shrink-0 ${CARD_WIDTH} ${heightClass} block relative rounded-2xl overflow-hidden deal-card-shine group
         shadow-lg ${glowColor} hover:shadow-xl hover:shadow-primary-500/40
         ring-1 ring-white/10 hover:ring-primary-400/50

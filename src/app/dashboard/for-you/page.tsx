@@ -31,7 +31,7 @@ function DealCard({ deal, showDistance }: { deal: DealWithDistance; showDistance
 
   return (
     <Link
-      href={`/deals/${deal.id}`}
+      href={`/deals/${deal.slug || deal.id}`}
       className="card group overflow-hidden hover:shadow-lg transition-all duration-300"
     >
       {/* Image */}

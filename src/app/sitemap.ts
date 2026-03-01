@@ -44,7 +44,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const supabase = await createServiceRoleClient();
     const { data: deals } = await supabase
       .from('deals')
-      .select('id, created_at, expires_at')
+      .select('id, slug, created_at, expires_at')
       .eq('status', 'active')
       .gte('expires_at', new Date().toISOString())
       .order('created_at', { ascending: false })
@@ -52,7 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     if (deals) {
       dealPages = deals.map((deal) => ({
-        url: `${BASE_URL}/deals/${deal.id}`,
+        url: `${BASE_URL}/deals/${deal.slug || deal.id}`,
         lastModified: new Date(deal.created_at),
         changeFrequency: 'daily' as const,
         priority: 0.8,

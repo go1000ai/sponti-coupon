@@ -134,6 +134,7 @@ export interface DealVariant {
 
 export interface Deal {
   id: string;
+  slug: string;
   vendor_id: string;
   deal_type: DealType;
   title: string;

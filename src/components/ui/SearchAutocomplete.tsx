@@ -126,7 +126,7 @@ export function SearchAutocomplete({ variant = 'hero' }: SearchAutocompleteProps
                     key={deal.id}
                     onClick={() => {
                       setShowDropdown(false);
-                      router.push(`/deals/${deal.id}`);
+                      router.push(`/deals/${deal.slug || deal.id}`);
                     }}
                     className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
                   >

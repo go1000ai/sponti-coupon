@@ -41,6 +41,7 @@ function getAmenityIcon(amenity: string): React.ElementType {
 
 interface VendorDeal {
   id: string;
+  slug?: string;
   title: string;
   deal_type: string;
   original_price: number;
@@ -1147,7 +1148,7 @@ export default function DealDetailPage() {
                     return (
                       <Link
                         key={vd.id}
-                        href={`/deals/${vd.id}`}
+                        href={`/deals/${vd.slug || vd.id}`}
                         className="flex gap-3 p-3 rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all group"
                       >
                         <div className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 ${vdIsSponti ? 'bg-primary-100' : 'bg-gray-100'}`}>
@@ -1190,7 +1191,7 @@ export default function DealDetailPage() {
                     return (
                       <Link
                         key={sd.id}
-                        href={`/deals/${sd.id}`}
+                        href={`/deals/${sd.slug || sd.id}`}
                         className="rounded-xl border border-gray-100 hover:border-primary-200 hover:shadow-md transition-all group overflow-hidden"
                       >
                         <div className={`w-full aspect-[3/2] overflow-hidden ${sdIsSponti ? 'bg-primary-100' : 'bg-gray-100'}`}>
