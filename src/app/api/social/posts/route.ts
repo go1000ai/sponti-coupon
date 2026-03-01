@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
   const { data: posts, count } = await serviceClient
     .from('social_posts')
-    .select('id, deal_id, platform, account_type, caption, image_url, claim_url, status, platform_post_id, platform_post_url, error_message, retry_count, created_at, posted_at', { count: 'exact' })
+    .select('id, deal_id, platform, account_type, caption, image_url, claim_url, status, platform_post_id, platform_post_url, error_message, retry_count, created_at, posted_at, deals(title, image_url)', { count: 'exact' })
     .in('deal_id', dealIds)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);

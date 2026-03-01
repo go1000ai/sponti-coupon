@@ -32,6 +32,7 @@ import {
   ExternalLink,
   RefreshCw,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -319,6 +320,7 @@ interface SocialPost {
   status: string;
   platform_post_url: string | null;
   error_message: string | null;
+  retry_count: number;
   created_at: string;
   posted_at: string | null;
 }
@@ -358,6 +360,37 @@ export default function AdminOverviewPage() {
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
   const [socialLoading, setSocialLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [retryingPost, setRetryingPost] = useState<string | null>(null);
+
+  const handleRetryPost = async (postId: string) => {
+    setRetryingPost(postId);
+    try {
+      const res = await fetch('/api/social/retry-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: postId }),
+      });
+      const data = await res.json();
+      if (data.success !== undefined) {
+        setSocialPosts(prev =>
+          prev.map(p =>
+            p.id === postId
+              ? {
+                  ...p,
+                  status: data.result?.status || p.status,
+                  error_message: data.result?.error || null,
+                  retry_count: (p.retry_count || 0) + 1,
+                  platform_post_url: data.result?.platform_post_url || p.platform_post_url,
+                  posted_at: data.result?.status === 'posted' ? new Date().toISOString() : p.posted_at,
+                }
+              : p
+          )
+        );
+      }
+    } finally {
+      setRetryingPost(null);
+    }
+  };
 
   const fetchData = useCallback(async (selectedRange: DateRange) => {
     try {
@@ -764,6 +797,7 @@ export default function AdminOverviewPage() {
                             <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
                             <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
                             <th className="text-left py-3 px-4 font-medium text-gray-500">Link</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -822,6 +856,24 @@ export default function AdminOverviewPage() {
                                     {post.error_message.substring(0, 40)}
                                   </span>
                                 ) : '-'}
+                              </td>
+                              <td className="py-3 px-4">
+                                {post.status === 'failed' && (post.retry_count || 0) < 3 ? (
+                                  <button
+                                    onClick={() => handleRetryPost(post.id)}
+                                    disabled={retryingPost === post.id}
+                                    className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1"
+                                  >
+                                    {retryingPost === post.id ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    )}
+                                    Retry
+                                  </button>
+                                ) : post.status === 'failed' && (post.retry_count || 0) >= 3 ? (
+                                  <span className="text-xs text-gray-400">Max retries</span>
+                                ) : null}
                               </td>
                             </tr>
                           ))}
