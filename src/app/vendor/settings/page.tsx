@@ -8,6 +8,7 @@ import {
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
   ExternalLink, AlertTriangle, Info, Navigation, RotateCcw, Play,
+  Share2, CheckCircle, Unplug,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -51,7 +52,7 @@ const DEFAULT_NOTIFICATIONS: VendorNotificationPreferences = {
   email_digest: true,
 };
 
-type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour';
+type SettingsSection = 'business' | 'social' | 'social_connections' | 'hours' | 'notifications' | 'auto_response' | 'tour';
 
 const DEFAULT_AUTO_RESPONSE: AutoResponseSettings = {
   enabled: false,
@@ -137,6 +138,22 @@ export default function VendorSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
+  // Social connections state
+  interface SocialConnectionItem {
+    id: string;
+    platform: string;
+    account_name: string | null;
+    account_username: string | null;
+    account_avatar_url: string | null;
+    is_active: boolean;
+    last_posted_at: string | null;
+    last_error: string | null;
+    connected_at: string;
+  }
+  const [socialConnections, setSocialConnections] = useState<SocialConnectionItem[]>([]);
+  const [connectionsLoading, setConnectionsLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+
   // Guided Tour settings
   const [tourAutoStart, setTourAutoStart] = useState(() => {
     if (typeof window === 'undefined') return true;
@@ -211,6 +228,55 @@ export default function VendorSettingsPage() {
 
     fetchVendor();
   }, [user]);
+
+  // Fetch social connections
+  useEffect(() => {
+    if (!user) return;
+    async function fetchConnections() {
+      setConnectionsLoading(true);
+      try {
+        const res = await fetch('/api/social/connections');
+        if (res.ok) {
+          const data = await res.json();
+          setSocialConnections(data.vendor || []);
+        }
+      } catch {
+        // Silent fail — connections are optional
+      }
+      setConnectionsLoading(false);
+    }
+    fetchConnections();
+
+    // Check for success params in URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('social_connected')) {
+      setMessage({ type: 'success', text: `${params.get('social_connected')} connected successfully!` });
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchConnections();
+    }
+    if (params.get('social_error')) {
+      setMessage({ type: 'error', text: `Social connection failed: ${params.get('social_error')}` });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [user]);
+
+  const disconnectSocial = async (connectionId: string) => {
+    setDisconnecting(connectionId);
+    try {
+      const res = await fetch('/api/social/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      if (res.ok) {
+        setSocialConnections(prev => prev.filter(c => c.id !== connectionId));
+        setMessage({ type: 'success', text: 'Social account disconnected.' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to disconnect account.' });
+    }
+    setDisconnecting(null);
+  };
 
   const toggleSection = (section: SettingsSection) => {
     setExpandedSection(prev => prev === section ? null : section);
@@ -819,6 +885,216 @@ export default function VendorSettingsPage() {
             </div>
           )}
         </div>
+
+        {/* ===== SOCIAL AUTO-POST CONNECTIONS ===== */}
+        <GatedSection loading={tierLoading} locked={!canAccess('social_auto_post')} requiredTier="pro" featureName="Social Auto-Post" description="Auto-post new deals to Facebook, Instagram, X, and TikTok. Available on Pro plan and above.">
+          <div className="card mb-4 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleSection('social_connections')}
+              className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Share2 className="w-5 h-5 text-[#E8632B]" />
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Auto-Post Connections</h2>
+                  <p className="text-xs text-gray-500 text-left">Automatically post new deals to your social media</p>
+                </div>
+              </div>
+              {expandedSection === 'social_connections' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+            </button>
+
+            {expandedSection === 'social_connections' && (
+              <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
+                <p className="text-sm text-gray-500">
+                  Connect your social accounts to auto-post every new deal. Your followers will see new deals the moment you publish them.
+                </p>
+
+                {connectionsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                    <span className="ml-2 text-sm text-gray-500">Loading connections...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Facebook */}
+                    {(() => {
+                      const fb = socialConnections.find(c => c.platform === 'facebook');
+                      return (
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <Facebook className="w-5 h-5 text-blue-600" />
+                            <div>
+                              <span className="font-medium text-gray-900">Facebook</span>
+                              {fb ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                  <span className="text-xs text-green-600">{fb.account_name || 'Connected'}</span>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">Not connected</p>
+                              )}
+                            </div>
+                          </div>
+                          {fb ? (
+                            <button
+                              type="button"
+                              onClick={() => disconnectSocial(fb.id)}
+                              disabled={disconnecting === fb.id}
+                              className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                            >
+                              {disconnecting === fb.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                              Disconnect
+                            </button>
+                          ) : (
+                            <a
+                              href="/api/social/connect/facebook/authorize"
+                              className="btn-primary text-sm px-4 py-1.5"
+                            >
+                              Connect
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* Instagram */}
+                    {(() => {
+                      const ig = socialConnections.find(c => c.platform === 'instagram');
+                      return (
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <Instagram className="w-5 h-5 text-pink-500" />
+                            <div>
+                              <span className="font-medium text-gray-900">Instagram</span>
+                              {ig ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                  <span className="text-xs text-green-600">@{ig.account_username || 'Connected'}</span>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">Requires Instagram Business Account</p>
+                              )}
+                            </div>
+                          </div>
+                          {ig ? (
+                            <button
+                              type="button"
+                              onClick={() => disconnectSocial(ig.id)}
+                              disabled={disconnecting === ig.id}
+                              className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                            >
+                              {disconnecting === ig.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                              Disconnect
+                            </button>
+                          ) : (
+                            <a
+                              href="/api/social/connect/instagram/authorize"
+                              className="btn-primary text-sm px-4 py-1.5"
+                            >
+                              Connect
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* X / Twitter */}
+                    {(() => {
+                      const tw = socialConnections.find(c => c.platform === 'twitter');
+                      return (
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <Twitter className="w-5 h-5 text-gray-800" />
+                            <div>
+                              <span className="font-medium text-gray-900">X (Twitter)</span>
+                              {tw ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                  <span className="text-xs text-green-600">@{tw.account_username || 'Connected'}</span>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">Not connected</p>
+                              )}
+                            </div>
+                          </div>
+                          {tw ? (
+                            <button
+                              type="button"
+                              onClick={() => disconnectSocial(tw.id)}
+                              disabled={disconnecting === tw.id}
+                              className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                            >
+                              {disconnecting === tw.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                              Disconnect
+                            </button>
+                          ) : (
+                            <a
+                              href="/api/social/connect/twitter/authorize"
+                              className="btn-primary text-sm px-4 py-1.5"
+                            >
+                              Connect
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* TikTok */}
+                    {(() => {
+                      const tt = socialConnections.find(c => c.platform === 'tiktok');
+                      return (
+                        <div className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-gray-50">
+                          <div className="flex items-center gap-3">
+                            <svg className="w-5 h-5 text-gray-800" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z"/></svg>
+                            <div>
+                              <span className="font-medium text-gray-900">TikTok</span>
+                              {tt ? (
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                  <span className="text-xs text-green-600">@{tt.account_username || 'Connected'}</span>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-500">Not connected</p>
+                              )}
+                            </div>
+                          </div>
+                          {tt ? (
+                            <button
+                              type="button"
+                              onClick={() => disconnectSocial(tt.id)}
+                              disabled={disconnecting === tt.id}
+                              className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                            >
+                              {disconnecting === tt.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                              Disconnect
+                            </button>
+                          ) : (
+                            <a
+                              href="/api/social/connect/tiktok/authorize"
+                              className="btn-primary text-sm px-4 py-1.5"
+                            >
+                              Connect
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+
+                {socialConnections.length > 0 && (
+                  <div className="mt-4 p-3 bg-[#E8632B]/5 border border-[#E8632B]/20 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <Info className="w-4 h-4 inline mr-1 text-[#E8632B]" />
+                      When you publish a new deal, it will be automatically posted to your connected accounts with an AI-generated caption.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </GatedSection>
 
         {/* ===== BUSINESS HOURS ===== */}
         <div className="card mb-4 overflow-hidden">

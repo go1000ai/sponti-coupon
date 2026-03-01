@@ -86,6 +86,10 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
           <p className="text-gray-500 text-sm mt-1">{deal.vendor.business_name}</p>
         )}
 
+        {deal.description && (
+          <p className="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">{deal.description}</p>
+        )}
+
         {/* Pricing with savings */}
         <div className="mt-auto pt-3">
           <div className="flex items-center gap-2">

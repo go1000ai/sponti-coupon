@@ -387,6 +387,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: createError.message }, { status: 500 });
     }
 
+    // Fire-and-forget: trigger social media auto-posting for active deals
+    if (deal && deal.status === 'active') {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      fetch(`${appUrl}/api/social/auto-post`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-social-post-secret': process.env.SOCIAL_POST_INTERNAL_SECRET || '',
+        },
+        body: JSON.stringify({ deal_id: deal.id, vendor_id: user.id }),
+      }).catch(() => {}); // Social posting should never block deal creation
+    }
+
     return NextResponse.json({ deal });
   }
 
@@ -436,6 +449,19 @@ export async function POST(request: NextRequest) {
 
   if (createError) {
     return NextResponse.json({ error: createError.message }, { status: 500 });
+  }
+
+  // Fire-and-forget: trigger social media auto-posting for active deals
+  if (deal && deal.status === 'active') {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    fetch(`${appUrl}/api/social/auto-post`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-social-post-secret': process.env.SOCIAL_POST_INTERNAL_SECRET || '',
+      },
+      body: JSON.stringify({ deal_id: deal.id, vendor_id: user.id }),
+    }).catch(() => {}); // Social posting should never block deal creation
   }
 
   return NextResponse.json({ deal });

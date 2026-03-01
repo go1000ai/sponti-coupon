@@ -27,6 +27,7 @@ import {
   Globe,
   ArrowLeftRight,
   ShoppingBag,
+  Share2,
 } from 'lucide-react';
 
 interface NavChild {
@@ -49,17 +50,18 @@ const navItems: NavItem[] = [
     href: '/vendor/dashboard',
     icon: <LayoutDashboard className="w-5 h-5" />,
   },
+  { label: 'Scan / Redeem', href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
   { label: 'Analytics', href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
   { label: 'Ava Insights', href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> },
   { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
   { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
   { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
-  { label: 'Scan / Redeem', href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
   { label: 'Reviews', href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" />, dataTour: 'vendor-nav-reviews' },
   { label: 'Loyalty', href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" />, dataTour: 'vendor-nav-loyalty' },
   { label: 'Locations', href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
   { label: 'Team', href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
   { label: 'API', href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
+  { label: 'Social', href: '/vendor/social', icon: <Share2 className="w-5 h-5" /> },
   { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Get Paid', href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" /> },

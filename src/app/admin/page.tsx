@@ -22,6 +22,16 @@ import {
   Star,
   ClipboardList,
   Grid3X3,
+  Share2,
+  Facebook,
+  Instagram,
+  Twitter,
+  Unplug,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -280,12 +290,74 @@ const TIER_CONFIG = [
 
 const DAILY_GOALS = { claims: 50, signups: 20, deals: 5 };
 
+// --- Social Media Types & Constants ---
+
+type DashTab = 'overview' | 'social';
+type SocialSubTab = 'brand' | 'vendors' | 'posts';
+
+interface SocialConnection {
+  id: string;
+  vendor_id: string | null;
+  is_brand_account: boolean;
+  platform: string;
+  account_name: string | null;
+  account_username: string | null;
+  account_avatar_url: string | null;
+  is_active: boolean;
+  last_posted_at: string | null;
+  last_error: string | null;
+  connected_at: string;
+  vendor_name?: string;
+}
+
+interface SocialPost {
+  id: string;
+  deal_id: string;
+  platform: string;
+  account_type: string;
+  caption: string | null;
+  status: string;
+  platform_post_url: string | null;
+  error_message: string | null;
+  created_at: string;
+  posted_at: string | null;
+}
+
+const TikTokIcon = () => (
+  <svg className="w-4 h-4 text-gray-800" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z" />
+  </svg>
+);
+
+const PLATFORM_ICONS: Record<string, React.ReactNode> = {
+  facebook: <Facebook className="w-4 h-4 text-blue-600" />,
+  instagram: <Instagram className="w-4 h-4 text-pink-500" />,
+  twitter: <Twitter className="w-4 h-4 text-gray-800" />,
+  tiktok: <TikTokIcon />,
+};
+
+const PLATFORM_LABELS: Record<string, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  twitter: 'X (Twitter)',
+  tiktok: 'TikTok',
+};
+
 export default function AdminOverviewPage() {
   const { user } = useAuth();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<DateRange>('30d');
   const [transitioning, setTransitioning] = useState(false);
+
+  // Social tab state
+  const [dashTab, setDashTab] = useState<DashTab>('overview');
+  const [socialSubTab, setSocialSubTab] = useState<SocialSubTab>('brand');
+  const [brandConnections, setBrandConnections] = useState<SocialConnection[]>([]);
+  const [vendorConnections, setVendorConnections] = useState<SocialConnection[]>([]);
+  const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
 
   const fetchData = useCallback(async (selectedRange: DateRange) => {
     try {
@@ -301,10 +373,62 @@ export default function AdminOverviewPage() {
     }
   }, []);
 
+  const fetchSocialData = useCallback(async () => {
+    setSocialLoading(true);
+    try {
+      const [connRes, postsRes] = await Promise.all([
+        fetch('/api/admin/social/connections'),
+        fetch('/api/admin/social/posts?limit=50'),
+      ]);
+      if (connRes.ok) {
+        const connData = await connRes.json();
+        setBrandConnections(connData.brand || []);
+        setVendorConnections(connData.vendors || []);
+      }
+      if (postsRes.ok) {
+        const postsData = await postsRes.json();
+        setSocialPosts(postsData.posts || []);
+      }
+    } catch {
+      // Silent fail
+    }
+    setSocialLoading(false);
+  }, []);
+
+  const disconnectAccount = async (connectionId: string) => {
+    setDisconnecting(connectionId);
+    try {
+      const res = await fetch('/api/social/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      if (res.ok) {
+        setBrandConnections(prev => prev.filter(c => c.id !== connectionId));
+        setVendorConnections(prev => prev.filter(c => c.id !== connectionId));
+      }
+    } catch {
+      // Silent fail
+    }
+    setDisconnecting(null);
+  };
+
   useEffect(() => {
     if (!user) return;
     fetchData(range);
+    // Check URL for ?tab=social
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'social') {
+      setDashTab('social');
+    }
   }, [user, range, fetchData]);
+
+  // Fetch social data when social tab is activated
+  useEffect(() => {
+    if (dashTab === 'social' && brandConnections.length === 0 && vendorConnections.length === 0 && !socialLoading) {
+      fetchSocialData();
+    }
+  }, [dashTab, brandConnections.length, vendorConnections.length, socialLoading, fetchSocialData]);
 
   const handleRangeChange = (newRange: DateRange) => {
     if (newRange === range) return;
@@ -443,6 +567,278 @@ export default function AdminOverviewPage() {
 
   return (
     <div className={`transition-opacity duration-300 ${transitioning ? 'opacity-40' : 'opacity-100'}`}>
+      {/* Dashboard Tab Switcher */}
+      <div className="flex items-center gap-1 mb-6 border-b border-gray-200">
+        <button
+          onClick={() => setDashTab('overview')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            dashTab === 'overview'
+              ? 'border-[#E8632B] text-[#E8632B]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Overview
+        </button>
+        <button
+          onClick={() => setDashTab('social')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+            dashTab === 'social'
+              ? 'border-[#E8632B] text-[#E8632B]'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Share2 className="w-4 h-4" />
+          Social Media
+        </button>
+      </div>
+
+      {/* === SOCIAL MEDIA TAB === */}
+      {dashTab === 'social' && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <Share2 className="w-7 h-7 text-[#E8632B]" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Social Media</h1>
+                <p className="text-sm text-gray-500">Manage brand accounts and monitor auto-posting</p>
+              </div>
+            </div>
+            <button onClick={fetchSocialData} className="btn-secondary flex items-center gap-2 text-sm">
+              <RefreshCw className="w-4 h-4" /> Refresh
+            </button>
+          </div>
+
+          {/* Social Sub-Tabs */}
+          <div className="flex border-b border-gray-200 mb-6">
+            {(['brand', 'vendors', 'posts'] as const).map(t => (
+              <button
+                key={t}
+                onClick={() => setSocialSubTab(t)}
+                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                  socialSubTab === t
+                    ? 'border-[#E8632B] text-[#E8632B]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {t === 'brand' ? 'Brand Accounts' : t === 'vendors' ? 'Vendor Connections' : 'Post History'}
+                {t === 'posts' && socialPosts.filter(p => p.status === 'failed').length > 0 && (
+                  <span className="ml-1.5 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
+                    {socialPosts.filter(p => p.status === 'failed').length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {socialLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            </div>
+          ) : (
+            <>
+              {/* Brand Accounts */}
+              {socialSubTab === 'brand' && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500 mb-4">
+                    Connect SpontiCoupon&apos;s official social accounts. All new vendor deals will also be posted here.
+                  </p>
+                  {(['facebook', 'instagram', 'twitter', 'tiktok'] as const).map(platform => {
+                    const conn = brandConnections.find(c => c.platform === platform);
+                    return (
+                      <div key={platform} className="flex items-center justify-between p-4 rounded-lg border border-gray-200 bg-white">
+                        <div className="flex items-center gap-3">
+                          {PLATFORM_ICONS[platform]}
+                          <div>
+                            <span className="font-medium text-gray-900">{PLATFORM_LABELS[platform]}</span>
+                            {conn ? (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <CheckCircle className="w-3.5 h-3.5 text-green-500" />
+                                <span className="text-xs text-green-600">{conn.account_name || conn.account_username || 'Connected'}</span>
+                                {conn.last_error && (
+                                  <span className="text-xs text-red-500 ml-2">Last error: {conn.last_error}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-gray-500">Not connected</p>
+                            )}
+                          </div>
+                        </div>
+                        {conn ? (
+                          <button
+                            onClick={() => disconnectAccount(conn.id)}
+                            disabled={disconnecting === conn.id}
+                            className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                          >
+                            {disconnecting === conn.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                            Disconnect
+                          </button>
+                        ) : (
+                          <a
+                            href={`/api/social/connect/${platform}/authorize?brand=true`}
+                            className="btn-primary text-sm px-4 py-1.5"
+                          >
+                            Connect
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Vendor Connections */}
+              {socialSubTab === 'vendors' && (
+                <div>
+                  {vendorConnections.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Share2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p>No vendors have connected their social accounts yet.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Vendor</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Account</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Last Post</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vendorConnections.map(conn => (
+                            <tr key={conn.id} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-4 font-medium text-gray-900">{conn.vendor_name}</td>
+                              <td className="py-3 px-4">
+                                <span className="flex items-center gap-1.5">
+                                  {PLATFORM_ICONS[conn.platform]}
+                                  {PLATFORM_LABELS[conn.platform]}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-gray-600">
+                                {conn.account_username ? `@${conn.account_username}` : conn.account_name || '-'}
+                              </td>
+                              <td className="py-3 px-4">
+                                {conn.is_active ? (
+                                  <span className="inline-flex items-center gap-1 text-green-600">
+                                    <CheckCircle className="w-3.5 h-3.5" /> Active
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-gray-400">
+                                    <XCircle className="w-3.5 h-3.5" /> Inactive
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-gray-500 text-xs">
+                                {conn.last_posted_at
+                                  ? new Date(conn.last_posted_at).toLocaleDateString()
+                                  : 'Never'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Post History */}
+              {socialSubTab === 'posts' && (
+                <div>
+                  {socialPosts.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <Share2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p>No social posts yet. Posts will appear here when deals are auto-posted.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Type</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">Link</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {socialPosts.map(post => (
+                            <tr key={post.id} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-4">
+                                <span className="flex items-center gap-1.5">
+                                  {PLATFORM_ICONS[post.platform]}
+                                  {PLATFORM_LABELS[post.platform]}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  post.account_type === 'brand'
+                                    ? 'bg-[#E8632B]/10 text-[#E8632B]'
+                                    : 'bg-[#29ABE2]/10 text-[#29ABE2]'
+                                }`}>
+                                  {post.account_type}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4">
+                                {post.status === 'posted' && (
+                                  <span className="inline-flex items-center gap-1 text-green-600">
+                                    <CheckCircle className="w-3.5 h-3.5" /> Posted
+                                  </span>
+                                )}
+                                {post.status === 'failed' && (
+                                  <span className="inline-flex items-center gap-1 text-red-600" title={post.error_message || ''}>
+                                    <XCircle className="w-3.5 h-3.5" /> Failed
+                                  </span>
+                                )}
+                                {post.status === 'pending' && (
+                                  <span className="inline-flex items-center gap-1 text-yellow-600">
+                                    <Loader2 className="w-3.5 h-3.5" /> Pending
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-gray-600 max-w-xs truncate">
+                                {post.caption?.substring(0, 80) || '-'}
+                              </td>
+                              <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">
+                                {new Date(post.created_at).toLocaleString()}
+                              </td>
+                              <td className="py-3 px-4">
+                                {post.platform_post_url ? (
+                                  <a
+                                    href={post.platform_post_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#E8632B] hover:underline inline-flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" /> View
+                                  </a>
+                                ) : post.error_message ? (
+                                  <span className="text-xs text-red-500 max-w-xs truncate block" title={post.error_message}>
+                                    {post.error_message.substring(0, 40)}
+                                  </span>
+                                ) : '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* === OVERVIEW TAB === */}
+      {dashTab === 'overview' && (<>
+
       {/* Header with Date Range Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
@@ -813,6 +1209,8 @@ export default function AdminOverviewPage() {
           </div>
         )}
       </div>
+
+      </>)}
     </div>
   );
 }

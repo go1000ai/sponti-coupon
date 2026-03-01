@@ -416,6 +416,7 @@ export const SUBSCRIPTION_TIERS = {
     api_access: false,
     custom_branding: false,
     loyalty_program: false,
+    social_auto_post: false,
     stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || '',
     stripe_annual_price_id: process.env.NEXT_PUBLIC_STRIPE_STARTER_ANNUAL_PRICE_ID || '',
   },
@@ -440,6 +441,7 @@ export const SUBSCRIPTION_TIERS = {
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
+    social_auto_post: true, // Auto-post deals to social media
     stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '',
     stripe_annual_price_id: process.env.NEXT_PUBLIC_STRIPE_PRO_ANNUAL_PRICE_ID || '',
   },
@@ -464,6 +466,7 @@ export const SUBSCRIPTION_TIERS = {
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
+    social_auto_post: true, // Auto-post deals to social media
     stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID || '',
     stripe_annual_price_id: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_ANNUAL_PRICE_ID || '',
   },
@@ -488,6 +491,7 @@ export const SUBSCRIPTION_TIERS = {
     api_access: true,
     custom_branding: true,
     loyalty_program: true,
+    social_auto_post: true, // Auto-post deals to social media
     stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || '',
     stripe_annual_price_id: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_ANNUAL_PRICE_ID || '',
   },

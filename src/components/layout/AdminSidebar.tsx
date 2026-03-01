@@ -33,6 +33,7 @@ import {
   Heart,
   Key,
   Calendar,
+  Share2,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -86,6 +87,7 @@ const navGroups: NavGroup[] = [
       { label: 'Website Import', href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
       { label: 'AI Tools', href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
       { label: 'Knowledge Base', href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
+      { label: 'Social Media', href: '/admin?tab=social', icon: <Share2 className="w-5 h-5" /> },
       { label: 'Support', href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
     ],
   },
@@ -119,7 +121,11 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (href: string) => {
-    if (href === '/admin') return pathname === '/admin';
+    if (href === '/admin') return pathname === '/admin' && !window.location.search.includes('tab=');
+    if (href.includes('?')) {
+      const [path, query] = href.split('?');
+      return pathname === path && window.location.search.includes(query);
+    }
     return pathname.startsWith(href);
   };
 
