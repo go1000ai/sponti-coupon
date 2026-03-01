@@ -147,6 +147,14 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
           >
             {current.thumbnail ? (
               <SafeImage src={current.thumbnail} alt={`${title} - Video`} fill className="object-cover" />
+            ) : current.url.match(/\.(mp4|webm|ogg)(\?|$)/i) || current.url.includes('supabase') ? (
+              <video
+                src={`${current.url}#t=0.5`}
+                className="absolute inset-0 w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
             ) : (
               <div className="w-full h-full bg-gray-900 flex items-center justify-center">
                 <Play className="w-16 h-16 text-white/60" />
@@ -209,6 +217,19 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
               ) : media.thumbnail ? (
                 <>
                   <SafeImage src={media.thumbnail} alt="Video thumbnail" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <Play className="w-4 h-4 text-white" fill="white" />
+                  </div>
+                </>
+              ) : media.url.match(/\.(mp4|webm|ogg)(\?|$)/i) || media.url.includes('supabase') ? (
+                <>
+                  <video
+                    src={`${media.url}#t=0.5`}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
                   <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                     <Play className="w-4 h-4 text-white" fill="white" />
                   </div>

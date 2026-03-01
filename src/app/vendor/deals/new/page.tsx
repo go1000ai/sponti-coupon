@@ -1520,7 +1520,7 @@ export default function NewDealPage() {
                     {isDirectVideo ? (
                       <button type="button" onClick={() => setPreviewVideoUrl(url)}
                         className="w-40 h-24 rounded-xl overflow-hidden border border-gray-200 bg-black relative cursor-pointer">
-                        <video src={url} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                        <video src={`${url}#t=0.5`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
                         <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:bg-black/40 transition-all">
                           <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
                             <span className="ml-0.5 border-l-[10px] border-l-gray-800 border-y-[6px] border-y-transparent" />

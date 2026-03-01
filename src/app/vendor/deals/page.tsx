@@ -7,13 +7,15 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { Plus, Tag, Pause, Play, Trash2, Pencil, TrendingUp, Lock, CalendarDays, List, Globe, MapPin } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Tag, Pause, Play, Trash2, TrendingUp, Lock, CalendarDays, List, Globe, MapPin } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 
 export default function VendorDealsPage() {
   const { user } = useAuth();
   const { dealsPerMonth } = useVendorTier();
+  const router = useRouter();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'draft' | 'expired' | 'paused'>('all');
   const [loading, setLoading] = useState(true);
@@ -161,121 +163,122 @@ export default function VendorDealsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {deals.map(deal => (
-            <div key={deal.id} className="card p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`rounded-lg p-3 ${deal.deal_type === 'sponti_coupon' ? 'bg-primary-50' : 'bg-gray-50'}`}>
-                    {deal.deal_type === 'sponti_coupon' ? (
-                      <SpontiIcon className="w-6 h-6 text-primary-500" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {deals.map(deal => {
+            const isSponti = deal.deal_type === 'sponti_coupon';
+            return (
+              <div key={deal.id}
+                onClick={() => router.push(`/vendor/deals/edit?id=${deal.id}`)}
+                className={`card overflow-hidden cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex flex-col ${
+                  isSponti ? 'border-primary-100' : ''
+                }`}
+              >
+                {/* Card Header — colored stripe */}
+                <div className={`px-4 py-3 flex items-center justify-between ${
+                  isSponti ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gradient-to-r from-gray-100 to-gray-50'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {isSponti ? (
+                      <SpontiIcon className="w-4 h-4 text-white" />
                     ) : (
-                      <Tag className="w-6 h-6 text-gray-500" />
+                      <Tag className="w-4 h-4 text-gray-500" />
                     )}
+                    <span className={`text-xs font-semibold ${isSponti ? 'text-white' : 'text-gray-600'}`}>
+                      {isSponti ? 'Sponti Coupon' : 'Steady Deal'}
+                    </span>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-lg text-gray-900 truncate">{deal.title}</h3>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        deal.deal_type === 'sponti_coupon' ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon' : 'Steady Deal'}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        deal.status === 'active' ? 'bg-green-50 text-green-600' :
-                        deal.status === 'draft' ? 'bg-amber-50 text-amber-600' :
-                        deal.status === 'expired' ? 'bg-gray-100 text-gray-500' :
-                        deal.status === 'paused' ? 'bg-yellow-50 text-yellow-600' :
-                        'bg-gray-100 text-gray-500'
-                      }`}>
-                        {deal.status === 'draft' ? 'Draft' : deal.status}
-                      </span>
-                      {deal.website_url ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600 flex items-center gap-1">
-                          <Globe className="w-3 h-3" /> Online
-                        </span>
-                      ) : deal.location_ids && deal.location_ids.length > 0 ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-600 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {deal.location_ids.length} location{deal.location_ids.length !== 1 ? 's' : ''}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    deal.status === 'active' ? (isSponti ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700') :
+                    deal.status === 'draft' ? (isSponti ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700') :
+                    deal.status === 'expired' ? (isSponti ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500') :
+                    deal.status === 'paused' ? (isSponti ? 'bg-white/20 text-white' : 'bg-yellow-100 text-yellow-700') :
+                    'bg-gray-200 text-gray-500'
+                  }`}>
+                    {deal.status === 'draft' ? 'Draft' : deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-6">
-                  {/* Countdown */}
-                  {deal.status === 'active' && deal.deal_type === 'sponti_coupon' && (
-                    <div className="hidden md:block">
+                {/* Card Body */}
+                <div className="p-4 flex flex-col flex-1">
+                  <h3 className="font-bold text-gray-900 line-clamp-2 leading-snug">{deal.title}</h3>
+
+                  {/* Location/Online badge */}
+                  <div className="flex items-center gap-1.5 mt-2">
+                    {deal.website_url ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5" /> Online
+                      </span>
+                    ) : deal.location_ids && deal.location_ids.length > 0 ? (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-600 flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5" /> {deal.location_ids.length} location{deal.location_ids.length !== 1 ? 's' : ''}
+                      </span>
+                    ) : null}
+                    {deal.claims_count > 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> Has claims
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Countdown for active Sponti */}
+                  {deal.status === 'active' && isSponti && (
+                    <div className="mt-3">
                       <CountdownTimer expiresAt={deal.expires_at} size="sm" variant="sponti" />
                     </div>
                   )}
 
-                  {/* Price */}
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400 line-through text-sm">{formatCurrency(deal.original_price)}</span>
-                      <span className="text-primary-500 font-bold text-lg">{formatCurrency(deal.deal_price)}</span>
-                    </div>
-                    <p className="text-sm text-gray-500">{formatPercentage(deal.discount_percentage)} off</p>
-                  </div>
-
-                  {/* Claims */}
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{deal.claims_count}</p>
-                    <p className="text-xs text-gray-400">claims</p>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    {deal.claims_count > 0 ? (
-                      <span
-                        className="p-2 text-gray-300 cursor-not-allowed"
-                        title="Deal is locked — has claims"
-                      >
-                        <Lock className="w-4 h-4" />
+                  {/* Pricing — pushed to bottom */}
+                  <div className="mt-auto pt-4">
+                    <div className="flex items-baseline justify-between">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-gray-400 line-through text-sm">{formatCurrency(deal.original_price)}</span>
+                        <span className="text-primary-500 font-bold text-xl">{formatCurrency(deal.deal_price)}</span>
+                      </div>
+                      <span className="bg-green-50 text-green-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                        {formatPercentage(deal.discount_percentage)} off
                       </span>
-                    ) : (
-                      <Link
-                        href={`/vendor/deals/edit?id=${deal.id}`}
-                        className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Link>
-                    )}
-                    {deal.status === 'active' && (
-                      <button
-                        onClick={() => handleStatusChange(deal.id, 'paused')}
-                        className="p-2 text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors"
-                        title="Pause"
-                      >
-                        <Pause className="w-4 h-4" />
-                      </button>
-                    )}
-                    {deal.status === 'paused' && (
-                      <button
-                        onClick={() => handleStatusChange(deal.id, 'active')}
-                        className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Resume"
-                      >
-                        <Play className="w-4 h-4" />
-                      </button>
-                    )}
-                    {(deal.status === 'draft' || deal.status === 'paused') && (
-                      <button
-                        onClick={() => handleStatusChange(deal.id, 'expired')}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Expire"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                    </div>
+                  </div>
+
+                  {/* Footer row: claims + actions */}
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                    <span className="text-sm text-gray-500">
+                      <span className="font-bold text-gray-900">{deal.claims_count}</span> claims
+                    </span>
+                    <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      {deal.status === 'active' && (
+                        <button
+                          onClick={() => handleStatusChange(deal.id, 'paused')}
+                          className="p-1.5 text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors"
+                          title="Pause"
+                        >
+                          <Pause className="w-4 h-4" />
+                        </button>
+                      )}
+                      {deal.status === 'paused' && (
+                        <button
+                          onClick={() => handleStatusChange(deal.id, 'active')}
+                          className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Resume"
+                        >
+                          <Play className="w-4 h-4" />
+                        </button>
+                      )}
+                      {(deal.status === 'draft' || deal.status === 'paused') && (
+                        <button
+                          onClick={() => handleStatusChange(deal.id, 'expired')}
+                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
