@@ -14,9 +14,13 @@ import type { VendorPaymentMethod } from '@/lib/types/database';
 import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
 import { formatCurrency } from '@/lib/utils';
 
+// Square-icon logos vs wide wordmark logos need different aspect ratios
+const SQUARE_LOGOS: Set<string> = new Set(['zelle', 'cashapp', 'square']);
+
 function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?: number }) {
   const processor = PAYMENT_PROCESSORS[type];
   const [imgError, setImgError] = useState(false);
+  const isSquare = SQUARE_LOGOS.has(type);
 
   if (imgError) {
     return (
@@ -32,12 +36,12 @@ function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?:
   return (
     <div
       className="flex items-center justify-center shrink-0"
-      style={{ width: size, height: size }}
+      style={{ width: isSquare ? size : size * 2, height: size }}
     >
       <Image
         src={processor.logo}
         alt={processor.name}
-        width={size}
+        width={isSquare ? size : size * 2}
         height={size}
         className="object-contain w-full h-full"
         onError={() => setImgError(true)}
@@ -302,8 +306,8 @@ export default function VendorPaymentsPage() {
               <Zap className="w-5 h-5 text-[#635BFF]" />
               <h3 className="font-semibold text-gray-900 text-sm">Automated</h3>
             </div>
-            <div className="flex items-center gap-2 mb-3">
-              <ProcessorLogo type="stripe" size={80} />
+            <div className="flex items-center gap-3 mb-3 min-h-[40px]">
+              <ProcessorLogo type="stripe" size={36} />
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
               Customers pay through secure Stripe checkout. Money goes directly to your Stripe account instantly.
@@ -320,10 +324,10 @@ export default function VendorPaymentsPage() {
               <Smartphone className="w-5 h-5 text-blue-500" />
               <h3 className="font-semibold text-gray-900 text-sm">Manual Verification</h3>
             </div>
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <ProcessorLogo type="venmo" size={70} />
-              <ProcessorLogo type="zelle" size={70} />
-              <ProcessorLogo type="cashapp" size={70} />
+            <div className="flex items-center gap-3 mb-3 flex-wrap min-h-[40px]">
+              <ProcessorLogo type="venmo" size={36} />
+              <ProcessorLogo type="zelle" size={36} />
+              <ProcessorLogo type="cashapp" size={36} />
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
               Customers send payment directly to you. You confirm receipt from your dashboard to release the deal.
@@ -340,10 +344,10 @@ export default function VendorPaymentsPage() {
               <ExternalLink className="w-5 h-5 text-gray-500" />
               <h3 className="font-semibold text-gray-900 text-sm">Payment Links</h3>
             </div>
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              <ProcessorLogo type="stripe" size={70} />
-              <ProcessorLogo type="square" size={70} />
-              <ProcessorLogo type="paypal" size={70} />
+            <div className="flex items-center gap-3 mb-3 flex-wrap min-h-[40px]">
+              <ProcessorLogo type="stripe" size={36} />
+              <ProcessorLogo type="square" size={36} />
+              <ProcessorLogo type="paypal" size={36} />
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
               Redirect customers to your existing checkout link on Stripe, Square, or PayPal.
@@ -401,7 +405,7 @@ export default function VendorPaymentsPage() {
                         : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    <ProcessorLogo type={key} size={48} />
+                    <ProcessorLogo type={key} size={32} />
                     <span className="text-[10px] font-medium text-gray-600">{processor.name}</span>
                   </button>
                 ))}
@@ -476,11 +480,11 @@ export default function VendorPaymentsPage() {
 
       {methods.length === 0 && !showAddForm ? (
         <div className="card p-12 text-center">
-          <div className="flex justify-center gap-3 mb-5">
-            <ProcessorLogo type="stripe" size={64} />
-            <ProcessorLogo type="venmo" size={64} />
-            <ProcessorLogo type="zelle" size={64} />
-            <ProcessorLogo type="cashapp" size={64} />
+          <div className="flex justify-center items-center gap-4 mb-5">
+            <ProcessorLogo type="stripe" size={36} />
+            <ProcessorLogo type="venmo" size={36} />
+            <ProcessorLogo type="zelle" size={36} />
+            <ProcessorLogo type="cashapp" size={36} />
           </div>
           <h3 className="font-semibold text-gray-700 mb-2">Set up how you get paid</h3>
           <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
