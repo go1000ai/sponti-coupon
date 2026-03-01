@@ -7,7 +7,7 @@ import {
   CircleCheck, HandCoins, TrendingDown, TrendingUp,
   ReceiptText, Landmark, Ban, Sparkles, PiggyBank,
   Clock, Wallet, CalendarX, XCircle,
-  Zap, BadgeCheck, ArrowDownUp
+  Zap, BadgeCheck
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
@@ -260,14 +260,9 @@ export function CompetitorComparison() {
               Other platforms take up to 50% of every sale and make you wait months for your money.
               With SpontiCoupon, every dollar goes directly to you — instantly.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="/auth/signup?type=vendor" className="btn-primary inline-flex items-center gap-2">
-                <Zap className="w-4 h-4" /> Start Your Free Trial
-              </a>
-              <a href="/pricing" className="text-primary-500 font-semibold inline-flex items-center gap-1 px-4 py-3 hover:underline">
-                View Pricing <ArrowDownUp className="w-4 h-4" />
-              </a>
-            </div>
+            <a href="#plans" className="btn-primary inline-flex items-center gap-2">
+              <Zap className="w-4 h-4" /> Start Your Free Trial
+            </a>
           </div>
         </ScrollReveal>
       </div>
