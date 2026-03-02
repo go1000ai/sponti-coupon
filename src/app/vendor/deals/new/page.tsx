@@ -266,7 +266,6 @@ export default function NewDealPage() {
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [savingDraft, setSavingDraft] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -291,7 +290,6 @@ export default function NewDealPage() {
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
-  const [uploadingAdditional, setUploadingAdditional] = useState(false);
   const [activeTab, setActiveTab] = useState<'new' | 'drafts'>('new');
   const [drafts, setDrafts] = useState<Deal[]>([]);
   const [draftsLoading, setDraftsLoading] = useState(false);
@@ -301,7 +299,6 @@ export default function NewDealPage() {
   const [variants, setVariants] = useState<DealVariant[]>([]);
   const [editingVariant, setEditingVariant] = useState<DealVariant | null>(null);
   const [aiVariantsLoading, setAiVariantsLoading] = useState(false);
-  const additionalFileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -576,11 +573,17 @@ export default function NewDealPage() {
     setAiLoading(false);
   };
 
-  // ── Image Upload ───────────────────────────────────────────
+  // ── Image Upload (adds to gallery — first image becomes main) ──
+  const addImageToGallery = (url: string) => {
+    if (!form.image_url) {
+      setForm(prev => ({ ...prev, image_url: url }));
+    } else {
+      setAdditionalImages(prev => [...prev, url]);
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     if (!file) return;
-
-    // Validate on client side
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       setError('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
@@ -590,31 +593,21 @@ export default function NewDealPage() {
       setError('File too large. Maximum size is 5MB.');
       return;
     }
-
-    // Show local preview immediately
-    const previewUrl = URL.createObjectURL(file);
-    setUploadPreview(previewUrl);
     setUploading(true);
     setError('');
-
     try {
       const formData = new FormData();
       formData.append('file', file);
-
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
-
       if (!res.ok) {
         setError(data.error || 'Upload failed');
-        setUploadPreview(null);
         setUploading(false);
         return;
       }
-
-      setForm(prev => ({ ...prev, image_url: data.url }));
+      addImageToGallery(data.url);
     } catch {
       setError('Failed to upload image. Please try again.');
-      setUploadPreview(null);
     }
     setUploading(false);
   };
@@ -635,44 +628,7 @@ export default function NewDealPage() {
     setDragActive(false);
   }, []);
 
-  const removeImage = () => {
-    setForm(prev => ({ ...prev, image_url: '' }));
-    setUploadPreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  // ── Additional Image Upload ────────────────────────────────
-  const handleAdditionalFileUpload = async (file: File) => {
-    if (!file) return;
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload JPG, PNG, WebP, or GIF.');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File too large. Maximum size is 5MB.');
-      return;
-    }
-    setUploadingAdditional(true);
-    setError('');
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Upload failed');
-        setUploadingAdditional(false);
-        return;
-      }
-      setAdditionalImages(prev => [...prev, data.url]);
-    } catch {
-      setError('Failed to upload image. Please try again.');
-    }
-    setUploadingAdditional(false);
-  };
-
-  // ── AI Image Generation ──────────────────────────────────
+  // ── AI Image Generation (adds to gallery) ───────────────
   const handleAiImageGenerate = async () => {
     if (!form.title) {
       setError('Please enter a deal title first so Ava can generate a relevant image.');
@@ -687,6 +643,7 @@ export default function NewDealPage() {
         body: JSON.stringify({
           title: form.title,
           description: form.description,
+          custom_prompt: customImagePrompt || undefined,
         }),
       });
       const data = await res.json();
@@ -695,8 +652,7 @@ export default function NewDealPage() {
         setAiImageLoading(false);
         return;
       }
-      setForm(prev => ({ ...prev, image_url: data.url }));
-      setUploadPreview(null);
+      addImageToGallery(data.url);
     } catch {
       setError('Failed to generate image. Please try again.');
     }
@@ -941,8 +897,6 @@ export default function NewDealPage() {
     setSavingDraft(false);
   };
 
-  // Current image to display (upload preview or URL)
-  const displayImage = uploadPreview || form.image_url;
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -1264,226 +1218,11 @@ export default function NewDealPage() {
           />
         </div>
 
-        {/* ── Image Upload / URL ─────────────────────────────── */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4" /> Deal Image</span>
-          </label>
-
-          {/* Tab toggle */}
-          <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1 w-fit">
-            <button
-              type="button"
-              onClick={() => setImageMode('upload')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                imageMode === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Upload className="w-3.5 h-3.5" /> Upload File
-            </button>
-            <button
-              type="button"
-              onClick={() => setImageMode('url')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                imageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <LinkIcon className="w-3.5 h-3.5" /> Paste URL
-            </button>
-            {canAccess('ai_deal_assistant') && (
-              <button
-                type="button"
-                onClick={() => setImageMode('ai')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  imageMode === 'ai' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' : 'text-emerald-600 hover:text-emerald-700'
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full" /> Ava Generate
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setImageMode('library')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                imageMode === 'library' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <ImageIcon className="w-3.5 h-3.5" /> Library
-            </button>
-          </div>
-
-          {imageMode === 'upload' ? (
-            <div>
-              {/* Drop zone */}
-              {!displayImage && (
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
-                    dragActive
-                      ? 'border-primary-400 bg-primary-50'
-                      : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <Upload className={`w-8 h-8 mx-auto mb-2 ${dragActive ? 'text-primary-500' : 'text-gray-400'}`} />
-                  <p className="text-sm font-medium text-gray-600">
-                    {dragActive ? 'Drop image here' : 'Click to upload or drag & drop'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP, GIF • Max 5MB</p>
-                </div>
-              )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={e => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file);
-                }}
-              />
-            </div>
-          ) : imageMode === 'url' ? (
-            <div className="flex gap-2">
-              <input
-                name="image_url"
-                value={form.image_url}
-                onChange={handleChange}
-                className="input-field flex-1"
-                placeholder="https://images.unsplash.com/..."
-              />
-            </div>
-          ) : imageMode === 'library' ? (
-            /* Library mode — unified image picker */
-            <div className="border-2 border-dashed border-[#E8632B]/30 rounded-xl p-6 text-center bg-orange-50/30">
-              <ImageIcon className="w-10 h-10 text-[#E8632B] mx-auto mb-2" />
-              <h4 className="font-semibold text-gray-800 mb-1">Select All Deal Images</h4>
-              <p className="text-sm text-gray-600 mb-4">Pick main + additional images, then drag to reorder</p>
-              <button
-                type="button"
-                onClick={() => setShowImagePicker(true)}
-                className="bg-[#E8632B] hover:bg-[#D55A25] text-white px-6 py-3 rounded-xl font-medium text-sm transition-all"
-              >
-                Browse &amp; Select Images
-              </button>
-            </div>
-          ) : (
-            /* Ava Image Generate mode */
-            <div className="border-2 border-dashed border-emerald-200 rounded-xl p-6 text-center bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
-              {!displayImage ? (
-                <>
-                  <div className="w-14 h-14 rounded-full overflow-hidden mx-auto mb-3 shadow-lg shadow-emerald-500/20">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
-                  </div>
-                  <h4 className="font-semibold text-emerald-800 mb-1">Ava&apos;s Image Studio</h4>
-                  <p className="text-sm text-emerald-600 mb-3">
-                    Tell me what you want and I&apos;ll generate a professional image for your deal.
-                  </p>
-                  <input
-                    value={customImagePrompt}
-                    onChange={e => setCustomImagePrompt(e.target.value)}
-                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-4"
-                    placeholder="Describe the image (e.g., 'a cozy Italian restaurant with warm lighting')"
-                  />
-                  {!form.title && !customImagePrompt && (
-                    <p className="text-xs text-amber-600 mb-3 flex items-center justify-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> Enter a deal title or image description
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (customImagePrompt) {
-                        // Use custom prompt
-                        setAiImageLoading(true);
-                        setError('');
-                        fetch('/api/vendor/generate-image', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            title: form.title || customImagePrompt,
-                            description: form.description,
-                            custom_prompt: customImagePrompt,
-                          }),
-                        })
-                          .then(r => r.json())
-                          .then(data => {
-                            if (data.url) {
-                              setForm(prev => ({ ...prev, image_url: data.url }));
-                              setUploadPreview(null);
-                            } else {
-                              setError(data.error || 'Failed to generate image');
-                            }
-                          })
-                          .catch(() => setError('Failed to generate image.'))
-                          .finally(() => setAiImageLoading(false));
-                      } else {
-                        handleAiImageGenerate();
-                      }
-                    }}
-                    disabled={aiImageLoading || (!form.title && !customImagePrompt)}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-emerald-500/25"
-                  >
-                    {aiImageLoading ? (
-                      <><Loader2 className="w-5 h-5 animate-spin" /> Ava is creating your image...</>
-                    ) : (
-                      <><Wand2 className="w-5 h-5" /> Generate Image</>
-                    )}
-                  </button>
-                  {aiImageLoading && (
-                    <p className="text-xs text-emerald-500 mt-3 animate-pulse">
-                      This may take 10-15 seconds...
-                    </p>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-2 text-sm text-emerald-700">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Ava created your image! You can see the preview below.</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Image preview */}
-          {displayImage && (
-            <div className="relative mt-3 inline-block">
-              <div className="w-full max-w-xs h-40 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={displayImage}
-                  alt="Deal preview"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {uploading && (
-                <div className="absolute inset-0 max-w-xs bg-black/50 rounded-xl flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-white animate-spin" />
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={removeImage}
-                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg hover:bg-red-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-
-          <p className="text-xs text-gray-400 mt-1.5">Upload a photo or paste a URL for your main deal image (optional)</p>
-        </div>
-
-        {/* ── All Deal Images (unified reorderable grid) ────── */}
+        {/* ── Deal Images (unified gallery) ─────────────────── */}
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium text-gray-700">
-              All Deal Images ({allDealImages.length}/11)
+              <span className="flex items-center gap-1"><ImageIcon className="w-4 h-4" /> Deal Images ({allDealImages.length}/11)</span>
             </label>
             <button
               type="button"
@@ -1494,7 +1233,8 @@ export default function NewDealPage() {
             </button>
           </div>
 
-          {allDealImages.length > 0 ? (
+          {/* Image gallery grid */}
+          {allDealImages.length > 0 && (
             <div className="flex flex-wrap gap-3 mb-3">
               {allDealImages.map((img, i) => {
                 const isMain = img === form.image_url && !!form.image_url;
@@ -1508,14 +1248,11 @@ export default function NewDealPage() {
                     onDragOver={(e) => { e.preventDefault(); setImgDragOverIdx(i); }}
                     onDrop={() => {
                       if (imgDragIdx !== null && imgDragIdx !== i) {
-                        // Reorder: rebuild image_url and additionalImages
                         const all = [...allDealImages];
                         const [item] = all.splice(imgDragIdx, 1);
                         all.splice(i, 0, item);
-                        // First in array = main image
                         setForm(prev => ({ ...prev, image_url: all[0] || '' }));
                         setAdditionalImages(all.slice(1));
-                        setUploadPreview(null);
                       }
                       setImgDragIdx(null); setImgDragOverIdx(null);
                     }}
@@ -1528,90 +1265,133 @@ export default function NewDealPage() {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
-                    {/* Main badge */}
                     {isMain && (
-                      <span className="absolute top-1 left-1 flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-bold shadow-sm">
-                        MAIN
-                      </span>
+                      <span className="absolute top-1 left-1 flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-bold shadow-sm">MAIN</span>
                     )}
-                    {/* Set as main button */}
                     {!isMain && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // Promote this image to main
-                          const all = [...allDealImages];
-                          const [item] = all.splice(i, 1);
-                          all.unshift(item);
-                          setForm(prev => ({ ...prev, image_url: item }));
-                          setAdditionalImages(all.slice(1));
-                          setUploadPreview(null);
-                        }}
-                        className="absolute top-1 left-1 text-[8px] px-1.5 py-0.5 rounded bg-black/60 text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
+                      <button type="button" onClick={(e) => {
+                        e.stopPropagation();
+                        const all = [...allDealImages];
+                        const [item] = all.splice(i, 1);
+                        all.unshift(item);
+                        setForm(prev => ({ ...prev, image_url: item }));
+                        setAdditionalImages(all.slice(1));
+                      }} className="absolute top-1 left-1 text-[8px] px-1.5 py-0.5 rounded bg-black/60 text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                         Set Main
                       </button>
                     )}
-                    {/* Position number */}
-                    <span className="absolute bottom-1 left-1 w-5 h-5 rounded-full bg-black/50 text-white text-[10px] font-bold flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    {/* Remove button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (i === 0 && form.image_url) {
-                          // Removing main image
-                          const remaining = allDealImages.filter((_, idx) => idx !== 0);
-                          setForm(prev => ({ ...prev, image_url: remaining[0] || '' }));
-                          setAdditionalImages(remaining.slice(1));
-                          setUploadPreview(null);
-                        } else {
-                          setAdditionalImages(prev => prev.filter((_, idx) => idx !== (form.image_url ? i - 1 : i)));
-                        }
-                      }}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                    >
+                    <span className="absolute bottom-1 left-1 w-5 h-5 rounded-full bg-black/50 text-white text-[10px] font-bold flex items-center justify-center">{i + 1}</span>
+                    <button type="button" onClick={(e) => {
+                      e.stopPropagation();
+                      if (i === 0 && form.image_url) {
+                        const remaining = allDealImages.filter((_, idx) => idx !== 0);
+                        setForm(prev => ({ ...prev, image_url: remaining[0] || '' }));
+                        setAdditionalImages(remaining.slice(1));
+                      } else {
+                        setAdditionalImages(prev => prev.filter((_, idx) => idx !== (form.image_url ? i - 1 : i)));
+                      }
+                    }} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
                 );
               })}
             </div>
-          ) : (
-            <p className="text-sm text-gray-400 py-4">No images added yet. Upload, paste a URL, or browse the library above.</p>
           )}
 
-          {/* Quick add: upload or paste URL for additional images */}
+          {/* Add images: tabs for Upload / URL / Ava / Library */}
           {allDealImages.length < 11 && (
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50">
-                {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload More
-              </button>
-              <div className="flex items-center gap-1.5 flex-1">
-                <input value={additionalImageUrl} onChange={e => setAdditionalImageUrl(e.target.value)} className="input-field flex-1 text-xs py-1.5" placeholder="Paste image URL..."
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (additionalImageUrl.trim()) { setAdditionalImages(prev => [...prev, additionalImageUrl.trim()]); setAdditionalImageUrl(''); } } }} />
-                <button type="button" onClick={() => { if (additionalImageUrl.trim()) { setAdditionalImages(prev => [...prev, additionalImageUrl.trim()]); setAdditionalImageUrl(''); } }}
-                  disabled={!additionalImageUrl.trim()}
-                  className="px-2.5 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium disabled:opacity-50 transition-colors">Add</button>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+                <button type="button" onClick={() => setImageMode('upload')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${imageMode === 'upload' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <Upload className="w-3.5 h-3.5" /> Upload
+                </button>
+                <button type="button" onClick={() => setImageMode('url')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${imageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  <LinkIcon className="w-3.5 h-3.5" /> Paste URL
+                </button>
+                {canAccess('ai_deal_assistant') && (
+                  <button type="button" onClick={() => setImageMode('ai')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${imageMode === 'ai' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' : 'text-emerald-600 hover:text-emerald-700'}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full" /> Ava Generate
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowImagePicker(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors">
+                  <ImageIcon className="w-3.5 h-3.5" /> Library
+                </button>
               </div>
+
+              {imageMode === 'upload' && (
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
+                    dragActive ? 'border-primary-400 bg-primary-50' : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {uploading ? (
+                    <Loader2 className="w-6 h-6 mx-auto text-gray-400 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className={`w-6 h-6 mx-auto mb-1 ${dragActive ? 'text-primary-500' : 'text-gray-400'}`} />
+                      <p className="text-xs font-medium text-gray-600">{dragActive ? 'Drop image here' : 'Click to upload or drag & drop'}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">JPG, PNG, WebP, GIF - Max 5MB</p>
+                    </>
+                  )}
+                </div>
+              )}
+              {imageMode === 'url' && (
+                <div className="flex gap-2">
+                  <input value={additionalImageUrl} onChange={e => setAdditionalImageUrl(e.target.value)}
+                    className="input-field flex-1 text-sm" placeholder="https://images.unsplash.com/..."
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (additionalImageUrl.trim()) { addImageToGallery(additionalImageUrl.trim()); setAdditionalImageUrl(''); } } }} />
+                  <button type="button" onClick={() => { if (additionalImageUrl.trim()) { addImageToGallery(additionalImageUrl.trim()); setAdditionalImageUrl(''); } }}
+                    disabled={!additionalImageUrl.trim()}
+                    className="px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] disabled:opacity-50 transition-colors">Add</button>
+                </div>
+              )}
+              {imageMode === 'ai' && (
+                <div className="border-2 border-dashed border-emerald-200 rounded-xl p-5 text-center bg-gradient-to-br from-emerald-50/50 to-teal-50/50">
+                  <div className="flex items-center gap-2 justify-center mb-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/ava.png" alt="Ava" className="w-8 h-8 rounded-full shadow" />
+                    <h4 className="font-semibold text-emerald-800">Ava&apos;s Image Studio</h4>
+                  </div>
+                  <input
+                    value={customImagePrompt}
+                    onChange={e => setCustomImagePrompt(e.target.value)}
+                    className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-3"
+                    placeholder="Describe the image (optional — uses deal title if empty)"
+                  />
+                  <button type="button" onClick={handleAiImageGenerate}
+                    disabled={aiImageLoading || (!form.title && !customImagePrompt)}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-xl font-medium text-sm transition-all flex items-center gap-2 mx-auto disabled:opacity-50 shadow-lg shadow-emerald-500/25">
+                    {aiImageLoading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                    ) : (
+                      <><Wand2 className="w-4 h-4" /> Generate Image</>
+                    )}
+                  </button>
+                  {aiImageLoading && <p className="text-xs text-emerald-500 mt-2 animate-pulse">This may take 10-15 seconds...</p>}
+                </div>
+              )}
+
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
+                onChange={e => { const file = e.target.files?.[0]; if (file) handleFileUpload(file); if (fileInputRef.current) fileInputRef.current.value = ''; }} />
             </div>
           )}
-          <input
-            ref={additionalFileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            className="hidden"
-            onChange={e => {
-              const file = e.target.files?.[0];
-              if (file) handleAdditionalFileUpload(file);
-              if (additionalFileInputRef.current) additionalFileInputRef.current.value = '';
-            }}
-          />
-          <p className="text-xs text-gray-400 mt-1.5">Drag to reorder. First image is the main deal image. Click &quot;Set Main&quot; to change it.</p>
+
+          {allDealImages.length === 0 && (
+            <p className="text-sm text-gray-400 py-3">No images yet. Upload, paste a URL, use Ava, or browse your library.</p>
+          )}
+          {allDealImages.length > 1 && (
+            <p className="text-xs text-gray-400 mt-1.5">Drag to reorder. First image is the main deal image. Hover to &quot;Set Main&quot; or remove.</p>
+          )}
         </div>
 
         {/* ── Video URLs ───────────────────────────────────── */}
@@ -2543,7 +2323,6 @@ export default function NewDealPage() {
             setForm(prev => ({ ...prev, image_url: mainImg }));
             setAdditionalImages(images.filter(img => img.url !== mainImg).map(img => img.url));
           }
-          setUploadPreview(null);
           setShowImagePicker(false);
         }}
       />
