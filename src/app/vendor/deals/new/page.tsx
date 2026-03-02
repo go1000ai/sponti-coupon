@@ -17,6 +17,8 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
 import type { Deal, DealVariant, VendorLocation } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
+import ImagePickerModal from '@/components/vendor/ImagePickerModal';
+import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
 
 // Category-specific suggested features/perks
@@ -251,12 +253,16 @@ export default function NewDealPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [imageMode, setImageMode] = useState<'upload' | 'url' | 'ai' | 'library'>('upload');
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
-  const [showAdditionalMediaPicker, setShowAdditionalMediaPicker] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   const [additionalImageUrl, setAdditionalImageUrl] = useState('');
+  // Drag reorder state for selected images
+  const [imgDragIdx, setImgDragIdx] = useState<number | null>(null);
+  const [imgDragOverIdx, setImgDragOverIdx] = useState<number | null>(null);
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoElapsed, setVideoElapsed] = useState(0);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -304,6 +310,7 @@ export default function NewDealPage() {
     deposit_amount: '',
     max_claims: '',
     duration_hours: '24',
+    redemption_hours: '24',
     duration_days: '7',
     image_url: '',
     scheduled_date: '',
@@ -699,6 +706,22 @@ export default function NewDealPage() {
   // ── AI Video Generation ──────────────────────────────────
   const allDealImages = [form.image_url, ...additionalImages].filter(Boolean);
 
+  // Video generation progress timer
+  useEffect(() => {
+    if (!aiVideoLoading) { setVideoProgress(0); setVideoElapsed(0); return; }
+    const interval = setInterval(() => {
+      setVideoElapsed(prev => prev + 1);
+      setVideoProgress(prev => {
+        if (prev >= 90) return 90; // Cap at 90% until done
+        // Ramp: fast to 30%, medium to 60%, slow to 90%
+        if (prev < 30) return prev + 2;
+        if (prev < 60) return prev + 1;
+        return prev + 0.3;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [aiVideoLoading]);
+
   const handleAiVideoGenerate = async () => {
     const sourceImage = videoSourceImage || form.image_url;
     if (!sourceImage) {
@@ -706,6 +729,8 @@ export default function NewDealPage() {
       return;
     }
     setAiVideoLoading(true);
+    setVideoProgress(0);
+    setVideoElapsed(0);
     setError('');
     try {
       const res = await fetch('/api/vendor/generate-video', {
@@ -828,6 +853,7 @@ export default function NewDealPage() {
           requires_appointment: requiresAppointment,
           search_tags: searchTags,
           variants: dealType === 'regular' && hasVariants ? variants : [],
+          redemption_hours: dealType === 'sponti_coupon' ? parseInt(form.redemption_hours) || 24 : null,
         }),
       });
 
@@ -1332,17 +1358,17 @@ export default function NewDealPage() {
               />
             </div>
           ) : imageMode === 'library' ? (
-            /* Library mode */
-            <div className="border-2 border-dashed border-blue-200 rounded-xl p-6 text-center bg-blue-50/30">
-              <ImageIcon className="w-10 h-10 text-blue-400 mx-auto mb-2" />
-              <h4 className="font-semibold text-blue-800 mb-1">Pick from Library</h4>
-              <p className="text-sm text-blue-600 mb-4">Select from your previously uploaded or Ava-generated images</p>
+            /* Library mode — unified image picker */
+            <div className="border-2 border-dashed border-[#E8632B]/30 rounded-xl p-6 text-center bg-orange-50/30">
+              <ImageIcon className="w-10 h-10 text-[#E8632B] mx-auto mb-2" />
+              <h4 className="font-semibold text-gray-800 mb-1">Select All Deal Images</h4>
+              <p className="text-sm text-gray-600 mb-4">Pick main + additional images, then drag to reorder</p>
               <button
                 type="button"
-                onClick={() => setShowMediaPicker(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium text-sm transition-all"
+                onClick={() => setShowImagePicker(true)}
+                className="bg-[#E8632B] hover:bg-[#D55A25] text-white px-6 py-3 rounded-xl font-medium text-sm transition-all"
               >
-                Browse Library
+                Browse &amp; Select Images
               </button>
             </div>
           ) : (
@@ -1453,37 +1479,117 @@ export default function NewDealPage() {
           <p className="text-xs text-gray-400 mt-1.5">Upload a photo or paste a URL for your main deal image (optional)</p>
         </div>
 
-        {/* ── Additional Images ─────────────────────────────── */}
+        {/* ── All Deal Images (unified reorderable grid) ────── */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Additional Images ({additionalImages.length}/10)
-          </label>
-          {additionalImages.length > 0 && (
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              All Deal Images ({allDealImages.length}/11)
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowImagePicker(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-[#D55A25] transition-colors"
+            >
+              <ImageIcon className="w-3 h-3" /> Browse Library
+            </button>
+          </div>
+
+          {allDealImages.length > 0 ? (
             <div className="flex flex-wrap gap-3 mb-3">
-              {additionalImages.map((img, i) => (
-                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img} alt={`Additional ${i + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
-                    className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+              {allDealImages.map((img, i) => {
+                const isMain = img === form.image_url && !!form.image_url;
+                const isDragging = imgDragIdx === i;
+                const isDragOver = imgDragOverIdx === i;
+                return (
+                  <div
+                    key={`${img}-${i}`}
+                    draggable
+                    onDragStart={() => setImgDragIdx(i)}
+                    onDragOver={(e) => { e.preventDefault(); setImgDragOverIdx(i); }}
+                    onDrop={() => {
+                      if (imgDragIdx !== null && imgDragIdx !== i) {
+                        // Reorder: rebuild image_url and additionalImages
+                        const all = [...allDealImages];
+                        const [item] = all.splice(imgDragIdx, 1);
+                        all.splice(i, 0, item);
+                        // First in array = main image
+                        setForm(prev => ({ ...prev, image_url: all[0] || '' }));
+                        setAdditionalImages(all.slice(1));
+                        setUploadPreview(null);
+                      }
+                      setImgDragIdx(null); setImgDragOverIdx(null);
+                    }}
+                    onDragEnd={() => { setImgDragIdx(null); setImgDragOverIdx(null); }}
+                    className={`relative w-24 h-24 rounded-xl overflow-hidden border-2 group cursor-grab active:cursor-grabbing transition-all ${
+                      isDragging ? 'opacity-40 border-dashed border-gray-300' :
+                      isDragOver ? 'border-[#E8632B] ring-2 ring-[#E8632B]/30 scale-105' :
+                      isMain ? 'border-[#E8632B] ring-1 ring-[#E8632B]/20' : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
+                    {/* Main badge */}
+                    {isMain && (
+                      <span className="absolute top-1 left-1 flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-bold shadow-sm">
+                        MAIN
+                      </span>
+                    )}
+                    {/* Set as main button */}
+                    {!isMain && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Promote this image to main
+                          const all = [...allDealImages];
+                          const [item] = all.splice(i, 1);
+                          all.unshift(item);
+                          setForm(prev => ({ ...prev, image_url: item }));
+                          setAdditionalImages(all.slice(1));
+                          setUploadPreview(null);
+                        }}
+                        className="absolute top-1 left-1 text-[8px] px-1.5 py-0.5 rounded bg-black/60 text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        Set Main
+                      </button>
+                    )}
+                    {/* Position number */}
+                    <span className="absolute bottom-1 left-1 w-5 h-5 rounded-full bg-black/50 text-white text-[10px] font-bold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (i === 0 && form.image_url) {
+                          // Removing main image
+                          const remaining = allDealImages.filter((_, idx) => idx !== 0);
+                          setForm(prev => ({ ...prev, image_url: remaining[0] || '' }));
+                          setAdditionalImages(remaining.slice(1));
+                          setUploadPreview(null);
+                        } else {
+                          setAdditionalImages(prev => prev.filter((_, idx) => idx !== (form.image_url ? i - 1 : i)));
+                        }
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
+          ) : (
+            <p className="text-sm text-gray-400 py-4">No images added yet. Upload, paste a URL, or browse the library above.</p>
           )}
-          {additionalImages.length < 10 && (
+
+          {/* Quick add: upload or paste URL for additional images */}
+          {allDealImages.length < 11 && (
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50">
-                {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload
-              </button>
-              <button type="button" onClick={() => setShowAdditionalMediaPicker(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
-                <ImageIcon className="w-3 h-3" /> Library
+                {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload More
               </button>
               <div className="flex items-center gap-1.5 flex-1">
                 <input value={additionalImageUrl} onChange={e => setAdditionalImageUrl(e.target.value)} className="input-field flex-1 text-xs py-1.5" placeholder="Paste image URL..."
@@ -1505,7 +1611,7 @@ export default function NewDealPage() {
               if (additionalFileInputRef.current) additionalFileInputRef.current.value = '';
             }}
           />
-          <p className="text-xs text-gray-400 mt-1.5">Add multiple photos to showcase your deal — customers can scroll through them</p>
+          <p className="text-xs text-gray-400 mt-1.5">Drag to reorder. First image is the main deal image. Click &quot;Set Main&quot; to change it.</p>
         </div>
 
         {/* ── Video URLs ───────────────────────────────────── */}
@@ -1629,9 +1735,16 @@ export default function NewDealPage() {
                     )}
                   </button>
                   {aiVideoLoading && (
-                    <p className="text-xs text-emerald-500 text-center animate-pulse">
-                      This takes 1–3 minutes. You can keep editing while Ava works.
-                    </p>
+                    <div className="space-y-2">
+                      <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-emerald-600">
+                        <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
+                        <span className="animate-pulse">{videoElapsed < 60 ? 'Est. 1–3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}</span>
+                      </div>
+                      <p className="text-[10px] text-emerald-500 text-center">You can keep editing while Ava works.</p>
+                    </div>
                   )}
                 </div>
               )}
@@ -2244,18 +2357,35 @@ export default function NewDealPage() {
 
         {/* Duration fields */}
         {dealType === 'sponti_coupon' ? (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (hours, 4-24)</label>
-            <input
-              name="duration_hours"
-              type="number"
-              min="4"
-              max="24"
-              value={form.duration_hours}
-              onChange={handleChange}
-              className="input-field"
-            />
-          </div>
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Deal Duration (hours, 4-24)</label>
+              <input
+                name="duration_hours"
+                type="number"
+                min="4"
+                max="24"
+                value={form.duration_hours}
+                onChange={handleChange}
+                className="input-field"
+              />
+              <p className="text-xs text-gray-500 mt-1">How long the deal is live and available to claim.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Redemption Window (hours, 4-24)</label>
+              <select
+                name="redemption_hours"
+                value={form.redemption_hours}
+                onChange={handleChange as React.ChangeEventHandler<HTMLSelectElement>}
+                className="input-field"
+              >
+                {[4,6,8,10,12,14,16,18,20,22,24].map(h => (
+                  <option key={h} value={h}>{h} hours</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">How long the customer has to redeem after purchasing.</p>
+            </div>
+          </>
         ) : (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Duration (days, 1-30)</label>
@@ -2272,16 +2402,23 @@ export default function NewDealPage() {
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Max Claims (optional)</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {dealType === 'sponti_coupon' ? 'Quantity (max 50) *' : 'Max Claims (optional)'}
+          </label>
           <input
             name="max_claims"
             type="number"
             min="1"
+            max={dealType === 'sponti_coupon' ? '50' : undefined}
             value={form.max_claims}
             onChange={handleChange}
             className="input-field"
-            placeholder="Leave empty for unlimited"
+            placeholder={dealType === 'sponti_coupon' ? '50' : 'Leave empty for unlimited'}
+            required={dealType === 'sponti_coupon'}
           />
+          {dealType === 'sponti_coupon' && (
+            <p className="text-xs text-gray-500 mt-1">Sponti Coupons are limited to 50 claims max. Creates urgency!</p>
+          )}
         </div>
 
         {/* ── How It Works ─────────────────────────────────── */}
@@ -2390,31 +2527,25 @@ export default function NewDealPage() {
         </div>
       </form>
 
-      {/* Media Picker Modal */}
-      <MediaPicker
-        open={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
-        onSelect={(url) => {
-          setForm(prev => ({ ...prev, image_url: url }));
+      {/* Unified Image Picker Modal */}
+      <ImagePickerModal
+        open={showImagePicker}
+        onClose={() => setShowImagePicker(false)}
+        initialImages={allDealImages}
+        initialMainImage={form.image_url}
+        maxImages={11}
+        onConfirm={(images: SelectedImage[]) => {
+          if (images.length === 0) {
+            setForm(prev => ({ ...prev, image_url: '' }));
+            setAdditionalImages([]);
+          } else {
+            const mainImg = images.find(img => img.isMain)?.url || images[0].url;
+            setForm(prev => ({ ...prev, image_url: mainImg }));
+            setAdditionalImages(images.filter(img => img.url !== mainImg).map(img => img.url));
+          }
           setUploadPreview(null);
-          setShowMediaPicker(false);
+          setShowImagePicker(false);
         }}
-        type="image"
-      />
-
-      <MediaPicker
-        open={showAdditionalMediaPicker}
-        onClose={() => setShowAdditionalMediaPicker(false)}
-        multiple
-        onSelect={(url) => {
-          setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev);
-          setShowAdditionalMediaPicker(false);
-        }}
-        onSelectMultiple={(urls) => {
-          setAdditionalImages(prev => { const remaining = 10 - prev.length; return [...prev, ...urls.slice(0, remaining)]; });
-          setShowAdditionalMediaPicker(false);
-        }}
-        type="image"
       />
       </>}
 

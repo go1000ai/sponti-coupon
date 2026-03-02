@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
-import MediaPicker from '@/components/vendor/MediaPicker';
+import ImagePickerModal from '@/components/vendor/ImagePickerModal';
+import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import type { Deal, VendorLocation } from '@/lib/types/database';
 import { Plus } from 'lucide-react';
 
@@ -116,11 +117,14 @@ function EditDealPageInner() {
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadingAdditional, setUploadingAdditional] = useState(false);
   const [imageMode, setImageMode] = useState<'upload' | 'url' | 'ai' | 'library'>('url');
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
-  const [showAdditionalMediaPicker, setShowAdditionalMediaPicker] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
   const [additionalImageUrl, setAdditionalImageUrl] = useState('');
+  const [imgDragIdx, setImgDragIdx] = useState<number | null>(null);
+  const [imgDragOverIdx, setImgDragOverIdx] = useState<number | null>(null);
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoElapsed, setVideoElapsed] = useState(0);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [customImagePrompt, setCustomImagePrompt] = useState('');
@@ -338,10 +342,27 @@ function EditDealPageInner() {
   // All available images (main + additional) for video source selection
   const allDealImages = [form.image_url, ...additionalImages].filter(Boolean);
 
+  // Video generation progress timer
+  useEffect(() => {
+    if (!aiVideoLoading) { setVideoProgress(0); setVideoElapsed(0); return; }
+    const interval = setInterval(() => {
+      setVideoElapsed(prev => prev + 1);
+      setVideoProgress(prev => {
+        if (prev >= 90) return 90;
+        if (prev < 30) return prev + 2;
+        if (prev < 60) return prev + 1;
+        return prev + 0.3;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [aiVideoLoading]);
+
   const handleAiVideoGenerate = async () => {
     const sourceImage = videoSourceImage || form.image_url;
     if (!sourceImage) { setError('Add a deal image first so Ava can turn it into a video.'); return; }
     setAiVideoLoading(true);
+    setVideoProgress(0);
+    setVideoElapsed(0);
     setError('');
     try {
       const res = await fetch('/api/vendor/generate-video', {
@@ -646,8 +667,8 @@ function EditDealPageInner() {
               <input name="image_url" value={form.image_url} onChange={handleChange} className="input-field text-sm" placeholder="https://..." />
             )}
             {imageMode === 'library' && (
-              <button type="button" onClick={() => setShowMediaPicker(true)} className="w-full bg-blue-50 border border-blue-200 rounded-xl p-4 text-center text-sm text-blue-600 font-medium hover:bg-blue-100 transition-colors">
-                Browse Media Library
+              <button type="button" onClick={() => setShowImagePicker(true)} className="w-full bg-orange-50 border border-[#E8632B]/30 rounded-xl p-4 text-center text-sm text-[#E8632B] font-medium hover:bg-orange-100 transition-colors">
+                Browse &amp; Select All Images
               </button>
             )}
             {imageMode === 'ai' && !displayImage && (
@@ -672,30 +693,88 @@ function EditDealPageInner() {
               </div>
             )}
 
-            {/* Additional images */}
+            {/* All Deal Images (unified reorderable grid) */}
             <div>
-              <p className="text-xs font-medium text-gray-600 mb-1.5">Additional ({additionalImages.length}/10)</p>
-              {additionalImages.length > 0 && (
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-medium text-gray-600">All Images ({allDealImages.length}/11)</p>
+                <button type="button" onClick={() => setShowImagePicker(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#E8632B] text-white rounded-lg text-[10px] font-medium hover:bg-[#D55A25] transition-colors">
+                  <ImageIcon className="w-3 h-3" /> Browse Library
+                </button>
+              </div>
+              {allDealImages.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {additionalImages.map((img, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt="" className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => setAdditionalImages(prev => prev.filter((_, idx) => idx !== i))}
-                        className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-2.5 h-2.5" /></button>
-                    </div>
-                  ))}
+                  {allDealImages.map((img, i) => {
+                    const isMain = img === form.image_url && !!form.image_url;
+                    const isDragging = imgDragIdx === i;
+                    const isDragOver = imgDragOverIdx === i;
+                    return (
+                      <div
+                        key={`${img}-${i}`}
+                        draggable
+                        onDragStart={() => setImgDragIdx(i)}
+                        onDragOver={(e) => { e.preventDefault(); setImgDragOverIdx(i); }}
+                        onDrop={() => {
+                          if (imgDragIdx !== null && imgDragIdx !== i) {
+                            const all = [...allDealImages];
+                            const [item] = all.splice(imgDragIdx, 1);
+                            all.splice(i, 0, item);
+                            setForm(prev => ({ ...prev, image_url: all[0] || '' }));
+                            setAdditionalImages(all.slice(1));
+                            setUploadPreview(null);
+                          }
+                          setImgDragIdx(null); setImgDragOverIdx(null);
+                        }}
+                        onDragEnd={() => { setImgDragIdx(null); setImgDragOverIdx(null); }}
+                        className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 group cursor-grab active:cursor-grabbing transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-gray-300' :
+                          isDragOver ? 'border-[#E8632B] ring-1 ring-[#E8632B]/30 scale-105' :
+                          isMain ? 'border-[#E8632B] ring-1 ring-[#E8632B]/20' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        style={{ width: '4.5rem', height: '4.5rem' }}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        {isMain && (
+                          <span className="absolute top-0.5 left-0.5 text-[7px] px-1 py-0.5 rounded bg-[#E8632B] text-white font-bold">MAIN</span>
+                        )}
+                        {!isMain && (
+                          <button type="button" onClick={(e) => {
+                            e.stopPropagation();
+                            const all = [...allDealImages];
+                            const [item] = all.splice(i, 1);
+                            all.unshift(item);
+                            setForm(prev => ({ ...prev, image_url: item }));
+                            setAdditionalImages(all.slice(1));
+                            setUploadPreview(null);
+                          }} className="absolute top-0.5 left-0.5 text-[7px] px-1 py-0.5 rounded bg-black/60 text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                            Set Main
+                          </button>
+                        )}
+                        <span className="absolute bottom-0.5 left-0.5 w-4 h-4 rounded-full bg-black/50 text-white text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
+                        <button type="button" onClick={(e) => {
+                          e.stopPropagation();
+                          if (i === 0 && form.image_url) {
+                            const remaining = allDealImages.filter((_, idx) => idx !== 0);
+                            setForm(prev => ({ ...prev, image_url: remaining[0] || '' }));
+                            setAdditionalImages(remaining.slice(1));
+                            setUploadPreview(null);
+                          } else {
+                            setAdditionalImages(prev => prev.filter((_, idx) => idx !== (form.image_url ? i - 1 : i)));
+                          }
+                        }} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-              {additionalImages.length < 10 && (
+              {allDealImages.length < 11 && (
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => additionalFileInputRef.current?.click()} disabled={uploadingAdditional}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors disabled:opacity-50">
-                    {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload
-                  </button>
-                  <button type="button" onClick={() => setShowAdditionalMediaPicker(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors">
-                    <ImageIcon className="w-3 h-3" /> Library
+                    {uploadingAdditional ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} Upload More
                   </button>
                   <div className="flex items-center gap-1.5 flex-1">
                     <input value={additionalImageUrl} onChange={e => setAdditionalImageUrl(e.target.value)} className="input-field flex-1 text-xs py-1.5" placeholder="Paste image URL..."
@@ -708,6 +787,9 @@ function EditDealPageInner() {
               )}
               <input ref={additionalFileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden"
                 onChange={e => { const file = e.target.files?.[0]; if (file) handleAdditionalFileUpload(file); if (additionalFileInputRef.current) additionalFileInputRef.current.value = ''; }} />
+              {allDealImages.length > 1 && (
+                <p className="text-[10px] text-gray-400 mt-1">Drag to reorder. Click &quot;Set Main&quot; to change the main image.</p>
+              )}
             </div>
 
             {/* Videos */}
@@ -795,7 +877,15 @@ function EditDealPageInner() {
                         {aiVideoLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is creating your video...</> : <><Video className="w-3.5 h-3.5" /> Generate Video</>}
                       </button>
                       {aiVideoLoading && (
-                        <p className="text-[10px] text-emerald-600 text-center animate-pulse">This takes 1–3 minutes. You can keep editing while Ava works.</p>
+                        <div className="space-y-1.5">
+                          <div className="w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
+                            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
+                          </div>
+                          <div className="flex justify-between items-center text-[10px] text-emerald-600">
+                            <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
+                            <span className="animate-pulse">{videoElapsed < 60 ? 'Est. 1–3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}</span>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
@@ -1041,12 +1131,26 @@ function EditDealPageInner() {
         </div>
       </form>
 
-      <MediaPicker open={showMediaPicker} onClose={() => setShowMediaPicker(false)}
-        onSelect={(url) => { setForm(prev => ({ ...prev, image_url: url })); setUploadPreview(null); setShowMediaPicker(false); }} type="image" />
-
-      <MediaPicker open={showAdditionalMediaPicker} onClose={() => setShowAdditionalMediaPicker(false)}
-        multiple onSelect={(url) => { setAdditionalImages(prev => prev.length < 10 ? [...prev, url] : prev); setShowAdditionalMediaPicker(false); }}
-        onSelectMultiple={(urls) => { setAdditionalImages(prev => { const remaining = 10 - prev.length; return [...prev, ...urls.slice(0, remaining)]; }); setShowAdditionalMediaPicker(false); }} type="image" />
+      {/* Unified Image Picker Modal */}
+      <ImagePickerModal
+        open={showImagePicker}
+        onClose={() => setShowImagePicker(false)}
+        initialImages={allDealImages}
+        initialMainImage={form.image_url}
+        maxImages={11}
+        onConfirm={(images: SelectedImage[]) => {
+          if (images.length === 0) {
+            setForm(prev => ({ ...prev, image_url: '' }));
+            setAdditionalImages([]);
+          } else {
+            const mainImg = images.find(img => img.isMain)?.url || images[0].url;
+            setForm(prev => ({ ...prev, image_url: mainImg }));
+            setAdditionalImages(images.filter(img => img.url !== mainImg).map(img => img.url));
+          }
+          setUploadPreview(null);
+          setShowImagePicker(false);
+        }}
+      />
     </div>
   );
 }
