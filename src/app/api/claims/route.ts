@@ -77,6 +77,13 @@ export async function POST(request: NextRequest) {
 
   const sessionToken = uuidv4();
 
+  // For Sponti deals, customer gets the vendor-set redemption window (4-24h) from purchase time
+  let claimExpiresAt = deal.expires_at;
+  if (deal.deal_type === 'sponti_coupon') {
+    const hours = deal.redemption_hours || 24;
+    claimExpiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+  }
+
   // ── No deposit required — instant QR + redemption code ──
   if (!deal.deposit_amount || deal.deposit_amount <= 0) {
     const qrCode = uuidv4();
@@ -92,7 +99,7 @@ export async function POST(request: NextRequest) {
         qr_code: qrCode,
         qr_code_url: `${APP_URL}/redeem/${qrCode}`,
         redemption_code: redemptionCode,
-        expires_at: deal.expires_at,
+        expires_at: claimExpiresAt,
         payment_tier: null,
         payment_method_type: null,
       })
@@ -146,7 +153,7 @@ export async function POST(request: NextRequest) {
         customer_id: user.id,
         session_token: sessionToken,
         deposit_confirmed: false,
-        expires_at: deal.expires_at,
+        expires_at: claimExpiresAt,
         payment_method_type: 'stripe',
         payment_tier: 'integrated',
       })
@@ -228,7 +235,7 @@ export async function POST(request: NextRequest) {
         customer_id: user.id,
         session_token: sessionToken,
         deposit_confirmed: false,
-        expires_at: deal.expires_at,
+        expires_at: claimExpiresAt,
         payment_method_type: primaryMethod.processor_type,
         payment_tier: 'link',
       })
@@ -258,7 +265,7 @@ export async function POST(request: NextRequest) {
         customer_id: user.id,
         session_token: sessionToken,
         deposit_confirmed: false,
-        expires_at: deal.expires_at,
+        expires_at: claimExpiresAt,
         payment_method_type: 'stripe',
         payment_tier: 'link',
       })

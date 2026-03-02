@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { notifyNewSignup } from '@/lib/email/admin-notification';
 
 export async function POST(request: NextRequest) {
   try {
@@ -96,6 +97,17 @@ export async function POST(request: NextRequest) {
         zip: profileData.zip || null,
       });
     }
+
+    // Fire-and-forget: notify admin of new signup
+    notifyNewSignup({
+      email: user.email || '',
+      accountType,
+      name: accountType === 'customer' ? [profileData.firstName, profileData.lastName].filter(Boolean).join(' ') : undefined,
+      businessName: accountType === 'vendor' ? profileData.businessName : undefined,
+      city: profileData.city,
+      state: profileData.state,
+      subscriptionTier: accountType === 'vendor' ? 'starter' : undefined,
+    }).catch(() => {});
 
     return NextResponse.json({ role: accountType, created: true });
   } catch (error: unknown) {

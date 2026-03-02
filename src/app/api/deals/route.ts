@@ -241,8 +241,13 @@ export async function POST(request: NextRequest) {
     deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
     location_ids, website_url, terms_and_conditions, video_urls, amenities,
     how_it_works, highlights, fine_print, image_urls, search_tags,
-    requires_appointment, variants,
+    requires_appointment, variants, redemption_hours,
   } = body;
+
+  // Cap Sponti deal quantity at 50
+  const finalMaxClaims = deal_type === 'sponti_coupon' && (!max_claims || max_claims > 50)
+    ? 50
+    : max_claims;
 
   // Draft mode — save the deal immediately with minimal validation
   if (body.status === 'draft') {
@@ -368,7 +373,7 @@ export async function POST(request: NextRequest) {
         deal_price,
         discount_percentage,
         deposit_amount,
-        max_claims,
+        max_claims: finalMaxClaims,
         starts_at,
         expires_at,
         timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -387,6 +392,7 @@ export async function POST(request: NextRequest) {
         requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
         variants: [], // Sponti deals do not support variants
+        redemption_hours: redemption_hours || null,
       })
       .select()
       .single();
@@ -415,6 +421,20 @@ export async function POST(request: NextRequest) {
       }).catch(() => {}); // Social posting should never block deal creation
     }
 
+    // Fire-and-forget: notify admin of new deal
+    if (deal) {
+      notifyNewDeal({
+        dealTitle: title,
+        dealType: deal_type,
+        vendorName: vendor.business_name || 'Unknown Vendor',
+        originalPrice: original_price,
+        dealPrice: deal_price,
+        discountPercent: discount_percentage,
+        expiresAt: expires_at,
+        dealId: deal.id,
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ deal });
   }
 
@@ -441,7 +461,7 @@ export async function POST(request: NextRequest) {
       deal_price,
       discount_percentage,
       deposit_amount: deposit_amount && deposit_amount > 0 ? deposit_amount : null,
-      max_claims,
+      max_claims: finalMaxClaims,
       starts_at,
       expires_at,
       timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -485,6 +505,20 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({ deal_id: deal.id, vendor_id: user.id }),
     }).catch(() => {}); // Social posting should never block deal creation
+  }
+
+  // Fire-and-forget: notify admin of new deal
+  if (deal) {
+    notifyNewDeal({
+      dealTitle: title,
+      dealType: deal_type,
+      vendorName: vendor.business_name || 'Unknown Vendor',
+      originalPrice: original_price,
+      dealPrice: deal_price,
+      discountPercent: discount_percentage,
+      expiresAt: expires_at,
+      dealId: deal.id,
+    }).catch(() => {});
   }
 
   return NextResponse.json({ deal });
