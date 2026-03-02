@@ -64,7 +64,7 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="relative text-white overflow-hidden h-[80vh] flex items-start md:items-center bg-gray-900">
+    <section className="relative text-white overflow-hidden min-h-[85vh] md:h-[80vh] flex items-center bg-gray-900">
       {/* Business collage background — moves slightly as you scroll */}
       <div
         ref={bgRef}
@@ -103,7 +103,7 @@ export function HeroSection() {
         <div className="absolute -bottom-20 right-1/3 w-56 h-56 bg-primary-500/15 rounded-full blur-2xl animate-float" style={{ animationDelay: '0.8s' }} />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 sm:py-16 md:py-32 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8 sm:py-16 md:py-32 w-full">
         <div className="flex flex-col md:flex-row items-center justify-between gap-12">
           {/* Left Side: Text Content + Search */}
           <div className="w-full md:w-1/2 text-center md:text-left">

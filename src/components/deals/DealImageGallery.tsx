@@ -173,13 +173,13 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
           <>
             <button
               onClick={goPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={goNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
             >
               <ChevronRight className="w-5 h-5" />
             </button>

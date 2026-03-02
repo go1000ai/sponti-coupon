@@ -639,13 +639,13 @@ function DetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto modal-backdrop bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="modal-content bg-white rounded-2xl w-full max-w-lg mx-4 my-6 overflow-hidden shadow-2xl"
+        className="modal-content bg-white rounded-2xl w-full max-w-lg mx-4 my-4 sm:my-6 overflow-hidden shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* ═══ HERO HEADER ═══ */}
         <div className="relative deal-modal-shine">
           {hasImage && displayImage ? (
-            <div className="h-52 sm:h-60 relative">
+            <div className="h-40 sm:h-60 relative">
               <Image src={displayImage} alt={deal.title} fill className="object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
             </div>
