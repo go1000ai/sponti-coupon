@@ -308,13 +308,13 @@ function EditDealPageInner() {
   const handleDragLeave = useCallback(() => { setDragActive(false); }, []);
 
   const handleAiImageGenerate = async () => {
-    if (!form.title) { setError('Enter a deal title first.'); return; }
+    if (!form.title && !customImagePrompt) { setError('Enter a deal title or describe the image you want.'); return; }
     setAiImageLoading(true);
     setError('');
     try {
       const res = await fetch('/api/vendor/generate-image', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: form.title, description: form.description, custom_prompt: customImagePrompt || undefined }),
+        body: JSON.stringify({ title: form.title || customImagePrompt, description: form.description, custom_prompt: customImagePrompt || undefined }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Failed to generate image'); setAiImageLoading(false); return; }

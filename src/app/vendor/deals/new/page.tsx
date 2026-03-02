@@ -630,8 +630,8 @@ export default function NewDealPage() {
 
   // ── AI Image Generation (adds to gallery) ───────────────
   const handleAiImageGenerate = async () => {
-    if (!form.title) {
-      setError('Please enter a deal title first so Ava can generate a relevant image.');
+    if (!form.title && !customImagePrompt) {
+      setError('Please enter a deal title or describe the image you want Ava to generate.');
       return;
     }
     setAiImageLoading(true);
@@ -641,7 +641,7 @@ export default function NewDealPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: form.title,
+          title: form.title || customImagePrompt,
           description: form.description,
           custom_prompt: customImagePrompt || undefined,
         }),
