@@ -683,17 +683,17 @@ function DetailModal({
             </span>
           </div>
 
-          {/* Floating savings badge — bottom right overlay */}
-          <div className="absolute -bottom-5 right-5">
-            <div className="bg-green-500 text-white font-bold text-sm px-4 py-2 rounded-full shadow-lg shadow-green-500/30 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" />
+          {/* Savings badge — inside image overlay */}
+          <div className="absolute bottom-3 right-3">
+            <div className="bg-green-500 text-white font-bold text-xs sm:text-sm px-3 py-1.5 rounded-full shadow-lg shadow-green-500/30 flex items-center gap-1 backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5" />
               Save {fmtCurrency(savings)}
             </div>
           </div>
         </div>
 
         {/* ═══ TITLE SECTION ═══ */}
-        <div className="px-6 pt-8 pb-2">
+        <div className="px-6 pt-4 pb-2">
           <div className="flex items-center gap-2 mb-1.5">
             {isSponti ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
