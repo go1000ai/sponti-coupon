@@ -67,8 +67,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'An image URL is required to generate a video' }, { status: 400 });
   }
 
+  // Convert /media/ paths back to full Supabase storage URLs for server-side fetch
+  let resolvedImageUrl = image_url;
+  if (image_url.startsWith('/media/')) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    resolvedImageUrl = `${supabaseUrl}/storage/v1/object/public/${image_url.slice('/media/'.length)}`;
+  }
+
   try {
-    const imageResponse = await fetch(image_url);
+    const imageResponse = await fetch(resolvedImageUrl);
     if (!imageResponse.ok) {
       return NextResponse.json({ error: 'Failed to fetch the deal image' }, { status: 400 });
     }
