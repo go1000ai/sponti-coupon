@@ -14,9 +14,6 @@ export const maxDuration = 300;
 //   Phase 1: { image_url, title, ... } → starts Veo, returns { operation_name }
 //   Phase 2: { operation_name, vendor_id } → polls Veo, when done downloads + uploads, returns { url }
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
-  if (limited) return limited;
-
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -61,6 +58,10 @@ export async function POST(request: NextRequest) {
   }
 
   // ─── Phase 1: Start a new generation ─────────────────────────
+  // Rate limit only new generations, not polls
+  const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
+  if (limited) return limited;
+
   const { image_url, title, description, video_prompt } = body;
 
   if (!image_url) {
@@ -149,7 +150,7 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
     }
 
     const opData = await pollRes.json();
-    console.log('[VideoGen] Poll result — done:', opData.done);
+    console.log('[VideoGen] Poll result — done:', opData.done, 'keys:', Object.keys(opData), 'metadata:', JSON.stringify(opData.metadata || {}).slice(0, 200));
 
     if (!opData.done) {
       return NextResponse.json({ status: 'processing', operation_name: operationName });
