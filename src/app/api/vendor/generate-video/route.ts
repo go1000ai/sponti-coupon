@@ -133,22 +133,47 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ─── Poll handler ──────────────────────────────────────────────
+// ─── Poll handler — uses raw REST API since SDK requires original operation object ───
 async function handlePoll(operationName: string, userId: string, geminiKey: string) {
   try {
-    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    // Call the Gemini REST API directly to check operation status
+    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}`;
+    const pollRes = await fetch(pollUrl, {
+      headers: { 'x-goog-api-key': geminiKey },
+    });
 
-    // Reconstruct a minimal operation object with the name to poll status
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const minimalOp = { name: operationName, done: false } as any;
-    const operation = await ai.operations.getVideosOperation({ operation: minimalOp });
+    if (!pollRes.ok) {
+      const errText = await pollRes.text().catch(() => '');
+      console.error('[VideoGen] Poll API error:', pollRes.status, errText);
+      return NextResponse.json({ error: 'Failed to check video status' }, { status: 500 });
+    }
 
-    if (!operation.done) {
+    const opData = await pollRes.json();
+    console.log('[VideoGen] Poll result — done:', opData.done);
+
+    if (!opData.done) {
       return NextResponse.json({ status: 'processing', operation_name: operationName });
     }
 
-    // Operation is done — download and upload the video
-    return await finishOperation(operation, userId, geminiKey);
+    // Operation is done — extract the video URI from the raw response
+    const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples
+      || opData.response?.generatedVideos
+      || opData.result?.generatedVideos;
+
+    if (!generatedVideos || generatedVideos.length === 0) {
+      console.error('[VideoGen] No videos in response:', JSON.stringify(opData.response || opData.result || {}).slice(0, 500));
+      return NextResponse.json({ error: 'No video was generated. Please try again.' }, { status: 500 });
+    }
+
+    const video = generatedVideos[0].video || generatedVideos[0];
+    const videoUri = video.uri;
+    if (!videoUri) {
+      console.error('[VideoGen] No video URI:', JSON.stringify(generatedVideos[0]).slice(0, 300));
+      return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
+    }
+
+    // Download and upload
+    return await finishFromUri(videoUri, userId, geminiKey);
   } catch (err) {
     console.error('[VideoGen] Poll error:', err);
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -170,7 +195,11 @@ async function finishOperation(operation: any, userId: string, geminiKey: string
     return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
   }
 
-  // Download from Google Files API
+  return await finishFromUri(videoUri, userId, geminiKey);
+}
+
+// Download video from URI and upload to Supabase
+async function finishFromUri(videoUri: string, userId: string, geminiKey: string) {
   const videoResponse = await fetch(videoUri, {
     headers: { 'x-goog-api-key': geminiKey },
     redirect: 'follow',
