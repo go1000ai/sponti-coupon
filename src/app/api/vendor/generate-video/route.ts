@@ -6,12 +6,14 @@ import type { SubscriptionTier } from '@/lib/types/database';
 import { brandStorageUrl } from '@/lib/utils';
 import { rateLimit } from '@/lib/rate-limit';
 
-const MAX_POLL_TIME_MS = 5 * 60 * 1000; // 5 minutes max
-const POLL_INTERVAL_MS = 10_000; // 10 seconds between polls
+// Extend Vercel function timeout (Pro: up to 300s, Hobby: 60s)
+export const maxDuration = 300;
 
-// POST /api/vendor/generate-video — Generate a promo video from a deal image using Veo 3.1 + Nano Banana 2 pipeline
+// POST /api/vendor/generate-video
+// Two-phase approach to avoid Vercel timeout:
+//   Phase 1: { image_url, title, ... } → starts Veo, returns { operation_name }
+//   Phase 2: { operation_name, vendor_id } → polls Veo, when done downloads + uploads, returns { url }
 export async function POST(request: NextRequest) {
-  // Rate limit: 5 video generations per hour (most expensive AI operation)
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
@@ -22,7 +24,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify vendor role
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('role')
@@ -33,18 +34,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Only vendors can generate videos' }, { status: 403 });
   }
 
-  // Get vendor info
   const { data: vendor } = await supabase
     .from('vendors')
     .select('business_name, category, subscription_tier')
     .eq('id', user.id)
     .single();
 
-  // Check tier access (Business+)
   const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
   if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
     return NextResponse.json(
-      { error: 'AI Video Generation requires a Business plan or higher. Upgrade at /vendor/subscription.' },
+      { error: 'AI Video Generation requires a Business plan or higher.' },
       { status: 403 }
     );
   }
@@ -55,6 +54,13 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
+
+  // ─── Phase 2: Poll an existing operation ─────────────────────
+  if (body.operation_name) {
+    return handlePoll(body.operation_name, user.id, geminiKey);
+  }
+
+  // ─── Phase 1: Start a new generation ─────────────────────────
   const { image_url, title, description, video_prompt } = body;
 
   if (!image_url) {
@@ -62,7 +68,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Fetch the image and convert to base64
     const imageResponse = await fetch(image_url);
     if (!imageResponse.ok) {
       return NextResponse.json({ error: 'Failed to fetch the deal image' }, { status: 400 });
@@ -75,13 +80,12 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
-    // Use vendor's custom prompt if provided, otherwise generate a default
     const prompt = video_prompt
       ? `${video_prompt}. Professional commercial quality for ${vendor?.business_name || 'this business'}'s ${vendor?.category || ''} deal: "${title || 'Special Deal'}". ${description || ''}`
       : `Smooth cinematic camera movement showcasing this ${vendor?.category || 'business'} deal: "${title || 'Special Deal'}". ${description || ''} Professional commercial quality, engaging and appealing, warm inviting atmosphere.`;
 
-    // Start video generation with image as starting frame (Veo 3.1)
-    let operation = await ai.models.generateVideos({
+    console.log('[VideoGen] Starting Veo generation for vendor:', user.id);
+    const operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt,
       image: {
@@ -94,132 +98,156 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Poll until done
-    const startTime = Date.now();
-    while (!operation.done) {
-      if (Date.now() - startTime > MAX_POLL_TIME_MS) {
-        return NextResponse.json(
-          { error: 'Video generation timed out. Please try again.' },
-          { status: 504 }
-        );
-      }
-
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
-      operation = await ai.operations.getVideosOperation({ operation });
+    const operationName = operation.name;
+    if (!operationName) {
+      return NextResponse.json({ error: 'Failed to start video generation' }, { status: 500 });
     }
 
-    // Get the generated video
-    const generatedVideos = operation.response?.generatedVideos;
-    if (!generatedVideos || generatedVideos.length === 0 || !generatedVideos[0].video) {
-      return NextResponse.json({ error: 'No video was generated. Please try again.' }, { status: 500 });
+    console.log('[VideoGen] Operation started:', operationName);
+
+    // If the operation is already done (unlikely but possible), handle it immediately
+    if (operation.done) {
+      return await finishOperation(operation, user.id, geminiKey);
     }
 
-    const video = generatedVideos[0].video;
-
-    // Download the video data from Gemini Files API
-    const videoUri = video.uri;
-    if (!videoUri) {
-      return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
-    }
-
-    // Google Files API requires API key in header, not query param
-    const videoResponse = await fetch(videoUri, {
-      headers: { 'x-goog-api-key': geminiKey },
-      redirect: 'follow',
+    // Return the operation name so the client can poll
+    return NextResponse.json({
+      status: 'processing',
+      operation_name: operationName,
+      message: 'Video generation started. Poll with operation_name to check progress.',
     });
-    if (!videoResponse.ok) {
-      console.error('Video download failed:', videoResponse.status, await videoResponse.text().catch(() => ''));
-      return NextResponse.json({ error: 'Failed to download generated video' }, { status: 500 });
+  } catch (err) {
+    console.error('[VideoGen] Start error:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
+      return NextResponse.json({ error: 'Video generation quota exceeded. Please try again later.' }, { status: 429 });
+    }
+    return NextResponse.json({ error: `Failed to generate video: ${errorMessage}` }, { status: 500 });
+  }
+}
+
+// ─── Poll handler ──────────────────────────────────────────────
+async function handlePoll(operationName: string, userId: string, geminiKey: string) {
+  try {
+    const ai = new GoogleGenAI({ apiKey: geminiKey });
+
+    // Reconstruct a minimal operation object with the name to poll status
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const minimalOp = { name: operationName, done: false } as any;
+    const operation = await ai.operations.getVideosOperation({ operation: minimalOp });
+
+    if (!operation.done) {
+      return NextResponse.json({ status: 'processing', operation_name: operationName });
     }
 
-    const videoArrayBuffer = await videoResponse.arrayBuffer();
-    const videoBuffer = Buffer.from(videoArrayBuffer);
+    // Operation is done — download and upload the video
+    return await finishOperation(operation, userId, geminiKey);
+  } catch (err) {
+    console.error('[VideoGen] Poll error:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    return NextResponse.json({ error: `Failed to check video status: ${errorMessage}` }, { status: 500 });
+  }
+}
 
-    console.log(`Video downloaded: ${videoBuffer.length} bytes (${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB)`);
+// ─── Finish: download from Gemini + upload to Supabase ─────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function finishOperation(operation: any, userId: string, geminiKey: string) {
+  const generatedVideos = operation.response?.generatedVideos;
+  if (!generatedVideos || generatedVideos.length === 0 || !generatedVideos[0].video) {
+    return NextResponse.json({ error: 'No video was generated. Please try again.' }, { status: 500 });
+  }
 
-    if (videoBuffer.length < 1000) {
-      console.error('Video buffer suspiciously small:', videoBuffer.toString('utf-8').slice(0, 500));
-      return NextResponse.json({ error: 'Generated video data appears invalid. Please try again.' }, { status: 500 });
-    }
+  const video = generatedVideos[0].video;
+  const videoUri = video.uri;
+  if (!videoUri) {
+    return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
+  }
 
-    // Upload to Supabase Storage
-    const serviceClient = await createServiceRoleClient();
-    const filename = `${user.id}/${Date.now()}-ai-generated.mp4`;
+  // Download from Google Files API
+  const videoResponse = await fetch(videoUri, {
+    headers: { 'x-goog-api-key': geminiKey },
+    redirect: 'follow',
+  });
+  if (!videoResponse.ok) {
+    console.error('[VideoGen] Download failed:', videoResponse.status);
+    return NextResponse.json({ error: 'Failed to download generated video' }, { status: 500 });
+  }
 
-    // deal-videos bucket created in Supabase (50MB limit, public, mp4/webm/quicktime)
+  const videoArrayBuffer = await videoResponse.arrayBuffer();
+  const videoBuffer = Buffer.from(videoArrayBuffer);
+  console.log(`[VideoGen] Downloaded: ${(videoBuffer.length / 1024 / 1024).toFixed(1)}MB`);
 
-    const { data: uploadData, error: uploadError } = await serviceClient.storage
-      .from('deal-videos')
-      .upload(filename, videoBuffer, {
+  if (videoBuffer.length < 1000) {
+    return NextResponse.json({ error: 'Generated video data appears invalid. Please try again.' }, { status: 500 });
+  }
+
+  // Upload to Supabase Storage
+  const serviceClient = await createServiceRoleClient();
+  const filename = `${userId}/${Date.now()}-ai-generated.mp4`;
+
+  const { data: uploadData, error: uploadError } = await serviceClient.storage
+    .from('deal-videos')
+    .upload(filename, videoBuffer, {
+      contentType: 'video/mp4',
+      cacheControl: '3600',
+      upsert: true,
+    });
+
+  if (uploadError) {
+    console.error('[VideoGen] Upload error:', JSON.stringify(uploadError));
+    // Fallback to deal-images bucket
+    const fallbackFilename = `${userId}/${Date.now()}-ai-video.mp4`;
+    const { data: fallbackData, error: fallbackError } = await serviceClient.storage
+      .from('deal-images')
+      .upload(fallbackFilename, videoBuffer, {
         contentType: 'video/mp4',
         cacheControl: '3600',
         upsert: true,
       });
 
-    if (uploadError) {
-      console.error('Video upload error:', JSON.stringify(uploadError));
-      // Fallback: try uploading to deal-images bucket (which we know works)
-      const fallbackFilename = `${user.id}/${Date.now()}-ai-video.mp4`;
-      const { data: fallbackData, error: fallbackError } = await serviceClient.storage
-        .from('deal-images')
-        .upload(fallbackFilename, videoBuffer, {
-          contentType: 'video/mp4',
-          cacheControl: '3600',
-          upsert: true,
-        });
-
-      if (fallbackError) {
-        console.error('Fallback upload also failed:', JSON.stringify(fallbackError));
-        return NextResponse.json({ error: `Failed to save generated video: ${uploadError.message}` }, { status: 500 });
-      }
-
-      const { data: fallbackUrl } = serviceClient.storage
-        .from('deal-images')
-        .getPublicUrl(fallbackData.path);
-
-      const brandedUrl = brandStorageUrl(fallbackUrl.publicUrl);
-
-      await serviceClient.from('vendor_media').insert({
-        vendor_id: user.id,
-        type: 'video',
-        url: brandedUrl,
-        storage_path: fallbackFilename,
-        bucket: 'deal-images',
-        filename: fallbackFilename.split('/').pop(),
-        source: 'ai_video',
-        file_size: videoBuffer.length,
-        mime_type: 'video/mp4',
-      });
-
-      return NextResponse.json({ url: brandedUrl, source: 'sponticoupon' });
+    if (fallbackError) {
+      return NextResponse.json({ error: `Failed to save video: ${uploadError.message}` }, { status: 500 });
     }
 
-    const { data: urlData } = serviceClient.storage
-      .from('deal-videos')
-      .getPublicUrl(uploadData.path);
+    const { data: fallbackUrl } = serviceClient.storage
+      .from('deal-images')
+      .getPublicUrl(fallbackData.path);
 
-    const brandedUrl = brandStorageUrl(urlData.publicUrl);
+    const brandedUrl = brandStorageUrl(fallbackUrl.publicUrl);
 
-    // Auto-record in vendor media library
     await serviceClient.from('vendor_media').insert({
-      vendor_id: user.id,
+      vendor_id: userId,
       type: 'video',
       url: brandedUrl,
-      storage_path: filename,
-      bucket: 'deal-videos',
-      filename: filename.split('/').pop(),
+      storage_path: fallbackFilename,
+      bucket: 'deal-images',
+      filename: fallbackFilename.split('/').pop(),
       source: 'ai_video',
       file_size: videoBuffer.length,
       mime_type: 'video/mp4',
     });
 
-    return NextResponse.json({ url: brandedUrl, source: 'sponticoupon' });
-  } catch (err) {
-    console.error('Veo video generation error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json(
-      { error: `Failed to generate video: ${errorMessage}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ status: 'done', url: brandedUrl, source: 'sponticoupon' });
   }
+
+  const { data: urlData } = serviceClient.storage
+    .from('deal-videos')
+    .getPublicUrl(uploadData.path);
+
+  const brandedUrl = brandStorageUrl(urlData.publicUrl);
+
+  await serviceClient.from('vendor_media').insert({
+    vendor_id: userId,
+    type: 'video',
+    url: brandedUrl,
+    storage_path: filename,
+    bucket: 'deal-videos',
+    filename: filename.split('/').pop(),
+    source: 'ai_video',
+    file_size: videoBuffer.length,
+    mime_type: 'video/mp4',
+  });
+
+  console.log('[VideoGen] Complete! URL:', brandedUrl);
+  return NextResponse.json({ status: 'done', url: brandedUrl, source: 'sponticoupon' });
 }

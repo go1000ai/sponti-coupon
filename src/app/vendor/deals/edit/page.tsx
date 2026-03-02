@@ -349,13 +349,33 @@ function EditDealPageInner() {
     setVideoElapsed(0);
     setError('');
     try {
-      const res = await fetch('/api/vendor/generate-video', {
+      // Phase 1: Start
+      const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description, video_prompt: videoPrompt || undefined }),
       });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
-      setVideoUrls(prev => [...prev, data.url]);
+      const startData = await startRes.json();
+      if (!startRes.ok) { setError(startData.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
+      if (startData.status === 'done' && startData.url) { setVideoUrls(prev => [...prev, startData.url]); setAiVideoLoading(false); return; }
+
+      const operationName = startData.operation_name;
+      if (!operationName) { setError('Failed to start video generation'); setAiVideoLoading(false); return; }
+
+      // Phase 2: Poll until done
+      const maxPollTime = 5 * 60 * 1000;
+      const pollInterval = 10_000;
+      const pollStart = Date.now();
+      while (Date.now() - pollStart < maxPollTime) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        const pollRes = await fetch('/api/vendor/generate-video', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operation_name: operationName }),
+        });
+        const pollData = await pollRes.json();
+        if (!pollRes.ok) { setError(pollData.error || 'Video generation failed'); setAiVideoLoading(false); return; }
+        if (pollData.status === 'done' && pollData.url) { setVideoUrls(prev => [...prev, pollData.url]); setAiVideoLoading(false); return; }
+      }
+      setError('Video generation timed out. Please try again.');
     } catch { setError('Failed to generate video.'); }
     setAiVideoLoading(false);
   };
