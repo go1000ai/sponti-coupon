@@ -1073,33 +1073,33 @@ export default function NewDealPage() {
       )}
 
       {/* Deal Type Selector */}
-      <div className="grid grid-cols-2 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
         <button
           type="button"
           onClick={() => setDealType('regular')}
-          className={`card p-6 text-left transition-all ${dealType === 'regular' ? 'ring-2 ring-secondary-500 shadow-lg' : 'hover:shadow-md'}`}
+          className={`card p-4 sm:p-6 text-left transition-all ${dealType === 'regular' ? 'ring-2 ring-secondary-500 shadow-lg' : 'hover:shadow-md'}`}
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-gray-100 rounded-lg p-2">
-              <Tag className="w-6 h-6 text-gray-900" />
+              <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-900" />
             </div>
-            <h3 className="font-bold text-gray-900">Steady Deal</h3>
+            <h3 className="font-bold text-gray-900 text-sm sm:text-base">Steady Deal</h3>
           </div>
-          <p className="text-sm text-gray-500">Standard discount lasting 1-30 days. Optional deposit available. Sets your baseline discount.</p>
+          <p className="text-xs sm:text-sm text-gray-500">Standard discount lasting 1-30 days. Optional deposit available. Sets your baseline discount.</p>
         </button>
 
         <button
           type="button"
           onClick={() => setDealType('sponti_coupon')}
-          className={`card p-6 text-left transition-all ${dealType === 'sponti_coupon' ? 'ring-2 ring-primary-500 shadow-lg' : 'hover:shadow-md'}`}
+          className={`card p-4 sm:p-6 text-left transition-all ${dealType === 'sponti_coupon' ? 'ring-2 ring-primary-500 shadow-lg' : 'hover:shadow-md'}`}
         >
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-primary-50 rounded-lg p-2">
-              <SpontiIcon className="w-6 h-6 text-primary-500" />
+              <SpontiIcon className="w-5 h-5 sm:w-6 sm:h-6 text-primary-500" />
             </div>
-            <h3 className="font-bold text-primary-500">Sponti Coupon</h3>
+            <h3 className="font-bold text-primary-500 text-sm sm:text-base">Sponti Coupon</h3>
           </div>
-          <p className="text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Set your own discount — Ava can help!</p>
+          <p className="text-xs sm:text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Set your own discount — Ava can help!</p>
         </button>
       </div>
 

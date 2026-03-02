@@ -81,7 +81,7 @@ export default function VendorDealsPage() {
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">My Deals</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Deals</h1>
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <button
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"

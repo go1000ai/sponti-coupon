@@ -29,7 +29,7 @@ export function Navbar() {
               alt="SpontiCoupon"
               width={267}
               height={80}
-              className="h-24 w-auto"
+              className="h-14 sm:h-20 md:h-24 w-auto"
               priority
             />
           </Link>

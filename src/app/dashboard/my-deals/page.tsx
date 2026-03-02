@@ -178,12 +178,12 @@ export default function DashboardMyDealsPage() {
       {/* Filters + Sort */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
         {/* Status filters */}
-        <div className="flex gap-2 flex-1">
+        <div className="flex gap-1.5 sm:gap-2 flex-1 flex-wrap">
           {(['all', 'active', 'redeemed', 'expired'] as const).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                 filter === f ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -206,7 +206,7 @@ export default function DashboardMyDealsPage() {
           {showSortMenu && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setShowSortMenu(false)} />
-              <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20">
+              <div className="absolute right-0 sm:right-0 top-full mt-1 w-48 sm:w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 z-20">
                 {(Object.keys(sortLabels) as SortOption[]).map(option => (
                   <button
                     key={option}

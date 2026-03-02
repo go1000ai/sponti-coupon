@@ -136,15 +136,15 @@ export function HeroSection() {
               }`}
             >
               {stats && stats.totalActive > 0 && (
-                <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-4 py-2">
-                  <span className="flex items-center gap-1.5 text-sm text-white/90 font-medium">
-                    <Flame className="w-4 h-4 text-primary-400 animate-pulse" />
-                    {stats.totalActive} deals live now
+                <div className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                  <span className="flex items-center gap-1.5 text-xs sm:text-sm text-white/90 font-medium">
+                    <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-400 animate-pulse" />
+                    {stats.totalActive} deals live
                   </span>
                   {stats.expiringSoon > 0 && (
                     <>
-                      <span className="w-px h-4 bg-white/20" />
-                      <span className="flex items-center gap-1.5 text-sm text-yellow-300/90 font-medium">
+                      <span className="w-px h-4 bg-white/20 hidden sm:block" />
+                      <span className="hidden sm:flex items-center gap-1.5 text-sm text-yellow-300/90 font-medium">
                         <Clock className="w-3.5 h-3.5" />
                         {stats.expiringSoon} expiring in &lt; 2hrs
                       </span>
@@ -165,7 +165,7 @@ export function HeroSection() {
 
             {/* Search Autocomplete */}
             <div
-              className={`mt-8 transition-opacity duration-700 ease-out ${
+              className={`mt-4 sm:mt-6 md:mt-8 transition-opacity duration-700 ease-out ${
                 mounted ? 'opacity-100' : 'opacity-0'
               }`}
               style={{ transitionDelay: '450ms' }}
