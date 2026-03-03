@@ -226,21 +226,24 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       return NextResponse.json({ error: `Video generation failed: ${errMsg}` }, { status: 500 });
     }
 
-    // Operation is done — try multiple response structures (REST API format varies)
-    // Google LRO format: { done: true, response: { "@type": "...", generatedSamples: [...] } }
-    const generatedVideos = opData.response?.generatedSamples
-      || opData.response?.generateVideoResponse?.generatedSamples
+    // Operation is done — extract videos from response
+    // Actual structure: { response: { @type, generateVideoResponse: { generatedSamples?: [...], ...} } }
+    const gvr = opData.response?.generateVideoResponse;
+    const gvrKeys = gvr ? Object.keys(gvr) : [];
+    console.log('[VideoGen] generateVideoResponse keys:', gvrKeys, 'Full GVR:', JSON.stringify(gvr).slice(0, 2000));
+
+    const generatedVideos = gvr?.generatedSamples
+      || gvr?.generatedVideos
+      || gvr?.videos
+      || opData.response?.generatedSamples
       || opData.response?.generatedVideos
       || opData.result?.generatedSamples
-      || opData.result?.generatedVideos
-      || opData.result?.generateVideoResponse?.generatedSamples;
+      || opData.result?.generatedVideos;
 
     if (!generatedVideos || generatedVideos.length === 0) {
-      // Log the full structure so we can see exactly what Google returned
       const responseKeys = opData.response ? Object.keys(opData.response) : [];
-      const resultKeys = opData.result ? Object.keys(opData.result) : [];
-      console.error('[VideoGen] No videos found. response keys:', responseKeys, 'result keys:', resultKeys, 'Full:', JSON.stringify(opData).slice(0, 3000));
-      return NextResponse.json({ error: `No video was generated. API response keys: [${responseKeys.join(', ')}]. Please try again or contact support.` }, { status: 500 });
+      console.error('[VideoGen] No videos found. GVR keys:', gvrKeys, 'response keys:', responseKeys, 'Full:', JSON.stringify(opData).slice(0, 3000));
+      return NextResponse.json({ error: `No video found. generateVideoResponse keys: [${gvrKeys.join(', ')}]. Please try again.` }, { status: 500 });
     }
 
     const video = generatedVideos[0].video || generatedVideos[0];
