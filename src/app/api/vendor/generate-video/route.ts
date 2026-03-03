@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
-  const { image_url, title, description, video_prompt } = body;
+  const { image_url, video_prompt } = body;
 
   if (!image_url) {
     return NextResponse.json({ error: 'An image URL is required to generate a video' }, { status: 400 });
@@ -99,8 +99,8 @@ export async function POST(request: NextRequest) {
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
     const prompt = video_prompt
-      ? `${video_prompt}. Professional commercial quality for ${vendor?.business_name || 'this business'}'s ${vendor?.category || ''} deal: "${title || 'Special Deal'}". ${description || ''}`
-      : `Smooth cinematic camera movement showcasing this ${vendor?.category || 'business'} deal: "${title || 'Special Deal'}". ${description || ''} Professional commercial quality, engaging and appealing, warm inviting atmosphere.`;
+      ? `${video_prompt}. Professional commercial quality, clean imagery, no text or logos.`
+      : `Gentle cinematic camera movement showcasing a ${vendor?.category || 'business'} service. Professional commercial quality, clean and appealing imagery, warm inviting atmosphere. No text, no logos, no watermarks.`;
 
     // Pre-flight: verify Veo model is accessible with this API key
     const modelCheckUrl = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview?key=${geminiKey}`;
@@ -227,10 +227,18 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
     }
 
     // Operation is done — extract videos from response
-    // Actual structure: { response: { @type, generateVideoResponse: { generatedSamples?: [...], ...} } }
+    // Structure: { response: { @type, generateVideoResponse: { generatedSamples?: [...] } } }
     const gvr = opData.response?.generateVideoResponse;
-    const gvrKeys = gvr ? Object.keys(gvr) : [];
-    console.log('[VideoGen] generateVideoResponse keys:', gvrKeys, 'Full GVR:', JSON.stringify(gvr).slice(0, 2000));
+    console.log('[VideoGen] generateVideoResponse:', JSON.stringify(gvr).slice(0, 2000));
+
+    // Check for RAI (Responsible AI) content filter
+    if (gvr?.raiMediaFilteredCount && gvr.raiMediaFilteredCount > 0) {
+      const reasons = gvr.raiMediaFilteredReasons || [];
+      console.warn('[VideoGen] Content filtered by Google safety. Count:', gvr.raiMediaFilteredCount, 'Reasons:', reasons);
+      return NextResponse.json({
+        error: `The generated video was blocked by Google's content safety filter${reasons.length ? ` (${reasons.join(', ')})` : ''}. Try using a different image or a simpler prompt — avoid text overlays, logos, or brand names in your source image.`,
+      }, { status: 400 });
+    }
 
     const generatedVideos = gvr?.generatedSamples
       || gvr?.generatedVideos
@@ -241,9 +249,8 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       || opData.result?.generatedVideos;
 
     if (!generatedVideos || generatedVideos.length === 0) {
-      const responseKeys = opData.response ? Object.keys(opData.response) : [];
-      console.error('[VideoGen] No videos found. GVR keys:', gvrKeys, 'response keys:', responseKeys, 'Full:', JSON.stringify(opData).slice(0, 3000));
-      return NextResponse.json({ error: `No video found. generateVideoResponse keys: [${gvrKeys.join(', ')}]. Please try again.` }, { status: 500 });
+      console.error('[VideoGen] No videos found. Full:', JSON.stringify(opData).slice(0, 3000));
+      return NextResponse.json({ error: 'No video was generated. Please try a different image or prompt.' }, { status: 500 });
     }
 
     const video = generatedVideos[0].video || generatedVideos[0];
