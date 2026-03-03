@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import {
   MapPin, Phone, Globe, Star, Download, Search,
   Plus, Trash2, Loader2, ExternalLink, Target,
-  CheckCircle2, Users, TrendingUp, UserCheck,
+  CheckCircle2, Users, TrendingUp, UserCheck, RefreshCw,
 } from 'lucide-react';
 
 type LeadStatus =
@@ -92,6 +92,7 @@ export default function AdminLeadsPage() {
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving]     = useState(false);
   const [grouponFilter, setGrouponFilter] = useState<'all' | 'groupon_only' | 'not_groupon'>('all');
+  const [importingGroupon, setImportingGroupon] = useState(false);
 
   // Groupon check state: place_id → true (found) | false (not found) | null (checking)
   const [grouponStatus, setGrouponStatus] = useState<Record<string, boolean | null>>({});
@@ -205,6 +206,50 @@ export default function AdminLeadsPage() {
     } finally {
       setSearching(false);
       setSearchProgress('');
+    }
+  };
+
+  // Import directly from Groupon via Apify headless browser
+  const handleGrouponImport = async () => {
+    if (!location.trim() || selectedCategories.size === 0) return;
+    setImportingGroupon(true);
+    setSearchError(null);
+    try {
+      const res = await fetch('/api/admin/leads/groupon-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location: location.trim(),
+          categories: Array.from(selectedCategories),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Groupon import failed');
+
+      const imported: SearchResult[] = data.results || [];
+      if (imported.length === 0) {
+        showToast('No businesses found on Groupon for this search', 'error');
+        return;
+      }
+
+      // Merge with existing results, dedup by place_id
+      setSearchResults((prev) => {
+        const seen = new Set(prev.map((r) => r.place_id));
+        return [...prev, ...imported.filter((r) => !seen.has(r.place_id))];
+      });
+
+      // Mark all imported as confirmed Groupon businesses
+      setGrouponStatus((prev) => {
+        const next = { ...prev };
+        imported.forEach((r) => { next[r.place_id] = true; });
+        return next;
+      });
+
+      showToast(`Imported ${imported.length} businesses from Groupon!`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Groupon import failed', 'error');
+    } finally {
+      setImportingGroupon(false);
     }
   };
 
@@ -495,13 +540,26 @@ export default function AdminLeadsPage() {
           </select>
           <button
             onClick={handleSearch}
-            disabled={searching || selectedCategories.size === 0 || !location.trim()}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[140px]"
+            disabled={searching || importingGroupon || selectedCategories.size === 0 || !location.trim()}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[130px]"
           >
             {searching ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Searching...</>
             ) : (
-              <><Search className="w-4 h-4" /> Search {selectedCategories.size > 1 ? `(${selectedCategories.size})` : ''}</>
+              <><Search className="w-4 h-4" /> Yelp {selectedCategories.size > 1 ? `(${selectedCategories.size})` : ''}</>
+            )}
+          </button>
+          {/* Import from Groupon via Apify headless browser */}
+          <button
+            onClick={handleGrouponImport}
+            disabled={importingGroupon || searching || selectedCategories.size === 0 || !location.trim()}
+            title="Scrape Groupon listings using Apify (uses free platform credits)"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[170px]"
+          >
+            {importingGroupon ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Importing (~60s)...</>
+            ) : (
+              <><RefreshCw className="w-4 h-4" /> Import from Groupon</>
             )}
           </button>
         </div>
