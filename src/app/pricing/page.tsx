@@ -229,21 +229,21 @@ export default function PricingPage() {
           {/* ── Founders Launch Banner ── */}
           {FOUNDERS_LAUNCH.active && (
             <ScrollReveal animation="scale-up">
-              <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-primary-500/20 to-amber-500/20 backdrop-blur-sm rounded-2xl px-6 py-3.5 mb-8 border border-primary-400/30">
+              <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-primary-500/30 to-amber-500/30 backdrop-blur-sm rounded-2xl px-6 py-3.5 mb-8 border border-white/30">
                 <div className="flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary-400 animate-bounce" />
                   <span className="text-sm font-bold text-white">Founders Launch</span>
                 </div>
-                <span className="hidden sm:block w-px h-5 bg-white/20" />
-                <span className="text-sm text-primary-200">
-                  First <span className="font-bold text-white">{FOUNDERS_LAUNCH.totalSpots}</span> vendors get{' '}
+                <span className="hidden sm:block w-px h-5 bg-white/30" />
+                <span className="text-sm text-white">
+                  First <span className="font-bold">{FOUNDERS_LAUNCH.totalSpots}</span> vendors get{' '}
                   <span className="font-bold text-primary-300">{FOUNDERS_LAUNCH.freeMonths} months free</span>
                   {' '}+ {FOUNDERS_LAUNCH.founderDiscount}% off forever
                 </span>
-                <span className="hidden sm:block w-px h-5 bg-white/20" />
+                <span className="hidden sm:block w-px h-5 bg-white/30" />
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="text-xs font-semibold text-amber-300">
+                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                  <span className="text-xs font-bold text-amber-300">
                     {FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken} spots left
                   </span>
                 </div>
@@ -252,9 +252,9 @@ export default function PricingPage() {
           )}
 
           <ScrollReveal animation="fade-up">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/10">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/20">
               <Sparkles className="w-4 h-4 text-primary-400 animate-sparkle" />
-              <span className="text-sm font-semibold text-white/90">Simple, Transparent Pricing</span>
+              <span className="text-sm font-semibold text-white">Simple, Transparent Pricing</span>
             </div>
           </ScrollReveal>
 
@@ -269,18 +269,18 @@ export default function PricingPage() {
           </ScrollReveal>
 
           <ScrollReveal animation="fade-up" delay={200}>
-            <p className="text-lg sm:text-xl text-white mt-5 max-w-2xl mx-auto opacity-80">
+            <p className="text-lg sm:text-xl text-white mt-5 max-w-2xl mx-auto">
               {FOUNDERS_LAUNCH.active ? (
                 <>
                   <span className="text-white font-semibold">2 months free</span> on Pro &amp; Business plans. Zero commission. Zero transaction fees.
                   <br />
-                  <span className="text-white/80 font-medium">Credit card required — cancel anytime.</span>
+                  <span className="text-white font-medium">Credit card required — cancel anytime.</span>
                 </>
               ) : (
                 <>
                   14-day free trial. Zero commission. Zero transaction fees.
                   <br />
-                  <span className="text-white/80 font-medium">Customer deposits go directly to you.</span>
+                  <span className="text-white font-medium">Customer deposits go directly to you.</span>
                 </>
               )}
             </p>
@@ -477,7 +477,7 @@ export default function PricingPage() {
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">{tier.name}</h3>
                       </div>
-                      <p className="text-sm text-gray-400 mb-6">{plan.tagline}</p>
+                      <p className="text-sm text-gray-600 mb-6">{plan.tagline}</p>
 
                       {/* Price */}
                       <div className="mb-6">
@@ -493,9 +493,9 @@ export default function PricingPage() {
                               <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
                                 $0
                               </span>
-                              <span className="text-gray-400 text-base font-medium">/mo</span>
+                              <span className="text-gray-600 text-base font-medium">/mo</span>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1.5">
+                            <p className="text-xs text-gray-500 mt-1.5">
                               <span className="line-through">{formatCurrency(price)}/mo</span>
                               {' '}&rarr;{' '}
                               <span className="text-green-600 font-semibold">
@@ -510,7 +510,7 @@ export default function PricingPage() {
                               <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
                                 {formatCurrency(price)}
                               </span>
-                              <span className="text-gray-400 text-base font-medium">/mo</span>
+                              <span className="text-gray-600 text-base font-medium">/mo</span>
                             </div>
                             {isAnnual && (
                               <p className="text-xs text-green-600 font-medium mt-1.5">
@@ -570,7 +570,7 @@ export default function PricingPage() {
                                   </>
                                 )}
                               </button>
-                              <p className="text-[11px] text-gray-400 text-center mt-3">
+                              <p className="text-[11px] text-gray-500 text-center mt-3">
                                 {isPromo
                                   ? 'Credit card required. Cancel anytime.'
                                   : '14-day free trial. Cancel anytime.'
@@ -603,7 +603,7 @@ export default function PricingPage() {
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-white opacity-80">/mo</span></span>
+                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-white">/mo</span></span>
                   <button
                     onClick={() => handleCheckout('enterprise')}
                     disabled={loadingPlan !== null}
@@ -629,7 +629,7 @@ export default function PricingPage() {
                 ].map(item => (
                   <div key={item.label} className="bg-white/15 rounded-xl p-3 sm:p-4 text-center sm:text-left">
                     <p className="font-semibold text-white text-sm">{item.label}</p>
-                    <p className="text-white text-xs mt-0.5 opacity-90">{item.desc}</p>
+                    <p className="text-white text-xs mt-0.5">{item.desc}</p>
                   </div>
                 ))}
               </div>
@@ -764,7 +764,7 @@ export default function PricingPage() {
                 : 'Try SpontiCoupon Free for 14 Days'
               }
             </h2>
-            <p className="text-lg text-white mb-8 max-w-xl mx-auto opacity-80">
+            <p className="text-lg text-white mb-8 max-w-xl mx-auto">
               {FOUNDERS_LAUNCH.active ? (
                 <>
                   Be one of the first {FOUNDERS_LAUNCH.totalSpots} vendors and lock in{' '}
@@ -789,7 +789,7 @@ export default function PricingPage() {
             </div>
 
             {/* Trust badges */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-white text-xs opacity-80">
+            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-white text-xs">
               <div className="flex items-center gap-1.5">
                 <Gift className="w-4 h-4 text-primary-400" />
                 <span>{FOUNDERS_LAUNCH.active ? '2 months free' : '14-day free trial'}</span>

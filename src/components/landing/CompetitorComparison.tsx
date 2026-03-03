@@ -41,7 +41,7 @@ function AnimatedBar({ targetPercent, color, label, amount, delay = 0 }: {
   return (
     <div ref={ref} className="space-y-1.5 sm:space-y-2">
       <div className="flex justify-between text-xs sm:text-sm gap-2">
-        <span className="font-medium text-white opacity-90">{label}</span>
+        <span className="font-medium text-white">{label}</span>
         <span className="font-bold text-white shrink-0">{amount}</span>
       </div>
       <div className="w-full bg-white/10 rounded-full h-6 sm:h-7 overflow-hidden">
@@ -158,7 +158,7 @@ export function CompetitorComparison() {
             <h3 className="text-xl sm:text-2xl font-bold text-center mb-2">
               See the Difference on $10,000 in Monthly Sales
             </h3>
-            <p className="text-center text-white opacity-80 mb-6 sm:mb-10 text-sm sm:text-base">
+            <p className="text-center text-white mb-6 sm:mb-10 text-sm sm:text-base">
               Here&apos;s what you actually take home
             </p>
 
@@ -181,17 +181,17 @@ export function CompetitorComparison() {
 
             {/* Savings callout */}
             <div ref={savingsRef} className="text-center mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-white/20 px-1">
-              <p className="text-white text-xs sm:text-sm uppercase tracking-wide mb-2 opacity-80">You take home more every month</p>
+              <p className="text-white text-xs sm:text-sm uppercase tracking-wide mb-2">You take home more every month</p>
               <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary-400">
                 ${savingsValue.toLocaleString()}
               </p>
-              <p className="text-white mt-2 opacity-80 text-sm sm:text-base">
+              <p className="text-white mt-2 text-sm sm:text-base">
                 That&apos;s <span className="text-white font-semibold opacity-100">${(savingsValue * 12).toLocaleString()}</span> more in your pocket every year
               </p>
               <p className="text-white/90 text-xs sm:text-sm mt-3 sm:mt-4 font-medium">
                 Your entire annual subscription pays for itself in <span className="text-primary-400 font-bold">less than one month</span>. That&apos;s 11 months of pure profit.
               </p>
-              <p className="text-white text-[11px] sm:text-xs mt-2 opacity-70">
+              <p className="text-white text-[11px] sm:text-xs mt-2">
                 Need unlimited deals? Our Enterprise plan at $499/mo gives you <span className="text-primary-400 font-semibold">unlimited Sponti + Steady deals</span> — and you&apos;d still take home $4,501/mo more vs. commission platforms.
               </p>
             </div>

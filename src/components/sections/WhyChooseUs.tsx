@@ -286,15 +286,15 @@ export function WhyChooseUs() {
                     Competitor
                   </span>
                 </div>
-                <div className="space-y-1.5 text-gray-300 text-sm leading-relaxed mb-4">
+                <div className="space-y-1.5 text-white text-sm leading-relaxed mb-4">
                   <p>$100 service &rarr; 50% off coupon</p>
-                  <p>Customer pays <span className="text-white font-medium">$50</span></p>
-                  <p>Platform takes <span className="text-red-300 font-medium">50% commission</span></p>
+                  <p>Customer pays <span className="font-semibold">$50</span></p>
+                  <p>Platform takes <span className="text-red-300 font-semibold">50% commission</span></p>
                 </div>
-                <div className="border-t border-white/10 pt-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Vendor keeps</p>
+                <div className="border-t border-white/20 pt-3">
+                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Vendor keeps</p>
                   <p className="text-3xl font-extrabold text-red-400">$25</p>
-                  <p className="text-xs text-gray-400 mt-1">...and waits 60–90 days for it</p>
+                  <p className="text-xs text-white/80 mt-1">...and waits 60–90 days for it</p>
                 </div>
               </div>
 
@@ -303,7 +303,7 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 border border-white/20 mb-4">
                   <span className="text-xl font-extrabold text-white">VS</span>
                 </div>
-                <p className="text-sm text-gray-300 max-w-[200px] mx-auto leading-relaxed">
+                <p className="text-sm text-white max-w-[200px] mx-auto leading-relaxed">
                   Same deal. Same discount.
                   <br />
                   <span className="font-bold text-primary-400">$25 more in your pocket.</span>
@@ -324,15 +324,15 @@ export function WhyChooseUs() {
                     className="h-5 w-auto brightness-110"
                   />
                 </div>
-                <div className="space-y-1.5 text-gray-300 text-sm leading-relaxed mb-4">
+                <div className="space-y-1.5 text-white text-sm leading-relaxed mb-4">
                   <p>$100 service &rarr; 50% off coupon</p>
-                  <p>Customer pays <span className="text-white font-medium">$50</span></p>
-                  <p><span className="text-primary-300 font-medium">$0 commission</span> — you keep it all</p>
+                  <p>Customer pays <span className="font-semibold">$50</span></p>
+                  <p><span className="text-primary-300 font-semibold">$0 commission</span> — you keep it all</p>
                 </div>
                 <div className="border-t border-primary-500/30 pt-3">
-                  <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Vendor keeps</p>
+                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Vendor keeps</p>
                   <p className="text-3xl font-extrabold text-primary-400">$50</p>
-                  <p className="text-xs text-gray-400 mt-1">...deposited to your account instantly</p>
+                  <p className="text-xs text-white/80 mt-1">...deposited to your account instantly</p>
                 </div>
               </div>
             </div>
