@@ -118,16 +118,6 @@ export default function DealsPage() {
     fetchDeals();
   }, [geoLoading, fetchDeals, filters.radius]);
 
-  const handleLocationSearch = async () => {
-    if (!filters.city.trim()) return;
-    setGeocoding(true);
-    const coords = await geocodeAddress(filters.city.trim());
-    if (coords) {
-      setUserLocation(coords);
-    }
-    setGeocoding(false);
-  };
-
   const handleSearchSubmit = async () => {
     // Geocode the city/ZIP if user entered one
     if (filters.city.trim()) {

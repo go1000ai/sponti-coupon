@@ -1,7 +1,7 @@
 'use client';
 
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { Search, Wallet, QrCode, ChevronRight, Flame, Tag } from 'lucide-react';
+import { Search, Wallet, QrCode, ChevronRight, Tag } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 const steps = [

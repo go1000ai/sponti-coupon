@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpontiCoupon Vendor Flyer — 4x6 Postcard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap');
+
+    :root {
+      --orange: #E8632B;
+      --orange-light: #FEF0EA;
+      --blue: #29ABE2;
+      --blue-light: #E8F7FC;
+      --amber: #F5A623;
+      --dark: #111827;
+      --text: #1f2937;
+      --body: #333333;
+      --muted: #666666;
+      --light-gray: #f3f4f6;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --red: #dc2626;
+      --red-light: #fef2f2;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #d1d5db;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .screen-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    /* ============ FLYER PAGE ============ */
+    .flyer-page {
+      width: 4.25in;
+      height: 6.25in;
+      background: white;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    @media screen {
+      .flyer-page {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        border-radius: 4px;
+      }
+    }
+
+    .bleed-guide {
+      position: absolute;
+      top: 0.125in;
+      left: 0.125in;
+      right: 0.125in;
+      bottom: 0.125in;
+      border: 1px dashed rgba(232, 99, 43, 0.2);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .safe-zone {
+      position: absolute;
+      top: 0.125in;
+      left: 0.125in;
+      width: 4in;
+      height: 6in;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ============ SECTION 1: HEADER ============ */
+    .header {
+      background: var(--dark);
+      padding: 0.1in 0.15in;
+      display: flex;
+      align-items: center;
+      gap: 0.1in;
+      flex-shrink: 0;
+    }
+
+    .header-logo {
+      height: 0.35in;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .header-text {
+      flex: 1;
+    }
+
+    .header-text h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13pt;
+      color: white;
+      line-height: 1.05;
+      letter-spacing: 0.5px;
+    }
+
+    .header-text h1 .highlight {
+      color: var(--orange);
+    }
+
+    .header-text .sub {
+      font-size: 6.5pt;
+      color: rgba(255,255,255,0.7);
+      margin-top: 1px;
+    }
+
+    /* ============ SECTION 2: ROI COMPARISON ============ */
+    .comparison {
+      padding: 0.08in 0.12in 0.06in;
+      flex-shrink: 0;
+    }
+
+    .comparison-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10pt;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 0.05in;
+      letter-spacing: 0.5px;
+    }
+
+    .comparison-grid {
+      display: flex;
+      gap: 0.08in;
+    }
+
+    .comp-col {
+      flex: 1;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .comp-col-header {
+      padding: 0.03in 0.06in;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8pt;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    .comp-col.competitor .comp-col-header {
+      background: var(--light-gray);
+      color: var(--muted);
+    }
+
+    .comp-col.sponti .comp-col-header {
+      background: var(--orange);
+      color: white;
+    }
+
+    .comp-col-body {
+      padding: 0.04in 0.08in 0.05in;
+      font-size: 6.5pt;
+      line-height: 1.45;
+    }
+
+    .comp-col.competitor .comp-col-body {
+      background: var(--red-light);
+      border: 1px solid #fecaca;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+
+    .comp-col.sponti .comp-col-body {
+      background: var(--green-light);
+      border: 1px solid #bbf7d0;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+    }
+
+    .comp-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--body);
+    }
+
+    .comp-row.negative .val { color: var(--red); font-weight: 700; }
+    .comp-row.positive .val { color: var(--green); font-weight: 700; }
+
+    .comp-divider {
+      border: none;
+      border-top: 1px dashed #d1d5db;
+      margin: 0.02in 0;
+    }
+
+    .comp-result {
+      text-align: center;
+      padding-top: 0.02in;
+    }
+
+    .comp-result .amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15pt;
+      line-height: 1;
+    }
+
+    .comp-col.competitor .comp-result .amount {
+      color: var(--red);
+    }
+
+    .comp-col.sponti .comp-result .amount {
+      color: var(--green);
+    }
+
+    .comp-result .timing {
+      font-size: 5.5pt;
+      color: var(--muted);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
+    .comp-col.sponti .comp-result .timing {
+      color: var(--green);
+      font-weight: 600;
+      font-style: normal;
+    }
+
+    .savings-callout {
+      text-align: center;
+      margin-top: 0.05in;
+      padding: 0.03in 0.08in;
+      background: var(--orange-light);
+      border-radius: 4px;
+      border: 1px solid #fdcfbd;
+    }
+
+    .savings-callout span {
+      font-size: 6.5pt;
+      color: var(--orange);
+      font-weight: 700;
+    }
+
+    .savings-callout .big {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10pt;
+    }
+
+    /* ============ SECTION 3: BENEFITS GRID ============ */
+    .benefits {
+      padding: 0.06in 0.12in;
+      flex-shrink: 0;
+    }
+
+    .benefits-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8.5pt;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 0.04in;
+      letter-spacing: 0.5px;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.03in 0.1in;
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: center;
+      gap: 0.05in;
+    }
+
+    .benefit-icon {
+      width: 0.18in;
+      height: 0.18in;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9pt;
+      flex-shrink: 0;
+      background: var(--orange-light);
+    }
+
+    .benefit-item:nth-child(even) .benefit-icon {
+      background: var(--blue-light);
+    }
+
+    .benefit-text {
+      font-size: 6.5pt;
+      color: var(--text);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    /* ============ SECTION 4: FOUNDERS PROMO ============ */
+    .promo {
+      margin: 0.04in 0.12in;
+      padding: 0.07in 0.12in;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--amber) 100%);
+      border-radius: 6px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .promo-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8.5pt;
+      color: white;
+      letter-spacing: 1.5px;
+      margin-bottom: 0.01in;
+    }
+
+    .promo-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14pt;
+      color: white;
+      line-height: 1.05;
+      margin-bottom: 0.02in;
+    }
+
+    .promo-details {
+      font-size: 6.5pt;
+      color: rgba(255,255,255,0.9);
+      margin-bottom: 0.01in;
+    }
+
+    .promo-small {
+      font-size: 6pt;
+      color: rgba(255,255,255,0.75);
+    }
+
+    /* ============ SECTION 5: PRICING ============ */
+    .pricing {
+      padding: 0.05in 0.12in 0.03in;
+      flex-shrink: 0;
+    }
+
+    .pricing-grid {
+      display: flex;
+      gap: 0.06in;
+    }
+
+    .price-col {
+      flex: 1;
+      text-align: center;
+      padding: 0.04in 0.03in;
+      border-radius: 5px;
+      border: 1px solid #e5e7eb;
+      position: relative;
+    }
+
+    .price-col.popular {
+      border-color: var(--orange);
+      border-width: 2px;
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -0.055in;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--orange);
+      color: white;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 5.5pt;
+      padding: 1px 5px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+    }
+
+    .price-tier {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8pt;
+      color: var(--dark);
+      letter-spacing: 0.5px;
+    }
+
+    .price-amount {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13pt;
+      line-height: 1.1;
+    }
+
+    .price-col:nth-child(1) .price-amount { color: var(--blue); }
+    .price-col:nth-child(2) .price-amount { color: var(--blue); }
+    .price-col:nth-child(3) .price-amount { color: var(--orange); }
+
+    .price-deals {
+      font-size: 5.5pt;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .pricing-note {
+      text-align: center;
+      font-size: 5.5pt;
+      color: var(--muted);
+      margin-top: 0.03in;
+    }
+
+    /* ============ SECTION 6: CTA FOOTER ============ */
+    .cta-footer {
+      margin-top: auto;
+      padding: 0.05in 0.12in 0.04in;
+      display: flex;
+      align-items: center;
+      gap: 0.1in;
+    }
+
+    .cta-qr {
+      width: 0.48in;
+      height: 0.48in;
+      border: 2px solid var(--orange);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .cta-qr span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 6.5pt;
+      color: var(--orange);
+      opacity: 0.5;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .cta-info {
+      flex: 1;
+    }
+
+    .cta-info .cta-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10pt;
+      color: var(--orange);
+      letter-spacing: 0.5px;
+    }
+
+    .cta-info .cta-url {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .cta-info .cta-email {
+      font-size: 6pt;
+      color: var(--body);
+    }
+
+    .cta-info .cta-social {
+      font-size: 6pt;
+      color: var(--blue);
+    }
+
+    .footer-bar {
+      height: 3px;
+      background: linear-gradient(to right, var(--orange), var(--blue));
+      flex-shrink: 0;
+    }
+
+    /* ============ PRINT ============ */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+        margin: 0;
+      }
+      .screen-label { display: none; }
+      .bleed-guide { display: none; }
+      .flyer-page {
+        box-shadow: none;
+        border-radius: 0;
+      }
+      @page {
+        size: 4.25in 6.25in;
+        margin: 0;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="screen-label">VENDOR FLYER — 4" x 6" POSTCARD</div>
+
+  <div class="flyer-page">
+    <div class="bleed-guide"></div>
+
+    <div class="safe-zone">
+
+      <!-- ===== SECTION 1: HEADER ===== -->
+      <div class="header">
+        <img src="../public/logo.png" alt="SpontiCoupon" class="header-logo">
+        <div class="header-text">
+          <h1>STOP LOSING <span class="highlight">50%</span> OF YOUR<br>REVENUE TO DEAL PLATFORMS</h1>
+          <div class="sub">Keep 100% of what you earn with SpontiCoupon</div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 2: ROI COMPARISON ===== -->
+      <div class="comparison">
+        <div class="comparison-title">THE $100 DEAL BREAKDOWN</div>
+        <div class="comparison-grid">
+
+          <!-- Competitor Column -->
+          <div class="comp-col competitor">
+            <div class="comp-col-header">COMMISSION PLATFORMS</div>
+            <div class="comp-col-body">
+              <div class="comp-row">
+                <span>Customer pays</span>
+                <span class="val">$100</span>
+              </div>
+              <div class="comp-row negative">
+                <span>Platform takes</span>
+                <span class="val">-$50</span>
+              </div>
+              <hr class="comp-divider">
+              <div class="comp-result">
+                <div class="amount">$50</div>
+                <div class="timing">You keep &bull; Wait 60-90 days</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SpontiCoupon Column -->
+          <div class="comp-col sponti">
+            <div class="comp-col-header">SPONTICOUPON</div>
+            <div class="comp-col-body">
+              <div class="comp-row">
+                <span>Customer pays</span>
+                <span class="val">$100</span>
+              </div>
+              <div class="comp-row positive">
+                <span>Commission</span>
+                <span class="val">$0</span>
+              </div>
+              <hr class="comp-divider">
+              <div class="comp-result">
+                <div class="amount">$100</div>
+                <div class="timing">You keep &bull; Paid instantly</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="savings-callout">
+          <span>On $10,000/mo in sales: Save <span class="big">$4,801</span>/mo vs commission platforms</span>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 3: BENEFITS GRID ===== -->
+      <div class="benefits">
+        <div class="benefits-title">EVERYTHING YOU NEED TO GROW</div>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x1F4B0;</div>
+            <div class="benefit-text">0% Commission</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x26A1;</div>
+            <div class="benefit-text">Instant Payouts</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x1F916;</div>
+            <div class="benefit-text">AI-Powered Tools</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x2764;&#xFE0F;</div>
+            <div class="benefit-text">Loyalty Program</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x1F4F1;</div>
+            <div class="benefit-text">Social Auto-Posting</div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">&#x2705;</div>
+            <div class="benefit-text">No Contracts</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 4: FOUNDERS LAUNCH PROMO ===== -->
+      <div class="promo">
+        <div class="promo-badge">&#x1F525; FOUNDERS LAUNCH &mdash; LIMITED OFFER</div>
+        <div class="promo-headline">2 Months FREE + 20% Off Forever</div>
+        <div class="promo-details">First 200 Vendors &bull; Through April 30, 2026</div>
+        <div class="promo-small">Business: $199/mo &rarr; $0 for 2 months, then $159/mo for life</div>
+      </div>
+
+      <!-- ===== SECTION 5: PRICING STRIP ===== -->
+      <div class="pricing">
+        <div class="pricing-grid">
+          <div class="price-col">
+            <div class="price-tier">STARTER</div>
+            <div class="price-amount">$49<span style="font-size:7pt">/mo</span></div>
+            <div class="price-deals">6 deals/month</div>
+          </div>
+          <div class="price-col">
+            <div class="price-tier">PRO</div>
+            <div class="price-amount">$99<span style="font-size:7pt">/mo</span></div>
+            <div class="price-deals">45 deals/month</div>
+          </div>
+          <div class="price-col popular">
+            <div class="popular-badge">BEST VALUE</div>
+            <div class="price-tier">BUSINESS</div>
+            <div class="price-amount">$199<span style="font-size:7pt">/mo</span></div>
+            <div class="price-deals">150 deals/month</div>
+          </div>
+        </div>
+        <div class="pricing-note">All plans: 0% transaction fees &bull; 20% off annual billing &bull; Cancel anytime</div>
+      </div>
+
+      <!-- ===== SECTION 6: CTA + FOOTER ===== -->
+      <div class="cta-footer">
+        <div class="cta-qr">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fsponticoupon.com%2Fpricing&color=E8632B" alt="Scan to visit sponticoupon.com/pricing" style="width:100%;height:100%;border-radius:3px;">
+        </div>
+        <div class="cta-info">
+          <div class="cta-headline">SCAN TO GET STARTED</div>
+          <div class="cta-url">sponticoupon.com</div>
+          <div class="cta-email">vendors@sponticoupon.com</div>
+          <div class="cta-social">facebook.com/sponticoupon</div>
+        </div>
+      </div>
+
+      <div class="footer-bar"></div>
+
+    </div><!-- /.safe-zone -->
+  </div><!-- /.flyer-page -->
+
+</body>
+</html>

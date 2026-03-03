@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpontiCoupon Business Card</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap');
+
+    :root {
+      --orange: #E8632B;
+      --blue: #29ABE2;
+      --amber: #F5A623;
+      --dark: #111827;
+      --text: #333333;
+      --muted: #666666;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+      margin-top: 30px;
+    }
+    .label:first-of-type { margin-top: 0; }
+
+    .card-page {
+      width: 3.75in;
+      height: 2.25in;
+      background: white;
+      position: relative;
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    @media screen {
+      .card-page {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-radius: 4px;
+      }
+    }
+
+    .bleed-guide {
+      position: absolute;
+      top: 0.125in;
+      left: 0.125in;
+      right: 0.125in;
+      bottom: 0.125in;
+      border: 1px dashed rgba(232, 99, 43, 0.25);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .safe-zone {
+      position: absolute;
+      top: 0.125in;
+      left: 0.125in;
+      width: 3.5in;
+      height: 2in;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ============ FRONT ============ */
+    .front .safe-zone {
+      padding: 0.15in 0.2in;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .front-logo {
+      width: 1.9in;
+      height: auto;
+      margin-bottom: 0.1in;
+    }
+
+    .front-tagline {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 10pt;
+      color: var(--text);
+      margin-bottom: 0.12in;
+    }
+
+    .front-url {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 13pt;
+      color: var(--orange);
+      letter-spacing: 1px;
+    }
+
+    .gradient-bar {
+      position: absolute;
+      bottom: 0.125in;
+      left: 0.2in;
+      right: 0.2in;
+      height: 3px;
+      background: linear-gradient(to right, var(--orange), var(--blue));
+      border-radius: 2px;
+    }
+
+    /* ============ BACK ============ */
+    .back .safe-zone {
+      padding: 0.15in 0.18in;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .back-header {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 12pt;
+      color: var(--orange);
+      letter-spacing: 1px;
+      margin-bottom: 0.06in;
+    }
+
+    .benefits-list {
+      list-style: none;
+      margin-bottom: 0.1in;
+      width: 100%;
+    }
+
+    .benefits-list li {
+      font-size: 7.5pt;
+      color: var(--text);
+      line-height: 1.4;
+      padding-left: 0.12in;
+      position: relative;
+      margin-bottom: 0.02in;
+    }
+
+    .benefits-list li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 4px;
+      width: 5px;
+      height: 5px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+
+    .back-footer {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.12in;
+      width: 100%;
+      margin-top: auto;
+    }
+
+    .qr-box {
+      width: 0.6in;
+      height: 0.6in;
+      border: 2px solid var(--orange);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .qr-box span {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 8pt;
+      color: var(--orange);
+      opacity: 0.6;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .contact-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 0.02in;
+      justify-content: center;
+      padding-top: 0.02in;
+    }
+
+    .contact-stack .email {
+      font-size: 7pt;
+      color: var(--text);
+    }
+
+    .contact-stack .social {
+      font-size: 6.5pt;
+      color: var(--blue);
+    }
+
+    .contact-stack .url {
+      font-size: 7.5pt;
+      color: var(--orange);
+      font-weight: 700;
+    }
+
+    /* ============ PRINT ============ */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+        margin: 0;
+      }
+      .label { display: none; }
+      .bleed-guide { display: none; }
+      .card-page {
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+      }
+      @page {
+        size: 3.75in 2.25in;
+        margin: 0;
+      }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======== FRONT ======== -->
+  <div class="label">FRONT</div>
+  <div class="card-page front">
+    <div class="bleed-guide"></div>
+    <div class="safe-zone">
+      <img src="../public/logo.png" alt="SpontiCoupon" class="front-logo">
+      <div class="front-tagline">Your Deals. Your Revenue.</div>
+      <div class="front-url">sponticoupon.com</div>
+    </div>
+    <div class="gradient-bar"></div>
+  </div>
+
+  <!-- ======== BACK ======== -->
+  <div class="label">BACK</div>
+  <div class="card-page back">
+    <div class="bleed-guide"></div>
+    <div class="safe-zone">
+      <div class="back-header">GROW YOUR BUSINESS</div>
+      <ul class="benefits-list">
+        <li><strong>0% Commission</strong> on Every Sale</li>
+        <li><strong>Instant</strong> Customer Deposits</li>
+        <li><strong>AI Tools</strong> + Loyalty Program</li>
+      </ul>
+      <div class="back-footer">
+        <div class="qr-box">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fsponticoupon.com%2Fpricing&color=E8632B" alt="Scan to visit sponticoupon.com/pricing" style="width:100%;height:100%;border-radius:3px;">
+        </div>
+        <div class="contact-stack">
+          <span class="email">vendors@sponticoupon.com</span>
+          <span class="social">facebook.com/sponticoupon</span>
+          <span class="url">sponticoupon.com</span>
+        </div>
+      </div>
+    </div>
+    <div class="gradient-bar"></div>
+  </div>
+
+</body>
+</html>
