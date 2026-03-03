@@ -87,7 +87,11 @@ export async function postDealToSocial(dealId: string, vendorId: string): Promis
   // 5. Generate platform-specific captions
   const captions = await generateCaptions(dealForPost);
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
-  const imageUrl = deal.image_url || '';
+
+  // Use branded social image (generated on-the-fly by our API)
+  const brandedImageUrl = `${APP_URL}/api/social/generate-image?deal_id=${deal.id}`;
+  // Fallback to raw deal image if branded generation might fail
+  const imageUrl = brandedImageUrl || deal.image_url || '';
 
   // 6. Post to each connection in parallel with error isolation
   const results = await Promise.allSettled(

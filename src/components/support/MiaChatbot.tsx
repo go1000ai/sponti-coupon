@@ -102,7 +102,7 @@ export function MiaAvatar({ size = 32 }: { size?: number }) {
 
 function getGreeting(userRole: string): string {
   if (userRole === 'visitor') {
-    return "Hey there! I'm Mia. Whether you're looking for amazing deals or thinking about listing your business — I'm here to help! What can I tell you?";
+    return "Hey there! I'm Mia, your SpontiCoupon guide. Looking for the best local deals or want to grow your business with us? Ask me anything — I'm here to help!";
   }
   return "Hi! I'm Mia, your SpontiCoupon assistant. How can I help you today?";
 }
