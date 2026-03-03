@@ -178,7 +178,7 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
                   >
                     {item.type === 'image' ? (
                       <div className="aspect-square bg-gray-50">
-                        <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" />
+                        <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
                       </div>
                     ) : (
                       <div className="aspect-video bg-gray-900 relative">

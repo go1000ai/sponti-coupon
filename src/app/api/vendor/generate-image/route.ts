@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
       model: 'gemini-3.1-flash-image-preview',
       contents: prompt,
       config: {
-        responseModalities: ['TEXT', 'IMAGE'],
+        responseModalities: ['IMAGE'],
       },
     });
 
@@ -93,11 +93,19 @@ export async function POST(request: NextRequest) {
     }
 
     if (!imageData) {
-      return NextResponse.json({ error: 'No image was generated. Try a different title or description.' }, { status: 500 });
+      // Log the response structure for debugging
+      console.error('No image data in response. Parts:', JSON.stringify(parts.map(p => ({ text: p.text?.substring(0, 100), hasInlineData: !!p.inlineData, mimeType: p.inlineData?.mimeType }))));
+      return NextResponse.json({ error: 'No image was generated. Try a different or more descriptive prompt.' }, { status: 500 });
     }
 
     // Convert base64 to buffer
     const buffer = Buffer.from(imageData, 'base64');
+
+    // Reject blank/tiny images (< 5KB is likely empty or corrupt)
+    if (buffer.length < 5000) {
+      console.error('Generated image too small:', buffer.length, 'bytes');
+      return NextResponse.json({ error: 'The generated image appears to be blank. Please try a more descriptive prompt.' }, { status: 500 });
+    }
 
     // Upload to Supabase Storage
     const serviceClient = await createServiceRoleClient();

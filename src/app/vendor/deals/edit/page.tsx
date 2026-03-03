@@ -680,7 +680,7 @@ function EditDealPageInner() {
                       style={{ width: '4.5rem', height: '4.5rem' }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt="" className="w-full h-full object-cover" />
+                      <img src={img} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
                       {isMain && <span className="absolute top-0.5 left-0.5 text-[7px] px-1 py-0.5 rounded bg-[#E8632B] text-white font-bold">MAIN</span>}
                       {!isMain && (
                         <button type="button" onClick={(e) => {
@@ -764,7 +764,7 @@ function EditDealPageInner() {
                 )}
                 {imageMode === 'ai' && (
                   <div className="text-center space-y-2">
-                    <input value={customImagePrompt} onChange={e => setCustomImagePrompt(e.target.value)} className="input-field text-sm" placeholder="Describe the image (optional)..." />
+                    <input value={customImagePrompt} onChange={e => setCustomImagePrompt(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading && (form.title || customImagePrompt)) handleAiImageGenerate(); } }} className="input-field text-sm" placeholder="Describe the image (optional)..." />
                     <button type="button" onClick={handleAiImageGenerate} disabled={aiImageLoading || (!form.title && !customImagePrompt)}
                       className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-50 flex items-center gap-1.5 mx-auto">
                       {aiImageLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</> : <><Wand2 className="w-3.5 h-3.5" /> Generate</>}
@@ -841,7 +841,7 @@ function EditDealPageInner() {
                             <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
                               className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" />
+                              <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
                               {isSelected && (
                                 <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
                                   <CheckCircle2 className="w-5 h-5 text-emerald-600 drop-shadow" />

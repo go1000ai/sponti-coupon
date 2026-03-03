@@ -76,13 +76,23 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const imageResponse = await fetch(resolvedImageUrl);
-    if (!imageResponse.ok) {
-      return NextResponse.json({ error: 'Failed to fetch the deal image' }, { status: 400 });
+    // Fetch the deal image with retry (Supabase storage can return transient 502s)
+    let imageResponse: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      imageResponse = await fetch(resolvedImageUrl);
+      if (imageResponse.ok) break;
+      console.warn(`[VideoGen] Image fetch attempt ${attempt + 1} failed: ${imageResponse.status}`);
+      if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
+    }
+    if (!imageResponse || !imageResponse.ok) {
+      return NextResponse.json({ error: `Failed to fetch the deal image (status ${imageResponse?.status || 'unknown'}). The image may still be processing — try again in a few seconds.` }, { status: 400 });
     }
 
     const imageArrayBuffer = await imageResponse.arrayBuffer();
     const imageBuffer = Buffer.from(imageArrayBuffer);
+    if (imageBuffer.length < 1000) {
+      return NextResponse.json({ error: 'The deal image appears to be empty or corrupt. Please re-generate the image first.' }, { status: 400 });
+    }
     const imageBase64 = imageBuffer.toString('base64');
     const imageMimeType = imageResponse.headers.get('content-type') || 'image/png';
 
@@ -135,46 +145,47 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ─── Poll handler — uses raw REST API since SDK requires original operation object ───
+// ─── Poll handler — uses REST API to check operation status ───
 async function handlePoll(operationName: string, userId: string, geminiKey: string) {
   try {
-    // Call the Gemini REST API directly to check operation status
-    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}`;
-    const pollRes = await fetch(pollUrl, {
-      headers: { 'x-goog-api-key': geminiKey },
-    });
+    const pollUrl = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${geminiKey}`;
+    const pollRes = await fetch(pollUrl);
 
     if (!pollRes.ok) {
       const errText = await pollRes.text().catch(() => '');
       console.error('[VideoGen] Poll API error:', pollRes.status, errText);
-      return NextResponse.json({ error: 'Failed to check video status' }, { status: 500 });
+      // Return processing instead of error for transient failures — let client retry
+      if (pollRes.status >= 500) {
+        return NextResponse.json({ status: 'processing', operation_name: operationName });
+      }
+      return NextResponse.json({ error: `Failed to check video status (${pollRes.status})` }, { status: 500 });
     }
 
     const opData = await pollRes.json();
-    console.log('[VideoGen] Poll result — done:', opData.done, 'keys:', Object.keys(opData), 'metadata:', JSON.stringify(opData.metadata || {}).slice(0, 200));
+    console.log('[VideoGen] Poll result — done:', opData.done, 'keys:', Object.keys(opData));
 
     if (!opData.done) {
       return NextResponse.json({ status: 'processing', operation_name: operationName });
     }
 
-    // Operation is done — extract the video URI from the raw response
+    // Operation is done — try multiple response structures (API format varies)
     const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples
       || opData.response?.generatedVideos
-      || opData.result?.generatedVideos;
+      || opData.result?.generatedVideos
+      || opData.result?.generateVideoResponse?.generatedSamples;
 
     if (!generatedVideos || generatedVideos.length === 0) {
-      console.error('[VideoGen] No videos in response:', JSON.stringify(opData.response || opData.result || {}).slice(0, 500));
-      return NextResponse.json({ error: 'No video was generated. Please try again.' }, { status: 500 });
+      console.error('[VideoGen] No videos in response. Full response:', JSON.stringify(opData).slice(0, 1000));
+      return NextResponse.json({ error: 'No video was generated. Please try a different prompt or image.' }, { status: 500 });
     }
 
     const video = generatedVideos[0].video || generatedVideos[0];
     const videoUri = video.uri;
     if (!videoUri) {
-      console.error('[VideoGen] No video URI:', JSON.stringify(generatedVideos[0]).slice(0, 300));
+      console.error('[VideoGen] No video URI:', JSON.stringify(generatedVideos[0]).slice(0, 500));
       return NextResponse.json({ error: 'No video URI returned' }, { status: 500 });
     }
 
-    // Download and upload
     return await finishFromUri(videoUri, userId, geminiKey);
   } catch (err) {
     console.error('[VideoGen] Poll error:', err);

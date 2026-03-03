@@ -308,7 +308,7 @@ export default function ImagePickerModal({
                           : 'border-transparent hover:border-[#E8632B]/50'
                       }`}
                     >
-                      <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" />
+                      <img src={item.url} alt={item.title || 'Media'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
                       {/* Overlays */}
                       {isSelected ? (
                         <div className="absolute inset-0 bg-[#E8632B]/15 flex items-center justify-center">

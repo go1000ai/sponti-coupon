@@ -228,6 +228,7 @@ export default function MediaLibraryPage() {
             <input
               value={imageTitle}
               onChange={e => setImageTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!generating && (customPrompt.trim() || imageTitle.trim())) handleAiGenerate(); } }}
               className="w-full px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="Image title (e.g., 'Sushi Platter Special')"
             />

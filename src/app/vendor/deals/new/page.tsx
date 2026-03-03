@@ -257,6 +257,7 @@ export default function NewDealPage() {
   const [additionalImageUrl, setAdditionalImageUrl] = useState('');
   // Drag reorder state for selected images
   const [imgDragIdx, setImgDragIdx] = useState<number | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [imgDragOverIdx, setImgDragOverIdx] = useState<number | null>(null);
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [aiImageLoading, setAiImageLoading] = useState(false);
@@ -1309,7 +1310,14 @@ export default function NewDealPage() {
                     }`}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img} alt={`Image ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={img}
+                      alt={`Image ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      onMouseEnter={() => setPreviewImage(img)}
+                      onMouseLeave={() => setPreviewImage(null)}
+                      onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }}
+                    />
                     {isMain && (
                       <span className="absolute top-1 left-1 flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded bg-[#E8632B] text-white font-bold shadow-sm">MAIN</span>
                     )}
@@ -1341,6 +1349,16 @@ export default function NewDealPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Hover preview overlay (desktop only) */}
+          {previewImage && (
+            <div className="hidden sm:block fixed inset-0 z-[100] pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={previewImage} alt="Preview" className="max-w-sm max-h-[50vh] object-contain rounded-2xl shadow-2xl border-4 border-white ring-1 ring-black/10" />
+              </div>
             </div>
           )}
 
@@ -1410,6 +1428,7 @@ export default function NewDealPage() {
                   <input
                     value={customImagePrompt}
                     onChange={e => setCustomImagePrompt(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading && (form.title || customImagePrompt)) handleAiImageGenerate(); } }}
                     className="w-full max-w-md mx-auto px-4 py-2.5 rounded-xl border border-emerald-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-3"
                     placeholder="Describe the image (optional — uses deal title if empty)"
                   />
@@ -1532,7 +1551,7 @@ export default function NewDealPage() {
                         <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
                           className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" />
+                          <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
                           {isSelected && (
                             <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
                               <CheckCircle2 className="w-6 h-6 text-emerald-600 drop-shadow" />
