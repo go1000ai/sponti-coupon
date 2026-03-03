@@ -102,7 +102,22 @@ export async function POST(request: NextRequest) {
       ? `${video_prompt}. Professional commercial quality for ${vendor?.business_name || 'this business'}'s ${vendor?.category || ''} deal: "${title || 'Special Deal'}". ${description || ''}`
       : `Smooth cinematic camera movement showcasing this ${vendor?.category || 'business'} deal: "${title || 'Special Deal'}". ${description || ''} Professional commercial quality, engaging and appealing, warm inviting atmosphere.`;
 
-    console.log('[VideoGen] Starting Veo generation for vendor:', user.id);
+    // Pre-flight: verify Veo model is accessible with this API key
+    const modelCheckUrl = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview?key=${geminiKey}`;
+    const modelCheck = await fetch(modelCheckUrl);
+    if (!modelCheck.ok) {
+      const modelErr = await modelCheck.text().catch(() => '');
+      console.error('[VideoGen] Model pre-flight failed:', modelCheck.status, modelErr);
+      if (modelCheck.status === 404) {
+        return NextResponse.json({ error: 'The Veo video model is not available for your API key. Please check your Google AI Studio billing and API access.' }, { status: 403 });
+      }
+      if (modelCheck.status === 403) {
+        return NextResponse.json({ error: 'Your API key does not have access to video generation. Enable billing in Google AI Studio.' }, { status: 403 });
+      }
+    }
+    console.log('[VideoGen] Model pre-flight OK');
+
+    console.log('[VideoGen] Starting Veo generation for vendor:', user.id, 'image size:', imageBuffer.length, 'bytes, mime:', imageMimeType);
     const operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt,
@@ -118,8 +133,17 @@ export async function POST(request: NextRequest) {
     });
 
     const operationName = operation.name;
+    console.log('[VideoGen] Operation response:', JSON.stringify({
+      name: operation.name,
+      done: operation.done,
+      hasResponse: !!operation.response,
+      hasError: !!((operation as unknown) as Record<string, unknown>).error,
+      keys: Object.keys(operation),
+    }));
+
     if (!operationName) {
-      return NextResponse.json({ error: 'Failed to start video generation' }, { status: 500 });
+      console.error('[VideoGen] No operation name. Full:', JSON.stringify(operation).slice(0, 1000));
+      return NextResponse.json({ error: 'Failed to start video generation — no operation ID returned.' }, { status: 500 });
     }
 
     console.log('[VideoGen] Operation started:', operationName);
@@ -137,9 +161,24 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('[VideoGen] Start error:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED') || errorMessage.includes('quota')) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errLower = errorMessage.toLowerCase();
+
+    // Billing / access errors
+    if (errLower.includes('permission') || errLower.includes('billing') || errLower.includes('not available') || errLower.includes('not found') || errLower.includes('403') || errLower.includes('does not exist')) {
+      return NextResponse.json({ error: 'Video generation requires a paid Gemini API plan with Veo access. Please enable billing in Google AI Studio.' }, { status: 403 });
+    }
+    // Quota / rate limit
+    if (errLower.includes('429') || errLower.includes('resource_exhausted') || errLower.includes('quota')) {
       return NextResponse.json({ error: 'Video generation quota exceeded. Please try again later.' }, { status: 429 });
+    }
+    // Content safety
+    if (errLower.includes('safety') || errLower.includes('policy') || errLower.includes('blocked') || errLower.includes('harm')) {
+      return NextResponse.json({ error: 'The image or prompt was blocked by safety filters. Please try different content.' }, { status: 400 });
+    }
+    // Invalid model
+    if (errLower.includes('model') && (errLower.includes('invalid') || errLower.includes('unsupported'))) {
+      return NextResponse.json({ error: 'The video generation model is not available. This may be a billing or region issue.' }, { status: 500 });
     }
     return NextResponse.json({ error: `Failed to generate video: ${errorMessage}` }, { status: 500 });
   }
@@ -168,6 +207,25 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       return NextResponse.json({ status: 'processing', operation_name: operationName });
     }
 
+    // Check for LRO error (Google returns { done: true, error: {...} } on failure)
+    if (opData.error) {
+      const errCode = opData.error.code || 0;
+      const errMsg = opData.error.message || 'Unknown error';
+      const errStatus = opData.error.status || '';
+      console.error('[VideoGen] Operation failed:', errCode, errStatus, errMsg);
+
+      if (errCode === 403 || errStatus === 'PERMISSION_DENIED' || errMsg.includes('billing') || errMsg.includes('not available')) {
+        return NextResponse.json({ error: 'Video generation requires a paid Gemini API plan. Please check your Google AI billing settings.' }, { status: 403 });
+      }
+      if (errCode === 429 || errStatus === 'RESOURCE_EXHAUSTED') {
+        return NextResponse.json({ error: 'Video generation quota exceeded. Please try again later.' }, { status: 429 });
+      }
+      if (errMsg.includes('safety') || errMsg.includes('policy') || errMsg.includes('blocked')) {
+        return NextResponse.json({ error: 'Video generation was blocked by content safety filters. Please try a different prompt or image.' }, { status: 400 });
+      }
+      return NextResponse.json({ error: `Video generation failed: ${errMsg}` }, { status: 500 });
+    }
+
     // Operation is done — try multiple response structures (API format varies)
     const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples
       || opData.response?.generatedVideos
@@ -175,8 +233,8 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       || opData.result?.generateVideoResponse?.generatedSamples;
 
     if (!generatedVideos || generatedVideos.length === 0) {
-      console.error('[VideoGen] No videos in response. Full response:', JSON.stringify(opData).slice(0, 1000));
-      return NextResponse.json({ error: 'No video was generated. Please try a different prompt or image.' }, { status: 500 });
+      console.error('[VideoGen] No videos in response. Full response:', JSON.stringify(opData).slice(0, 2000));
+      return NextResponse.json({ error: 'No video was generated. The API returned an empty result — this may indicate a billing or quota issue. Check your Google AI Studio billing.' }, { status: 500 });
     }
 
     const video = generatedVideos[0].video || generatedVideos[0];
