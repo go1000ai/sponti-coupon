@@ -34,6 +34,7 @@ import {
   Key,
   Calendar,
   Share2,
+  Target,
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -65,6 +66,7 @@ const navGroups: NavGroup[] = [
       { label: 'Claims', href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
       { label: 'Reviews', href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
       { label: 'Locations', href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
+      { label: 'Leads', href: '/admin/leads', icon: <Target className="w-5 h-5" /> },
     ],
   },
   {
