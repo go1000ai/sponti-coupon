@@ -716,7 +716,7 @@ export default function NewDealPage() {
       }
 
       // Phase 2: Poll until done
-      const operationName = startData.operation_name;
+      let operationName = startData.operation_name;
       if (!operationName) {
         setError('Failed to start video generation');
         setAiVideoLoading(false);
@@ -741,6 +741,12 @@ export default function NewDealPage() {
           setError(pollData.error || 'Video generation failed');
           setAiVideoLoading(false);
           return;
+        }
+
+        // If safety filter triggered and server auto-retried with text-only
+        if (pollData.retried && pollData.operation_name) {
+          operationName = pollData.operation_name;
+          continue; // poll the new operation
         }
 
         if (pollData.status === 'done' && pollData.url) {
@@ -1569,15 +1575,36 @@ export default function NewDealPage() {
                       className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400"
                       rows={2} placeholder="e.g., Slow zoom into the product with warm lighting, then pan to show the details..." />
                   </div>
-                  {/* Generate button */}
-                  <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
-                    {aiVideoLoading ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
-                    ) : (
-                      <><Video className="w-4 h-4" /> Generate Video</>
-                    )}
-                  </button>
+                  {/* Generate button + guidelines */}
+                  <div className="flex items-center gap-2">
+                    <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
+                      {aiVideoLoading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating your video...</>
+                      ) : (
+                        <><Video className="w-4 h-4" /> Generate Video</>
+                      )}
+                    </button>
+                    <div className="relative group">
+                      <button type="button" className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" aria-label="Video guidelines">
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <div className="absolute bottom-full right-0 mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <p className="font-semibold mb-1.5">Video Generation Tips</p>
+                        <p className="text-gray-300 mb-2">Google&apos;s AI has content guidelines. For best results:</p>
+                        <ul className="space-y-1 text-gray-300">
+                          <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Use product/service photos without people</li>
+                          <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Clean images without text or logos</li>
+                          <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Simple, descriptive video prompts</li>
+                          <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No photos with children</li>
+                          <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No copyrighted or branded content</li>
+                          <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No violent or explicit imagery</li>
+                        </ul>
+                        <p className="text-gray-400 mt-2 text-[10px]">If an image is blocked, Ava will auto-retry with a generic video.</p>
+                        <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />
+                      </div>
+                    </div>
+                  </div>
                   {aiVideoLoading && (
                     <div className="space-y-2">
                       <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">

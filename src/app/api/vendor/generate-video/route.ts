@@ -231,12 +231,40 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
     const gvr = opData.response?.generateVideoResponse;
     console.log('[VideoGen] generateVideoResponse:', JSON.stringify(gvr).slice(0, 2000));
 
-    // Check for RAI (Responsible AI) content filter
+    // Check for RAI (Responsible AI) content filter — auto-retry without image
     if (gvr?.raiMediaFilteredCount && gvr.raiMediaFilteredCount > 0) {
       const reasons = gvr.raiMediaFilteredReasons || [];
-      console.warn('[VideoGen] Content filtered by Google safety. Count:', gvr.raiMediaFilteredCount, 'Reasons:', reasons);
+      console.warn('[VideoGen] Content filtered by Google safety. Count:', gvr.raiMediaFilteredCount, 'Reasons:', reasons, '— retrying text-only');
+
+      // Auto-retry as text-to-video (no image) to bypass image-based safety filter
+      try {
+        const ai = new GoogleGenAI({ apiKey: geminiKey });
+        const fallbackPrompt = `Professional commercial video for a local business service. Cinematic camera movement, warm inviting atmosphere, clean modern visuals. No text, no logos, no people.`;
+        const retryOp = await ai.models.generateVideos({
+          model: 'veo-3.1-generate-preview',
+          prompt: fallbackPrompt,
+          config: {
+            aspectRatio: '16:9',
+            numberOfVideos: 1,
+            durationSeconds: 8,
+          },
+        });
+
+        if (retryOp.name) {
+          console.log('[VideoGen] Text-only retry started:', retryOp.name);
+          return NextResponse.json({
+            status: 'processing',
+            operation_name: retryOp.name,
+            message: 'Image was filtered by safety — retrying with text-only video generation.',
+            retried: true,
+          });
+        }
+      } catch (retryErr) {
+        console.error('[VideoGen] Text-only retry failed:', retryErr);
+      }
+
       return NextResponse.json({
-        error: `The generated video was blocked by Google's content safety filter${reasons.length ? ` (${reasons.join(', ')})` : ''}. Try using a different image or a simpler prompt — avoid text overlays, logos, or brand names in your source image.`,
+        error: `The source image was blocked by Google's safety filter${reasons.length ? ` (${reasons.join(', ')})` : ''}. Please try a different image.`,
       }, { status: 400 });
     }
 
