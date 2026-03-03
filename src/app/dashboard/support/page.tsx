@@ -585,12 +585,13 @@ export default function CustomerSupportPage() {
   const [toast, setToast] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const ticketSectionRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top once content has loaded (not during loading spinner)
+  // Scroll to top once content has loaded — target the dashboard <main> scroll container
   useEffect(() => {
     if (!authLoading && !loading) {
       requestAnimationFrame(() => {
+        const main = document.querySelector('main');
+        if (main) main.scrollTo({ top: 0, behavior: 'instant' });
         window.scrollTo({ top: 0, behavior: 'instant' });
-        document.documentElement.scrollTop = 0;
       });
     }
   }, [authLoading, loading]);

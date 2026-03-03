@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Facebook } from 'lucide-react';
+import { Facebook, Instagram } from 'lucide-react';
 
 export function Footer() {
   const pathname = usePathname();
@@ -42,6 +42,15 @@ export function Footer() {
                 aria-label="Follow us on Facebook"
               >
                 <Facebook className="w-4 h-4 text-white" />
+              </a>
+              <a
+                href="https://www.instagram.com/sponticoupon"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                aria-label="Follow us on Instagram"
+              >
+                <Instagram className="w-4 h-4 text-white" />
               </a>
             </div>
           </div>

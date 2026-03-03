@@ -152,12 +152,15 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
+    // Skip scroll for the initial greeting — it would push the whole page down
+    if (messages.length <= 1) return;
 
     requestAnimationFrame(() => {
       const lastMsg = messages[messages.length - 1];
-      // If the latest message is from Mia, scroll so it starts at the top of the chat area
+      // If the latest message is from Mia, scroll within the chat container only
       if (lastMsg?.role === 'assistant' && lastAssistantRef.current) {
-        lastAssistantRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const offset = lastAssistantRef.current.offsetTop - container.offsetTop;
+        container.scrollTo({ top: offset, behavior: 'smooth' });
       } else {
         // User message — scroll to bottom as usual
         container.scrollTop = container.scrollHeight;
