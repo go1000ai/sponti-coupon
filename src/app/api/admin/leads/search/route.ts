@@ -39,11 +39,14 @@ export async function GET(request: NextRequest) {
     sort_by: 'review_count',
   };
 
-  // Yelp radius is in meters, max 40000 (~25 miles)
-  if (radiusMiles > 0) {
-    const radiusMeters = Math.min(Math.round(radiusMiles * 1609.34), 40000);
+  // Yelp radius is in meters, max 40000 (~25 miles).
+  // For larger radii (50/100 mi) we omit the radius param so Yelp returns
+  // its best results for the entire metro area.
+  if (radiusMiles > 0 && radiusMiles <= 25) {
+    const radiusMeters = Math.round(radiusMiles * 1609.34);
     yelpParams.radius = String(radiusMeters);
   }
+  // radiusMiles > 25 → no radius param → Yelp searches the full region
 
   const params = new URLSearchParams(yelpParams);
 
