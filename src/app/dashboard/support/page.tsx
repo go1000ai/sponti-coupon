@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { MiaChatbot } from '@/components/support/MiaChatbot';
+import { OliviaChatbot } from '@/components/support/OliviaChatbot';
 import {
   Headphones,
   Loader2,
@@ -677,12 +677,12 @@ export default function CustomerSupportPage() {
         <Headphones className="w-8 h-8 text-primary-500" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Support & Help</h1>
-          <p className="text-sm text-gray-500">Chat with Mia or open a support ticket</p>
+          <p className="text-sm text-gray-500">Chat with Olivia or open a support ticket</p>
         </div>
       </div>
 
-      {/* Mia Chatbot */}
-      <MiaChatbot onOpenTicket={scrollToTickets} />
+      {/* Olivia Chatbot */}
+      <OliviaChatbot onOpenTicket={scrollToTickets} />
 
       {/* Divider — Need more help? */}
       <div ref={ticketSectionRef} className="my-8">

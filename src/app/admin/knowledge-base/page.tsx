@@ -156,7 +156,7 @@ export default function AdminKnowledgeBasePage() {
             Knowledge Base
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Manage Mia&apos;s knowledge base entries for all vendors.
+            Manage Olivia&apos;s knowledge base entries for all vendors.
           </p>
         </div>
         {!showForm && (

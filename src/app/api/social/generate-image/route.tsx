@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
       ? `$${deal.deal_price}`
       : 'SPECIAL DEAL';
   const originalPrice = deal.original_price ? `$${deal.original_price}` : '';
-  const dealPrice = deal.deal_price ? `$${deal.deal_price}` : '';
 
   // Truncate title if too long
   const title = deal.title.length > 60 ? deal.title.substring(0, 57) + '...' : deal.title;

@@ -65,7 +65,7 @@ const navItems: NavItem[] = [
   { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Get Paid', href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" /> },
-  { label: 'Support', href: '/vendor/support', icon: <img src="/mia.png" alt="Mia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
+  { label: 'Support', href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
   { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
 ];
 

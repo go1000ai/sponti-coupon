@@ -130,9 +130,9 @@ export const VENDOR_DASHBOARD_STEPS: Step[] = [
   },
   {
     target: '[data-tour="vendor-nav-support"]',
-    title: 'Support — Meet Mia',
+    title: 'Support — Meet Olivia',
     content:
-      'Need help? Chat with Mia, our AI support assistant, for instant answers. You can also open a support ticket for complex issues.',
+      'Need help? Chat with Olivia, our AI support assistant, for instant answers. You can also open a support ticket for complex issues.',
     placement: 'right',
     disableBeacon: true,
   },
@@ -236,9 +236,9 @@ export const CUSTOMER_DASHBOARD_STEPS: Step[] = [
   },
   {
     target: '[data-tour="customer-nav-support"]',
-    title: 'Support — Meet Mia',
+    title: 'Support — Meet Olivia',
     content:
-      'Need help? Chat with Mia, our AI assistant, for instant answers about deals, redemptions, or your account. Open a ticket for anything else.',
+      'Need help? Chat with Olivia, our AI assistant, for instant answers about deals, redemptions, or your account. Open a ticket for anything else.',
     placement: 'right',
     disableBeacon: true,
   },
@@ -254,7 +254,7 @@ export const CUSTOMER_DASHBOARD_STEPS: Step[] = [
     target: 'body',
     title: "You're All Set!",
     content:
-      "You have everything you need to start saving. Browse deals, claim coupons, and show your QR code at the business to redeem. Happy saving!",
+      "You have everything you need to start saving. Browse deals, claim coupons, and show your QR code at the business to redeem. Happy savings!",
     placement: 'center',
     disableBeacon: true,
   },

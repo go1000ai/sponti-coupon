@@ -33,9 +33,9 @@ interface ChatMessage {
 }
 
 const MAX_USER_MESSAGES = 25;
-const STORAGE_KEY = 'mia-chat-messages';
+const STORAGE_KEY = 'olivia-chat-messages';
 
-interface MiaChatbotProps {
+interface OliviaChatbotProps {
   onOpenTicket?: () => void;
   userRole?: 'vendor' | 'customer' | 'visitor';
   variant?: 'card' | 'floating';
@@ -67,9 +67,9 @@ const VENDOR_PROSPECT_SUGGESTIONS = [
   'How do deals work?',
 ];
 
-const MIA_AVATAR = '/mia.png';
+const OLIVIA_AVATAR = '/olivia.png';
 
-export function MiaAvatar({ size = 32 }: { size?: number }) {
+export function OliviaAvatar({ size = 32 }: { size?: number }) {
   const [imgError, setImgError] = useState(false);
 
   if (imgError) {
@@ -78,7 +78,7 @@ export function MiaAvatar({ size = 32 }: { size?: number }) {
         className="rounded-full bg-gradient-to-br from-primary-400 to-orange-400 flex items-center justify-center flex-shrink-0 text-white font-bold"
         style={{ width: size, height: size, fontSize: size * 0.45 }}
       >
-        M
+        O
       </div>
     );
   }
@@ -89,8 +89,8 @@ export function MiaAvatar({ size = 32 }: { size?: number }) {
       style={{ width: size, height: size, minWidth: size, minHeight: size }}
     >
       <Image
-        src={MIA_AVATAR}
-        alt="Mia"
+        src={OLIVIA_AVATAR}
+        alt="Olivia"
         width={size}
         height={size}
         className="w-full h-full object-cover"
@@ -102,9 +102,9 @@ export function MiaAvatar({ size = 32 }: { size?: number }) {
 
 function getGreeting(userRole: string): string {
   if (userRole === 'visitor') {
-    return "Hey there! I'm Mia, your SpontiCoupon guide. Looking for the best local deals or want to grow your business with us? Ask me anything — I'm here to help!";
+    return "Hey there! I'm Olivia, your SpontiCoupon guide. Looking for the best local deals or want to grow your business with us? Ask me anything — I'm here to help!";
   }
-  return "Hi! I'm Mia, your SpontiCoupon assistant. How can I help you today?";
+  return "Hi! I'm Olivia, your SpontiCoupon assistant. How can I help you today?";
 }
 
 function getSuggestions(userRole: string, pageContext?: string): string[] {
@@ -114,7 +114,7 @@ function getSuggestions(userRole: string, pageContext?: string): string[] {
   return CUSTOMER_SUGGESTIONS;
 }
 
-export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: MiaChatbotProps) {
+export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: OliviaChatbotProps) {
   const isFloating = variant === 'floating';
 
   // Load persisted messages from sessionStorage (floating widget only)
@@ -157,7 +157,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
 
     requestAnimationFrame(() => {
       const lastMsg = messages[messages.length - 1];
-      // If the latest message is from Mia, scroll within the chat container only
+      // If the latest message is from Olivia, scroll within the chat container only
       if (lastMsg?.role === 'assistant' && lastAssistantRef.current) {
         const offset = lastAssistantRef.current.offsetTop - container.offsetTop;
         container.scrollTo({ top: offset, behavior: 'smooth' });
@@ -255,7 +255,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
               ref={isLastAssistant ? lastAssistantRef : undefined}
               className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.role === 'assistant' && <MiaAvatar size={28} />}
+              {msg.role === 'assistant' && <OliviaAvatar size={28} />}
               <div
                 className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
@@ -272,7 +272,7 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
         {/* Typing indicator */}
         {loading && (
           <div className="flex gap-2.5 justify-start">
-            <MiaAvatar size={28} />
+            <OliviaAvatar size={28} />
             <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
               <div className="flex gap-1.5">
                 <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -365,9 +365,9 @@ export function MiaChatbot({ onOpenTicket, userRole = 'customer', variant = 'car
     <div className="card overflow-hidden">
       {/* Header */}
       <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 sm:px-6 py-4 flex items-center gap-3">
-        <MiaAvatar size={40} />
+        <OliviaAvatar size={40} />
         <div>
-          <h3 className="text-white font-bold text-base">Mia</h3>
+          <h3 className="text-white font-bold text-base">Olivia</h3>
           <p className="text-secondary-200 text-xs">Support Assistant</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">

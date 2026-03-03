@@ -3,14 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { X, RotateCcw } from 'lucide-react';
-import { MiaChatbot, MiaAvatar } from './MiaChatbot';
+import { OliviaChatbot, OliviaAvatar } from './OliviaChatbot';
 
 function getPageContext(pathname: string): 'general' | 'vendor-prospect' {
   if (pathname === '/pricing') return 'vendor-prospect';
   return 'general';
 }
 
-export function MiaFloatingWidget() {
+export function OliviaFloatingWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
@@ -19,7 +19,7 @@ export function MiaFloatingWidget() {
   // Check sessionStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setHasInteracted(sessionStorage.getItem('mia-interacted') === 'true');
+      setHasInteracted(sessionStorage.getItem('olivia-interacted') === 'true');
     }
   }, []);
 
@@ -48,7 +48,7 @@ export function MiaFloatingWidget() {
     setIsOpen(true);
     if (!hasInteracted) {
       setHasInteracted(true);
-      sessionStorage.setItem('mia-interacted', 'true');
+      sessionStorage.setItem('olivia-interacted', 'true');
     }
   };
 
@@ -59,16 +59,16 @@ export function MiaFloatingWidget() {
         <button
           onClick={handleOpen}
           className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[55] w-14 h-14 rounded-full bg-gradient-to-br from-secondary-500 to-secondary-600 shadow-lg shadow-secondary-500/25 hover:shadow-xl hover:shadow-secondary-500/35 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group"
-          aria-label="Chat with Mia"
+          aria-label="Chat with Olivia"
         >
-          <MiaAvatar size={36} />
+          <OliviaAvatar size={36} />
           {/* Pulse ring for attention */}
           {!hasInteracted && (
             <span className="absolute inset-0 rounded-full animate-ping bg-secondary-400 opacity-20 pointer-events-none" />
           )}
           {/* Tooltip */}
           <span className="absolute right-[calc(100%+8px)] top-1/2 -translate-y-1/2 bg-white text-secondary-600 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
-            Chat with Mia
+            Chat with Olivia
           </span>
         </button>
       )}
@@ -84,13 +84,13 @@ export function MiaFloatingWidget() {
             shadow-2xl border border-gray-200"
           style={{ maxWidth: '100%' }}
           role="dialog"
-          aria-label="Chat with Mia, SpontiCoupon assistant"
+          aria-label="Chat with Olivia, SpontiCoupon assistant"
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-secondary-500 to-secondary-600 px-4 py-3 flex items-center gap-3 shrink-0">
-            <MiaAvatar size={32} />
+            <OliviaAvatar size={32} />
             <div className="flex-1 min-w-0">
-              <h3 className="text-white font-bold text-sm">Mia</h3>
+              <h3 className="text-white font-bold text-sm">Olivia</h3>
               <p className="text-secondary-200 text-[11px]">SpontiCoupon Assistant</p>
             </div>
             <div className="flex items-center gap-1.5 mr-1">
@@ -99,7 +99,7 @@ export function MiaFloatingWidget() {
             </div>
             <button
               onClick={() => {
-                try { sessionStorage.removeItem('mia-chat-messages'); } catch { /* ignore */ }
+                try { sessionStorage.removeItem('olivia-chat-messages'); } catch { /* ignore */ }
                 setChatKey(k => k + 1);
               }}
               className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
@@ -118,7 +118,7 @@ export function MiaFloatingWidget() {
           </div>
 
           {/* Chat body */}
-          <MiaChatbot
+          <OliviaChatbot
             key={chatKey}
             userRole="visitor"
             variant="floating"

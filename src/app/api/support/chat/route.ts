@@ -3,13 +3,13 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/rate-limit';
 
-const BASE_PROMPT = `You are Mia, SpontiCoupon's friendly support assistant.
+const BASE_PROMPT = `You are Olivia, SpontiCoupon's friendly support assistant.
 
 CRITICAL RULES:
 - Keep responses SHORT. 2-4 sentences max. No long paragraphs, no walls of text. If they need more, they'll ask.
 - NEVER use markdown formatting. No bold, no asterisks, no bullet points, no headers, no numbered lists. Plain conversational text only.
 - When directing users to a page, give specific navigation instructions AND include the full clickable link. Example: "Just click on 'For Businesses' in the menu at the top of the page! Here's the direct link: {{BASE_URL}}/pricing"
-- Sound human and warm. You're Mia — friendly, helpful, direct. Like texting a helpful friend.
+- Sound human and warm. You're Olivia — friendly, helpful, direct. Like texting a helpful friend.
 - Get to the point immediately. One idea per response.
 - If something needs admin help or you can't resolve the issue, suggest opening a support ticket.
 - Never make up pricing, policies, or features you're unsure about.
@@ -107,7 +107,7 @@ VENDOR DASHBOARD FEATURES:
 - Branding: custom colors, logo, branded domain (Enterprise only).
 - Subscription: manage plan, view billing.
 - Payment Methods: add and manage payment processors (Stripe, Square, PayPal, Venmo, Zelle, Cash App). Set a primary method for customer deposits.
-- Support: chat with Mia (me!) or open support tickets.
+- Support: chat with Olivia (me!) or open support tickets.
 - Settings: business info, hours, social links, notifications, auto-response settings.
 
 AI FEATURES:
@@ -250,7 +250,7 @@ SAFETY & TRUST:
 SIGNING UP:
 - Click the Sign Up button at the top of the page. It's completely free, no credit card needed.
 - Once you're in, you can start browsing and claiming deals immediately.
-- And Mia will be right there to help with anything once they're signed up.
+- And Olivia will be right there to help with anything once they're signed up.
 
 === VENDOR KNOWLEDGE (for business owner visitors) ===
 
@@ -298,10 +298,10 @@ interface ChatMessage {
   content: string;
 }
 
-// POST /api/support/chat — Stateless chat with Mia
+// POST /api/support/chat — Stateless chat with Olivia
 export async function POST(request: NextRequest) {
   // Rate limit: 20 messages per 15 minutes per IP
-  const limited = rateLimit(request, { maxRequests: 20, windowMs: 15 * 60 * 1000, identifier: 'mia-chat' });
+  const limited = rateLimit(request, { maxRequests: 20, windowMs: 15 * 60 * 1000, identifier: 'olivia-chat' });
   if (limited) return limited;
 
   let body: { messages: ChatMessage[]; userRole?: string; vendorId?: string; origin?: string };
@@ -387,7 +387,7 @@ export async function POST(request: NextRequest) {
       reply: "I'm sorry, I had trouble processing that. Could you try rephrasing your question?",
     });
   } catch (err) {
-    console.error('[Mia Chat] Error:', err);
+    console.error('[Olivia Chat] Error:', err);
     return NextResponse.json({
       reply: "I'm having a little trouble right now. If you need immediate help, please open a support ticket below and our team will assist you.",
     });

@@ -5,7 +5,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { InactivityGuard } from "@/components/auth/InactivityGuard";
-import { MiaFloatingWidget } from "@/components/support/MiaFloatingWidget";
+import { OliviaFloatingWidget } from "@/components/support/OliviaFloatingWidget";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -286,7 +286,7 @@ export default function RootLayout({
         <Navbar />
         <main className="min-h-screen">{children}</main>
         <Footer />
-        <MiaFloatingWidget />
+        <OliviaFloatingWidget />
         <InactivityGuard />
         <ServiceWorkerRegistration />
       </body>
