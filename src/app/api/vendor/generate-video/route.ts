@@ -226,15 +226,21 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       return NextResponse.json({ error: `Video generation failed: ${errMsg}` }, { status: 500 });
     }
 
-    // Operation is done — try multiple response structures (API format varies)
-    const generatedVideos = opData.response?.generateVideoResponse?.generatedSamples
+    // Operation is done — try multiple response structures (REST API format varies)
+    // Google LRO format: { done: true, response: { "@type": "...", generatedSamples: [...] } }
+    const generatedVideos = opData.response?.generatedSamples
+      || opData.response?.generateVideoResponse?.generatedSamples
       || opData.response?.generatedVideos
+      || opData.result?.generatedSamples
       || opData.result?.generatedVideos
       || opData.result?.generateVideoResponse?.generatedSamples;
 
     if (!generatedVideos || generatedVideos.length === 0) {
-      console.error('[VideoGen] No videos in response. Full response:', JSON.stringify(opData).slice(0, 2000));
-      return NextResponse.json({ error: 'No video was generated. The API returned an empty result — this may indicate a billing or quota issue. Check your Google AI Studio billing.' }, { status: 500 });
+      // Log the full structure so we can see exactly what Google returned
+      const responseKeys = opData.response ? Object.keys(opData.response) : [];
+      const resultKeys = opData.result ? Object.keys(opData.result) : [];
+      console.error('[VideoGen] No videos found. response keys:', responseKeys, 'result keys:', resultKeys, 'Full:', JSON.stringify(opData).slice(0, 3000));
+      return NextResponse.json({ error: `No video was generated. API response keys: [${responseKeys.join(', ')}]. Please try again or contact support.` }, { status: 500 });
     }
 
     const video = generatedVideos[0].video || generatedVideos[0];
