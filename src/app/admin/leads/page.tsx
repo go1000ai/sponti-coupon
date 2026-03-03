@@ -228,7 +228,8 @@ export default function AdminLeadsPage() {
 
       const imported: SearchResult[] = data.results || [];
       if (imported.length === 0) {
-        showToast('No businesses found on Groupon for this search', 'error');
+        const msg = data.debug || 'No businesses found on Groupon — try a city name like "Orlando, FL" instead of a zip code, then retry.';
+        showToast(msg, 'error');
         return;
       }
 
