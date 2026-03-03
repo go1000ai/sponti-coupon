@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import {
   MapPin, Phone, Globe, Star, Download, Search,
   Plus, Trash2, Loader2, ExternalLink, Target,
-  CheckCircle2, Users, TrendingUp, UserCheck, X,
+  CheckCircle2, Users, TrendingUp, UserCheck,
 } from 'lucide-react';
 
 type LeadStatus =
