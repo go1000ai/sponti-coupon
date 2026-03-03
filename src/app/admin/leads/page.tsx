@@ -245,7 +245,7 @@ export default function AdminLeadsPage() {
       if (res.status === 409) { showToast('Already saved', 'error'); return; }
       if (!res.ok) throw new Error(data.error || 'Failed to save');
       showToast('Lead saved!', 'success');
-      setSavedPlaceIds((prev) => new Set([...prev, result.place_id]));
+      setSavedPlaceIds((prev) => { const s = new Set(Array.from(prev)); s.add(result.place_id); return s; });
       setLeads((prev) => [data.lead, ...prev]);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to save', 'error');
@@ -271,7 +271,7 @@ export default function AdminLeadsPage() {
         const data = await res.json();
         if (res.ok) {
           saved++;
-          setSavedPlaceIds((prev) => new Set([...prev, result.place_id]));
+          setSavedPlaceIds((prev) => { const s = new Set(Array.from(prev)); s.add(result.place_id); return s; });
           setLeads((prev) => [data.lead, ...prev]);
         }
       } catch { /* skip failed */ }

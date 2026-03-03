@@ -61,10 +61,10 @@ const navItems: NavItem[] = [
   { label: 'Locations', href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
   { label: 'Team', href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
   { label: 'API', href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
-  { label: 'Social', href: '/vendor/social', icon: <Share2 className="w-5 h-5" /> },
+  { label: 'Social', href: '/vendor/social', icon: <Share2 className="w-5 h-5" />, dataTour: 'vendor-nav-social' },
   { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
   { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
-  { label: 'Get Paid', href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" /> },
+  { label: 'Get Paid', href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" />, dataTour: 'vendor-nav-getpaid' },
   { label: 'Support', href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
   { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
 ];
