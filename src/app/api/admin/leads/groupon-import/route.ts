@@ -145,7 +145,10 @@ export async function POST(request: NextRequest) {
         startUrls,
         maxPagesPerCrawl: startUrls.length,
         pageFunction: PAGE_FUNCTION,
-        proxyConfiguration: { useApifyProxy: false },
+        proxyConfiguration: {
+          useApifyProxy: true,
+          apifyProxyGroups: ['RESIDENTIAL'],
+        },
         launchPuppeteerOptions: {
           stealth: true,
           headless: true,
