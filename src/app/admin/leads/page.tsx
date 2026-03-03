@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
   MapPin, Phone, Globe, Star, Download, Search,
   Plus, Trash2, Loader2, ExternalLink, Target,
-  CheckCircle2, Users, TrendingUp, UserCheck,
+  CheckCircle2, Users, TrendingUp, UserCheck, X,
 } from 'lucide-react';
 
 type LeadStatus =
@@ -67,18 +67,34 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; bg: string; text: strin
   not_interested: { label: 'Not Interested',  bg: 'bg-red-100',    text: 'text-red-700'   },
 };
 
+// Green "Groupon" badge SVG-style pill
+function GrouponBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-500 text-white leading-none">
+      G Groupon
+    </span>
+  );
+}
+
 export default function AdminLeadsPage() {
   const { user, role, loading: authLoading } = useAuth();
 
-  // Search state
-  const [category, setCategory]         = useState('Restaurants');
+  // Multi-category state
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(['Restaurants']));
   const [location, setLocation]         = useState('Orlando, FL');
+  const [radiusMiles, setRadiusMiles]   = useState('0');
   const [searching, setSearching]       = useState(false);
+  const [searchProgress, setSearchProgress] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [nextOffset, setNextOffset]     = useState<number | null>(null);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [searchError, setSearchError]   = useState<string | null>(null);
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
+  const [bulkSaving, setBulkSaving]     = useState(false);
+
+  // Groupon check state: place_id → true (found) | false (not found) | null (checking)
+  const [grouponStatus, setGrouponStatus] = useState<Record<string, boolean | null>>({});
+  const grouponCheckRef = useRef<AbortController | null>(null);
 
   // Saved leads state
   const [leads, setLeads]               = useState<VendorLead[]>([]);
@@ -92,7 +108,7 @@ export default function AdminLeadsPage() {
 
   const showToast = useCallback((message: string, type: 'success' | 'error') => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3500);
   }, []);
 
   // Load saved leads
@@ -117,38 +133,97 @@ export default function AdminLeadsPage() {
     fetchLeads();
   }, [user, role, fetchLeads]);
 
-  // Search
+  // Run Groupon checks in the background for a batch of results
+  const runGrouponChecks = useCallback(async (results: SearchResult[]) => {
+    // Cancel any in-flight checks
+    if (grouponCheckRef.current) grouponCheckRef.current.abort();
+    const controller = new AbortController();
+    grouponCheckRef.current = controller;
+
+    // Initialize all as null (checking)
+    setGrouponStatus((prev) => {
+      const next = { ...prev };
+      results.forEach((r) => { next[r.place_id] = null; });
+      return next;
+    });
+
+    // Check up to 30 at a time to avoid hammering the server
+    const batch = results.slice(0, 30);
+
+    await Promise.allSettled(
+      batch.map(async (result) => {
+        try {
+          const params = new URLSearchParams({ name: result.business_name, city: result.city });
+          const res = await fetch(`/api/admin/leads/check-groupon?${params}`, {
+            signal: controller.signal,
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          setGrouponStatus((prev) => ({ ...prev, [result.place_id]: data.found === true }));
+        } catch {
+          setGrouponStatus((prev) => ({ ...prev, [result.place_id]: false }));
+        }
+      })
+    );
+  }, []);
+
+  // Multi-category search: fires one call per selected category, merges & dedupes
   const handleSearch = async () => {
-    if (!category || !location.trim()) return;
+    if (selectedCategories.size === 0 || !location.trim()) return;
     setSearching(true);
     setSearchError(null);
     setSearchResults([]);
     setNextOffset(null);
+    setGrouponStatus({});
+
+    const cats = Array.from(selectedCategories);
+    const allResults: SearchResult[] = [];
+    const seen = new Set<string>();
+
     try {
-      const params = new URLSearchParams({ category, location: location.trim(), offset: '0' });
-      const res  = await fetch(`/api/admin/leads/search?${params}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Search failed');
-      setSearchResults(data.results || []);
-      setNextOffset(data.next_offset ?? null);
+      for (let i = 0; i < cats.length; i++) {
+        const cat = cats[i];
+        setSearchProgress(`Searching ${cat} (${i + 1}/${cats.length})...`);
+        const params = new URLSearchParams({ category: cat, location: location.trim(), offset: '0', radius: radiusMiles });
+        const res  = await fetch(`/api/admin/leads/search?${params}`);
+        const data = await res.json();
+        if (!res.ok) continue; // skip failed categories, don't abort all
+        for (const r of (data.results || [])) {
+          if (!seen.has(r.place_id)) {
+            seen.add(r.place_id);
+            allResults.push(r);
+          }
+        }
+      }
+      setSearchResults(allResults);
+      setSearchProgress('');
+      // Run Groupon checks in background
+      if (allResults.length > 0) runGrouponChecks(allResults);
     } catch (err) {
       setSearchError(err instanceof Error ? err.message : 'Search failed');
     } finally {
       setSearching(false);
+      setSearchProgress('');
     }
   };
 
-  // Load more results using offset pagination
+  // Load more (single category — uses last searched category for load-more)
   const handleLoadMore = async () => {
     if (nextOffset === null) return;
     setLoadingMore(true);
     try {
-      const params = new URLSearchParams({ category, location, offset: String(nextOffset) });
+      const cat = Array.from(selectedCategories)[0];
+      const params = new URLSearchParams({ category: cat, location, offset: String(nextOffset) });
       const res  = await fetch(`/api/admin/leads/search?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to load more');
-      setSearchResults((prev) => [...prev, ...(data.results || [])]);
+      const newResults: SearchResult[] = data.results || [];
+      setSearchResults((prev) => {
+        const seen = new Set(prev.map((r) => r.place_id));
+        return [...prev, ...newResults.filter((r) => !seen.has(r.place_id))];
+      });
       setNextOffset(data.next_offset ?? null);
+      runGrouponChecks(newResults);
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Failed to load more', 'error');
     } finally {
@@ -156,14 +231,15 @@ export default function AdminLeadsPage() {
     }
   };
 
-  // Save a search result as a lead
+  // Save a single lead
   const handleSaveLead = async (result: SearchResult) => {
     setSavingId(result.place_id);
+    const onGroupon = grouponStatus[result.place_id] === true;
     try {
       const res = await fetch('/api/admin/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result),
+        body: JSON.stringify({ ...result, on_groupon: onGroupon }),
       });
       const data = await res.json();
       if (res.status === 409) { showToast('Already saved', 'error'); return; }
@@ -176,6 +252,32 @@ export default function AdminLeadsPage() {
     } finally {
       setSavingId(null);
     }
+  };
+
+  // Bulk save all unsaved results
+  const handleBulkSave = async () => {
+    const unsaved = searchResults.filter((r) => !savedPlaceIds.has(r.place_id));
+    if (unsaved.length === 0) return;
+    setBulkSaving(true);
+    let saved = 0;
+    for (const result of unsaved) {
+      const onGroupon = grouponStatus[result.place_id] === true;
+      try {
+        const res = await fetch('/api/admin/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...result, on_groupon: onGroupon }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          saved++;
+          setSavedPlaceIds((prev) => new Set([...prev, result.place_id]));
+          setLeads((prev) => [data.lead, ...prev]);
+        }
+      } catch { /* skip failed */ }
+    }
+    setBulkSaving(false);
+    showToast(`Saved ${saved} leads!`, 'success');
   };
 
   // Update status / on_groupon / notes
@@ -215,10 +317,16 @@ export default function AdminLeadsPage() {
 
   const handleExport = () => window.open('/api/admin/leads/export', '_blank');
 
-  const handleGrouponCheck = (result: SearchResult) => {
-    const q = encodeURIComponent(`${result.business_name} ${result.city} groupon`);
-    window.open(`https://www.google.com/search?q=${q}`, '_blank');
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) { next.delete(cat); } else { next.add(cat); }
+      return next;
+    });
   };
+
+  const unsavedCount = searchResults.filter((r) => !savedPlaceIds.has(r.place_id)).length;
+  const grouponCount = searchResults.filter((r) => grouponStatus[r.place_id] === true).length;
 
   const stats = {
     total:      leads.length,
@@ -308,45 +416,118 @@ export default function AdminLeadsPage() {
 
       {/* Search Panel */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Find Businesses</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-900">Find Businesses</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setSelectedCategories(new Set(CATEGORIES))}
+              className="text-xs text-orange-600 hover:text-orange-700 font-medium">
+              Select All
+            </button>
+            <span className="text-gray-300">|</span>
+            <button onClick={() => setSelectedCategories(new Set())}
+              className="text-xs text-gray-500 hover:text-gray-700">
+              Clear
+            </button>
+          </div>
+        </div>
+
+        {/* Category checkboxes */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mb-4">
+          {CATEGORIES.map((cat) => {
+            const checked = selectedCategories.has(cat);
+            return (
+              <button
+                key={cat}
+                onClick={() => toggleCategory(cat)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all text-left ${
+                  checked
+                    ? 'bg-orange-50 border-orange-300 text-orange-700'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                <div className={`w-3.5 h-3.5 rounded shrink-0 border flex items-center justify-center transition-colors ${
+                  checked ? 'bg-orange-500 border-orange-500' : 'border-gray-300'
+                }`}>
+                  {checked && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Location + Radius + Search */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            placeholder="City, State (e.g. Orlando, FL)"
+            placeholder="City, State or Zip Code (e.g. 32801)"
             className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
           />
+          <select
+            value={radiusMiles}
+            onChange={(e) => setRadiusMiles(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+          >
+            <option value="0">Any Distance</option>
+            <option value="1">Within 1 mile</option>
+            <option value="5">Within 5 miles</option>
+            <option value="10">Within 10 miles</option>
+            <option value="15">Within 15 miles</option>
+            <option value="25">Within 25 miles</option>
+          </select>
           <button
             onClick={handleSearch}
-            disabled={searching || !location.trim()}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[120px]"
+            disabled={searching || selectedCategories.size === 0 || !location.trim()}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-w-[140px]"
           >
             {searching ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Searching...</>
             ) : (
-              <><Search className="w-4 h-4" /> Search</>
+              <><Search className="w-4 h-4" /> Search {selectedCategories.size > 1 ? `(${selectedCategories.size})` : ''}</>
             )}
           </button>
         </div>
+
+        {/* Progress indicator */}
+        {searchProgress && (
+          <p className="mt-3 text-xs text-orange-600 flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> {searchProgress}
+          </p>
+        )}
+
         {searchError && (
           <p className="mt-3 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{searchError}</p>
         )}
+
         {searchResults.length > 0 && !searching && (
-          <p className="mt-3 text-xs text-gray-500">
-            Found <span className="font-semibold text-gray-700">{searchResults.length}</span> businesses
-            {nextOffset !== null ? ' — more available below' : ''}
-          </p>
+          <div className="mt-3 flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              Found <span className="font-semibold text-gray-700">{searchResults.length}</span> businesses
+              {grouponCount > 0 && (
+                <> — <span className="font-semibold text-green-600">{grouponCount} on Groupon</span></>
+              )}
+              {nextOffset !== null ? ' — more available below' : ''}
+            </p>
+            {unsavedCount > 0 && (
+              <button
+                onClick={handleBulkSave}
+                disabled={bulkSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+              >
+                {bulkSaving
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...</>
+                  : <><Plus className="w-3.5 h-3.5" /> Save All ({unsavedCount})</>
+                }
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -363,10 +544,28 @@ export default function AdminLeadsPage() {
             {searchResults.map((result) => {
               const isSaved   = savedPlaceIds.has(result.place_id);
               const isSaving  = savingId === result.place_id;
+              const gStatus   = grouponStatus[result.place_id]; // null=checking, true=found, false=not found
+              const onGroupon = gStatus === true;
+
               return (
-                <div key={result.place_id} className="border border-gray-100 rounded-xl p-4 hover:border-gray-200 transition-colors">
+                <div key={result.place_id} className={`border rounded-xl p-4 transition-colors ${
+                  onGroupon ? 'border-green-200 bg-green-50/30' : 'border-gray-100 hover:border-gray-200'
+                }`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">{result.business_name}</h3>
+                    <div className="flex items-start gap-2 flex-wrap min-w-0">
+                      <h3 className="font-semibold text-gray-900 text-sm leading-tight">{result.business_name}</h3>
+                      {/* Groupon badge */}
+                      {gStatus === null && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-400">
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" /> checking
+                        </span>
+                      )}
+                      {onGroupon && <GrouponBadge />}
+                      {/* Category pill */}
+                      <span className="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded font-medium">
+                        {result.category}
+                      </span>
+                    </div>
                     {result.rating && (
                       <div className="flex items-center gap-1 shrink-0">
                         <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
@@ -399,12 +598,13 @@ export default function AdminLeadsPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleGrouponCheck(result)}
+                    <a
+                      href={`https://www.google.com/search?q=${encodeURIComponent(result.business_name + ' ' + result.city + ' groupon')}`}
+                      target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600 transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" /> Check Groupon
-                    </button>
+                    </a>
                     <div className="flex-1" />
                     {isSaved ? (
                       <span className="flex items-center gap-1 text-xs text-green-600 font-medium px-3 py-1.5 bg-green-50 rounded-lg">
@@ -544,11 +744,11 @@ export default function AdminLeadsPage() {
                           onClick={() => handleUpdateLead(lead.id, { on_groupon: !lead.on_groupon })}
                           className={`text-xs font-medium px-2 py-1 rounded-full transition-colors ${
                             lead.on_groupon
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              ? 'bg-green-500 text-white hover:bg-green-600'
                               : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                           }`}
                         >
-                          {lead.on_groupon ? 'Yes' : 'No'}
+                          {lead.on_groupon ? 'G Groupon' : 'No'}
                         </button>
                       </td>
 
@@ -575,7 +775,6 @@ export default function AdminLeadsPage() {
                           onClick={() => handleDeleteLead(lead.id, lead.place_id)}
                           disabled={deletingId === lead.id}
                           className="p-1.5 text-gray-300 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 disabled:opacity-50"
-                          title="Delete lead"
                         >
                           {deletingId === lead.id
                             ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -591,6 +790,14 @@ export default function AdminLeadsPage() {
           </div>
         )}
       </div>
+
+      {/* Print styles for CSV printout */}
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { font-size: 11px; }
+        }
+      `}</style>
     </div>
   );
 }

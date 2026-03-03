@@ -19,9 +19,10 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get('category') || '';
-  const location = searchParams.get('location') || '';
-  const offset   = parseInt(searchParams.get('offset') || '0', 10);
+  const category   = searchParams.get('category') || '';
+  const location   = searchParams.get('location') || '';
+  const offset     = parseInt(searchParams.get('offset') || '0', 10);
+  const radiusMiles = parseFloat(searchParams.get('radius') || '0');
 
   if (!category || !location) {
     return NextResponse.json(
@@ -30,13 +31,21 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const params = new URLSearchParams({
-    term:     category,
+  const yelpParams: Record<string, string> = {
+    term:    category,
     location: location.trim(),
-    limit:    '50',
-    offset:   String(offset),
-    sort_by:  'review_count',
-  });
+    limit:   '50',
+    offset:  String(offset),
+    sort_by: 'review_count',
+  };
+
+  // Yelp radius is in meters, max 40000 (~25 miles)
+  if (radiusMiles > 0) {
+    const radiusMeters = Math.min(Math.round(radiusMiles * 1609.34), 40000);
+    yelpParams.radius = String(radiusMeters);
+  }
+
+  const params = new URLSearchParams(yelpParams);
 
   const res = await fetch(`${YELP_SEARCH_URL}?${params}`, {
     headers: {
