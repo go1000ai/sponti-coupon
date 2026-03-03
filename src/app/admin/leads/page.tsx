@@ -91,6 +91,7 @@ export default function AdminLeadsPage() {
   const [searchError, setSearchError]   = useState<string | null>(null);
   const [savedPlaceIds, setSavedPlaceIds] = useState<Set<string>>(new Set());
   const [bulkSaving, setBulkSaving]     = useState(false);
+  const [grouponFilter, setGrouponFilter] = useState<'all' | 'groupon_only' | 'not_groupon'>('all');
 
   // Groupon check state: place_id → true (found) | false (not found) | null (checking)
   const [grouponStatus, setGrouponStatus] = useState<Record<string, boolean | null>>({});
@@ -256,7 +257,7 @@ export default function AdminLeadsPage() {
 
   // Bulk save all unsaved results
   const handleBulkSave = async () => {
-    const unsaved = searchResults.filter((r) => !savedPlaceIds.has(r.place_id));
+    const unsaved = filteredResults.filter((r) => !savedPlaceIds.has(r.place_id));
     if (unsaved.length === 0) return;
     setBulkSaving(true);
     let saved = 0;
@@ -325,8 +326,16 @@ export default function AdminLeadsPage() {
     });
   };
 
-  const unsavedCount = searchResults.filter((r) => !savedPlaceIds.has(r.place_id)).length;
   const grouponCount = searchResults.filter((r) => grouponStatus[r.place_id] === true).length;
+
+  // Apply Groupon filter to results
+  const filteredResults = searchResults.filter((r) => {
+    if (grouponFilter === 'groupon_only') return grouponStatus[r.place_id] === true;
+    if (grouponFilter === 'not_groupon')  return grouponStatus[r.place_id] !== true;
+    return true;
+  });
+
+  const unsavedCount = filteredResults.filter((r) => !savedPlaceIds.has(r.place_id)).length;
 
   const stats = {
     total:      leads.length,
@@ -534,14 +543,36 @@ export default function AdminLeadsPage() {
       {/* Search Results */}
       {searchResults.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">
-            Search Results
-            <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-              {searchResults.length}
-            </span>
-          </h2>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <h2 className="text-base font-semibold text-gray-900">
+              Search Results
+              <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                {filteredResults.length}{filteredResults.length !== searchResults.length ? ` of ${searchResults.length}` : ''}
+              </span>
+            </h2>
+            {/* Groupon filter */}
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+              {([
+                { key: 'all',          label: 'All' },
+                { key: 'groupon_only', label: '🟢 Groupon Only' },
+                { key: 'not_groupon',  label: 'Not on Groupon' },
+              ] as const).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setGrouponFilter(key)}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    grouponFilter === key
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {searchResults.map((result) => {
+            {filteredResults.map((result) => {
               const isSaved   = savedPlaceIds.has(result.place_id);
               const isSaving  = savingId === result.place_id;
               const gStatus   = grouponStatus[result.place_id]; // null=checking, true=found, false=not found
