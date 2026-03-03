@@ -40,10 +40,8 @@ export function DealsGrid() {
 
   if (loading) {
     return (
-      <section className="relative py-10 sm:py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-gray-900/75" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-10 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="shrink-0 w-[85%] sm:w-[280px] lg:w-[300px] h-[280px] sm:h-[320px] lg:h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
@@ -57,16 +55,8 @@ export function DealsGrid() {
   if (deals.length === 0) return null;
 
   return (
-    <section className="relative pt-10 sm:pt-20 md:pt-24 py-8 sm:py-12 -mt-6 sm:-mt-8 overflow-hidden">
-      {/* Parallax background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=2070&auto=format&fit=crop)` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-secondary-500/80 via-secondary-500/70 to-secondary-500/80 backdrop-blur-[2px]" />
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-t from-transparent via-secondary-500/70 to-secondary-500 z-[1]" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-10 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <ScrollReveal animation="fade-up">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -84,7 +74,7 @@ export function DealsGrid() {
             </div>
             <Link
               href="/deals"
-              className="text-primary-400 font-semibold inline-flex items-center gap-1 hover:text-primary-300 transition-colors group"
+              className="text-white font-semibold inline-flex items-center gap-1 hover:text-white/80 transition-colors group"
             >
               See All Steady Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -111,7 +101,7 @@ export function DealsGrid() {
           <div className="text-center mt-10">
             <Link
               href="/deals"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300 hover:scale-105"
             >
               Browse All Deals <ArrowRight className="w-5 h-5" />
             </Link>

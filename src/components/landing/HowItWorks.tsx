@@ -1,7 +1,8 @@
 'use client';
 
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
-import { Search, Wallet, QrCode, ChevronRight } from 'lucide-react';
+import { Search, Wallet, QrCode, ChevronRight, Flame, Tag } from 'lucide-react';
+import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 const steps = [
   {
@@ -29,9 +30,27 @@ export function HowItWorks() {
     <section id="how-it-works" className="relative py-10 sm:py-12 bg-gray-50 scroll-mt-20 overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-up">
-          <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-8">
+          <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
             How It Works
           </h2>
+
+          {/* Deal type explainer */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto mb-8">
+            <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-primary-100">
+              <div className="flex items-center gap-1 bg-gradient-to-r from-primary-500 to-orange-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shrink-0">
+                <SpontiIcon className="w-3 h-3" />
+                Sponti
+              </div>
+              <span className="text-gray-600 text-xs">Flash deals with a countdown — grab them before they expire</span>
+            </div>
+            <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-secondary-100">
+              <div className="flex items-center gap-1 bg-secondary-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shrink-0">
+                <Tag className="w-3 h-3" />
+                Steady
+              </div>
+              <span className="text-gray-600 text-xs">Always-on deals you can claim anytime</span>
+            </div>
+          </div>
         </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 relative">

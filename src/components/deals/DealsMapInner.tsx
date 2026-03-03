@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
 import { Navigation, Search } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -38,8 +38,19 @@ function DealPopupCard({ deal }: { deal: Deal }) {
   const vendor = deal.vendor;
   const distance = (deal as Deal & { distance?: number }).distance;
 
+  const imageUrl = deal.image_url || (deal.image_urls && deal.image_urls.length > 0 ? deal.image_urls[0] : null);
+
   return (
     <div className="w-60">
+      {imageUrl && (
+        <Link href={`/deals/${deal.id}`} className="block mb-2">
+          <img
+            src={imageUrl}
+            alt={deal.title}
+            className="w-full h-28 object-cover rounded-lg"
+          />
+        </Link>
+      )}
       <div className="flex items-start gap-2 mb-2">
         <DealTypeBadge type={deal.deal_type} size="sm" />
         <span className="text-xs font-bold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
@@ -73,6 +84,21 @@ function DealPopupCard({ deal }: { deal: Deal }) {
       </Link>
     </div>
   );
+}
+
+// Re-centers the map when center prop changes (e.g. after ZIP code search)
+function ChangeView({ center, zoom }: { center: [number, number]; zoom?: number }) {
+  const map = useMap();
+  const prevCenter = useRef<[number, number]>(center);
+
+  useEffect(() => {
+    if (prevCenter.current[0] !== center[0] || prevCenter.current[1] !== center[1]) {
+      map.setView(center, zoom ?? map.getZoom(), { animate: true });
+      prevCenter.current = center;
+    }
+  }, [center, zoom, map]);
+
+  return null;
 }
 
 // Detects when the user pans/zooms and shows "Search this area"
@@ -179,6 +205,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
+          <ChangeView center={center} />
           {onSearchArea && <MapMoveHandler onMoved={handleMapMoved} />}
 
           {userLocation && (

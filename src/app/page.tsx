@@ -27,11 +27,19 @@ export default function Home() {
       {/* 3. Featured Deals — top picks with tab filtering */}
       <FeaturedDeals />
 
-      {/* 3. Sponti Deals — time-limited deals with countdown */}
-      <SpontiDealsShowcase />
-
-      {/* 4. Steady Deals — regular long-running deals */}
-      <DealsGrid />
+      {/* 3+4. Sponti + Steady Deals — unified gradient background */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary-600 via-gray-900 to-secondary-600" />
+        <div className="absolute inset-0 bg-cover bg-center bg-fixed opacity-10" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }} />
+        <div className="relative z-10">
+          <SpontiDealsShowcase />
+          {/* Subtle divider between the two deal sections */}
+          <div className="max-w-5xl mx-auto px-8">
+            <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          </div>
+          <DealsGrid />
+        </div>
+      </div>
 
       {/* 5. All Deals — everything else, any location */}
       <BentoDeals />

@@ -74,13 +74,16 @@ export default function DealsPage() {
     const params = new URLSearchParams();
 
     if (userLocation && filters.radius > 0) {
+      // Use coordinate-based search — don't also send city text as a filter
       params.set('lat', String(userLocation.lat));
       params.set('lng', String(userLocation.lng));
       params.set('radius', String(filters.radius));
+    } else if (filters.city) {
+      // No coordinates — fall back to city name match
+      params.set('city', filters.city);
     }
     if (filters.type) params.set('type', filters.type);
     if (filters.category) params.set('category', filters.category);
-    if (filters.city) params.set('city', filters.city);
     if (filters.search) params.set('search', filters.search);
 
     params.set('limit', '50');
@@ -126,9 +129,20 @@ export default function DealsPage() {
   };
 
   const handleSearchSubmit = async () => {
-    // Geocode the city/ZIP if user entered one and we don't have location
-    if (filters.city.trim() && !userLocation) {
-      await handleLocationSearch();
+    // Geocode the city/ZIP if user entered one
+    if (filters.city.trim()) {
+      setGeocoding(true);
+      const coords = await geocodeAddress(filters.city.trim());
+      if (coords) {
+        setUserLocation(coords);
+        if (filters.radius === 0) {
+          setFilters(f => ({ ...f, radius: 25 }));
+        }
+        setGeocoding(false);
+        // useEffect will re-trigger fetchDeals once state updates
+        return;
+      }
+      setGeocoding(false);
     }
     fetchDeals();
   };
@@ -274,10 +288,19 @@ export default function DealsPage() {
                       if (filters.city.trim()) {
                         setGeocoding(true);
                         const coords = await geocodeAddress(filters.city.trim());
-                        if (coords) setUserLocation(coords);
+                        if (coords) {
+                          setUserLocation(coords);
+                          // Set a radius if currently "All" so location actually filters
+                          if (filters.radius === 0) {
+                            setFilters(f => ({ ...f, radius: 25 }));
+                          }
+                        }
                         setGeocoding(false);
+                        // Don't call fetchDeals() here — the useEffect will
+                        // re-trigger it once userLocation/filters state updates
+                      } else {
+                        fetchDeals();
                       }
-                      fetchDeals();
                     }
                   }}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"

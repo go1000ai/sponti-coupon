@@ -42,10 +42,8 @@ export function SpontiDealsShowcase() {
 
   if (loading) {
     return (
-      <section className="relative py-10 sm:py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-gray-900/70" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-10 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-4 overflow-x-auto scrollbar-hide">
             {[...Array(3)].map((_, i) => (
               <div key={i} className="shrink-0 w-[85%] sm:w-[280px] lg:w-[300px] h-[280px] sm:h-[320px] lg:h-[360px] bg-white/20 backdrop-blur-sm rounded-2xl animate-pulse" />
@@ -58,10 +56,8 @@ export function SpontiDealsShowcase() {
 
   if (deals.length === 0) {
     return (
-      <section className="relative py-10 sm:py-16 overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }} />
-        <div className="absolute inset-0 bg-gray-900/70" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative py-10 sm:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center">
               <SpontiIcon className="w-12 h-12 text-primary-400 mx-auto mb-4" />
@@ -81,16 +77,8 @@ export function SpontiDealsShowcase() {
   }
 
   return (
-    <section className="relative py-10 sm:py-16 pb-10 sm:pb-16 overflow-hidden">
-      {/* Parallax background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center bg-fixed"
-        style={{ backgroundImage: `url(https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=2070&auto=format&fit=crop)` }}
-      />
-      <div className="absolute inset-0 bg-gray-900/75 backdrop-blur-[2px]" />
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent via-gray-900/70 to-gray-900 z-[1]" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-10 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <ScrollReveal animation="fade-up">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
