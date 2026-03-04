@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import {
   QrCode, CheckCircle2, XCircle, Camera, DollarSign, Hash,
-  CreditCard, AlertCircle, Loader2, Star, Sparkles, ArrowLeft,
+  CreditCard, AlertCircle, Loader2, Star, Sparkles, ArrowLeft, ExternalLink, Copy, Check,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
@@ -80,6 +80,10 @@ export default function ScanPage() {
   const [mode, setMode] = useState<'code' | 'qr'>('code');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const extractCode = (input: string): string => {
     const match = input.match(/redeem\/([a-f0-9-]{36})/i);
@@ -222,12 +226,53 @@ export default function ScanPage() {
     setStep('collected');
   };
 
+  const handleGeneratePaymentLink = async () => {
+    if (!result) return;
+    setGeneratingLink(true);
+    setLinkError(null);
+
+    const amount = (result.remaining_balance || 0) > 0
+      ? result.remaining_balance!
+      : result.deal?.deal_price || 0;
+
+    try {
+      const response = await fetch('/api/vendor/collect-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redemption_id: result.redemption_id,
+          amount,
+          deal_title: result.deal?.title,
+          customer_name: result.customer?.name,
+        }),
+      });
+      const data = await response.json();
+      if (response.ok && data.checkout_url) {
+        setPaymentLink(data.checkout_url);
+      } else {
+        setLinkError(data.error || 'Failed to generate payment link');
+      }
+    } catch {
+      setLinkError('Network error. Please try again.');
+    }
+    setGeneratingLink(false);
+  };
+
+  const handleCopyLink = () => {
+    if (!paymentLink) return;
+    navigator.clipboard.writeText(paymentLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   const resetScanner = () => {
     setCodeInput('');
     setDigits(['', '', '', '', '', '']);
     setPreview(null);
     setResult(null);
     setError(null);
+    setPaymentLink(null);
+    setLinkError(null);
     setStep('input');
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   };
@@ -561,22 +606,81 @@ export default function ScanPage() {
               </div>
             </div>
 
-            {/* Collection Complete Button */}
-            <button
-              onClick={handleMarkCollected}
-              disabled={collecting}
-              className="w-full mt-5 py-3 bg-green-500 hover:bg-green-600 text-white text-base font-bold rounded-xl transition-colors shadow-md shadow-green-200"
-            >
-              {collecting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" /> Recording...
-                </span>
+            {/* Balance Collection Options */}
+            <div className="mt-5 space-y-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">
+                How is the customer paying the balance?
+              </p>
+
+              {/* Option A: Stripe Payment Link */}
+              {!paymentLink ? (
+                <button
+                  onClick={handleGeneratePaymentLink}
+                  disabled={generatingLink}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
+                >
+                  {generatingLink ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Generating link...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <CreditCard className="w-4 h-4" /> Send Stripe Payment Link
+                    </span>
+                  )}
+                </button>
               ) : (
-                <span className="flex items-center justify-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" /> Collection Complete
-                </span>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-blue-700">Payment link ready — share with customer:</p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={paymentLink}
+                      className="flex-1 text-xs bg-white border border-blue-200 rounded-lg px-3 py-2 text-gray-600 truncate"
+                    />
+                    <button
+                      onClick={handleCopyLink}
+                      className="px-3 py-2 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700 transition-colors"
+                      title="Copy link"
+                    >
+                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <a
+                    href={paymentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" /> Open Payment Page
+                  </a>
+                  <p className="text-[11px] text-blue-500 text-center">
+                    Customer can also scan the page on their phone to pay
+                  </p>
+                </div>
               )}
-            </button>
+
+              {linkError && (
+                <p className="text-xs text-red-500 text-center">{linkError}</p>
+              )}
+
+              {/* Option B: Collect In Person */}
+              <button
+                onClick={handleMarkCollected}
+                disabled={collecting}
+                className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
+              >
+                {collecting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Recording...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Collected In Person — Done
+                  </span>
+                )}
+              </button>
+            </div>
 
             <button
               onClick={resetScanner}
