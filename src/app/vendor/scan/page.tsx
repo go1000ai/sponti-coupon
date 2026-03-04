@@ -30,6 +30,7 @@ interface PreviewData {
     payment_tier: string | null;
     customer_id: string;
     deal: {
+      id?: string;
       title: string;
       deal_price: number;
       original_price: number;
@@ -86,6 +87,7 @@ export default function ScanPage() {
   const [linkError, setLinkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [stripePaid, setStripePaid] = useState(false);
+  const [stripeEnabled, setStripeEnabled] = useState<boolean | null>(null); // null = loading
 
   const extractCode = (input: string): string => {
     const match = input.match(/redeem\/([a-f0-9-]{36})/i);
@@ -281,6 +283,14 @@ export default function ScanPage() {
     setStep('input');
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   };
+
+  // Check once on mount whether this vendor has Stripe Connect active
+  useEffect(() => {
+    fetch('/api/stripe/connect/status')
+      .then(r => r.json())
+      .then(d => setStripeEnabled(d.charges_enabled === true))
+      .catch(() => setStripeEnabled(false));
+  }, []);
 
   // Poll Stripe every 3 seconds after link is sent to auto-confirm when customer pays
   const handleStripePaid = useCallback(async () => {
@@ -642,8 +652,18 @@ export default function ScanPage() {
                 How is the customer paying the balance?
               </p>
 
-              {/* Option A: Stripe Payment Link */}
-              {stripePaid ? (
+              {/* Option A: Stripe Payment Link (only shown when Stripe Connect is active) */}
+              {stripeEnabled === false ? (
+                <div className="text-center py-2">
+                  <p className="text-xs text-gray-400">
+                    Stripe not connected —{' '}
+                    <a href="/vendor/settings" className="text-blue-500 hover:underline">
+                      set up Stripe Connect in Settings
+                    </a>{' '}
+                    to offer card payment links.
+                  </p>
+                </div>
+              ) : stripePaid ? (
                 <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
                   <p className="font-bold text-green-700 text-sm">Stripe Payment Received!</p>

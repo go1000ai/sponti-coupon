@@ -36,14 +36,21 @@ export async function POST(request: NextRequest) {
   const serviceClient = await createServiceRoleClient();
   const { data: vendor } = await serviceClient
     .from('vendors')
-    .select('stripe_connect_account_id, business_name')
-    .eq('user_id', user.id)
+    .select('stripe_connect_account_id, stripe_connect_charges_enabled, business_name')
+    .eq('id', user.id)
     .single();
 
   if (!vendor?.stripe_connect_account_id) {
     return NextResponse.json({
-      error: 'No Stripe account connected. Connect your Stripe account in Settings to use this feature.',
+      error: 'No Stripe account connected. Go to Settings → Stripe Connect to link your account.',
       code: 'NO_STRIPE_CONNECT',
+    }, { status: 400 });
+  }
+
+  if (!vendor.stripe_connect_charges_enabled) {
+    return NextResponse.json({
+      error: 'Your Stripe account is not yet active. Complete Stripe onboarding in Settings to accept payments.',
+      code: 'STRIPE_NOT_ACTIVE',
     }, { status: 400 });
   }
 
