@@ -90,5 +90,5 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  return NextResponse.json({ checkout_url: session.url });
+  return NextResponse.json({ checkout_url: session.url, session_id: session.id });
 }

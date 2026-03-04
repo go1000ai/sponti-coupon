@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   QrCode, CheckCircle2, XCircle, Camera, DollarSign, Hash,
   CreditCard, AlertCircle, Loader2, Star, Sparkles, ArrowLeft, ExternalLink, Copy, Check,
@@ -81,9 +81,11 @@ export default function ScanPage() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [stripePaid, setStripePaid] = useState(false);
 
   const extractCode = (input: string): string => {
     const match = input.match(/redeem\/([a-f0-9-]{36})/i);
@@ -249,6 +251,7 @@ export default function ScanPage() {
       const data = await response.json();
       if (response.ok && data.checkout_url) {
         setPaymentLink(data.checkout_url);
+        setSessionId(data.session_id || null);
       } else {
         setLinkError(data.error || 'Failed to generate payment link');
       }
@@ -272,10 +275,37 @@ export default function ScanPage() {
     setResult(null);
     setError(null);
     setPaymentLink(null);
+    setSessionId(null);
     setLinkError(null);
+    setStripePaid(false);
     setStep('input');
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   };
+
+  // Poll Stripe every 3 seconds after link is sent to auto-confirm when customer pays
+  const handleStripePaid = useCallback(async () => {
+    setStripePaid(true);
+    await handleMarkCollected();
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!sessionId || stripePaid || step !== 'success') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/vendor/collect-balance/status?session_id=${sessionId}`);
+        const data = await res.json();
+        if (data.paid) {
+          clearInterval(interval);
+          handleStripePaid();
+        }
+      } catch {
+        // ignore transient errors, keep polling
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [sessionId, stripePaid, step, handleStripePaid]);
 
   const paymentLabel = (type: string | null | undefined) =>
     type ? PAYMENT_METHOD_LABELS[type] || type : null;
@@ -613,7 +643,13 @@ export default function ScanPage() {
               </p>
 
               {/* Option A: Stripe Payment Link */}
-              {!paymentLink ? (
+              {stripePaid ? (
+                <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
+                  <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                  <p className="font-bold text-green-700 text-sm">Stripe Payment Received!</p>
+                  <p className="text-xs text-green-600 mt-1">Customer paid — transaction complete</p>
+                </div>
+              ) : !paymentLink ? (
                 <button
                   onClick={handleGeneratePaymentLink}
                   disabled={generatingLink}
@@ -625,13 +661,16 @@ export default function ScanPage() {
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      <CreditCard className="w-4 h-4" /> Send Stripe Payment Link
+                      <CreditCard className="w-4 h-4" /> Customer Pays via Stripe
                     </span>
                   )}
                 </button>
               ) : (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-                  <p className="text-xs font-semibold text-blue-700">Payment link ready — share with customer:</p>
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                    <p className="text-xs font-semibold text-blue-700">Waiting for customer payment…</p>
+                  </div>
                   <div className="flex gap-2">
                     <input
                       readOnly
@@ -652,10 +691,10 @@ export default function ScanPage() {
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
                   >
-                    <ExternalLink className="w-4 h-4" /> Open Payment Page
+                    <ExternalLink className="w-4 h-4" /> Open on Customer&apos;s Phone
                   </a>
                   <p className="text-[11px] text-blue-500 text-center">
-                    Customer can also scan the page on their phone to pay
+                    This screen will auto-update once payment is confirmed
                   </p>
                 </div>
               )}
@@ -664,22 +703,24 @@ export default function ScanPage() {
                 <p className="text-xs text-red-500 text-center">{linkError}</p>
               )}
 
-              {/* Option B: Collect In Person */}
-              <button
-                onClick={handleMarkCollected}
-                disabled={collecting}
-                className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
-              >
-                {collecting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Recording...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Collected In Person — Done
-                  </span>
-                )}
-              </button>
+              {/* Option B: Collect In Person (hidden once Stripe payment confirmed) */}
+              {!stripePaid && (
+                <button
+                  onClick={handleMarkCollected}
+                  disabled={collecting}
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
+                >
+                  {collecting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Recording...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> Collected In Person — Done
+                    </span>
+                  )}
+                </button>
+              )}
             </div>
 
             <button
