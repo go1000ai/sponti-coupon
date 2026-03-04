@@ -52,6 +52,7 @@ function SignupForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [vendorTermsAccepted, setVendorTermsAccepted] = useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -76,6 +77,10 @@ function SignupForm() {
     }
     if (accountType === 'vendor' && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
       setError('Business address is required (street address, city, state, and ZIP code)');
+      return;
+    }
+    if (accountType === 'vendor' && !vendorTermsAccepted) {
+      setError('You must read and agree to the Vendor Terms of Service to continue.');
       return;
     }
 
@@ -484,7 +489,29 @@ function SignupForm() {
             </div>
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary w-full">
+          {/* Vendor Terms click-wrap agreement */}
+          {accountType === 'vendor' && (
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={vendorTermsAccepted}
+                onChange={(e) => setVendorTermsAccepted(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 shrink-0"
+              />
+              <span className="text-xs text-gray-500 leading-relaxed">
+                I have read and agree to the{' '}
+                <Link href="/vendor-terms" target="_blank" className="text-primary-500 hover:underline font-medium">
+                  Vendor Terms of Service
+                </Link>{' '}
+                and{' '}
+                <Link href="/terms" target="_blank" className="text-primary-500 hover:underline font-medium">
+                  Terms of Service
+                </Link>. I understand that I am legally obligated to honor all deals I publish, and that my account may be suspended or terminated if I fail to do so.
+              </span>
+            </label>
+          )}
+
+          <button type="submit" disabled={loading || (accountType === 'vendor' && !vendorTermsAccepted)} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
             {loading
               ? 'Creating Account...'
               : accountType === 'vendor'
