@@ -156,13 +156,16 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">5. Payments &amp; Deposits</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">5. Payments, Deposits &amp; Money Transmission</h2>
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+              <li><strong>Platform Role.</strong> SpontiCoupon is a marketplace platform that facilitates connections between vendors and customers. SpontiCoupon does not accept, hold, transmit, or control customer funds on vendors&rsquo; behalf. SpontiCoupon is not a bank, money transmitter, payment processor, or money services business.</li>
               <li>Vendors may require customer deposits for Sponti Coupon deals. Deposit payments are processed through your configured payment account (Stripe Connect, Square, PayPal, Venmo, Zelle, or Cash App).</li>
               <li><strong>SpontiCoupon does not collect, hold, process, or have access to deposit payments.</strong> All financial transactions for deposits occur directly between you and the customer through your chosen payment processor.</li>
+              <li><strong>Stripe Connect.</strong> If you use SpontiCoupon&rsquo;s integrated Stripe Connect feature, your payments are processed by Stripe, Inc., a licensed payment processor. Your use of Stripe Connect is subject to Stripe&rsquo;s Connected Account Agreement and Stripe&rsquo;s Services Agreement. SpontiCoupon is not a party to transactions processed through Stripe and does not control Stripe&rsquo;s licensing, compliance, or operations.</li>
+              <li><strong>Manual Payments.</strong> If you accept payments via third-party apps (Venmo, Zelle, Cash App, or similar), you are solely responsible for complying with those platforms&rsquo; terms of service and applicable law. SpontiCoupon is not responsible for disputes, chargebacks, or losses arising from manual payment arrangements.</li>
               <li>You are solely responsible for your refund policies, chargeback disputes, and deposit disputes. You must clearly communicate deposit terms to customers through your deal listings.</li>
-              <li>SpontiCoupon is not liable for losses arising from third-party payment processor errors, outages, account suspensions, or unauthorized transactions.</li>
-              <li>You are responsible for all taxes, reporting, and compliance obligations arising from payments you receive.</li>
+              <li>You are responsible for all taxes, sales tax collection, and compliance obligations arising from payments you receive in your jurisdiction. Nothing in this Agreement constitutes tax or financial advice.</li>
+              <li>You are responsible for maintaining any required state or federal licenses for your business activities, including any required money transmitter licenses in states where your operations require them.</li>
             </ul>
           </section>
 
@@ -220,7 +223,10 @@ export default function VendorTermsPage() {
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
               <li>You will receive access to customer data (names, contact information) only for customers who interact with your deals. This data must be used solely for fulfilling deals and providing customer service related to SpontiCoupon transactions.</li>
               <li>You may not sell, share, or use customer data for purposes unrelated to your SpontiCoupon deals without explicit customer consent.</li>
-              <li>You are responsible for compliance with applicable data protection and privacy laws in your jurisdiction, including but not limited to CCPA and applicable state privacy laws.</li>
+              <li><strong>Vendor Data Obligations.</strong> If you collect personal information from customers through your use of the SpontiCoupon platform, you are independently responsible for complying with all applicable federal and state privacy laws, including providing required notices to your customers and honoring their privacy rights. You represent and warrant that customer data you collect will be used only for purposes consistent with your own privacy policy and applicable law, and not shared with unauthorized third parties.</li>
+              <li><strong>California Residents (CPRA).</strong> Vendors located in California, or vendors whose customers include California residents, should be aware that the California Consumer Privacy Act of 2018, as amended by the California Privacy Rights Act of 2020 (&ldquo;CPRA&rdquo;), may impose obligations on your business with respect to the personal information of California consumers. You are independently responsible for your own CPRA compliance.</li>
+              <li><strong>Multi-State Privacy Laws.</strong> You are responsible for compliance with applicable data protection and privacy laws in all jurisdictions where you operate, including but not limited to Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), Texas (TDPSA), and other applicable state privacy laws.</li>
+              <li>Our collection and use of your data is governed by our <Link href="/privacy" className="text-primary-500 hover:underline">Privacy Policy</Link>, incorporated herein by reference.</li>
             </ul>
           </section>
 
@@ -270,7 +276,18 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">12. Prohibited Conduct</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">12. Advertising Accuracy &amp; FTC Compliance</h2>
+            <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+              <li><strong>Truthful Pricing.</strong> You represent and warrant that all prices, discounts, and savings claims in your deal listings are truthful and not misleading. Any reference to an &ldquo;original,&rdquo; &ldquo;regular,&rdquo; &ldquo;was,&rdquo; or &ldquo;list&rdquo; price means a price at which you actually offered the product or service to the public in the recent past at a substantial quantity. You shall not fabricate or inflate original prices solely to make a discount appear larger, in accordance with the FTC&rsquo;s Guides Against Deceptive Pricing (16 CFR Part 233).</li>
+              <li><strong>No Fake Reviews.</strong> You shall not submit, solicit, or compensate any person for submitting false, misleading, or fake reviews or testimonials on the SpontiCoupon platform. You shall not suppress genuine negative reviews. In accordance with the FTC&rsquo;s Guides Concerning the Use of Endorsements and Testimonials (16 CFR Part 255), verified customer reviews may not be filtered or altered by you.</li>
+              <li><strong>Material Connections.</strong> If you offer any incentive (discount, free item, payment, or other benefit) in exchange for a customer review or social media post about your deal, you must ensure that material connection is clearly disclosed in that review or post, consistent with 16 CFR Part 255.</li>
+              <li><strong>Coupon Terms.</strong> You shall clearly state all material restrictions on your deal listings, including expiration dates, geographic limitations, excluded items, and any limits on quantity per customer. Restrictions shall be displayed prominently and not buried in fine print.</li>
+              <li><strong>FTC Act Generally.</strong> You agree to comply with all applicable FTC regulations and guidelines, including but not limited to the FTC Act&rsquo;s prohibition on unfair or deceptive acts or practices (15 U.S.C. &sect; 45). SpontiCoupon reserves the right to remove any deal listing it reasonably believes violates applicable advertising laws or regulations.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">13. Prohibited Conduct</h2>
 
             <p className="leading-relaxed mb-3">You may not use the SpontiCoupon platform to:</p>
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
@@ -284,7 +301,7 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">13. Termination</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">14. Termination</h2>
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
               <li>You may terminate your vendor account at any time by canceling your subscription and contacting support.</li>
               <li>SpontiCoupon may suspend or terminate your account without prior notice for violations of these terms, fraud, abuse, or any conduct that harms the platform or its users.</li>
@@ -293,7 +310,7 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">14. Disclaimer of Warranties</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">15. Disclaimer of Warranties</h2>
             <p className="leading-relaxed">
               The SpontiCoupon platform is provided on an &ldquo;as is&rdquo; and &ldquo;as available&rdquo; basis without
               warranties of any kind, either express or implied, including but not limited to implied warranties of
@@ -304,7 +321,7 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">15. Limitation of Liability</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">16. Limitation of Liability</h2>
             <p className="leading-relaxed mb-3">
               To the fullest extent permitted by applicable law, SpontiCoupon and its officers, directors, employees,
               and agents shall not be liable for any indirect, incidental, special, punitive, or consequential damages
@@ -319,7 +336,7 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">16. Indemnification</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">17. Indemnification</h2>
             <p className="leading-relaxed">
               You agree to indemnify, defend, and hold harmless SpontiCoupon, its officers, directors, employees, and
               agents from and against any and all claims, damages, losses, liabilities, costs, and expenses (including
@@ -330,7 +347,7 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">17. Modifications to These Terms</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">18. Modifications to These Terms</h2>
             <p className="leading-relaxed">
               SpontiCoupon reserves the right to modify these Vendor Terms at any time. We will notify you of material
               changes via email or a notice within the vendor dashboard at least 14 days before the changes take effect.
@@ -339,23 +356,82 @@ export default function VendorTermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">18. Governing Law &amp; Dispute Resolution</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">19. Governing Law</h2>
             <p className="leading-relaxed">
-              These Vendor Terms are governed by the laws of the State of Florida, United States, without regard to
-              conflict of law principles. Any dispute arising from or relating to these terms or the platform shall
-              be resolved through binding arbitration in accordance with the rules of the American Arbitration
-              Association (AAA), conducted in the State of Florida. Each party shall bear its own costs unless the
-              arbitrator determines otherwise. Nothing in this section prevents either party from seeking injunctive
-              or other equitable relief in a court of competent jurisdiction.
+              This Agreement and any dispute or claim arising out of or relating to it shall be governed by and construed
+              in accordance with the laws of the State of Florida, without regard to its conflict-of-law provisions.
+              The parties acknowledge that this Agreement evidences a transaction involving interstate commerce.
+              Notwithstanding the foregoing, nothing in this Agreement limits any rights you may have under the mandatory
+              consumer protection laws of the state in which you are located, to the extent such laws cannot be waived
+              by contract. The United Nations Convention on Contracts for the International Sale of Goods does not apply
+              to this Agreement.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">19. Contact</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">20. Arbitration Agreement</h2>
+            <p className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">
+              Please read this section carefully — it affects your legal rights and contains a class action waiver.
+            </p>
+            <p className="leading-relaxed mb-3">
+              <strong>Agreement to Arbitrate.</strong> You and SpontiCoupon agree that any dispute, claim, or controversy
+              arising out of or relating to this Agreement or your use of the SpontiCoupon platform, including disputes
+              about the formation, existence, breach, termination, enforcement, interpretation, or validity of this
+              Agreement (collectively, &ldquo;Disputes&rdquo;), shall be resolved exclusively by binding individual
+              arbitration rather than in court, except as set forth below.
+            </p>
+            <p className="leading-relaxed mb-3">
+              <strong>Arbitration Rules.</strong> Arbitration shall be conducted by the American Arbitration Association
+              (&ldquo;AAA&rdquo;) under its Commercial Arbitration Rules (or, where applicable, its Consumer Arbitration
+              Rules), available at www.adr.org. The arbitration shall be conducted <strong>remotely via videoconference
+              or telephone</strong>, unless both parties mutually agree in writing to an in-person hearing. If an
+              in-person hearing is required by applicable law and cannot be waived, it shall be held in Miami-Dade County,
+              Florida, or such other location as the AAA determines is most convenient. The arbitrator shall have
+              exclusive authority to resolve disputes relating to the interpretation, applicability, or enforceability
+              of this Arbitration Agreement.
+            </p>
+            <p className="leading-relaxed mb-3">
+              <strong>Arbitration Costs.</strong> AAA filing fees and arbitrator compensation shall be allocated in
+              accordance with applicable AAA rules. For claims under $10,000, SpontiCoupon will advance your portion
+              of the filing fee if you demonstrate financial hardship. Each party bears its own attorneys&rsquo; fees
+              unless the arbitrator awards fees under applicable law.
+            </p>
+            <p className="leading-relaxed mb-3">
+              <strong>Exceptions.</strong> Either party may seek relief in small claims court for disputes within that
+              court&rsquo;s jurisdictional limits, provided the action remains in small claims court. Either party may
+              seek emergency injunctive or other equitable relief in any court of competent jurisdiction to prevent
+              irreparable harm pending arbitration. Nothing in this Agreement prevents either party from filing a
+              complaint with a government regulator or agency.
+            </p>
+            <p className="leading-relaxed mb-3">
+              <strong>Opt-Out Right.</strong> You may opt out of this Arbitration Agreement within thirty (30) days of
+              first accepting this Agreement by sending written notice to{' '}
+              <a href="mailto:legal@sponticoupon.com" className="text-primary-500 hover:underline">legal@sponticoupon.com</a>{' '}
+              with the subject line &ldquo;Arbitration Opt-Out.&rdquo; Your opt-out applies only to the Agreement version
+              in effect at the time of your opt-out and does not affect other sections of these Vendor Terms.
+            </p>
+            <p className="leading-relaxed">
+              <strong>Class Action and Representative Action Waiver.</strong> TO THE FULLEST EXTENT PERMITTED BY
+              APPLICABLE LAW, YOU AND SPONTICOUPON EACH AGREE THAT ANY PROCEEDING, WHETHER IN ARBITRATION OR IN COURT,
+              SHALL BE CONDUCTED ONLY ON AN INDIVIDUAL BASIS AND NOT IN A CLASS, CONSOLIDATED, MASS, OR REPRESENTATIVE
+              ACTION. You and SpontiCoupon waive any right to bring or participate in a class action, collective action,
+              or other representative proceeding in any forum. The arbitrator shall have no authority to consolidate
+              claims, conduct class arbitration, or award relief to any person other than the individual parties.
+              If this Class Action Waiver is found unenforceable as to a particular claim, that claim shall be severed
+              from arbitration and may proceed in court individually, but the waiver remains in full effect for all
+              other claims. If the Class Action Waiver is found entirely unenforceable, this entire Arbitration Agreement
+              shall be null and void only as to that claim.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">21. Contact</h2>
             <p className="leading-relaxed">
               For questions about these Vendor Terms, please contact us at{' '}
               <Link href="/contact" className="text-primary-500 hover:underline">our contact page</Link> or email{' '}
               <a href="mailto:vendors@sponticoupon.com" className="text-primary-500 hover:underline">vendors@sponticoupon.com</a>.
+              For arbitration opt-out notices, email{' '}
+              <a href="mailto:legal@sponticoupon.com" className="text-primary-500 hover:underline">legal@sponticoupon.com</a>.
             </p>
           </section>
 
