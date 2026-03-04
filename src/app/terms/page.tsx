@@ -108,6 +108,23 @@ export default function TermsPage() {
           <p className="text-gray-600 leading-relaxed mt-3 text-sm">
             Vendors set their own deposit amounts, which are clearly disclosed before claiming. By claiming any deal with a deposit, you acknowledge and accept the applicable policy stated above.
           </p>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mt-4">
+            <h3 className="font-bold text-gray-900 text-base mb-2">Remaining Balance at Redemption</h3>
+            <p className="text-gray-700 text-sm leading-relaxed mb-3">
+              When you redeem a deal, any remaining balance (the deal price minus any deposit already paid) is due directly to the Vendor at the time of service. SpontiCoupon offers two options for settling this balance — neither of which involves SpontiCoupon holding or receiving your money:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-700">
+              <li>
+                <strong>Stripe Payment Link (Internal).</strong> The Vendor may generate a secure Stripe checkout link through SpontiCoupon. If you pay via this link, your payment is processed by Stripe, Inc. and transferred <strong>directly and in full</strong> to the Vendor&apos;s connected Stripe account. SpontiCoupon facilitates the link generation only — we never receive, hold, or have access to these funds. No application fee or platform fee is deducted by SpontiCoupon.
+              </li>
+              <li>
+                <strong>External Payment (Vendor&apos;s Own Method).</strong> The Vendor may collect the remaining balance using their own card terminal, cash register, or a third-party app (Zelle, Venmo, Cash App, etc.). If you pay by any external method, that transaction is entirely between you and the Vendor. SpontiCoupon has no visibility into, role in, or responsibility for external payments. Any disputes about external payments must be resolved directly with the Vendor.
+              </li>
+            </ul>
+            <p className="text-gray-600 text-xs leading-relaxed mt-3">
+              By using SpontiCoupon, you acknowledge that SpontiCoupon is not a party to any balance-collection transaction — whether paid via Stripe link or by any external method — and that SpontiCoupon bears no liability for the outcome of those transactions.
+            </p>
+          </div>
           <div className="bg-red-50 border border-red-200 rounded-xl p-5 mt-4">
             <h3 className="font-bold text-red-800 text-base mb-2">Payment Dispute Notice — Important</h3>
             <p className="text-red-800 text-sm leading-relaxed">
