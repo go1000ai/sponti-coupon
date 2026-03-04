@@ -235,9 +235,7 @@ export default function ScanPage() {
     setGeneratingLink(true);
     setLinkError(null);
 
-    const amount = (result.remaining_balance || 0) > 0
-      ? result.remaining_balance!
-      : result.deal?.deal_price || 0;
+    const amount = result.remaining_balance || 0;
 
     try {
       const response = await fetch('/api/vendor/collect-balance', {
@@ -632,14 +630,10 @@ export default function ScanPage() {
                 <div className="border-t border-primary-200 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900 text-base">
-                      {(result.remaining_balance || 0) > 0 ? 'Collect from Customer' : 'Amount to Collect'}
+                      {(result.remaining_balance || 0) > 0 ? 'Collect from Customer' : 'Paid in Full'}
                     </span>
-                    <span className="font-bold text-primary-500 text-xl">
-                      {formatCurrency(
-                        (result.remaining_balance || 0) > 0
-                          ? result.remaining_balance!
-                          : result.deal?.deal_price || 0
-                      )}
+                    <span className={`font-bold text-xl ${(result.remaining_balance || 0) > 0 ? 'text-primary-500' : 'text-green-600'}`}>
+                      {formatCurrency(result.remaining_balance || 0)}
                     </span>
                   </div>
                 </div>
@@ -648,12 +642,25 @@ export default function ScanPage() {
 
             {/* Balance Collection Options */}
             <div className="mt-5 space-y-3">
+              {(result.remaining_balance || 0) === 0 && (
+                <button
+                  onClick={handleMarkCollected}
+                  disabled={collecting}
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Paid in Full — Complete Transaction
+                  </span>
+                </button>
+              )}
+              {(result.remaining_balance || 0) > 0 && (
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">
                 How is the customer paying the balance?
               </p>
+              )}
 
-              {/* Option A: Stripe Payment Link (only shown when Stripe Connect is active) */}
-              {stripeEnabled === false ? (
+              {/* Option A & B — only shown when a balance is actually owed */}
+              {(result.remaining_balance || 0) > 0 && stripeEnabled === false ? (
                 <div className="text-center py-2">
                   <p className="text-xs text-gray-400">
                     Stripe not connected —{' '}
@@ -663,13 +670,13 @@ export default function ScanPage() {
                     to offer card payment links.
                   </p>
                 </div>
-              ) : stripePaid ? (
+              ) : (result.remaining_balance || 0) > 0 && stripePaid ? (
                 <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
                   <p className="font-bold text-green-700 text-sm">Stripe Payment Received!</p>
                   <p className="text-xs text-green-600 mt-1">Customer paid — transaction complete</p>
                 </div>
-              ) : !paymentLink ? (
+              ) : (result.remaining_balance || 0) > 0 && !paymentLink ? (
                 <button
                   onClick={handleGeneratePaymentLink}
                   disabled={generatingLink}
@@ -694,7 +701,7 @@ export default function ScanPage() {
                   <div className="flex gap-2">
                     <input
                       readOnly
-                      value={paymentLink}
+                      value={paymentLink ?? ''}
                       className="flex-1 text-xs bg-white border border-blue-200 rounded-lg px-3 py-2 text-gray-600 truncate"
                     />
                     <button
@@ -706,7 +713,7 @@ export default function ScanPage() {
                     </button>
                   </div>
                   <a
-                    href={paymentLink}
+                    href={paymentLink ?? '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
@@ -723,8 +730,8 @@ export default function ScanPage() {
                 <p className="text-xs text-red-500 text-center">{linkError}</p>
               )}
 
-              {/* Option B: Collect In Person (hidden once Stripe payment confirmed) */}
-              {!stripePaid && (
+              {/* Option B: Collect In Person (only when balance owed and Stripe not yet paid) */}
+              {(result.remaining_balance || 0) > 0 && !stripePaid && (
                 <button
                   onClick={handleMarkCollected}
                   disabled={collecting}
