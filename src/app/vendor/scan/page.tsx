@@ -99,10 +99,6 @@ export default function ScanPage() {
       inputRefs.current[index + 1]?.focus();
     }
 
-    const fullCode = newDigits.join('');
-    if (fullCode.length === 6 && /^\d{6}$/.test(fullCode)) {
-      setTimeout(() => handleVerify(fullCode), 200);
-    }
   };
 
   const handleDigitKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -120,7 +116,7 @@ export default function ScanPage() {
     }
     setDigits(newDigits);
     if (pasted.length === 6) {
-      setTimeout(() => handleVerify(pasted), 200);
+      inputRefs.current[5]?.focus();
     }
   };
 
@@ -204,29 +200,26 @@ export default function ScanPage() {
 
   // Step 3 → Step 4: Mark collection complete
   const handleMarkCollected = async () => {
-    if (!result?.redemption_id) return;
     setCollecting(true);
 
-    const amountToCollect = result.remaining_balance || result.deal?.deal_price || 0;
-
-    try {
-      const response = await fetch('/api/vendor/mark-collected', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          redemption_id: result.redemption_id,
-          amount_collected: amountToCollect,
-        }),
-      });
-
-      if (response.ok) {
-        setStep('collected');
+    // Fire-and-forget tracking (non-critical)
+    if (result?.redemption_id) {
+      try {
+        await fetch('/api/vendor/mark-collected', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            redemption_id: result.redemption_id,
+            amount_collected: result.remaining_balance || result.deal?.deal_price || 0,
+          }),
+        });
+      } catch {
+        // Non-critical — proceed regardless
       }
-    } catch {
-      // Silently fail — collection tracking is non-critical
     }
 
     setCollecting(false);
+    setStep('collected');
   };
 
   const resetScanner = () => {
