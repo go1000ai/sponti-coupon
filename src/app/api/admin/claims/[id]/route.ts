@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
-import { generateRedemptionCode } from '@/lib/qr';
+import { generateUniqueRedemptionCode } from '@/lib/qr';
 
 /**
  * PUT /api/admin/claims/[id]
@@ -156,7 +156,7 @@ export async function PUT(
       case 'generate_codes': {
         // Generate QR code and 6-digit redemption code for a claim that doesn't have them
         const qrCode = uuidv4();
-        const redemptionCode = generateRedemptionCode();
+        const redemptionCode = await generateUniqueRedemptionCode(serviceClient);
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
         const { error: updateError } = await serviceClient

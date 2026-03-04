@@ -1,0 +1,38 @@
+User-agent: *
+
+# Allow public-facing pages
+Allow: /
+Allow: /deals
+Allow: /deals/
+Allow: /pricing
+Allow: /how-it-works
+Allow: /about
+Allow: /contact
+Allow: /faq
+Allow: /roi
+Allow: /terms
+Allow: /privacy
+Allow: /vendor-terms
+Allow: /loyalty-terms
+Allow: /dispute-policy
+Allow: /dmca-policy
+Allow: /accessibility
+Allow: /cookies
+Allow: /auth/signup
+Allow: /auth/login
+
+# Block private/admin areas
+Disallow: /admin/
+Disallow: /vendor/
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /auth/callback
+Disallow: /auth/forgot-password
+Disallow: /auth/reset-password
+Disallow: /auth/complete-signup
+Disallow: /auth/vendor-signup
+Disallow: /claim/
+Disallow: /redeem/
+
+# Sitemap
+Sitemap: https://sponticoupon.com/sitemap.xml

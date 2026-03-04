@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, Stripe } from '@/lib/stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { generateQRCodeId, getRedemptionUrl, generateRedemptionCode } from '@/lib/qr';
+import { generateQRCodeId, getRedemptionUrl, generateUniqueRedemptionCode } from '@/lib/qr';
 
 // POST /api/webhooks/stripe-connect
 // Handles Stripe Connect events (deposit payments on connected accounts)
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       // Generate QR code + redemption code
       const qrCode = generateQRCodeId();
       const qrCodeUrl = getRedemptionUrl(qrCode);
-      const redemptionCode = generateRedemptionCode();
+      const redemptionCode = await generateUniqueRedemptionCode(supabase);
 
       // Confirm the deposit
       const { error: updateError } = await supabase

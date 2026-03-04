@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
-import { generateRedemptionCode } from '@/lib/qr';
+import { generateUniqueRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
   // ── No deposit required — instant QR + redemption code ──
   if (!deal.deposit_amount || deal.deposit_amount <= 0) {
     const qrCode = uuidv4();
-    const redemptionCode = generateRedemptionCode();
+    const redemptionCode = await generateUniqueRedemptionCode(supabase);
     const { data: claim, error: claimError } = await supabase
       .from('claims')
       .insert({

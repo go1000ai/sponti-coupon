@@ -46,7 +46,7 @@ export default function VendorTermsPage() {
             <ArrowLeft className="w-4 h-4" /> Back to Home
           </Link>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900">Vendor Terms of Service</h1>
-          <p className="text-gray-400 text-sm mt-2">Last updated: March 4, 2026 &nbsp;·&nbsp; Effective immediately for all new and existing vendor accounts</p>
+          <p className="text-gray-400 text-sm mt-2">Last updated: March 3, 2026 &nbsp;·&nbsp; Effective immediately for all new and existing vendor accounts</p>
         </div>
       </div>
 
@@ -164,37 +164,48 @@ export default function VendorTermsPage() {
               <li><strong>Stripe Connect.</strong> If you use SpontiCoupon&rsquo;s integrated Stripe Connect feature, your payments are processed by Stripe, Inc., a licensed payment processor. Your use of Stripe Connect is subject to Stripe&rsquo;s Connected Account Agreement and Stripe&rsquo;s Services Agreement. SpontiCoupon is not a party to transactions processed through Stripe and does not control Stripe&rsquo;s licensing, compliance, or operations.</li>
               <li><strong>Manual Payments.</strong> If you accept payments via third-party apps (Venmo, Zelle, Cash App, or similar), you are solely responsible for complying with those platforms&rsquo; terms of service and applicable law. SpontiCoupon is not responsible for disputes, chargebacks, or losses arising from manual payment arrangements.</li>
               <li>You are solely responsible for your refund policies, chargeback disputes, and deposit disputes. You must clearly communicate deposit terms to customers through your deal listings.</li>
+              <li><strong>Mandatory Steady Deal Credit.</strong> If a customer claims a Steady Deal with a deposit and does not redeem it before the deal&rsquo;s expiration date, you are <strong>required</strong> to retain that deposit amount as a credit applicable to a future purchase or service at your business. You may not refuse, cancel, or reduce this credit without the customer&rsquo;s written consent. Failure to honor Steady Deal credits is a violation of this Agreement and may result in immediate account suspension or permanent removal from the platform.</li>
+              <li><strong>Sponti Coupon Deposits — No Credit Required.</strong> If a customer claims a Sponti Coupon with a deposit and does not redeem it within the stated redemption window, the deposit is forfeited by the customer. You are not required to issue a refund or credit for unredeemed Sponti Coupon deposits.</li>
               <li>You are responsible for all taxes, sales tax collection, and compliance obligations arising from payments you receive in your jurisdiction. Nothing in this Agreement constitutes tax or financial advice.</li>
               <li>You are responsible for maintaining any required state or federal licenses for your business activities, including any required money transmitter licenses in states where your operations require them.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">6. AI-Powered Features</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">6. AI-Powered Features &amp; Disclosure</h2>
             <p className="leading-relaxed mb-3">
-              Eligible subscription tiers include access to Ava, our AI deal strategist, which may generate deal titles,
-              descriptions, tags, pricing suggestions, and other content. By using these features, you agree to the following:
+              Eligible subscription tiers include access to Ava, our AI deal strategist, and other AI-assisted tools
+              that may generate deal titles, descriptions, tags, images, pricing suggestions, and social media captions.
+              These features are powered by third-party large language models (including Google Gemini and Anthropic Claude).
+              By using these features, you agree to the following:
             </p>
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
-              <li>AI-generated content is provided as a <strong>starting point only</strong>. You are responsible for reviewing and approving all content before it is published.</li>
-              <li>SpontiCoupon is not responsible for inaccurate, misleading, or inappropriate AI-generated content that you publish without review.</li>
-              <li>AI analytics and ROI estimates are based on your self-reported data and are provided for informational purposes only. They do not constitute financial advice.</li>
-              <li>You retain full ownership of your business data. AI models used by the platform do not use your specific deal data to train external models.</li>
+              <li><strong>Review before publishing.</strong> AI-generated content — including titles, descriptions, tags, images, and captions — is provided as a <strong>starting point only</strong>. You are solely responsible for reviewing, editing, and approving all content before it is published on the platform or posted to social media.</li>
+              <li><strong>AI hallucination risk.</strong> AI models may produce inaccurate, incomplete, or misleading content (commonly called &ldquo;hallucinations&rdquo;). SpontiCoupon is not responsible for errors, omissions, or inaccuracies in AI-generated content that you publish without review. Publishing inaccurate deal information is a violation of Section 4 of this Agreement.</li>
+              <li><strong>AI-generated images.</strong> When you use our AI image generation feature, images are created by a generative AI model. You must ensure generated images accurately represent your actual business, products, or services. Using AI images that misrepresent your offering is prohibited and may result in account suspension.</li>
+              <li><strong>AI search tags.</strong> Deals on SpontiCoupon may be assigned AI-generated search tags to improve discoverability. These tags are suggestions; you may edit or remove them from your deal listing at any time.</li>
+              <li><strong>No financial advice.</strong> AI analytics and ROI estimates are based on platform data and are provided for informational purposes only. They do not constitute financial, tax, or business advice.</li>
+              <li><strong>Data usage.</strong> You retain full ownership of your business data. SpontiCoupon does not use your specific deal data to train external AI models, and we do not share your data with AI providers beyond what is necessary to process your request in real time.</li>
+              <li><strong>FTC compliance.</strong> You are responsible for ensuring that any AI-generated content you publish complies with FTC guidelines on truthful advertising (16 CFR Part 255), including that claims about your products or services are accurate and substantiated.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-3">7. Social Media Auto-Posting</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-3">7. Social Media Auto-Posting &amp; Consent</h2>
             <p className="leading-relaxed mb-3">
               Pro and Business tier vendors may connect social media accounts (Facebook, Instagram, X/Twitter, TikTok)
-              to auto-post deals. By enabling this feature, you agree:
+              to automatically post deals when published. <strong>This feature is opt-in</strong> — it is only activated
+              when you explicitly connect a social media account from your Vendor Settings. By connecting an account
+              and enabling auto-posting, you expressly consent to and agree to the following:
             </p>
             <ul className="list-disc pl-5 space-y-2 leading-relaxed">
-              <li>You authorize SpontiCoupon to post content to your connected accounts on your behalf when you publish a deal.</li>
-              <li>SpontiCoupon is not responsible for posts that violate any social media platform&rsquo;s terms of service. You are solely responsible for ensuring your deal content complies with each platform&rsquo;s policies.</li>
-              <li>SpontiCoupon is not liable for account suspensions, bans, or penalties imposed by social media platforms on your accounts.</li>
-              <li>SpontiCoupon is not responsible for failed posts due to social media platform outages, API changes, or expired authorization tokens. You should verify posts after deal publication.</li>
-              <li>You may disconnect social media accounts at any time from your vendor settings.</li>
+              <li><strong>Express authorization.</strong> You grant SpontiCoupon permission to post deal content — including deal images, descriptions, and AI-generated captions — to your connected social media accounts automatically when you publish a deal. This authorization remains in effect until you disconnect the account.</li>
+              <li><strong>AI-generated captions.</strong> Post captions are generated by an AI model (Google Gemini) and are tailored for each social media platform. Captions may include hashtags and promotional language. You are responsible for reviewing deal content before publishing, as posts go out automatically. SpontiCoupon is not liable for caption errors or platform-specific formatting issues.</li>
+              <li><strong>FTC #Ad disclosure.</strong> When SpontiCoupon&rsquo;s brand accounts post about your deals, those posts are labeled <code>#Ad</code> per FTC 16 CFR § 255.5 (2023). Posts made to your own business accounts are considered your own promotional content and are your responsibility to disclose per applicable law if required.</li>
+              <li><strong>Platform compliance.</strong> You are solely responsible for ensuring your deal content, images, and captions comply with each social media platform&rsquo;s terms of service and community guidelines. SpontiCoupon is not liable for posts that violate any platform&rsquo;s rules.</li>
+              <li><strong>No guarantee of posting.</strong> SpontiCoupon is not responsible for failed, delayed, or missing posts due to social media platform outages, API changes, expired authorization tokens, or rate limits. You should verify that posts appeared after deal publication.</li>
+              <li><strong>Account consequences.</strong> SpontiCoupon is not liable for account suspensions, bans, reduced reach, or other penalties imposed by social media platforms on your accounts as a result of auto-posted content.</li>
+              <li><strong>Revoke at any time.</strong> You may disconnect any social media account and disable auto-posting at any time from Vendor Settings → Social Media. Disconnecting stops future auto-posts but does not delete previously published posts.</li>
             </ul>
           </section>
 

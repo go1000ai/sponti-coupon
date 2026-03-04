@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, Stripe } from '@/lib/stripe';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import {
+  sendSubscriptionConfirmationEmail,
+  sendCancellationConfirmationEmail,
+} from '@/lib/email/subscription-notification';
+
+// Plan pricing map for email notifications (must match SUBSCRIPTION_TIERS)
+const TIER_PRICES: Record<string, { monthly: number; annual: number }> = {
+  starter: { monthly: 49, annual: 39 },
+  pro: { monthly: 99, annual: 79 },
+  business: { monthly: 199, annual: 159 },
+  enterprise: { monthly: 499, annual: 399 },
+};
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -141,6 +153,38 @@ export async function POST(request: NextRequest) {
             subscription_status: dbStatus,
           })
           .eq('id', vendorId);
+
+        // Send post-signup subscription confirmation email (FTC + NY GBL § 527)
+        const { data: vendorForEmail } = await supabase
+          .from('vendors')
+          .select('business_name')
+          .eq('id', vendorId)
+          .single();
+        const { data: profileForEmail } = await supabase
+          .from('user_profiles')
+          .select('email')
+          .eq('id', vendorId)
+          .single();
+
+        if (profileForEmail?.email && vendorForEmail?.business_name && verifiedTier) {
+          const interval = subscription.items?.data?.[0]?.price?.id
+            ? (process.env[`NEXT_PUBLIC_STRIPE_${verifiedTier.toUpperCase()}_ANNUAL_PRICE_ID`] === subscription.items.data[0].price.id ? 'year' : 'month')
+            : 'month';
+          const tierPrices = TIER_PRICES[verifiedTier] || { monthly: 0, annual: 0 };
+          const pricePerPeriod = interval === 'year' ? tierPrices.annual : tierPrices.monthly;
+          const trialEnd = subscription.trial_end
+            ? new Date(subscription.trial_end * 1000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : undefined;
+
+          await sendSubscriptionConfirmationEmail({
+            vendorEmail: profileForEmail.email,
+            vendorName: vendorForEmail.business_name,
+            tier: verifiedTier,
+            interval,
+            pricePerPeriod,
+            accessEndDate: trialEnd,
+          });
+        }
       }
       break;
     }
@@ -207,7 +251,11 @@ export async function POST(request: NextRequest) {
     }
 
     case 'customer.subscription.deleted': {
-      const deletedSub = event.data.object as unknown as { id: string };
+      const deletedSub = event.data.object as unknown as {
+        id: string;
+        current_period_end: number;
+        items?: { data: Array<{ price?: { id: string } }> };
+      };
 
       await supabase
         .from('subscriptions')
@@ -216,7 +264,7 @@ export async function POST(request: NextRequest) {
 
       const { data: sub } = await supabase
         .from('subscriptions')
-        .select('vendor_id')
+        .select('vendor_id, tier')
         .eq('stripe_subscription_id', deletedSub.id)
         .single();
 
@@ -225,6 +273,30 @@ export async function POST(request: NextRequest) {
           .from('vendors')
           .update({ subscription_status: 'canceled', subscription_tier: null })
           .eq('id', sub.vendor_id);
+
+        // Send cancellation confirmation email (FTC Negative Option Rule)
+        const { data: vendorData } = await supabase
+          .from('vendors')
+          .select('business_name')
+          .eq('id', sub.vendor_id)
+          .single();
+        const { data: profileData } = await supabase
+          .from('user_profiles')
+          .select('email')
+          .eq('id', sub.vendor_id)
+          .single();
+
+        if (profileData?.email && vendorData?.business_name) {
+          const accessEndDate = new Date(deletedSub.current_period_end * 1000).toLocaleDateString('en-US', {
+            year: 'numeric', month: 'long', day: 'numeric',
+          });
+          await sendCancellationConfirmationEmail({
+            vendorEmail: profileData.email,
+            vendorName: vendorData.business_name,
+            tier: sub.tier || 'starter',
+            accessEndDate,
+          });
+        }
       }
       break;
     }

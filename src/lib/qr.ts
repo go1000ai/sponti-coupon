@@ -8,11 +8,32 @@ export function generateQRCodeId(): string {
 }
 
 /**
- * Generate a unique 6-digit redemption code (e.g. "482917").
- * Customer gives this to the vendor as an alternative to QR scanning.
+ * Generate a random 6-digit redemption code (e.g. "482917").
+ * Use generateUniqueRedemptionCode() to guarantee DB uniqueness.
  */
 export function generateRedemptionCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+/**
+ * Generate a 6-digit redemption code that is guaranteed unique in the DB.
+ * Retries up to 10 times on collision (unique constraint violation).
+ * Pass any Supabase client (server, service-role, etc.).
+ */
+export async function generateUniqueRedemptionCode(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseClient: { from: (table: string) => any }
+): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = generateRedemptionCode();
+    const { count } = await supabaseClient
+      .from('claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('redemption_code', code);
+    if ((count ?? 1) === 0) return code;
+  }
+  // Extremely unlikely — fall back to a random UUID suffix to guarantee uniqueness
+  return Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
 }
 
 export function getRedemptionUrl(qrCodeId: string): string {

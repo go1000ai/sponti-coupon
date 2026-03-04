@@ -370,7 +370,7 @@ export default function ScanPage() {
 
           {/* Deal Info */}
           <div className="bg-gray-50 rounded-xl p-4 mb-3">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               {preview.claim.deal.deal_type === 'sponti_coupon' && (
                 <span className="bg-primary-50 text-primary-600 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
                   <SpontiIcon className="w-3 h-3" /> Sponti
@@ -378,6 +378,11 @@ export default function ScanPage() {
               )}
               <p className="text-gray-700 font-semibold">{preview.claim.deal.title}</p>
             </div>
+            {preview.claim.deal.id && (
+              <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                Deal Ref: #{(preview.claim.deal.id as string).slice(0, 8).toUpperCase()}
+              </p>
+            )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-gray-400 line-through text-sm">{formatCurrency(preview.claim.deal.original_price)}</span>
               <span className="text-primary-500 font-bold text-lg">{formatCurrency(preview.claim.deal.deal_price)}</span>

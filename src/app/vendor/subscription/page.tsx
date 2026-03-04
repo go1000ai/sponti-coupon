@@ -10,7 +10,7 @@ import type { Vendor, SubscriptionTier } from '@/lib/types/database';
 import {
   CreditCard, Check, Crown, Zap, Rocket,
   ArrowRight, ArrowDown, Star, Shield, Sparkles,
-  ExternalLink, Loader2,
+  ExternalLink, Loader2, XCircle,
 } from 'lucide-react';
 
 /* ─────── Plan Config (matches pricing page) ─────── */
@@ -290,6 +290,22 @@ function SubscriptionContent() {
                vendor?.subscription_status || 'Inactive'}
             </span>
           </div>
+        </div>
+
+        {/* Click-to-cancel — California ARL compliance */}
+        <div className="mt-5 pt-5 border-t border-white/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <p className="text-xs text-white/70 leading-relaxed max-w-sm">
+            Your subscription auto-renews {vendor?.subscription_status === 'trialing' ? 'after your trial ends' : 'each billing period'}.
+            Cancel anytime — your access continues until the end of the current period.
+          </p>
+          <button
+            onClick={handleOpenPortal}
+            disabled={portalLoading}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors whitespace-nowrap shrink-0"
+          >
+            {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+            Cancel Plan
+          </button>
         </div>
       </div>
 

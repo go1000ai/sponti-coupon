@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { generateQRCodeId, getRedemptionUrl, generateRedemptionCode } from '@/lib/qr';
+import { generateQRCodeId, getRedemptionUrl, generateUniqueRedemptionCode } from '@/lib/qr';
 import crypto from 'crypto';
 
 // POST /api/webhooks/deposit-confirmed
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     // Generate QR code + 6-digit redemption code
     const qrCode = generateQRCodeId();
     const qrCodeUrl = getRedemptionUrl(qrCode);
-    const redemptionCode = generateRedemptionCode();
+    const redemptionCode = await generateUniqueRedemptionCode(supabase);
 
     // Mark deposit as confirmed and assign QR code + redemption code
     const { error: updateError } = await supabase

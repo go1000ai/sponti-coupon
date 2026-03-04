@@ -1,14 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
+import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
+
+// Run on Vercel Edge Network — keeps YELP_API_KEY server-side, never exposed to browser.
+export const runtime = 'edge';
 
 const YELP_SEARCH_URL = 'https://api.yelp.com/v3/businesses/search';
 
-// GET /api/admin/leads/search — proxy to Yelp Fusion Business Search API
-// Query params: ?category=Restaurants&location=Orlando, FL&offset=0
-// Returns up to 50 results per call. Use offset to paginate (max 1000 total).
+/**
+ * Edge-compatible admin verification.
+ * Reads auth cookies directly from the incoming Request (no next/headers).
+ */
+async function verifyAdminEdge(request: NextRequest): Promise<boolean> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) return false;
+
+  // Use request cookies directly — Edge runtime does not support next/headers
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll() {
+        // Read-only in this Edge handler; session refresh is handled by middleware
+      },
+    },
+  });
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+
+  // Service role client — pure fetch, fully Edge-compatible
+  const serviceClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: profile } = await serviceClient
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  return profile?.role === 'admin';
+}
+
+// GET /api/admin/leads/search
+// Query params: ?category=Restaurants&location=Orlando, FL&offset=0&radius=10
 export async function GET(request: NextRequest) {
-  const admin = await verifyAdmin();
-  if (!admin) return forbiddenResponse();
+  const isAdmin = await verifyAdminEdge(request);
+  if (!isAdmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const apiKey = process.env.YELP_API_KEY;
   if (!apiKey) {
@@ -19,9 +64,9 @@ export async function GET(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url);
-  const category   = searchParams.get('category') || '';
-  const location   = searchParams.get('location') || '';
-  const offset     = parseInt(searchParams.get('offset') || '0', 10);
+  const category    = searchParams.get('category') || '';
+  const location    = searchParams.get('location') || '';
+  const offset      = parseInt(searchParams.get('offset') || '0', 10);
   const radiusMiles = parseFloat(searchParams.get('radius') || '0');
 
   if (!category || !location) {
@@ -39,14 +84,11 @@ export async function GET(request: NextRequest) {
     sort_by: 'review_count',
   };
 
-  // Yelp radius is in meters, max 40000 (~25 miles).
-  // For larger radii (50/100 mi) we omit the radius param so Yelp returns
-  // its best results for the entire metro area.
+  // Yelp radius is in meters, max 40 000 m (~25 mi).
+  // For larger radii omit the param so Yelp covers the full metro area.
   if (radiusMiles > 0 && radiusMiles <= 25) {
-    const radiusMeters = Math.round(radiusMiles * 1609.34);
-    yelpParams.radius = String(radiusMeters);
+    yelpParams.radius = String(Math.round(radiusMiles * 1609.34));
   }
-  // radiusMiles > 25 → no radius param → Yelp searches the full region
 
   const params = new URLSearchParams(yelpParams);
 
@@ -57,28 +99,31 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const data = await res.json();
+  const data = await res.json() as {
+    businesses?: Array<{
+      id: string;
+      name: string;
+      location: { display_address: string[]; city: string; state: string };
+      display_phone: string;
+      url: string;
+      rating: number;
+      review_count: number;
+      categories: { title: string }[];
+    }>;
+    total?: number;
+    error?: { description?: string };
+  };
 
   if (!res.ok) {
-    console.error('[Yelp Search] API error:', data);
     return NextResponse.json(
       { error: data.error?.description || 'Yelp API error' },
       { status: 502 }
     );
   }
 
-  const businesses = data.businesses || [];
+  const businesses = data.businesses ?? [];
 
-  const results = businesses.map((b: {
-    id: string;
-    name: string;
-    location: { display_address: string[]; city: string; state: string };
-    display_phone: string;
-    url: string;
-    rating: number;
-    review_count: number;
-    categories: { title: string }[];
-  }) => ({
+  const results = businesses.map((b) => ({
     place_id:      b.id,
     business_name: b.name,
     address:       b.location?.display_address?.join(', ') || '',
@@ -91,7 +136,7 @@ export async function GET(request: NextRequest) {
     category,
   }));
 
-  const total      = data.total || results.length;
+  const total      = data.total ?? results.length;
   const nextOffset = offset + results.length;
   const hasMore    = nextOffset < Math.min(total, 1000);
 

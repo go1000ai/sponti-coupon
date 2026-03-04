@@ -53,7 +53,18 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [vendorTermsAccepted, setVendorTermsAccepted] = useState(false);
+  const [arlConsentAccepted, setArlConsentAccepted] = useState(false);
   const router = useRouter();
+
+  // Plan prices for ARL disclosure (must match SUBSCRIPTION_TIERS in database.ts)
+  const PLAN_PRICES: Record<string, { monthly: number; annual: number }> = {
+    starter: { monthly: 49, annual: 39 },
+    pro: { monthly: 99, annual: 79 },
+    business: { monthly: 199, annual: 159 },
+    enterprise: { monthly: 499, annual: 399 },
+  };
+  const planPrice = PLAN_PRICES[selectedPlan] || PLAN_PRICES.starter;
+  const recurringAmount = selectedInterval === 'year' ? planPrice.annual : planPrice.monthly;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -81,6 +92,10 @@ function SignupForm() {
     }
     if (accountType === 'vendor' && !vendorTermsAccepted) {
       setError('You must read and agree to the Vendor Terms of Service to continue.');
+      return;
+    }
+    if (accountType === 'vendor' && !arlConsentAccepted) {
+      setError('You must acknowledge and agree to the auto-renewal terms to continue.');
       return;
     }
 
@@ -489,7 +504,7 @@ function SignupForm() {
             </div>
           </div>
 
-          {/* Vendor Terms click-wrap agreement */}
+          {/* Vendor Terms click-wrap agreement — Checkbox 1 */}
           {accountType === 'vendor' && (
             <label className="flex items-start gap-3 cursor-pointer group">
               <input
@@ -511,7 +526,31 @@ function SignupForm() {
             </label>
           )}
 
-          <button type="submit" disabled={loading || (accountType === 'vendor' && !vendorTermsAccepted)} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
+          {/* ARL / FTC Negative Option — Checkbox 2 (separate express consent, required by law) */}
+          {accountType === 'vendor' && (
+            <label className="flex items-start gap-3 cursor-pointer group border border-amber-200 bg-amber-50 rounded-xl p-3">
+              <input
+                type="checkbox"
+                checked={arlConsentAccepted}
+                onChange={(e) => setArlConsentAccepted(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-amber-400 text-primary-500 focus:ring-primary-500 shrink-0"
+              />
+              <span className="text-xs text-gray-700 leading-relaxed">
+                <strong className="text-amber-800">Auto-Renewal Consent:</strong>{' '}
+                I understand my <strong>{planDisplayName} Plan</strong> subscription will automatically renew{' '}
+                {selectedInterval === 'year' ? 'annually' : 'monthly'} at{' '}
+                <strong>${recurringAmount}/month</strong>
+                {selectedPromo === 'founders'
+                  ? ' after my 2-month free period ends'
+                  : ' after my 14-day free trial ends'}, and will continue renewing until I cancel.
+                I may cancel anytime at <strong>Vendor Dashboard → Subscription → Cancel Plan</strong> or by emailing{' '}
+                <a href="mailto:billing@sponticoupon.com" className="text-primary-500 underline">billing@sponticoupon.com</a>.
+                I agree to these recurring charges.
+              </span>
+            </label>
+          )}
+
+          <button type="submit" disabled={loading || (accountType === 'vendor' && (!vendorTermsAccepted || !arlConsentAccepted))} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
             {loading
               ? 'Creating Account...'
               : accountType === 'vendor'
@@ -526,6 +565,14 @@ function SignupForm() {
                 : '14-day free trial. Cancel anytime.'}
             </p>
           )}
+
+          {/* CalOPPA — privacy link required at all data collection points */}
+          <p className="text-xs text-gray-400 text-center">
+            By creating an account, you agree to our{' '}
+            <Link href="/terms" target="_blank" className="hover:underline">Terms of Service</Link>{' '}
+            and{' '}
+            <Link href="/privacy" target="_blank" className="hover:underline">Privacy Policy</Link>.
+          </p>
         </form>
         </>
         )}

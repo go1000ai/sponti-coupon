@@ -83,6 +83,11 @@ export function Footer() {
               <li><Link href="/terms" className="hover:text-secondary-400 transition-colors">Terms of Service</Link></li>
               <li><Link href="/vendor-terms" className="hover:text-secondary-400 transition-colors">Vendor Terms</Link></li>
               <li><Link href="/loyalty-terms" className="hover:text-secondary-400 transition-colors">SpontiPoints Terms</Link></li>
+              <li><Link href="/dispute-policy" className="hover:text-secondary-400 transition-colors">Dispute Policy</Link></li>
+              <li><Link href="/dmca-policy" className="hover:text-secondary-400 transition-colors">DMCA / Copyright</Link></li>
+              <li><Link href="/accessibility" className="hover:text-secondary-400 transition-colors">Accessibility</Link></li>
+              <li><Link href="/cookies" className="hover:text-secondary-400 transition-colors">Cookie Policy</Link></li>
+              <li><Link href="/privacy#do-not-sell" className="hover:text-secondary-400 transition-colors">Do Not Sell My Info</Link></li>
             </ul>
           </div>
         </div>

@@ -316,7 +316,7 @@ export async function GET(
 
   const { data: claim } = await supabase
     .from('claims')
-    .select('*, deal:deals(title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name))')
+    .select('*, deal:deals(id, title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name))')
     .eq(column, is6Digit ? qrCode.trim() : qrCode)
     .single();
 

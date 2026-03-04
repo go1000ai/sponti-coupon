@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { generateQRCodeId, getRedemptionUrl, generateRedemptionCode } from '@/lib/qr';
+import { generateQRCodeId, getRedemptionUrl, generateUniqueRedemptionCode } from '@/lib/qr';
 
 // POST /api/vendor/confirm-payment
 // Vendor confirms they received a manual payment (Venmo/Zelle/Cash App)
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   // Generate codes and confirm
   const qrCode = generateQRCodeId();
   const qrCodeUrl = getRedemptionUrl(qrCode);
-  const redemptionCode = generateRedemptionCode();
+  const redemptionCode = await generateUniqueRedemptionCode(serviceClient);
 
   const { error: updateError } = await serviceClient
     .from('claims')

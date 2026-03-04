@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       </Link>
 
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-      <p className="text-gray-400 mb-10">Last updated: February 22, 2026</p>
+      <p className="text-gray-400 mb-10">Last updated: March 3, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-8">
         <section>
@@ -36,6 +36,7 @@ export default function PrivacyPage() {
             <li><strong>Account Information:</strong> Name, email address, and password when you create an account.</li>
             <li><strong>Vendor Information:</strong> Business name, business address, phone number, category, and Stripe account details for payment processing.</li>
             <li><strong>Transaction Data:</strong> Deal claims, redemption codes, deposit payments, and redemption history.</li>
+            <li><strong>Loyalty Program Data:</strong> SpontiPoints balance, point earning history (tied to deal redemptions), account credit balance, and redemption activity. This data is used solely to administer the SpontiPoints program and prevent fraud.</li>
             <li><strong>Communication Data:</strong> Messages or feedback you send to us through contact forms or email.</li>
           </ul>
 
@@ -92,6 +93,10 @@ export default function PrivacyPage() {
           <p className="text-gray-600 leading-relaxed mt-3">
             While we strive to protect your data, no method of electronic storage or internet transmission is 100% secure. We cannot guarantee absolute security of your information.
           </p>
+          <p className="text-gray-600 leading-relaxed mt-3">
+            <strong>Data Breach Notification.</strong> In the event of a security incident involving unauthorized access to your personal information, SpontiCoupon will notify affected users without unreasonable delay and in accordance with applicable federal and state law. Notification will be provided by email to your address on file, by in-app notice, or as otherwise required by law. We will disclose the nature of the incident, categories of data affected, steps we are taking, and actions you can take to protect yourself. To report a suspected security vulnerability, email{' '}
+            <a href="mailto:security@sponticoupon.com" className="text-primary-500 hover:underline">security@sponticoupon.com</a>.
+          </p>
         </section>
 
         <section>
@@ -114,6 +119,9 @@ export default function PrivacyPage() {
           <p className="text-gray-600 leading-relaxed mt-3">
             We do not use third-party advertising cookies. You can manage cookie preferences through your browser settings.
           </p>
+          <p className="text-gray-600 leading-relaxed mt-3">
+            <strong>Do Not Track (DNT):</strong> Our website does not currently respond to browser DNT signals because no industry-wide standard has been established. However, if your browser transmits a <strong>Global Privacy Control (GPC)</strong> signal, we treat it as an opt-out of the sale or sharing of your personal information (though we do not currently sell or share personal information for commercial purposes).
+          </p>
         </section>
 
         <section>
@@ -134,10 +142,60 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
-          <h2 className="text-2xl font-bold text-gray-900">9. California Privacy Rights (CCPA)</h2>
+        <section id="do-not-sell">
+          <h2 className="text-2xl font-bold text-gray-900">9. California Privacy Rights (CPRA / CCPA)</h2>
           <p className="text-gray-600 leading-relaxed">
-            If you are a California resident, you have the right to: (a) know what personal information is being collected about you; (b) know whether your personal information is sold or disclosed and to whom; (c) say no to the sale of personal information; (d) access your personal information; and (e) equal service and price, even if you exercise your privacy rights. We do not sell personal information as defined by the CCPA.
+            This section applies to California residents under the California Privacy Rights Act (CPRA) and the California Consumer Privacy Act (CCPA), as amended. Residents of Virginia (VCDPA), Colorado (CPA), Connecticut (CTDPA), Texas (TDPSA), Montana (MCDPA), Oregon (OCPA), and New Hampshire (SB 255) have equivalent or similar rights under their respective state privacy laws, and may exercise them using the same process described in Section 9.7. We apply these rights uniformly to all U.S. residents regardless of state.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.1 Right to Know</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            You have the right to request that we disclose: (a) the categories and specific pieces of personal information we have collected about you; (b) the categories of sources from which we collected it; (c) our business or commercial purpose for collecting it; and (d) the categories of third parties with whom we share it.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.2 Right to Delete</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            You have the right to request deletion of personal information we have collected from you, subject to certain exceptions — for example, we may retain information needed to complete a transaction you requested, detect security incidents, or comply with a legal obligation.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.3 Right to Correct</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            You have the right to request that we correct inaccurate personal information we maintain about you, taking into account the nature of the information and the purposes for processing it.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.4 Right to Opt-Out of Sale or Sharing</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            <strong>We do not sell your personal information to third parties, and we do not share your personal information for cross-context behavioral advertising.</strong> If this practice ever changes, we will provide advance notice and a clear mechanism to opt-out before any such sharing begins. To submit a &ldquo;Do Not Sell or Share My Personal Information&rdquo; request, email us at <a href="mailto:privacy@sponticoupon.com" className="text-primary-500 hover:underline">privacy@sponticoupon.com</a>.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.5 Right to Limit Use of Sensitive Personal Information</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            To the extent we collect sensitive personal information (such as precise geolocation, if you grant permission), you have the right to direct us to limit its use and disclosure to what is strictly necessary to perform the services you requested.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.6 Right to Non-Discrimination</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            We will not discriminate against you for exercising any of your CPRA rights. We will not deny you our services, charge you a different price, or provide a different level of quality based solely on your exercise of privacy rights.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.7 How to Submit a Request</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            To exercise any of the rights above, you may: (a) email us at <a href="mailto:privacy@sponticoupon.com" className="text-primary-500 hover:underline">privacy@sponticoupon.com</a> with &ldquo;California Privacy Request&rdquo; in the subject line; or (b) use the contact form at <a href="/contact" className="text-primary-500 hover:underline">sponticoupon.com/contact</a>. We will verify your identity before processing your request. We will respond within 45 days; if we need additional time (up to 45 more days), we will notify you in writing. Requests may be submitted by you or by an authorized agent holding written permission.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.7.1 Appeals Process</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            If we deny your privacy request in whole or in part, you may appeal our decision within 30 days of receiving our response. To appeal, email <a href="mailto:privacy@sponticoupon.com" className="text-primary-500 hover:underline">privacy@sponticoupon.com</a> with &ldquo;Privacy Appeal&rdquo; in the subject line and explain the basis for your appeal. We will respond to your appeal within 60 days. This appeals process applies to residents of California, Virginia, Colorado, Connecticut, Texas, Montana, Oregon, and New Hampshire as required by their respective state privacy laws.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.8 Data Retention — California</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            We retain account information for the duration of your account, plus up to 3 years after account closure for legal and accounting purposes. Transaction records (deal claims, redemptions, payment history) are retained for 7 years. Usage analytics are retained for 2 years. You may request earlier deletion subject to the exceptions in Section 9.2.
+          </p>
+
+          <h3 className="text-lg font-semibold text-gray-900 mt-5">9.9 CalOPPA Disclosure</h3>
+          <p className="text-gray-600 leading-relaxed mt-1">
+            Pursuant to the California Online Privacy Protection Act (CalOPPA), we post this Privacy Policy conspicuously and update it when our information practices change. The &ldquo;Last updated&rdquo; date at the top of this page reflects when it was most recently revised. This policy link appears at all pages where we collect personal information. Third parties that may collect personally identifiable information from our users through cookies or other tracking technologies include our hosting provider (Vercel) and authentication provider (Supabase). You can disable cookies in your browser settings; however, disabling essential cookies will prevent you from logging in to the Service.
           </p>
         </section>
 

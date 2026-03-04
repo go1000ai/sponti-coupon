@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { InactivityGuard } from "@/components/auth/InactivityGuard";
 import { OliviaFloatingWidget } from "@/components/support/OliviaFloatingWidget";
+import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -116,16 +117,101 @@ export default function RootLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "SpontiCoupon",
+    alternateName: "Online Commerce Hub, LLC DBA SpontiCoupon",
     url: BASE_URL,
-    logo: `${BASE_URL}/logo.png`,
+    logo: {
+      "@type": "ImageObject",
+      url: `${BASE_URL}/logo.png`,
+      width: 160,
+      height: 50,
+    },
     description: "SpontiCoupon connects consumers with exclusive 24-hour Sponti Deals from verified local businesses, offering up to 70% off restaurants, spas, fitness, entertainment and more.",
     foundingDate: "2025",
+    foundingLocation: { "@type": "Place", name: "Orlando, Florida, USA" },
+    areaServed: { "@type": "Country", name: "United States" },
     founder: { "@type": "Organization", name: "Online Commerce Hub, LLC" },
-    sameAs: [],
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer service",
-      url: `${BASE_URL}/pricing`,
+    sameAs: [
+      "https://www.facebook.com/sponticoupon",
+      "https://www.instagram.com/sponticoupon",
+    ],
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        email: "support@sponticoupon.com",
+        url: `${BASE_URL}/contact`,
+        availableLanguage: "English",
+      },
+      {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        email: "billing@sponticoupon.com",
+        url: `${BASE_URL}/pricing`,
+        availableLanguage: "English",
+      },
+    ],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "SpontiCoupon Deal Categories",
+      itemListElement: [
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "Restaurant Deals" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "Spa & Beauty Deals" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "Fitness & Gym Deals" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "Entertainment Deals" } },
+        { "@type": "Offer", itemOffered: { "@type": "Service", name: "Shopping & Retail Deals" } },
+      ],
+    },
+  };
+
+  // LocalBusiness schema — critical for local SEO and Google Maps
+  const localBusinessSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": `${BASE_URL}/#localbusiness`,
+    name: "SpontiCoupon",
+    description: "Sponti Deal platform connecting consumers with exclusive 24-hour Sponti Coupons from local businesses. Save up to 70% at restaurants, spas, fitness centers, and more.",
+    url: BASE_URL,
+    logo: `${BASE_URL}/logo.png`,
+    image: `${BASE_URL}/og-image.png`,
+    priceRange: "Free for consumers",
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "Orlando",
+      addressRegion: "FL",
+      postalCode: "32801",
+      addressCountry: "US",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 28.5383,
+      longitude: -81.3792,
+    },
+    areaServed: [
+      { "@type": "City", name: "Orlando", containedInPlace: { "@type": "State", name: "Florida" } },
+      { "@type": "City", name: "Kissimmee", containedInPlace: { "@type": "State", name: "Florida" } },
+      { "@type": "City", name: "Winter Park", containedInPlace: { "@type": "State", name: "Florida" } },
+      { "@type": "City", name: "Lake Nona", containedInPlace: { "@type": "State", name: "Florida" } },
+    ],
+    sameAs: [
+      "https://www.facebook.com/sponticoupon",
+      "https://www.instagram.com/sponticoupon",
+    ],
+  };
+
+  // SoftwareApplication schema — for app store / AEO visibility
+  const appSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "SpontiCoupon",
+    applicationCategory: "ShoppingApplication",
+    operatingSystem: "Web, iOS, Android",
+    url: BASE_URL,
+    description: "Discover and claim exclusive 24-hour Sponti Deals from local businesses. Save up to 70% on restaurants, spas, fitness, entertainment and more.",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+      description: "Free for consumers. Vendor plans start at $49/month.",
     },
   };
 
@@ -275,6 +361,14 @@ export default function RootLayout({
         />
         <script
           type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }}
+        />
+        <script
+          type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
         />
         <script
@@ -289,6 +383,7 @@ export default function RootLayout({
         <OliviaFloatingWidget />
         <InactivityGuard />
         <ServiceWorkerRegistration />
+        <CookieConsentBanner />
       </body>
     </html>
   );

@@ -107,7 +107,14 @@ export async function postDealToSocial(dealId: string, vendorId: string): Promis
         } as SocialPostResult;
       }
 
-      return postToConnection(conn, validToken, captions, imageUrl, claimUrl);
+      // FTC 16 CFR § 255.5 (2023): brand account posts promoting vendor deals
+      // are commercial endorsements and must be labeled #Ad / #Sponsored.
+      // Vendor's own account posts are their own content — no disclosure required.
+      const captionsForConn = conn.is_brand_account
+        ? applyAdDisclosure(captions)
+        : captions;
+
+      return postToConnection(conn, validToken, captionsForConn, imageUrl, claimUrl);
     })
   );
 
@@ -219,4 +226,24 @@ async function postToConnection(
         error: `Unsupported platform: ${conn.platform}`,
       };
   }
+}
+
+/**
+ * Add FTC-required #Ad disclosure to captions posted from SpontiCoupon's
+ * brand accounts (16 CFR § 255.5, 2023 revision).
+ * Vendor's own account posts are their own content — no disclosure needed.
+ */
+function applyAdDisclosure(captions: PlatformCaptions): PlatformCaptions {
+  const twitterWithAd = captions.twitter.includes('#Ad')
+    ? captions.twitter
+    : captions.twitter.length + 4 <= 280
+      ? `${captions.twitter} #Ad`
+      : `${captions.twitter.substring(0, 276)} #Ad`;
+
+  return {
+    facebook: `${captions.facebook}\n\n#Ad`,
+    instagram: `${captions.instagram} #Ad`,
+    twitter: twitterWithAd,
+    tiktok: `${captions.tiktok} #Ad`,
+  };
 }
