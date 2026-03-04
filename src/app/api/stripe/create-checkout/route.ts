@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
         ...(isFoundersEligible ? { promo: 'founders' } : {}),
       },
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/dashboard?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?subscription=canceled`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
     };
 
     const session = await getStripe().checkout.sessions.create(sessionConfig);

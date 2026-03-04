@@ -54,6 +54,9 @@ export function Navbar() {
                 <Link href="/pricing" className="text-gray-400 hover:text-gray-600 transition-colors text-sm">
                   For Businesses
                 </Link>
+                <Link href="/roi" className="text-gray-400 hover:text-primary-500 transition-colors text-sm">
+                  ROI Calculator
+                </Link>
               </>
             )}
 
@@ -138,6 +141,9 @@ export function Navbar() {
               </Link>
               <Link href="/pricing" className="block text-gray-400 hover:text-gray-600 text-center text-sm py-3 mt-1" onClick={() => setMobileOpen(false)}>
                 For Businesses
+              </Link>
+              <Link href="/roi" className="block text-gray-400 hover:text-primary-500 text-center text-sm py-2" onClick={() => setMobileOpen(false)}>
+                ROI Calculator
               </Link>
             </>
           )}

@@ -5,7 +5,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import {
   MapPin, Phone, Globe, Star, Download, Search,
   Plus, Trash2, Loader2, ExternalLink, Target,
-  CheckCircle2, Users, TrendingUp, UserCheck, RefreshCw,
+  CheckCircle2, Users, TrendingUp, UserCheck, RefreshCw, Mail, Send, X,
+  ClipboardList, Navigation,
 } from 'lucide-react';
 
 type LeadStatus =
@@ -34,6 +35,8 @@ interface VendorLead {
   address: string | null;
   phone: string | null;
   website: string | null;
+  email: string | null;
+  email_sent_at: string | null;
   category: string | null;
   city: string | null;
   state: string | null;
@@ -93,6 +96,21 @@ export default function AdminLeadsPage() {
   const [bulkSaving, setBulkSaving]     = useState(false);
   const [grouponFilter, setGrouponFilter] = useState<'all' | 'groupon_only' | 'not_groupon'>('all');
   const [importingGroupon, setImportingGroupon] = useState(false);
+
+  // Batch import state
+  const [batchOpen, setBatchOpen]         = useState(false);
+  const [batchNames, setBatchNames]       = useState('');
+  const [batchImporting, setBatchImporting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState('');
+
+  // Email modal state
+  const [emailModal, setEmailModal] = useState<{
+    lead: VendorLead;
+    toEmail: string;
+    subject: string;
+    body: string;
+  } | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Groupon check state: place_id → true (found) | false (not found) | null (checking)
   const [grouponStatus, setGrouponStatus] = useState<Record<string, boolean | null>>({});
@@ -254,6 +272,46 @@ export default function AdminLeadsPage() {
     }
   };
 
+  // Batch import: paste a list of business names, look up each one via Yelp
+  const handleBatchImport = async () => {
+    const names = batchNames.split('\n').map((n) => n.trim()).filter((n) => n.length > 1);
+    if (names.length === 0 || !location.trim()) return;
+    setBatchImporting(true);
+    setBatchProgress(`Looking up ${names.length} business${names.length > 1 ? 'es' : ''}…`);
+    try {
+      const res = await fetch('/api/admin/leads/batch-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names, location: location.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Batch import failed');
+      const imported: SearchResult[] = data.results || [];
+      if (imported.length === 0) {
+        showToast('No businesses found — check names or try a different location', 'error');
+        return;
+      }
+      setSearchResults((prev) => {
+        const seen = new Set(prev.map((r) => r.place_id));
+        return [...prev, ...imported.filter((r) => !seen.has(r.place_id))];
+      });
+      // Mark all batch-imported leads as Groupon
+      setGrouponStatus((prev) => {
+        const next = { ...prev };
+        imported.forEach((r) => { next[r.place_id] = true; });
+        return next;
+      });
+      showToast(`Found ${imported.length} of ${names.length} businesses!`, 'success');
+      setBatchNames('');
+      setBatchOpen(false);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Batch import failed', 'error');
+    } finally {
+      setBatchImporting(false);
+      setBatchProgress('');
+    }
+  };
+
   // Load more (single category — uses last searched category for load-more)
   const handleLoadMore = async () => {
     if (nextOffset === null) return;
@@ -359,6 +417,71 @@ export default function AdminLeadsPage() {
       showToast('Failed to delete lead', 'error');
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  // Open email compose modal pre-filled with pitch template
+  const openEmailModal = (lead: VendorLead) => {
+    const name = lead.business_name;
+    const city = lead.city || 'your area';
+    setEmailModal({
+      lead,
+      toEmail: lead.email || '',
+      subject: `${name} — Grow Your Bookings with SpontiCoupon`,
+      body: `Hi ${name} Team,
+
+I noticed your business${lead.on_groupon ? ' on Groupon' : ''} and wanted to share an exciting opportunity.
+
+SpontiCoupon is a next-generation deal platform built for local businesses like yours. Unlike traditional deal sites:
+
+✓ You keep 100% of all customer deposits
+✓ AI automatically creates professional deal images and social media posts
+✓ Real-time analytics show your ROI, claims, and redemptions
+✓ Built-in loyalty program keeps customers coming back
+✓ Auto-posts your deals to Facebook, Instagram, and TikTok
+
+We're growing fast in ${city} and would love to have ${name} as one of our launch partners. There's no long-term commitment and setup takes less than 10 minutes.
+
+Would you have 10 minutes this week for a quick call or demo?
+
+Best regards,
+SpontiCoupon Team
+https://sponticoupon.com`,
+    });
+  };
+
+  // Send the composed email
+  const handleSendEmail = async () => {
+    if (!emailModal) return;
+    if (!emailModal.toEmail.trim()) {
+      showToast('Please enter an email address', 'error');
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const res = await fetch('/api/admin/leads/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId: emailModal.lead.id,
+          toEmail: emailModal.toEmail.trim(),
+          subject: emailModal.subject,
+          body: emailModal.body,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send email');
+      showToast(`Email sent to ${emailModal.toEmail}!`, 'success');
+      setLeads((prev) => prev.map((l) =>
+        l.id === emailModal.lead.id
+          ? { ...l, email: emailModal.toEmail, email_sent_at: new Date().toISOString(), status: 'contacted' }
+          : l
+      ));
+      setEmailModal(null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to send email', 'error');
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -601,6 +724,64 @@ export default function AdminLeadsPage() {
         )}
       </div>
 
+      {/* Batch Import Panel */}
+      <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+        <button
+          onClick={() => setBatchOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+              <ClipboardList className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-semibold text-gray-900">Paste Groupon Business Names</p>
+              <p className="text-xs text-gray-500">Browse Groupon, copy names, paste here — we&apos;ll look up their addresses automatically</p>
+            </div>
+          </div>
+          <span className={`text-gray-400 transition-transform ${batchOpen ? 'rotate-180' : ''}`}>▼</span>
+        </button>
+
+        {batchOpen && (
+          <div className="px-6 pb-6 border-t border-gray-100 pt-4">
+            <p className="text-xs text-gray-500 mb-3">
+              Go to <a href="https://www.groupon.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium">groupon.com</a>,
+              browse your city, and copy the business names — one per line. We&apos;ll look up every address and phone number automatically.
+            </p>
+            <textarea
+              value={batchNames}
+              onChange={(e) => setBatchNames(e.target.value)}
+              rows={8}
+              placeholder={`Bella Italia Restaurant\nOrlando Spa & Wellness\nThe Escape Room Orlando\nSunshine Dental Group\n…`}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent resize-none font-mono"
+            />
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-gray-400">
+                {batchNames.split('\n').filter((n) => n.trim().length > 1).length} names entered
+                {location.trim() && <> · searching in <span className="font-medium text-gray-600">{location}</span></>}
+              </p>
+              <div className="flex items-center gap-2">
+                {batchProgress && (
+                  <span className="text-xs text-green-600 flex items-center gap-1">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> {batchProgress}
+                  </span>
+                )}
+                <button
+                  onClick={handleBatchImport}
+                  disabled={batchImporting || batchNames.trim().length === 0 || !location.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {batchImporting
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Looking up…</>
+                    : <><Search className="w-4 h-4" /> Find Addresses</>
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Search Results */}
       {searchResults.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
@@ -768,6 +949,7 @@ export default function AdminLeadsPage() {
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Groupon</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Notes</th>
                   <th className="px-4 py-3" />
                 </tr>
@@ -795,7 +977,16 @@ export default function AdminLeadsPage() {
                       <td className="px-4 py-3">
                         <p className="text-xs text-gray-600">{lead.city}{lead.state ? `, ${lead.state}` : ''}</p>
                         {lead.address && (
-                          <p className="text-xs text-gray-400 max-w-[160px] truncate" title={lead.address}>{lead.address}</p>
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lead.business_name} ${lead.address}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open in Google Maps"
+                            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors max-w-[180px] group mt-0.5"
+                          >
+                            <Navigation className="w-3 h-3 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="truncate">{lead.address}</span>
+                          </a>
                         )}
                       </td>
 
@@ -844,6 +1035,43 @@ export default function AdminLeadsPage() {
                         </button>
                       </td>
 
+                      {/* Email */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 min-w-[180px]">
+                          <input
+                            type="email"
+                            defaultValue={lead.email || ''}
+                            onBlur={(e) => {
+                              const val = e.target.value.trim();
+                              if (val !== (lead.email || '')) {
+                                handleUpdateLead(lead.id, { email: val || null } as Partial<VendorLead>);
+                              }
+                            }}
+                            placeholder="email@business.com"
+                            className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-transparent"
+                          />
+                          <button
+                            onClick={() => openEmailModal(lead)}
+                            title={lead.email_sent_at ? `Last sent ${new Date(lead.email_sent_at).toLocaleDateString()}` : 'Send pitch email'}
+                            className={`shrink-0 p-1.5 rounded-lg transition-colors ${
+                              lead.email_sent_at
+                                ? 'bg-green-50 text-green-600 hover:bg-green-100'
+                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                            }`}
+                          >
+                            {lead.email_sent_at
+                              ? <CheckCircle2 className="w-3.5 h-3.5" />
+                              : <Send className="w-3.5 h-3.5" />
+                            }
+                          </button>
+                        </div>
+                        {lead.email_sent_at && (
+                          <p className="text-[10px] text-green-600 mt-0.5 pl-0.5">
+                            Sent {new Date(lead.email_sent_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </td>
+
                       {/* Notes */}
                       <td className="px-4 py-3">
                         <input
@@ -882,6 +1110,88 @@ export default function AdminLeadsPage() {
           </div>
         )}
       </div>
+
+      {/* Email compose modal */}
+      {emailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" />
+                <h2 className="font-semibold text-gray-900">Send Pitch Email</h2>
+              </div>
+              <button
+                onClick={() => setEmailModal(null)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <div className="px-6 py-4 space-y-3 overflow-y-auto flex-1">
+              {/* To */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">To</label>
+                <input
+                  type="email"
+                  value={emailModal.toEmail}
+                  onChange={(e) => setEmailModal((prev) => prev ? { ...prev, toEmail: e.target.value } : null)}
+                  placeholder="recipient@business.com"
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                />
+              </div>
+
+              {/* Subject */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
+                <input
+                  type="text"
+                  value={emailModal.subject}
+                  onChange={(e) => setEmailModal((prev) => prev ? { ...prev, subject: e.target.value } : null)}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                />
+              </div>
+
+              {/* Body */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Message</label>
+                <textarea
+                  value={emailModal.body}
+                  onChange={(e) => setEmailModal((prev) => prev ? { ...prev, body: e.target.value } : null)}
+                  rows={14}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none font-mono leading-relaxed"
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between shrink-0">
+              <p className="text-xs text-gray-400">From: info@sponticoupon.com</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setEmailModal(null)}
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail || !emailModal.toEmail.trim()}
+                  className="flex items-center gap-2 text-sm font-medium px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {sendingEmail ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                  ) : (
+                    <><Send className="w-4 h-4" /> Send Email</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Print styles for CSV printout */}
       <style>{`

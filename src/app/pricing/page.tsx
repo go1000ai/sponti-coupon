@@ -12,6 +12,7 @@ import { useParallax } from '@/lib/hooks/useParallax';
 import { useCountUp } from '@/lib/hooks/useCountUp';
 import { CompetitorComparison } from '@/components/landing/CompetitorComparison';
 import { WhyChooseUs } from '@/components/sections/WhyChooseUs';
+import { ROICalculator } from '@/components/sections/ROICalculator';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
 
@@ -706,6 +707,42 @@ export default function PricingPage() {
                 </button>
               )}
             </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ─── ROI CALCULATOR ─── */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal animation="fade-up">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4">
+                💰 ROI Calculator
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+                See exactly what you&apos;re giving away
+              </h2>
+              <p className="text-gray-500 max-w-xl mx-auto">
+                Enter your current platform&apos;s commission rate and your monthly numbers.
+                We&apos;ll show you how much more stays in your pocket with SpontiCoupon.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* No-brainer callout */}
+          <ScrollReveal animation="fade-up" delay={100}>
+            <div className="max-w-2xl mx-auto mb-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-5 text-white text-center shadow-lg shadow-orange-200/50">
+              <p className="text-lg font-black mb-1">Here&apos;s the math that makes this a no-brainer:</p>
+              <p className="text-sm text-orange-100 leading-relaxed">
+                Even if you paid a full year of SpontiCoupon upfront in a single month —
+                the commission you&apos;d <em>stop giving away</em> to your current platform
+                more than covers it. Every dollar after that is <strong className="text-white">pure profit you used to hand over for free.</strong>
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal animation="fade-up" delay={150}>
+            <ROICalculator />
           </ScrollReveal>
         </div>
       </section>
