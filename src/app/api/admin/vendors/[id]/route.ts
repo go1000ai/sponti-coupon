@@ -120,6 +120,7 @@ export async function PUT(
       if (addr && city && state && zip) {
         const geoHeaders = { 'User-Agent': 'SpontiCoupon/1.0' };
         const geoBase = 'https://nominatim.openstreetmap.org/search';
+        let isEstimated = false;
 
         // Strategy 1: Structured search (best for fuzzy/misspelled addresses)
         try {
@@ -134,27 +135,34 @@ export async function PUT(
           }
         } catch { /* continue */ }
 
-        // Strategy 2 & 3: Free-form full address, then city fallback
+        // Strategy 2: Free-form full address
         if (!updates.lat) {
-          const fallbacks = [
-            `${addr}, ${city}, ${state} ${zip}, USA`,
-            `${city}, ${state} ${zip}, USA`,
-          ];
-          for (const q of fallbacks) {
-            try {
-              const geoRes = await fetch(
-                `${geoBase}?q=${encodeURIComponent(q)}&format=json&limit=1`,
-                { headers: geoHeaders }
-              );
-              const geoData = await geoRes.json();
-              if (geoData?.length > 0) {
-                updates.lat = parseFloat(geoData[0].lat);
-                updates.lng = parseFloat(geoData[0].lon);
-                break;
-              }
-            } catch { /* continue */ }
-          }
+          try {
+            const q = encodeURIComponent(`${addr}, ${city}, ${state} ${zip}, USA`);
+            const geoRes = await fetch(`${geoBase}?q=${q}&format=json&limit=1`, { headers: geoHeaders });
+            const geoData = await geoRes.json();
+            if (geoData?.length > 0) {
+              updates.lat = parseFloat(geoData[0].lat);
+              updates.lng = parseFloat(geoData[0].lon);
+            }
+          } catch { /* continue */ }
         }
+
+        // Strategy 3: City + zip fallback (estimated location)
+        if (!updates.lat) {
+          try {
+            const q = encodeURIComponent(`${city}, ${state} ${zip}, USA`);
+            const geoRes = await fetch(`${geoBase}?q=${q}&format=json&limit=1`, { headers: geoHeaders });
+            const geoData = await geoRes.json();
+            if (geoData?.length > 0) {
+              updates.lat = parseFloat(geoData[0].lat);
+              updates.lng = parseFloat(geoData[0].lon);
+              isEstimated = true;
+            }
+          } catch { /* continue */ }
+        }
+
+        updates.location_estimated = isEstimated;
       }
     }
 

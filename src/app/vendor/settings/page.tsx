@@ -80,6 +80,7 @@ export default function VendorSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [expandedSection, setExpandedSection] = useState<SettingsSection | null>('business');
+  const [locationEstimated, setLocationEstimated] = useState(false);
 
   // Personal name
   const [firstName, setFirstName] = useState('');
@@ -170,6 +171,7 @@ export default function VendorSettingsPage() {
 
       if (data) {
         setVendor(data);
+        setLocationEstimated(!!data.location_estimated);
         setBusinessForm({
           business_name: data.business_name || '',
           email: data.email || '',
@@ -404,7 +406,13 @@ export default function VendorSettingsPage() {
     } else {
       // Auto-geocode the address after saving
       try {
-        await fetch('/api/vendor/geocode', { method: 'POST' });
+        const geoRes = await fetch('/api/vendor/geocode', { method: 'POST' });
+        const geoData = await geoRes.json();
+        if (geoData.estimated) {
+          setLocationEstimated(true);
+        } else if (geoRes.ok) {
+          setLocationEstimated(false);
+        }
       } catch {
         // Geocoding failure is non-blocking
       }
@@ -744,6 +752,19 @@ export default function VendorSettingsPage() {
                   placeholder="https://www.yourbusiness.com"
                 />
               </div>
+
+              {locationEstimated && (
+                <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 flex items-start gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">Your map location is estimated</p>
+                    <p className="text-xs text-yellow-700 mt-1">
+                      We couldn&apos;t verify your exact street address, so your location is based on your zip code.
+                      Please double-check your address below (watch for misspellings) and save again.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
