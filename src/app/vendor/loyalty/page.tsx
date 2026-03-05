@@ -1259,7 +1259,7 @@ export default function LoyaltyPage() {
             <h1 className="text-3xl font-extrabold bg-gradient-to-r from-secondary-500 via-secondary-400 to-primary-500 bg-clip-text text-transparent">
               Loyalty Programs
             </h1>
-            <p className="text-gray-400 text-sm mt-0.5">Create and manage multiple reward programs</p>
+            <p className="text-gray-400 text-sm mt-0.5">Create and manage your reward programs</p>
           </div>
         </div>
         <button
@@ -1271,6 +1271,19 @@ export default function LoyaltyPage() {
           <span className="relative">New Program</span>
         </button>
       </div>
+
+      {/* One-active-program info banner */}
+      {programs.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex gap-3 items-start">
+          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-amber-800">
+            <p className="font-semibold mb-1">Only one program can be active at a time.</p>
+            <p className="text-amber-700 leading-relaxed">
+              Activating a program will automatically pause your other programs. Keep in mind that pausing a program affects customers who are already enrolled — they won&apos;t be able to earn or redeem until you reactivate it. Plan your program durations accordingly (e.g., 3 months, 6 months) so customers can complete their rewards before you switch.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Programs Grid */}
       {programs.length === 0 ? (
