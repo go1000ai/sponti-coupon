@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Brain, Plus, Pencil, Trash2, X, Save, Loader2, BookOpen, Search, Store } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface KBEntry {
   id: string;
@@ -17,6 +18,7 @@ interface KBEntry {
 const CATEGORIES = ['General', 'Hours & Location', 'Products & Services', 'Pricing', 'Policies', 'FAQ'];
 
 export default function AdminKnowledgeBasePage() {
+  const { t } = useLanguage();
   const [entries, setEntries] = useState<KBEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -153,10 +155,10 @@ export default function AdminKnowledgeBasePage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Brain className="w-7 h-7 text-primary-500" />
-            Knowledge Base
+            {t("admin.knowledgeBase.title")}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Manage Olivia&apos;s knowledge base entries for all vendors.
+            {t("admin.knowledgeBase.subtitle")}
           </p>
         </div>
         {!showForm && (

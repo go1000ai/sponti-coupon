@@ -9,11 +9,13 @@ import {
   ImagePlus, Upload, Sparkles, Trash2, Copy, RefreshCw, Loader2,
   CheckCircle2, X, Film, Image as ImageIcon, FolderOpen, Wand2,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 type TypeFilter = 'all' | 'image' | 'video';
 
 export default function MediaLibraryPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -186,9 +188,9 @@ export default function MediaLibraryPage() {
             <div className="bg-gradient-to-br from-sky-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-sky-500/20">
               <ImagePlus className="w-6 h-6 text-white" />
             </div>
-            Media Library
+            {t('vendor.media.title')}
           </h1>
-          <p className="text-gray-500 mt-1">Manage your images and videos. Pick from library when creating deals.</p>
+          <p className="text-gray-500 mt-1">{t('vendor.media.subtitle')}</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -196,7 +198,7 @@ export default function MediaLibraryPage() {
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-xl font-medium text-sm hover:shadow-lg hover:shadow-sky-500/25 transition-all"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full" /> Ava Generate
+            <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full" /> {t('vendor.media.avaGenerate')}
           </button>
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -204,7 +206,7 @@ export default function MediaLibraryPage() {
             className="flex items-center gap-2 px-4 py-2.5 bg-[#E8632B] text-white rounded-xl font-medium text-sm hover:bg-[#D55A25] transition-all disabled:opacity-50"
           >
             {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-            Upload
+            {t('common.upload')}
           </button>
           <input
             ref={fileInputRef}

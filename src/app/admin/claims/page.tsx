@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminPagination from '@/components/admin/AdminPagination';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import {
@@ -54,6 +55,7 @@ const PAGE_SIZE = 20;
 
 export default function AdminClaimsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [claims, setClaims] = useState<ClaimRow[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -437,7 +439,7 @@ export default function AdminClaimsPage() {
         <div className="flex items-center gap-3">
           <QrCode className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Claims Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.claims.title")}</h1>
             <p className="text-sm text-gray-500">{totalAll} total claims</p>
           </div>
         </div>
@@ -482,7 +484,7 @@ export default function AdminClaimsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by Deal Ref, deal, vendor, or code..."
+              placeholder={t("admin.claims.searchClaims")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field pl-10"
@@ -492,7 +494,7 @@ export default function AdminClaimsPage() {
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Filter by customer name or email..."
+              placeholder={t("admin.claims.filterCustomer")}
               value={customerQuery}
               onChange={(e) => setCustomerQuery(e.target.value)}
               className="input-field pl-10"
@@ -506,10 +508,10 @@ export default function AdminClaimsPage() {
               className="input-field w-full sm:w-40"
             >
               <option value="all">All Statuses</option>
-              <option value="active">Active</option>
+              <option value="active">{t("common.active")}</option>
               <option value="redeemed">Redeemed</option>
               <option value="expired">Expired</option>
-              <option value="pending">Pending</option>
+              <option value="pending">{t("common.pending")}</option>
             </select>
           </div>
         </div>
@@ -521,10 +523,10 @@ export default function AdminClaimsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Customer</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Deal</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.claims.customer")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.claims.deal")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.claims.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.status")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Code</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Redeemed By</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Claimed</th>
@@ -545,7 +547,7 @@ export default function AdminClaimsPage() {
               ) : claims.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="p-8 text-center text-gray-400">
-                    No claims found matching your filters.
+                    {t("admin.claims.noClaims")} matching your filters.
                   </td>
                 </tr>
               ) : (

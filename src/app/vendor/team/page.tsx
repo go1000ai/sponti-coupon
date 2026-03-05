@@ -10,6 +10,7 @@ import {
   UserPlus, Crown, Star,
 } from 'lucide-react';
 import type { TeamMember, TeamRole, VendorLocation } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface MemberForm {
   email: string;
@@ -28,6 +29,7 @@ const ROLE_CONFIG: Record<TeamRole, { label: string; description: string; icon: 
 
 export default function TeamPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [locations, setLocations] = useState<VendorLocation[]>([]);
@@ -175,7 +177,7 @@ export default function TeamPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Team</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.team.title')}</h1>
             <p className="text-gray-500 text-sm mt-1">Manage team members and their roles</p>
           </div>
         </div>

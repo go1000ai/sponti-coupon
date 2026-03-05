@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   MessageSquare,
   Search,
@@ -44,6 +45,7 @@ interface ReviewRow {
 
 export default function AdminReviewsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -256,7 +258,7 @@ export default function AdminReviewsPage() {
         <div className="flex items-center gap-3">
           <MessageSquare className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.reviews.title")}</h1>
             <p className="text-sm text-gray-500">{reviews.length} total reviews</p>
           </div>
         </div>
@@ -331,11 +333,11 @@ export default function AdminReviewsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Customer</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Rating</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Comment</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Deal</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.reviews.customer")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.reviews.rating")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.reviews.comment")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.reviews.deal")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.reviews.vendor")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Date</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
@@ -354,7 +356,7 @@ export default function AdminReviewsPage() {
               ) : reviews.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
-                    No reviews found.
+                    {t("admin.reviews.noReviews")}.
                   </td>
                 </tr>
               ) : (

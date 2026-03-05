@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import {
@@ -157,6 +158,7 @@ const REASON_BORDER_COLORS: Record<string, string> = {
 
 export default function AdminSpontiPointsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [stats, setStats] = useState<PointsStats>({ total_issued: 0, total_redeemed: 0, active_balance: 0 });
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [userBalances, setUserBalances] = useState<Record<string, number>>({});
@@ -390,8 +392,8 @@ export default function AdminSpontiPointsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Coins className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">SpontiPoints</h1>
-          <p className="text-sm text-gray-500">Platform-wide points management &middot; Click any row to adjust points</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.spontipoints.title")}</h1>
+          <p className="text-sm text-gray-500">{t("admin.spontipoints.subtitle")}</p>
         </div>
       </div>
 
@@ -407,7 +409,7 @@ export default function AdminSpontiPointsPage() {
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Issued</p>
+              <p className="text-sm text-gray-500">{t("admin.spontipoints.totalIssued")}</p>
               <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.total_issued} />
               </p>
@@ -425,7 +427,7 @@ export default function AdminSpontiPointsPage() {
               <TrendingDown className="w-5 h-5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Redeemed</p>
+              <p className="text-sm text-gray-500">{t("admin.spontipoints.totalRedeemed")}</p>
               <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.total_redeemed} />
               </p>
@@ -443,7 +445,7 @@ export default function AdminSpontiPointsPage() {
               <Wallet className="w-5 h-5 text-primary-500" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Active Balance</p>
+              <p className="text-sm text-gray-500">{t("admin.spontipoints.activeBalance")}</p>
               <p className="text-2xl font-bold text-gray-900">
                 <AnimatedValue value={stats.active_balance} />
               </p>
@@ -527,7 +529,7 @@ export default function AdminSpontiPointsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Customer</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.spontipoints.customer")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Type</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-right">Points</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>

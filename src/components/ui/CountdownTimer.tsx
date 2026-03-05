@@ -1,6 +1,7 @@
 'use client';
 
 import { useCountdown } from '@/lib/hooks/useCountdown';
+import { useLanguage } from '@/lib/i18n';
 
 interface CountdownTimerProps {
   expiresAt: string;
@@ -11,12 +12,13 @@ interface CountdownTimerProps {
 
 export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', onExpire }: CountdownTimerProps) {
   const { days, hours, minutes, seconds, expired } = useCountdown(expiresAt);
+  const { t } = useLanguage();
 
   if (expired) {
     if (onExpire) onExpire();
     return (
       <div className="flex items-center gap-1 text-red-500 font-bold">
-        <span className="text-red-500">EXPIRED</span>
+        <span className="text-red-500">{t('countdown.expired')}</span>
       </div>
     );
   }
@@ -41,22 +43,22 @@ export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', onE
       {days > 0 && (
         <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
           <div className="font-bold tabular-nums">{String(days).padStart(2, '0')}</div>
-          <div className={`${labelSize[size]} text-gray-300`}>Days</div>
+          <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.days')}</div>
         </div>
       )}
       <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(hours).padStart(2, '0')}</div>
-        <div className={`${labelSize[size]} text-gray-300`}>Hrs</div>
+        <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.hrs')}</div>
       </div>
       <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
       <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(minutes).padStart(2, '0')}</div>
-        <div className={`${labelSize[size]} text-gray-300`}>Min</div>
+        <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.min')}</div>
       </div>
       <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
       <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
         <div className="font-bold tabular-nums">{String(seconds).padStart(2, '0')}</div>
-        <div className={`${labelSize[size]} text-gray-300`}>Sec</div>
+        <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.sec')}</div>
       </div>
     </div>
   );

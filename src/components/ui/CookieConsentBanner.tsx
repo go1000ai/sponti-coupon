@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 const STORAGE_KEY = 'sc_cookie_consent';
 
 export function CookieConsentBanner() {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -35,11 +37,10 @@ export function CookieConsentBanner() {
     >
       <div className="max-w-4xl mx-auto bg-gray-900 text-white rounded-xl shadow-2xl border border-gray-700 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex-1 text-sm text-gray-300 leading-relaxed">
-          <strong className="text-white block mb-1">We use cookies</strong>
-          Essential cookies keep the platform running. With your consent we also use analytics
-          cookies to improve your experience. See our{' '}
+          <strong className="text-white block mb-1">{t('cookieConsent.title')}</strong>
+          {t('cookieConsent.description')}{' '}
           <Link href="/privacy#section-7" className="text-primary-400 hover:underline underline-offset-2">
-            Cookie &amp; Privacy Policy
+            {t('cookieConsent.cookiePrivacyPolicy')}
           </Link>.
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -47,17 +48,17 @@ export function CookieConsentBanner() {
             onClick={() => accept('essential')}
             className="px-4 py-2 text-sm text-gray-300 border border-gray-600 rounded-lg hover:bg-gray-800 transition-colors whitespace-nowrap"
           >
-            Essential Only
+            {t('cookieConsent.essentialOnly')}
           </button>
           <button
             onClick={() => accept('all')}
             className="px-4 py-2 text-sm bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium whitespace-nowrap"
           >
-            Accept All
+            {t('cookieConsent.acceptAll')}
           </button>
           <button
             onClick={() => accept('essential')}
-            aria-label="Dismiss"
+            aria-label={t('cookieConsent.dismiss')}
             className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors"
           >
             <X className="w-4 h-4" />

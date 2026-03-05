@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Image as ImageIcon,
   Search,
@@ -51,6 +52,7 @@ function formatTotalStorage(bytes: number): string {
 
 export default function AdminMediaPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -191,7 +193,7 @@ export default function AdminMediaPage() {
         <div className="flex items-center gap-3">
           <ImageIcon className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Media Library</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.media.title")}</h1>
             <p className="text-sm text-gray-500">{stats.totalFiles} total files</p>
           </div>
         </div>

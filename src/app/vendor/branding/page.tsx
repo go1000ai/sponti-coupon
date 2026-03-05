@@ -10,6 +10,7 @@ import {
   Globe, Image as ImageIcon, Upload, X, Link as LinkIcon,
 } from 'lucide-react';
 import type { VendorBranding } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 const DEFAULT_BRANDING: VendorBranding = {
   primary_color: '#E8632B',
@@ -22,6 +23,7 @@ const DEFAULT_BRANDING: VendorBranding = {
 
 export default function BrandingPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -165,7 +167,7 @@ export default function BrandingPage() {
       <div className="flex items-center gap-3 mb-8">
         <Palette className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Custom Branding</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('vendor.branding.title')}</h1>
           <p className="text-gray-500 text-sm mt-1">Customize the look and feel of your deal pages</p>
         </div>
       </div>

@@ -4,8 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Mail, ArrowLeft, CheckCircle2, Loader2 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
 export default function ForgotPasswordPage() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -47,9 +49,9 @@ export default function ForgotPasswordPage() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Reset Password</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('auth.forgotPassword.title')}</h1>
           <p className="text-gray-500 mt-2">
-            {sent ? 'Check your email for a reset link' : 'Enter your email to receive a password reset link'}
+            {sent ? t('auth.forgotPassword.sent') : t('auth.forgotPassword.subtitle')}
           </p>
         </div>
 
@@ -58,14 +60,13 @@ export default function ForgotPasswordPage() {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Email Sent!</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{t('auth.forgotPassword.emailSent')}</h2>
             <p className="text-gray-500 text-sm">
-              If an account exists for <strong>{email}</strong>, you&apos;ll receive a password reset link shortly.
-              Check your inbox and spam folder.
+              {t('auth.forgotPassword.emailSentDesc', { email })}
             </p>
             <div className="pt-2">
               <Link href="/auth/login" className="text-primary-500 font-semibold hover:underline text-sm">
-                Back to Sign In
+                {t('auth.forgotPassword.backToLogin')}
               </Link>
             </div>
           </div>
@@ -78,7 +79,7 @@ export default function ForgotPasswordPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.forgotPassword.emailAddress')}</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
@@ -86,7 +87,7 @@ export default function ForgotPasswordPage() {
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   className="input-field pl-10"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.login.emailPlaceholder')}
                   required
                   autoFocus
                 />
@@ -95,9 +96,9 @@ export default function ForgotPasswordPage() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('auth.forgotPassword.sending')}</>
               ) : (
-                'Send Reset Link'
+                t('auth.forgotPassword.send')
               )}
             </button>
           </form>
@@ -105,7 +106,7 @@ export default function ForgotPasswordPage() {
 
         <div className="text-center mt-6">
           <Link href="/auth/login" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back to Sign In
+            <ArrowLeft className="w-4 h-4" /> {t('auth.forgotPassword.backToLogin')}
           </Link>
         </div>
       </div>

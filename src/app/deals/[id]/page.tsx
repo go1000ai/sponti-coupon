@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
+import { useLanguage } from '@/lib/i18n';
+import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
@@ -67,7 +69,9 @@ export default function DealDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [deal, setDeal] = useState<Deal | null>(null);
+  const { t } = useLanguage();
+  const [rawDeal, setRawDeal] = useState<Deal | null>(null);
+  const deal = useTranslatedDeal(rawDeal);
   const [vendorDeals, setVendorDeals] = useState<VendorDeal[]>([]);
   const [similarDeals, setSimilarDeals] = useState<SimilarDeal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +102,7 @@ export default function DealDetailPage() {
     async function fetchDeal() {
       const response = await fetch(`/api/deals/${params.id}`);
       const data = await response.json();
-      setDeal(data.deal);
+      setRawDeal(data.deal);
       setVendorDeals(data.vendor_deals || []);
       setSimilarDeals(data.similar_deals || []);
       setLoading(false);
@@ -178,7 +182,7 @@ export default function DealDetailPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        setReviewMessage({ type: 'success', text: 'Thank you for your review!' });
+        setReviewMessage({ type: 'success', text: t('dealDetail.thankYouReview') });
         setShowReviewForm(false);
         setCanReview(false);
         setReviewRating(0);
@@ -191,7 +195,7 @@ export default function DealDetailPage() {
           setCanReview(false);
           checkCanReview();
         } else {
-          setReviewMessage({ type: 'error', text: data.error || 'Failed to submit review' });
+          setReviewMessage({ type: 'error', text: data.error || t('dealDetail.failedSubmitReview') });
         }
       }
     } catch {
@@ -205,7 +209,7 @@ export default function DealDetailPage() {
 
   const handleClaim = async () => {
     if (!user) { router.push(`/auth/login?redirect=/deals/${params.id}`); return; }
-    if (isOwnDeal) { setError('You cannot claim your own deal'); return; }
+    if (isOwnDeal) { setError(t('dealDetail.cannotClaimOwn')); return; }
     if (deal?.deposit_amount && deal.deposit_amount > 0) { setShowDisclaimer(true); return; }
     await processClaim();
   };
@@ -237,7 +241,7 @@ export default function DealDetailPage() {
 
       // No deposit — instant QR
       router.push('/dashboard/my-deals');
-    } catch { setError('Failed to claim deal. Please try again.'); }
+    } catch { setError(t('dealDetail.failedToClaim')); }
     setClaiming(false);
     setShowDisclaimer(false);
   };
@@ -297,7 +301,7 @@ export default function DealDetailPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
-          <p className="text-sm text-gray-400">Loading deal...</p>
+          <p className="text-sm text-gray-400">{t('dealDetail.loadingDeal')}</p>
         </div>
       </div>
     );
@@ -306,8 +310,8 @@ export default function DealDetailPage() {
   if (!deal) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold text-gray-500">Deal not found</h1>
-        <Link href="/deals" className="text-primary-500 hover:underline mt-4 inline-block">Back to deals</Link>
+        <h1 className="text-2xl font-bold text-gray-500">{t('dealDetail.dealNotFound')}</h1>
+        <Link href="/deals" className="text-primary-500 hover:underline mt-4 inline-block">{t('dealDetail.backToDeals')}</Link>
       </div>
     );
   }
@@ -339,7 +343,7 @@ export default function DealDetailPage() {
       {/* ===== TOP: Image + Deal Info (Groupon-style) ===== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 lg:pt-6">
         <Link href="/deals" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-700 mb-4 text-sm font-medium transition-colors">
-          <ArrowLeft className="w-4 h-4" /> Back to Deals
+          <ArrowLeft className="w-4 h-4" /> {t('dealDetail.backToDeals')}
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-start overflow-hidden">
@@ -362,7 +366,7 @@ export default function DealDetailPage() {
             {/* ===== BELOW IMAGE: Deal Variant Options ===== */}
             {deal.variants && deal.variants.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Choose an option</p>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">{t('dealDetail.chooseOption')}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {deal.variants.map((v: DealVariant) => {
                     const isSelected = selectedVariant?.id === v.id;
@@ -402,11 +406,11 @@ export default function DealDetailPage() {
                         <div className="flex items-center gap-2 mt-1.5">
                           <span className="text-xs text-gray-400 line-through">{formatCurrency(v.original_price)}</span>
                           <span className="text-sm font-bold text-primary-500">{formatCurrency(v.price)}</span>
-                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(discount)} OFF</span>
+                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(discount)} {t('dealDetail.off')}</span>
                         </div>
-                        {soldOut && <p className="text-[10px] text-red-500 font-medium mt-1">Sold out</p>}
+                        {soldOut && <p className="text-[10px] text-red-500 font-medium mt-1">{t('dealDetail.soldOut')}</p>}
                         {!soldOut && v.max_claims != null && (
-                          <p className="text-[10px] text-gray-400 mt-1">{v.max_claims - v.claims_count} left</p>
+                          <p className="text-[10px] text-gray-400 mt-1">{t('dealDetail.variantLeft', { count: String(v.max_claims - v.claims_count) })}</p>
                         )}
                       </button>
                     );
@@ -421,11 +425,11 @@ export default function DealDetailPage() {
             {/* Badges row */}
             <div className="flex items-center flex-wrap gap-2 mb-3">
                 <DealTypeBadge type={deal.deal_type} size="lg" />
-                {isExpired && <span className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">EXPIRED</span>}
-                {isSoldOut && <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">SOLD OUT</span>}
+                {isExpired && <span className="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">{t('dealDetail.expired')}</span>}
+                {isSoldOut && <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">{t('dealDetail.soldOutBadge')}</span>}
                 {!isExpired && !isSoldOut && deal.claims_count > 10 && (
                   <span className="bg-orange-100 text-orange-600 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1">
-                    <Zap className="w-3 h-3" /> Popular
+                    <Zap className="w-3 h-3" /> {t('dealDetail.popular')}
                   </span>
                 )}
               </div>
@@ -463,7 +467,7 @@ export default function DealDetailPage() {
                         <>
                           <span className="text-gray-300 hidden sm:inline">|</span>
                           <span className={`font-medium ${isOpenNow ? 'text-green-600' : 'text-red-500'}`}>
-                            {isOpenNow ? 'Open Now' : 'Closed'}
+                            {isOpenNow ? t('dealDetail.openNow') : t('dealDetail.closed')}
                           </span>
                         </>
                       )}
@@ -492,7 +496,7 @@ export default function DealDetailPage() {
               {deal.requires_appointment && (
                 <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
                   <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-blue-800">Appointment Required</p>
+                  <p className="text-xs font-semibold text-blue-800">{t('dealDetail.appointmentRequired')}</p>
                 </div>
               )}
 
@@ -507,17 +511,17 @@ export default function DealDetailPage() {
                 </div>
                 <div className="flex items-center gap-3 mt-2">
                   <span className="inline-flex items-center gap-1 bg-green-50 text-green-600 font-bold text-sm px-3 py-1 rounded-full">
-                    {formatPercentage(effectiveDiscount)} OFF
+                    {formatPercentage(effectiveDiscount)} {t('dealDetail.off')}
                   </span>
-                  <span className="text-sm text-gray-400">You save {formatCurrency(effectiveOriginalPrice - effectiveDealPrice)}</span>
+                  <span className="text-sm text-gray-400">{t('dealDetail.youSaveAmount', { amount: formatCurrency(effectiveOriginalPrice - effectiveDealPrice) })}</span>
                 </div>
               </div>
 
               {/* Deposit info */}
               {hasDeposit && (
                 <div className="bg-primary-50 border border-primary-200 rounded-xl p-3">
-                  <p className="text-sm font-semibold text-primary-700">Deposit: {formatCurrency(effectiveDeposit ?? 0)}</p>
-                  <p className="text-xs text-primary-600 mt-0.5">{isSponti ? 'Paid directly to the business. Non-refundable if not redeemed.' : 'Paid directly to the business. Converts to vendor credit if not redeemed.'}</p>
+                  <p className="text-sm font-semibold text-primary-700">{t('dealDetail.depositLabel', { amount: formatCurrency(effectiveDeposit ?? 0) })}</p>
+                  <p className="text-xs text-primary-600 mt-0.5">{isSponti ? t('dealDetail.spontiDepositNote') : t('dealDetail.steadyDepositNote')}</p>
                 </div>
               )}
 
@@ -526,7 +530,7 @@ export default function DealDetailPage() {
                 <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-4 text-white">
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4" />
-                    <span className="text-sm font-semibold">Deal expires in:</span>
+                    <span className="text-sm font-semibold">{t('dealDetail.dealExpiresIn')}</span>
                   </div>
                   <CountdownTimer expiresAt={deal.expires_at} size="lg" variant="sponti" />
                 </div>
@@ -536,8 +540,8 @@ export default function DealDetailPage() {
               {effectiveMaxClaims && (
                 <div>
                   <div className="flex justify-between text-sm text-gray-500 mb-1.5">
-                    <span>{effectiveClaimsCount} claimed</span>
-                    <span className="font-medium">{effectiveMaxClaims - effectiveClaimsCount} left</span>
+                    <span>{t('dealDetail.claimedCount', { count: String(effectiveClaimsCount) })}</span>
+                    <span className="font-medium">{t('dealDetail.left', { count: String(effectiveMaxClaims - effectiveClaimsCount) })}</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
@@ -549,7 +553,7 @@ export default function DealDetailPage() {
                   </div>
                   {(effectiveClaimsCount / effectiveMaxClaims) > 0.8 && (
                     <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> Almost sold out!
+                      <Zap className="w-3 h-3" /> {t('dealDetail.almostSoldOut')}
                     </p>
                   )}
                 </div>
@@ -559,7 +563,7 @@ export default function DealDetailPage() {
               {!isExpired && !isSoldOut && deal.status === 'active' && (
                 isOwnDeal ? (
                   <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
-                    This is your deal
+                    {t('dealDetail.thisIsYourDeal')}
                   </div>
                 ) : (
                   <button
@@ -571,16 +575,16 @@ export default function DealDetailPage() {
                         : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
                     }`}
                   >
-                    {claiming ? 'Processing...' : hasDeposit ? `Claim Deal — ${formatCurrency(effectiveDeposit!)} Deposit` : 'Claim This Deal'}
+                    {claiming ? t('dealDetail.processing') : hasDeposit ? t('dealDetail.claimDealDeposit', { amount: formatCurrency(effectiveDeposit!) }) : t('dealDetail.claimThisDeal')}
                   </button>
                 )
               )}
 
               {isExpired && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal has expired</div>
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealHasExpired')}</div>
               )}
               {isSoldOut && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">This deal is sold out</div>
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealIsSoldOut')}</div>
               )}
 
               {error && (
@@ -590,17 +594,17 @@ export default function DealDetailPage() {
               {/* Trust signals — competitive advantage over Groupon */}
               <div className="flex items-center flex-wrap gap-x-4 gap-y-2 pt-2 border-t border-gray-100">
                 <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> Verified Business
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.verifiedBusiness')}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> Direct Payments
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.directPayments')}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> Secure QR Code
+                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.secureQrCode')}
                 </span>
                 {deal.claims_count > 0 && (
                   <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Users className="w-3.5 h-3.5 text-blue-500" /> {deal.claims_count} claimed
+                    <Users className="w-3.5 h-3.5 text-blue-500" /> {t('dealDetail.claimedCount', { count: String(deal.claims_count) })}
                   </span>
                 )}
               </div>
@@ -614,7 +618,7 @@ export default function DealDetailPage() {
                   }}
                   className="flex items-center gap-2 text-xs text-gray-400 hover:text-primary-500 transition-colors"
                 >
-                  <span>Payments accepted:</span>
+                  <span>{t('dealDetail.paymentsAccepted')}</span>
                   <div className="flex items-center gap-1">
                     {hasStripeConnect && (
                       <Image src="/logos/stripe.svg" alt="Stripe" width={14} height={14} className="object-contain" />
@@ -647,10 +651,10 @@ export default function DealDetailPage() {
                       activeTab === tab ? 'text-primary-500' : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    {tab === 'vendor' && 'About'}
-                    {tab === 'details' && 'Nitty Gritty'}
-                    {tab === 'payments' && 'Payments'}
-                    {tab === 'reviews' && `Reviews (${totalReviews})`}
+                    {tab === 'vendor' && t('dealDetail.tabAbout')}
+                    {tab === 'details' && t('dealDetail.tabNittyGritty')}
+                    {tab === 'payments' && t('dealDetail.tabPayments')}
+                    {tab === 'reviews' && t('dealDetail.tabReviews', { count: String(totalReviews) })}
                     {activeTab === tab && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-500 rounded-full" />
                     )}
@@ -665,7 +669,7 @@ export default function DealDetailPage() {
                     {/* How It Works */}
                     <div className="border border-gray-200 rounded-2xl p-5 sm:p-6">
                       <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Info className="w-5 h-5 text-primary-500" /> How It Works
+                        <Info className="w-5 h-5 text-primary-500" /> {t('dealDetail.howItWorks')}
                       </h3>
 
                       {/* Vendor's custom instructions */}
@@ -678,12 +682,12 @@ export default function DealDetailPage() {
                       {/* Step-by-step flow */}
                       <ol className="space-y-4">
                         {[
-                          { title: 'Claim this deal', desc: hasDeposit ? `Pay the ${formatCurrency(deal.deposit_amount!)} deposit to secure your spot` : 'Click the claim button — no payment required' },
-                          { title: 'Get your code', desc: 'A unique QR code and 6-digit code will appear in your "My Coupons" dashboard' },
+                          { title: t('dealDetail.claimThisDealStep'), desc: hasDeposit ? t('dealDetail.payDepositToSecure', { amount: formatCurrency(deal.deposit_amount!) }) : t('dealDetail.noPaymentRequired') },
+                          { title: t('dealDetail.getYourCode'), desc: t('dealDetail.getYourCodeDesc') },
                           deal.requires_appointment
-                            ? { title: `Book with ${vendor?.business_name || 'the business'}`, desc: 'Schedule your appointment before the deal expires — the appointment itself can be after expiration' }
-                            : { title: `Visit ${vendor?.business_name || 'the business'}`, desc: 'Head there before the deal expires' },
-                          { title: 'Show your code', desc: `Show your QR code or give the 6-digit code to the staff — you save ${formatPercentage(deal.discount_percentage)}!` },
+                            ? { title: t('dealDetail.bookWith', { name: vendor?.business_name || 'the business' }), desc: t('dealDetail.bookWithDesc') }
+                            : { title: t('dealDetail.visit', { name: vendor?.business_name || 'the business' }), desc: t('dealDetail.visitDesc') },
+                          { title: t('dealDetail.showYourCode'), desc: t('dealDetail.showYourCodeDesc', { percent: formatPercentage(deal.discount_percentage) }) },
                         ].map((step, i) => (
                           <li key={i} className="flex items-start gap-3">
                             <div className="w-8 h-8 rounded-full bg-primary-500 text-white font-bold text-sm flex items-center justify-center flex-shrink-0">{i + 1}</div>
@@ -700,7 +704,7 @@ export default function DealDetailPage() {
                     {deal.terms_and_conditions && (
                       <div className="border border-gray-200 rounded-2xl p-5 sm:p-6">
                         <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-                          <Shield className="w-5 h-5 text-primary-500" /> Terms & Conditions
+                          <Shield className="w-5 h-5 text-primary-500" /> {t('dealDetail.termsAndConditions')}
                         </h3>
                         <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">{deal.terms_and_conditions}</p>
                       </div>
@@ -710,7 +714,7 @@ export default function DealDetailPage() {
                     {deal.fine_print && (
                       <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 sm:p-6">
                         <h3 className="text-sm font-bold text-amber-800 mb-2 flex items-center gap-2">
-                          <AlertTriangle className="w-4 h-4 text-amber-500" /> Fine Print
+                          <AlertTriangle className="w-4 h-4 text-amber-500" /> {t('dealDetail.finePrint')}
                         </h3>
                         <p className="text-sm text-amber-700 leading-relaxed whitespace-pre-line">{deal.fine_print}</p>
                       </div>
@@ -728,8 +732,8 @@ export default function DealDetailPage() {
                           <Shield className="w-5 h-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="font-semibold text-green-800 text-sm">100% Direct Payments</p>
-                          <p className="text-xs text-green-600 mt-0.5">SpontiCoupon never holds or touches your money. Every payment goes straight to the business.</p>
+                          <p className="font-semibold text-green-800 text-sm">{t('dealDetail.directPaymentsBanner')}</p>
+                          <p className="text-xs text-green-600 mt-0.5">{t('dealDetail.directPaymentsBannerDesc')}</p>
                         </div>
                       </div>
                     </div>
@@ -737,15 +741,15 @@ export default function DealDetailPage() {
                     {/* Deposit / Online Payments */}
                     {(hasStripeConnect || paymentMethods.some(m => m.payment_tier === 'link' || m.payment_tier === 'integrated')) && (
                       <div className="border border-gray-200 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-gray-900 mb-1">Online Checkout</h3>
-                        <p className="text-xs text-gray-400 mb-4">Secure payment for deposits and purchases</p>
+                        <h3 className="text-sm font-bold text-gray-900 mb-1">{t('dealDetail.onlineCheckout')}</h3>
+                        <p className="text-xs text-gray-400 mb-4">{t('dealDetail.onlineCheckoutDesc')}</p>
                         <div className="flex flex-wrap gap-3">
                           {hasStripeConnect && (
                             <div className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
                               <Image src="/logos/stripe.svg" alt="Stripe" width={48} height={20} className="object-contain" />
                               <div>
                                 <p className="text-xs font-semibold text-gray-700">Stripe</p>
-                                <p className="text-[10px] text-gray-400">Integrated checkout</p>
+                                <p className="text-[10px] text-gray-400">{t('dealDetail.integratedCheckout')}</p>
                               </div>
                             </div>
                           )}
@@ -760,7 +764,7 @@ export default function DealDetailPage() {
                                   <Image src={proc.logo} alt={proc.name} width={32} height={32} className="object-contain" />
                                   <div>
                                     <p className="text-xs font-semibold text-gray-700">{proc.name}</p>
-                                    <p className="text-[10px] text-gray-400">Payment link</p>
+                                    <p className="text-[10px] text-gray-400">{t('dealDetail.paymentLink')}</p>
                                   </div>
                                 </div>
                               );
@@ -772,8 +776,8 @@ export default function DealDetailPage() {
                     {/* At-Location Payments */}
                     {paymentMethods.some(m => m.payment_tier === 'manual') && (
                       <div className="border border-gray-200 rounded-2xl p-5">
-                        <h3 className="text-sm font-bold text-gray-900 mb-1">Accepted at Location</h3>
-                        <p className="text-xs text-gray-400 mb-4">Pay any remaining balance in person</p>
+                        <h3 className="text-sm font-bold text-gray-900 mb-1">{t('dealDetail.acceptedAtLocation')}</h3>
+                        <p className="text-xs text-gray-400 mb-4">{t('dealDetail.acceptedAtLocationDesc')}</p>
                         <div className="flex flex-wrap gap-3">
                           {paymentMethods
                             .filter(m => m.payment_tier === 'manual')
@@ -800,8 +804,8 @@ export default function DealDetailPage() {
                         <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
                           <Shield className="w-6 h-6 text-gray-300" />
                         </div>
-                        <p className="text-sm text-gray-400">Payment information not yet configured by vendor.</p>
-                        <p className="text-xs text-gray-300 mt-1">Contact the business directly for payment details.</p>
+                        <p className="text-sm text-gray-400">{t('dealDetail.paymentNotConfigured')}</p>
+                        <p className="text-xs text-gray-300 mt-1">{t('dealDetail.contactForPayment')}</p>
                       </div>
                     )}
                   </div>
@@ -813,12 +817,12 @@ export default function DealDetailPage() {
                     {/* Review header */}
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">Customer Reviews</h3>
-                        {totalReviews > 0 && <p className="text-sm text-gray-400">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>}
+                        <h3 className="text-lg font-bold text-gray-900">{t('dealDetail.customerReviews')}</h3>
+                        {totalReviews > 0 && <p className="text-sm text-gray-400">{totalReviews} {totalReviews !== 1 ? t('dealDetail.reviewsWord') : t('dealDetail.reviewWord')}</p>}
                       </div>
                       {user && canReview && !showReviewForm && (
                         <button onClick={() => setShowReviewForm(true)} className="btn-primary text-sm flex items-center gap-2">
-                          <Star className="w-4 h-4" /> Write a Review
+                          <Star className="w-4 h-4" /> {t('dealDetail.writeReview')}
                         </button>
                       )}
                     </div>
@@ -839,22 +843,22 @@ export default function DealDetailPage() {
                     {/* Review Form */}
                     {showReviewForm && (
                       <div className="bg-gray-50 rounded-xl p-6">
-                        <h4 className="font-semibold text-gray-900 mb-3">How was your experience?</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">{t('dealDetail.howWasExperience')}</h4>
                         <div className="flex items-center gap-1 mb-4">
                           {[1, 2, 3, 4, 5].map(star => (
                             <button key={star} type="button" onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} onClick={() => setReviewRating(star)} className="p-1 transition-transform hover:scale-110">
                               <Star className={`w-8 h-8 ${star <= (hoverRating || reviewRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'} transition-colors`} />
                             </button>
                           ))}
-                          {reviewRating > 0 && <span className="ml-2 text-sm text-gray-500">{['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent!'][reviewRating]}</span>}
+                          {reviewRating > 0 && <span className="ml-2 text-sm text-gray-500">{['', t('dealDetail.ratingPoor'), t('dealDetail.ratingFair'), t('dealDetail.ratingGood'), t('dealDetail.ratingGreat'), t('dealDetail.ratingExcellent')][reviewRating]}</span>}
                         </div>
-                        <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder="Tell others about your experience (optional)" className="input-field min-h-[80px] resize-y mb-4" rows={3} />
+                        <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} placeholder={t('dealDetail.reviewPlaceholder')} className="input-field min-h-[80px] resize-y mb-4" rows={3} />
                         <div className="flex items-center gap-2">
                           <button onClick={handleSubmitReview} disabled={submittingReview || reviewRating === 0} className="btn-primary flex items-center gap-2 disabled:opacity-50">
                             {submittingReview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                            {submittingReview ? 'Submitting...' : 'Submit Review'}
+                            {submittingReview ? t('dealDetail.submittingReview') : t('dealDetail.submitReview')}
                           </button>
-                          <button onClick={() => { setShowReviewForm(false); setReviewRating(0); setReviewComment(''); }} className="btn-outline">Cancel</button>
+                          <button onClick={() => { setShowReviewForm(false); setReviewRating(0); setReviewComment(''); }} className="btn-outline">{t('dealDetail.cancelBtn')}</button>
                         </div>
                       </div>
                     )}
@@ -869,7 +873,7 @@ export default function DealDetailPage() {
                               <Star key={star} className={`w-4 h-4 ${star <= Math.round(avgRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
                             ))}
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">{totalReviews} review{totalReviews !== 1 ? 's' : ''}</p>
+                          <p className="text-xs text-gray-400 mt-1">{totalReviews} {totalReviews !== 1 ? t('dealDetail.reviewsWord') : t('dealDetail.reviewWord')}</p>
                         </div>
                       </div>
                     )}
@@ -880,7 +884,7 @@ export default function DealDetailPage() {
                     ) : reviews.length === 0 ? (
                       <div className="text-center py-8">
                         <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-2" />
-                        <p className="text-gray-400">No reviews yet. Be the first to review!</p>
+                        <p className="text-gray-400">{t('dealDetail.noReviewsYet')}</p>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -893,7 +897,7 @@ export default function DealDetailPage() {
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-medium text-gray-900 text-sm">{getCustomerName(review)}</span>
-                                  {review.is_verified && <span className="inline-flex items-center gap-0.5 text-xs text-green-600"><CheckCircle2 className="w-3 h-3" /> Verified</span>}
+                                  {review.is_verified && <span className="inline-flex items-center gap-0.5 text-xs text-green-600"><CheckCircle2 className="w-3 h-3" /> {t('dealDetail.verifiedReviewer')}</span>}
                                   <span className="text-xs text-gray-400">{timeAgo(review.created_at)}</span>
                                 </div>
                                 <div className="flex items-center gap-0.5 mt-1">
@@ -904,7 +908,7 @@ export default function DealDetailPage() {
                                 {review.comment && <p className="text-sm text-gray-600 mt-2 leading-relaxed">{review.comment}</p>}
                                 {review.vendor_reply && (
                                   <div className="mt-3 bg-white rounded-lg p-3 border-l-3 border-primary-500">
-                                    <p className="text-xs font-semibold text-gray-900 mb-1">Business Response</p>
+                                    <p className="text-xs font-semibold text-gray-900 mb-1">{t('dealDetail.businessResponse')}</p>
                                     <p className="text-sm text-gray-600">{review.vendor_reply}</p>
                                   </div>
                                 )}
@@ -924,7 +928,7 @@ export default function DealDetailPage() {
                     {deal.description && (
                       <div className="bg-gradient-to-br from-primary-50/50 to-orange-50/50 rounded-xl p-5 border border-primary-100">
                         <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                          <Tag className="w-4 h-4 text-primary-500" /> About This Deal
+                          <Tag className="w-4 h-4 text-primary-500" /> {t('dealDetail.aboutDeal')}
                         </h4>
                         <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-line">{deal.description}</p>
                       </div>
@@ -955,7 +959,7 @@ export default function DealDetailPage() {
                     {vendor.description && (
                       <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
                         <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                          <Info className="w-4 h-4 text-primary-500" /> About {vendor.business_name}
+                          <Info className="w-4 h-4 text-primary-500" /> {t('dealDetail.about', { name: vendor.business_name })}
                         </h4>
                         <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">{vendor.description}</p>
                       </div>
@@ -965,7 +969,7 @@ export default function DealDetailPage() {
                     {deal.amenities && deal.amenities.length > 0 && (
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-primary-500" /> Features & Perks
+                          <CheckCircle2 className="w-4 h-4 text-primary-500" /> {t('dealDetail.featuresPerks')}
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {deal.amenities.map((amenity: string, i: number) => {
@@ -985,7 +989,7 @@ export default function DealDetailPage() {
                     {fullAddress && (
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-primary-500" /> Location
+                          <MapPin className="w-4 h-4 text-primary-500" /> {t('dealDetail.location')}
                         </h4>
                         {getGoogleMapsEmbedUrl(vendor) && (
                           <div className="rounded-xl overflow-hidden mb-3 border border-gray-100">
@@ -1009,7 +1013,7 @@ export default function DealDetailPage() {
                           <button
                             onClick={() => copyAddress(fullAddress)}
                             className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
-                            title="Copy address"
+                            title={t('dealDetail.copyAddress')}
                           >
                             {copiedAddress ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4 text-gray-400" />}
                           </button>
@@ -1020,7 +1024,7 @@ export default function DealDetailPage() {
                             onClick={() => setShowDirections(prev => !prev)}
                             className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-500 text-white rounded-xl text-sm font-semibold hover:bg-primary-600 transition-colors shadow-sm"
                           >
-                            <Navigation className="w-4 h-4" /> Get Directions
+                            <Navigation className="w-4 h-4" /> {t('dealDetail.getDirections')}
                           </button>
                           {showDirections && (
                             <>
@@ -1057,7 +1061,7 @@ export default function DealDetailPage() {
                     {/* Contact info */}
                     {(vendor.phone || vendor.email || vendor.website) && (
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">Contact Information</h4>
+                      <h4 className="font-semibold text-gray-900">{t('dealDetail.contactInformation')}</h4>
                       {vendor.phone && (
                         <a href={`tel:${vendor.phone}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                           <Phone className="w-5 h-5 text-primary-500 flex-shrink-0" />
@@ -1084,7 +1088,7 @@ export default function DealDetailPage() {
                     {hours && Object.keys(hours).length > 0 && (
                       <div>
                         <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Clock className="w-4 h-4" /> Business Hours
+                          <Clock className="w-4 h-4" /> {t('dealDetail.businessHoursTitle')}
                         </h4>
                         <div className="bg-gray-50 rounded-xl overflow-hidden">
                           {dayNames.map(day => {
@@ -1093,10 +1097,10 @@ export default function DealDetailPage() {
                             return (
                               <div key={day} className={`flex items-center justify-between px-4 py-2.5 text-sm ${isToday ? 'bg-primary-50 font-medium' : ''} ${day !== 'sunday' ? 'border-t border-gray-100' : ''}`}>
                                 <span className={`capitalize ${isToday ? 'text-primary-700' : 'text-gray-700'}`}>
-                                  {day}{isToday ? ' (Today)' : ''}
+                                  {day}{isToday ? ` ${t('dealDetail.todayLabel')}` : ''}
                                 </span>
                                 <span className={dayData?.closed ? 'text-red-500' : isToday ? 'text-primary-600' : 'text-gray-600'}>
-                                  {dayData?.closed ? 'Closed' : dayData ? `${dayData.open} - ${dayData.close}` : '—'}
+                                  {dayData?.closed ? t('dealDetail.closedText') : dayData ? `${dayData.open} - ${dayData.close}` : '—'}
                                 </span>
                               </div>
                             );
@@ -1108,7 +1112,7 @@ export default function DealDetailPage() {
                     {/* Social Links */}
                     {social && Object.values(social).some(Boolean) && (
                       <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Follow Us</h4>
+                        <h4 className="font-semibold text-gray-900 mb-3">{t('dealDetail.followUs')}</h4>
                         <div className="flex flex-wrap gap-2">
                           {social.instagram && (
                             <a href={social.instagram.startsWith('http') ? social.instagram : `https://instagram.com/${social.instagram}`} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-gradient-to-r from-blue-500 to-pink-500 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Instagram</a>
@@ -1140,7 +1144,7 @@ export default function DealDetailPage() {
             {vendorDeals.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Store className="w-5 h-5 text-primary-500" /> More Deals from {vendor?.business_name}
+                  <Store className="w-5 h-5 text-primary-500" /> {t('dealDetail.moreDealsFrom', { name: vendor?.business_name || '' })}
                 </h3>
                 <div className="grid sm:grid-cols-2 gap-4">
                   {vendorDeals.map(vd => {
@@ -1168,7 +1172,7 @@ export default function DealDetailPage() {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-gray-400 line-through">{formatCurrency(vd.original_price)}</span>
                             <span className="text-sm font-bold text-primary-500">{formatCurrency(vd.deal_price)}</span>
-                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(vd.discount_percentage)} OFF</span>
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(vd.discount_percentage)} {t('dealDetail.off')}</span>
                           </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-400 mt-1 flex-shrink-0" />
@@ -1183,7 +1187,7 @@ export default function DealDetailPage() {
             {similarDeals.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
                 <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary-500" /> Similar Deals You Might Like
+                  <Sparkles className="w-5 h-5 text-primary-500" /> {t('dealDetail.similarDeals')}
                 </h3>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {similarDeals.map(sd => {
@@ -1216,7 +1220,7 @@ export default function DealDetailPage() {
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-xs text-gray-400 line-through">{formatCurrency(sd.original_price)}</span>
                             <span className="text-sm font-bold text-primary-500">{formatCurrency(sd.deal_price)}</span>
-                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(sd.discount_percentage)} OFF</span>
+                            <span className="text-xs font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">{formatPercentage(sd.discount_percentage)} {t('dealDetail.off')}</span>
                           </div>
                         </div>
                       </Link>
@@ -1233,7 +1237,7 @@ export default function DealDetailPage() {
           <div className="bg-white rounded-2xl p-8 max-w-md w-full animate-fade-up">
             <div className="flex items-start gap-3 mb-4">
               <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
-              <h3 className="text-xl font-bold text-gray-900">Confirm Your Claim</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('dealDetail.confirmYourClaim')}</h3>
             </div>
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-amber-800">
@@ -1257,9 +1261,9 @@ export default function DealDetailPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowDisclaimer(false)} className="btn-outline flex-1">Cancel</button>
+              <button onClick={() => setShowDisclaimer(false)} className="btn-outline flex-1">{t('dealDetail.cancelBtn')}</button>
               <button onClick={processClaim} disabled={claiming} className="btn-primary flex-1">
-                {claiming ? 'Processing...' : `Pay ${formatCurrency(deal.deposit_amount!)} Deposit`}
+                {claiming ? t('dealDetail.processing') : t('dealDetail.payDepositAmount', { amount: formatCurrency(deal.deposit_amount!) })}
               </button>
             </div>
           </div>

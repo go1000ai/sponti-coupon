@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   MapPin, Phone, Globe, Star, Download, Search,
   Plus, Trash2, Loader2, ExternalLink, Target,
@@ -81,6 +82,7 @@ function GrouponBadge() {
 
 export default function AdminLeadsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   // Multi-category state
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set(['Restaurants']));
@@ -547,8 +549,8 @@ https://sponticoupon.com`,
             <Target className="w-5 h-5 text-orange-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Vendor Leads</h1>
-            <p className="text-sm text-gray-500">Find and track local businesses to pitch SpontiCoupon</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.leads.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.leads.subtitle")}</p>
           </div>
         </div>
         <button

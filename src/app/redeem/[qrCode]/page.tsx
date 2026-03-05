@@ -6,6 +6,7 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CheckCircle2, XCircle, Clock, QrCode } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
 interface RedemptionStatus {
   status: 'valid' | 'redeemed' | 'expired';
@@ -27,6 +28,7 @@ interface RedemptionStatus {
 
 export default function RedeemPage() {
   const params = useParams();
+  const { t } = useLanguage();
   const [data, setData] = useState<RedemptionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -40,10 +42,10 @@ export default function RedeemPage() {
           setData(result);
         } else {
           const err = await response.json();
-          setError(err.error || 'Invalid QR code');
+          setError(err.error || t('redeem.invalidQrCode'));
         }
       } catch {
-        setError('Failed to verify QR code');
+        setError(t('redeem.failedToVerify'));
       }
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export default function RedeemPage() {
       <div className="min-h-[80vh] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto mb-4" />
-          <p className="text-gray-500">Verifying QR code...</p>
+          <p className="text-gray-500">{t('redeem.verifyingQr')}</p>
         </div>
       </div>
     );
@@ -66,7 +68,7 @@ export default function RedeemPage() {
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="card p-8 max-w-md w-full text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Invalid QR Code</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">{t('redeem.invalidQrCode')}</h1>
           <p className="text-gray-600">{error}</p>
         </div>
       </div>
@@ -83,8 +85,8 @@ export default function RedeemPage() {
             <div className="inline-flex bg-green-50 rounded-full p-4 mb-4">
               <QrCode className="w-12 h-12 text-green-500" />
             </div>
-            <h1 className="text-2xl font-bold text-green-600 mb-2">Valid QR Code</h1>
-            <p className="text-gray-500 mb-6">Ready for vendor to scan and redeem</p>
+            <h1 className="text-2xl font-bold text-green-600 mb-2">{t('redeem.validQrCode')}</h1>
+            <p className="text-gray-500 mb-6">{t('redeem.readyToRedeem')}</p>
 
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-4">
               <div className="flex items-center gap-2 mb-2">
@@ -102,7 +104,7 @@ export default function RedeemPage() {
             <div className="bg-primary-50 rounded-lg p-4">
               <div className="flex items-center justify-center gap-2 text-sm text-primary-600 mb-2">
                 <Clock className="w-4 h-4" />
-                <span className="font-medium">Expires in:</span>
+                <span className="font-medium">{t('redeem.expiresIn')}</span>
               </div>
               <CountdownTimer expiresAt={data.claim.expires_at} size="md" variant="sponti" />
             </div>
@@ -114,8 +116,8 @@ export default function RedeemPage() {
             <div className="inline-flex bg-blue-50 rounded-full p-4 mb-4">
               <CheckCircle2 className="w-12 h-12 text-blue-500" />
             </div>
-            <h1 className="text-2xl font-bold text-blue-600 mb-2">Already Redeemed</h1>
-            <p className="text-gray-500">This QR code was redeemed on {new Date(data.claim.redeemed_at!).toLocaleString()}</p>
+            <h1 className="text-2xl font-bold text-blue-600 mb-2">{t('redeem.alreadyRedeemed')}</h1>
+            <p className="text-gray-500">{t('redeem.redeemedOn', { date: new Date(data.claim.redeemed_at!).toLocaleString() })}</p>
           </>
         )}
 
@@ -124,8 +126,8 @@ export default function RedeemPage() {
             <div className="inline-flex bg-red-50 rounded-full p-4 mb-4">
               <XCircle className="w-12 h-12 text-red-500" />
             </div>
-            <h1 className="text-2xl font-bold text-red-600 mb-2">Expired</h1>
-            <p className="text-gray-500">This QR code expired on {new Date(data.claim.expires_at).toLocaleString()}</p>
+            <h1 className="text-2xl font-bold text-red-600 mb-2">{t('redeem.expired')}</h1>
+            <p className="text-gray-500">{t('redeem.expiredOn', { date: new Date(data.claim.expires_at).toLocaleString() })}</p>
           </>
         )}
       </div>

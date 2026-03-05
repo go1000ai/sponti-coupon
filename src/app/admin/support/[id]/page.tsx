@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import {
   ArrowLeft,
@@ -109,6 +110,7 @@ export default function AdminSupportDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -407,7 +409,7 @@ export default function AdminSupportDetailPage() {
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Support
+        {t('admin.support.backToSupport')}
       </button>
 
       {/* Two-column layout */}
@@ -448,7 +450,7 @@ export default function AdminSupportDetailPage() {
 
           {/* Messages Thread */}
           <div className="card p-5 mb-4">
-            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Conversation</h2>
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">{t('admin.support.conversation')}</h2>
 
             <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
               {messages.length === 0 ? (

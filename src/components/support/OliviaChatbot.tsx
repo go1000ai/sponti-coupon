@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, ReactNode } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useLanguage } from '@/lib/i18n';
 
 // Auto-detect URLs in text and render them as clickable links
 function linkifyText(text: string): ReactNode {
@@ -43,29 +44,11 @@ interface OliviaChatbotProps {
   onNewChat?: () => void;
 }
 
-const VENDOR_SUGGESTIONS = [
-  'How do I create a deal?',
-  'How do I scan a QR code?',
-  'Billing question',
-];
-
-const CUSTOMER_SUGGESTIONS = [
-  'How do I claim a deal?',
-  'Billing question',
-  'How do deposits work?',
-];
-
-const VISITOR_SUGGESTIONS = [
-  'What is SpontiCoupon?',
-  'How does it work?',
-  'Is it free?',
-];
-
-const VENDOR_PROSPECT_SUGGESTIONS = [
-  'How much does it cost?',
-  'What features do I get?',
-  'How do deals work?',
-];
+// Suggestion keys by role (resolved with t() inside component)
+const VENDOR_SUGGESTION_KEYS = ['chatbot.sugVendorCreateDeal', 'chatbot.sugVendorScanQR', 'chatbot.sugVendorBilling'];
+const CUSTOMER_SUGGESTION_KEYS = ['chatbot.sugCustomerClaim', 'chatbot.sugCustomerBilling', 'chatbot.sugCustomerDeposits'];
+const VISITOR_SUGGESTION_KEYS = ['chatbot.sugVisitorWhat', 'chatbot.sugVisitorHow', 'chatbot.sugVisitorFree'];
+const VENDOR_PROSPECT_SUGGESTION_KEYS = ['chatbot.sugProspectCost', 'chatbot.sugProspectFeatures', 'chatbot.sugProspectDeals'];
 
 const OLIVIA_AVATAR = '/olivia.png';
 
@@ -100,22 +83,21 @@ export function OliviaAvatar({ size = 32 }: { size?: number }) {
   );
 }
 
-function getGreeting(userRole: string): string {
-  if (userRole === 'visitor') {
-    return "Hey there! I'm Olivia, your SpontiCoupon guide. Looking for the best local deals or want to grow your business with us? Ask me anything — I'm here to help!";
-  }
-  return "Hi! I'm Olivia, your SpontiCoupon assistant. How can I help you today?";
+function getGreetingKey(userRole: string): string {
+  if (userRole === 'visitor') return 'chatbot.oliviaGreetingVisitor';
+  return 'chatbot.oliviaGreetingDefault';
 }
 
-function getSuggestions(userRole: string, pageContext?: string): string[] {
-  if (pageContext === 'vendor-prospect') return VENDOR_PROSPECT_SUGGESTIONS;
-  if (userRole === 'vendor') return VENDOR_SUGGESTIONS;
-  if (userRole === 'visitor') return VISITOR_SUGGESTIONS;
-  return CUSTOMER_SUGGESTIONS;
+function getSuggestionKeys(userRole: string, pageContext?: string): string[] {
+  if (pageContext === 'vendor-prospect') return VENDOR_PROSPECT_SUGGESTION_KEYS;
+  if (userRole === 'vendor') return VENDOR_SUGGESTION_KEYS;
+  if (userRole === 'visitor') return VISITOR_SUGGESTION_KEYS;
+  return CUSTOMER_SUGGESTION_KEYS;
 }
 
 export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: OliviaChatbotProps) {
   const isFloating = variant === 'floating';
+  const { t } = useLanguage();
 
   // Load persisted messages from sessionStorage (floating widget only)
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -128,7 +110,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
         }
       } catch { /* ignore */ }
     }
-    return [{ role: 'assistant', content: getGreeting(userRole) }];
+    return [{ role: 'assistant', content: t(getGreetingKey(userRole)) }];
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -170,7 +152,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
 
   const handleNewChat = () => {
     try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-    setMessages([{ role: 'assistant', content: getGreeting(userRole) }]);
+    setMessages([{ role: 'assistant', content: t(getGreetingKey(userRole)) }]);
     setInput('');
     onNewChat?.();
   };
@@ -196,7 +178,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
         body: JSON.stringify({ messages: updatedMessages, userRole, origin: window.location.origin }),
       });
       const data = await res.json();
-      const reply = data.reply || "I'm sorry, I couldn't process that. Please try again.";
+      const reply = data.reply || t('chatbot.couldntProcess');
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch {
       setMessages((prev) => [
@@ -204,8 +186,8 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
         {
           role: 'assistant',
           content: userRole === 'visitor'
-            ? "I'm having a little trouble right now. Check out our FAQ page or reach out through the Contact page!"
-            : "I'm having trouble connecting right now. Please try again or open a support ticket below.",
+            ? t('chatbot.errorVisitor')
+            : t('chatbot.errorDefault'),
         },
       ]);
     } finally {
@@ -231,7 +213,8 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
   };
 
-  const suggestions = getSuggestions(userRole, pageContext);
+  const suggestionKeys = getSuggestionKeys(userRole, pageContext);
+  const suggestions = suggestionKeys.map(k => t(k));
   const showSuggestions = messages.length === 1 && !loading;
 
   const messagesArea = (
@@ -289,7 +272,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
       {/* Suggestion chips */}
       {showSuggestions && (
         <div className="px-4 sm:px-6 py-3 border-t border-gray-100 bg-white shrink-0">
-          <p className="text-xs text-gray-400 mb-2">Quick questions:</p>
+          <p className="text-xs text-gray-400 mb-2">{t('chatbot.quickQuestions')}</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((s) => (
               <button
@@ -308,12 +291,12 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
       <div className="border-t border-gray-200 p-3 sm:p-4 bg-white shrink-0 overflow-hidden">
         {isAtLimit ? (
           <div className="text-center py-1">
-            <p className="text-xs text-gray-500 mb-2">You&apos;ve reached the message limit for this chat.</p>
+            <p className="text-xs text-gray-500 mb-2">{t('chatbot.messageLimitReached')}</p>
             <button
               onClick={handleNewChat}
               className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
             >
-              Start a new chat
+              {t('chatbot.startNewChat')}
             </button>
           </div>
         ) : (
@@ -324,7 +307,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
                 value={input}
                 onChange={handleInput}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a message..."
+                placeholder={t('chatbot.typeMessage')}
                 rows={1}
                 className="flex-1 min-w-0 resize-none border border-gray-200 rounded-xl px-3 sm:px-4 py-2.5 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 transition-all"
                 disabled={loading}
@@ -346,7 +329,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
                 onClick={onOpenTicket}
                 className="w-full text-center text-xs text-gray-400 hover:text-primary-500 mt-2 transition-colors"
               >
-                Rather open a support ticket?
+                {t('chatbot.openSupportTicket')}
               </button>
             )}
           </>
@@ -368,11 +351,11 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
         <OliviaAvatar size={40} />
         <div>
           <h3 className="text-white font-bold text-base">Olivia</h3>
-          <p className="text-secondary-200 text-xs">Support Assistant</p>
+          <p className="text-secondary-200 text-xs">{t('chatbot.supportAssistant')}</p>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-          <span className="text-xs text-secondary-200">Online</span>
+          <span className="text-xs text-secondary-200">{t('chatbot.online')}</span>
         </div>
       </div>
       {messagesArea}

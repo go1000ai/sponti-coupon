@@ -8,6 +8,7 @@ import {
   Key, Plus, Trash2, Loader2, Copy, Eye, EyeOff,
   AlertCircle, CheckCircle2, Code,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface ApiKey {
   id: string;
@@ -20,6 +21,7 @@ interface ApiKey {
 
 export default function ApiKeysPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ export default function ApiKeysPage() {
         <div className="flex items-center gap-3">
           <Key className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">API Access</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.api.title')}</h1>
             <p className="text-gray-500 text-sm mt-1">Manage API keys for your integrations</p>
           </div>
         </div>

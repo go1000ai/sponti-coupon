@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
 export default function LoginPage() {
   return (
@@ -15,6 +16,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -75,14 +77,14 @@ function LoginForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-500 mt-2">Sign in to access your deals</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('auth.login.title')}</h1>
+          <p className="text-gray-500 mt-2">{t('auth.login.subtitle')}</p>
         </div>
 
         <form onSubmit={handleLogin} className="card p-5 sm:p-8 space-y-5">
           {reason === 'inactivity' && (
             <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg border border-amber-200">
-              You were signed out due to inactivity. Please sign in again.
+              {t('auth.login.sessionExpired')}
             </div>
           )}
 
@@ -93,7 +95,7 @@ function LoginForm() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.login.email')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
               <input
@@ -101,14 +103,14 @@ function LoginForm() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="input-field pl-10"
-                placeholder="you@example.com"
+                placeholder={t('auth.login.emailPlaceholder')}
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.login.password')}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
               <input
@@ -116,7 +118,7 @@ function LoginForm() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 className="input-field pl-10 pr-10"
-                placeholder="Enter your password"
+                placeholder={t('auth.login.passwordPlaceholder')}
                 required
               />
               <button
@@ -130,27 +132,27 @@ function LoginForm() {
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full">
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.login.signingIn') : t('auth.login.signIn')}
           </button>
 
           <div className="text-right">
             <Link href="/auth/forgot-password" className="text-sm text-primary-500 hover:underline">
-              Forgot password?
+              {t('auth.login.forgotPassword')}
             </Link>
           </div>
         </form>
 
         <div className="text-center mt-6 space-y-2">
           <p className="text-gray-500 text-sm">
-            Don&apos;t have an account?{' '}
+            {t('auth.login.noAccount')}{' '}
             <Link href="/auth/signup" className="text-primary-500 font-semibold hover:underline">
-              Sign up as a Customer
+              {t('auth.login.signUpCustomer')}
             </Link>
           </p>
           <p className="text-gray-500 text-sm">
-            Own a business?{' '}
+            {t('auth.login.ownBusiness')}{' '}
             <Link href="/auth/signup?type=vendor" className="text-primary-500 font-semibold hover:underline">
-              Register as a Vendor
+              {t('auth.login.registerVendor')}
             </Link>
           </p>
         </div>

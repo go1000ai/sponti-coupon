@@ -20,6 +20,7 @@ import {
   AlertCircle,
   TicketIcon,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 /* ── Types ──────────────────────────── */
 interface SupportTicket {
@@ -130,6 +131,7 @@ function NewTicketModal({
   onClose: () => void;
   onSubmit: (data: { subject: string; category: string; message: string; attachments?: Attachment[] }) => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('general');
   const [message, setMessage] = useState('');
@@ -167,7 +169,7 @@ function NewTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">New Support Ticket</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('vendor.support.newTicket')}</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -577,6 +579,7 @@ function TicketDetailView({
 /* ── Main Page ──────────────────────────── */
 export default function VendorSupportPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -676,7 +679,7 @@ export default function VendorSupportPage() {
       <div className="flex items-center gap-3 mb-6">
         <Headphones className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support & Help</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('vendor.support.title')}</h1>
           <p className="text-sm text-gray-500">Chat with Olivia or open a support ticket</p>
         </div>
       </div>
@@ -709,7 +712,7 @@ export default function VendorSupportPage() {
       {/* Ticket List */}
       {tickets.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Your Tickets</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('vendor.support.yourTickets')}</h2>
           <div className="space-y-3">
             {tickets.map((ticket) => (
               <button

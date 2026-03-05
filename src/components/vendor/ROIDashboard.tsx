@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { formatCurrency } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 import {
   Users, TrendingUp, Eye, Heart, DollarSign,
   ArrowUpRight, ArrowDownRight, Minus, Loader2, Pencil, Check, X,
@@ -55,6 +56,7 @@ function DeltaBadge({ delta }: { delta?: number }) {
 }
 
 export function ROIDashboard() {
+  const { t } = useLanguage();
   const [data, setData] = useState<ROIData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(30);
@@ -120,14 +122,14 @@ export function ROIDashboard() {
       label: metrics.customers_sent.label,
       value: metrics.customers_sent.value.toLocaleString(),
       delta: metrics.customers_sent.delta,
-      sub: `in last ${period} days`,
+      sub: t('roiDashboard.inLast', { period: String(period) }),
     },
     {
       icon: <TrendingUp className="w-5 h-5 text-green-600" />,
       bg: 'bg-green-50',
       label: metrics.repeat_customers.label,
       value: metrics.repeat_customers.value.toLocaleString(),
-      sub: `${metrics.repeat_customers.rate}% repeat rate`,
+      sub: t('roiDashboard.repeatRate', { rate: String(metrics.repeat_customers.rate) }),
     },
     {
       icon: <DollarSign className="w-5 h-5 text-emerald-600" />,
@@ -135,7 +137,7 @@ export function ROIDashboard() {
       label: metrics.estimated_revenue.label,
       value: formatCurrency(metrics.estimated_revenue.value),
       delta: metrics.estimated_revenue.delta,
-      sub: `@ ${formatCurrency(metrics.estimated_revenue.avg_ticket || 50)}/ticket`,
+      sub: t('roiDashboard.atTicket', { amount: formatCurrency(metrics.estimated_revenue.avg_ticket || 50) }),
     },
     {
       icon: <Eye className="w-5 h-5 text-blue-600" />,
@@ -143,14 +145,14 @@ export function ROIDashboard() {
       label: metrics.deal_views.label,
       value: metrics.deal_views.value.toLocaleString(),
       delta: metrics.deal_views.delta,
-      sub: `${metrics.deal_views.conversion_rate}% claimed`,
+      sub: t('roiDashboard.claimed', { rate: String(metrics.deal_views.conversion_rate) }),
     },
     {
       icon: <Heart className="w-5 h-5 text-pink-600" />,
       bg: 'bg-pink-50',
       label: metrics.loyalty_active.label,
       value: metrics.loyalty_active.value.toLocaleString(),
-      sub: 'enrolled members',
+      sub: t('roiDashboard.enrolledMembers'),
     },
   ];
 
@@ -159,8 +161,8 @@ export function ROIDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">ROI Dashboard</h2>
-          <p className="text-sm text-gray-500">Track the return on your SpontiCoupon investment</p>
+          <h2 className="text-xl font-bold text-gray-900">{t('roiDashboard.title')}</h2>
+          <p className="text-sm text-gray-500">{t('roiDashboard.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {/* Period selector */}
@@ -202,7 +204,7 @@ export function ROIDashboard() {
       {/* Average Ticket Value Editor */}
       <div className="bg-white rounded-xl border border-gray-100 p-4">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600">Average Ticket Value:</span>
+          <span className="text-sm text-gray-600">{t('roiDashboard.avgTicketValue')}</span>
           {editingTicket ? (
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">$</span>
@@ -238,7 +240,7 @@ export function ROIDashboard() {
             </button>
           )}
           <span className="text-xs text-gray-400 ml-2">
-            Used to estimate revenue from redemptions
+            {t('roiDashboard.usedToEstimate')}
           </span>
         </div>
       </div>
@@ -246,7 +248,7 @@ export function ROIDashboard() {
       {/* Revenue Chart */}
       {revenue_chart && revenue_chart.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-100 p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">Estimated Monthly Revenue</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-4">{t('roiDashboard.estimatedMonthlyRevenue')}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenue_chart} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -278,7 +280,7 @@ export function ROIDashboard() {
             </ResponsiveContainer>
           </div>
           <p className="text-xs text-gray-400 mt-3 text-center">
-            Based on unique customers sent × your average ticket value
+            {t('roiDashboard.basedOnCustomers')}
           </p>
         </div>
       )}

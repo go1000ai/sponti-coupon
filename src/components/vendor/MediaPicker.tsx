@@ -5,6 +5,7 @@ import type { VendorMedia } from '@/lib/types/database';
 import {
   X, Loader2, Upload, Film, FolderOpen, CheckCircle2,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface MediaPickerProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface MediaPickerProps {
 }
 
 export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple, multiple = false, type = 'image' }: MediaPickerProps) {
+  const { t } = useLanguage();
   const [media, setMedia] = useState<VendorMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -45,11 +47,11 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
   const handleUpload = async (file: File) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Invalid file type.');
+      setError(t('mediaPicker.invalidFileType'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('File too large (max 5MB).');
+      setError(t('mediaPicker.fileTooLarge'));
       return;
     }
 
@@ -70,10 +72,10 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
           onSelect(data.url);
         }
       } else {
-        setError(data.error || 'Upload failed');
+        setError(data.error || t('mediaPicker.uploadFailed'));
       }
     } catch {
-      setError('Upload failed.');
+      setError(t('mediaPicker.uploadFailed'));
     }
     setUploading(false);
   };
@@ -102,7 +104,7 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
         <div className="flex items-center justify-between p-5 border-b">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <FolderOpen className="w-5 h-5 text-[#E8632B]" />
-            {multiple ? 'Select Images' : 'Pick from Library'}
+            {multiple ? t('mediaPicker.selectImages') : t('mediaPicker.pickFromLibrary')}
           </h3>
           <div className="flex items-center gap-3">
             <button
@@ -111,7 +113,7 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
               className="flex items-center gap-2 px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] transition-all disabled:opacity-50"
             >
               {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-              Upload New
+              {t('mediaPicker.uploadNew')}
             </button>
             <input
               ref={fileInputRef}
@@ -139,7 +141,7 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
         {/* Multi-select hint */}
         {multiple && !loading && media.length > 0 && (
           <div className="mx-5 mt-3 text-xs text-gray-500">
-            Tap images to select them, then press &quot;Add Selected&quot;
+            {t('mediaPicker.tapToSelect')}
           </div>
         )}
 
@@ -159,8 +161,8 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
           ) : media.length === 0 ? (
             <div className="text-center py-16">
               <FolderOpen className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 mb-1">No media in your library yet.</p>
-              <p className="text-sm text-gray-400">Upload an image to get started.</p>
+              <p className="text-gray-500 mb-1">{t('mediaPicker.noMediaYet')}</p>
+              <p className="text-sm text-gray-400">{t('mediaPicker.uploadToStart')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
@@ -211,14 +213,18 @@ export default function MediaPicker({ open, onClose, onSelect, onSelectMultiple,
         {multiple && (
           <div className="border-t p-4 flex items-center justify-between">
             <p className="text-sm text-gray-500">
-              {selected.size === 0 ? 'No images selected' : `${selected.size} image${selected.size > 1 ? 's' : ''} selected`}
+              {selected.size === 0
+                ? t('mediaPicker.noImagesSelected')
+                : selected.size > 1
+                  ? t('mediaPicker.imagesSelected', { count: String(selected.size) })
+                  : t('mediaPicker.imageSelected', { count: String(selected.size) })}
             </p>
             <button
               onClick={handleAddSelected}
               disabled={selected.size === 0}
               className="px-5 py-2.5 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Add Selected ({selected.size})
+              {t('mediaPicker.addSelected', { count: String(selected.size) })}
             </button>
           </div>
         )}

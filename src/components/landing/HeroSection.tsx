@@ -7,6 +7,7 @@ import { ArrowRight, Star, Users, ShieldCheck, Flame, Clock } from 'lucide-react
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { LandingAccordionItem } from '@/components/ui/interactive-image-accordion';
 import { SearchAutocomplete } from '@/components/ui/SearchAutocomplete';
+import { useLanguage } from '@/lib/i18n';
 
 interface DealStats {
   totalActive: number;
@@ -16,6 +17,7 @@ interface DealStats {
 }
 
 export function HeroSection() {
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [stats, setStats] = useState<DealStats | null>(null);
   const bgRef = useRef<HTMLDivElement>(null);
@@ -113,7 +115,7 @@ export function HeroSection() {
               }`}
             >
               <SpontiIcon className="w-4 h-4 text-primary-400" />
-              <span className="text-sm font-medium text-primary-300">Sponti Deals. Real Savings. Right Now.</span>
+              <span className="text-sm font-medium text-primary-300">{t('home.hero.badge')}</span>
             </div>
 
             <h1
@@ -122,11 +124,11 @@ export function HeroSection() {
               }`}
               style={{ transitionDelay: '150ms' }}
             >
-              Unbeatable
+              {t('home.hero.headlineLine1')}
               <br />
               <span className="text-primary-500">Sponti Deals</span>
               <br />
-              Near You
+              {t('home.hero.headlineLine3')}
             </h1>
 
             {/* Urgency badge — live deal count (always rendered, fades in when stats load) */}
@@ -139,14 +141,14 @@ export function HeroSection() {
                 <div className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
                   <span className="flex items-center gap-1.5 text-xs sm:text-sm text-white/90 font-medium">
                     <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-400 animate-pulse" />
-                    {stats.totalActive} deals live
+                    {t('home.hero.dealsLive').replace('{{count}}', String(stats.totalActive))}
                   </span>
                   {stats.expiringSoon > 0 && (
                     <>
                       <span className="w-px h-4 bg-white/20 hidden sm:block" />
                       <span className="hidden sm:flex items-center gap-1.5 text-sm text-yellow-300/90 font-medium">
                         <Clock className="w-3.5 h-3.5" />
-                        {stats.expiringSoon} expiring in &lt; 2hrs
+                        {t('home.hero.expiringSoon').replace('{{count}}', String(stats.expiringSoon))}
                       </span>
                     </>
                   )}
@@ -160,7 +162,7 @@ export function HeroSection() {
               }`}
               style={{ transitionDelay: '300ms' }}
             >
-              Discover 24-hour spontaneous deals from local businesses. Exclusive discounts that won&apos;t wait — save big before the countdown hits zero.
+              {t('home.hero.description')}
             </p>
 
             {/* Search Autocomplete */}
@@ -180,20 +182,26 @@ export function HeroSection() {
               }`}
               style={{ transitionDelay: '600ms' }}
             >
-              {['Restaurants', 'Spa & Beauty', 'Fitness', 'Entertainment', 'Shopping'].map(cat => (
+              {[
+                { label: t('home.hero.restaurants'), slug: 'restaurants' },
+                { label: t('home.hero.spaBeauty'), slug: 'spa-beauty' },
+                { label: t('home.hero.fitness'), slug: 'fitness' },
+                { label: t('home.hero.entertainment'), slug: 'entertainment' },
+                { label: t('home.hero.shopping'), slug: 'shopping' },
+              ].map(cat => (
                 <button
-                  key={cat}
-                  onClick={() => router.push(`/deals?category=${cat.toLowerCase().replace(/ & /g, '-')}`)}
+                  key={cat.slug}
+                  onClick={() => router.push(`/deals?category=${cat.slug}`)}
                   className="bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 px-3 py-1.5 rounded-full text-xs font-medium hover:bg-white/20 transition-all duration-200 hover:-translate-y-0.5"
                 >
-                  {cat}
+                  {cat.label}
                 </button>
               ))}
               <button
                 onClick={() => router.push('/deals')}
                 className="text-primary-400 font-semibold inline-flex items-center gap-1 px-3 py-1.5 text-xs hover:text-primary-300 transition-colors"
               >
-                All Deals <ArrowRight className="w-3 h-3" />
+                {t('home.hero.allDeals')} <ArrowRight className="w-3 h-3" />
               </button>
             </div>
 
@@ -206,11 +214,11 @@ export function HeroSection() {
             >
               <div className="flex items-center gap-1.5 text-white/60 text-xs">
                 <ShieldCheck className="w-4 h-4 text-green-400" />
-                <span>Verified Businesses</span>
+                <span>{t('home.hero.verifiedBusinesses')}</span>
               </div>
               <div className="flex items-center gap-1.5 text-white/60 text-xs">
                 <Users className="w-4 h-4 text-blue-400" />
-                <span>Growing Community</span>
+                <span>{t('home.hero.growingCommunity')}</span>
               </div>
               <div className="flex items-center gap-1 text-white/60 text-xs">
                 <div className="flex">
@@ -218,7 +226,7 @@ export function HeroSection() {
                     <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
                   ))}
                 </div>
-                <span className="ml-1">Top Rated</span>
+                <span className="ml-1">{t('home.hero.topRated')}</span>
               </div>
             </div>
           </div>

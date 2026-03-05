@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 interface SuggestedPricing {
   original_price?: number;
@@ -28,6 +29,7 @@ interface DealAdvisorProps {
 }
 
 export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }: DealAdvisorProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
   useEffect(() => {
     if (expanded && !hasGreeted && messages.length === 0) {
       setHasGreeted(true);
-      sendMessage('Hi Ava! I need help pricing my deal.', true);
+      sendMessage(t('dealAdvisor.autoGreet'), true);
     }
   }, [expanded, hasGreeted, messages.length]);
 
@@ -88,13 +90,13 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
       } else {
         setMessages(prev => [...prev, {
           role: 'assistant' as const,
-          content: data.error || "Sorry, I'm having trouble right now. Try again!",
+          content: data.error || t('dealAdvisor.connectionIssue'),
         }]);
       }
     } catch {
       setMessages(prev => [...prev, {
         role: 'assistant' as const,
-        content: "Connection issue — try again in a moment!",
+        content: t('dealAdvisor.connectionIssue'),
       }]);
     }
     setLoading(false);
@@ -104,7 +106,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
     onApplyPricing(pricing);
     setMessages(prev => [...prev, {
       role: 'assistant' as const,
-      content: "Done! I've filled in the pricing for you. Feel free to tweak it or ask me for a different suggestion.",
+      content: t('dealAdvisor.pricingApplied'),
     }]);
   };
 
@@ -121,8 +123,8 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
           <img src="/ava.png" alt="Ava" className="w-full h-full rounded-full object-cover" />
         </div>
         <div className="flex-1 text-left">
-          <p className="font-bold text-emerald-800 text-sm">Ask Ava — AI Deal Strategist</p>
-          <p className="text-xs text-emerald-600">Get smart pricing suggestions based on your category, market, and deal history</p>
+          <p className="font-bold text-emerald-800 text-sm">{t('dealAdvisor.askAva')}</p>
+          <p className="text-xs text-emerald-600">{t('dealAdvisor.askAvaDesc')}</p>
         </div>
         <ChevronDown className="w-5 h-5 text-emerald-400 group-hover:translate-y-0.5 transition-transform" />
       </button>
@@ -140,9 +142,9 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
           </div>
           <div>
             <p className="font-bold text-emerald-800 text-sm flex items-center gap-1.5">
-              Ava <span className="text-[10px] font-normal text-emerald-500 bg-emerald-100 px-1.5 py-0.5 rounded-full">AI Deal Strategist</span>
+              Ava <span className="text-[10px] font-normal text-emerald-500 bg-emerald-100 px-1.5 py-0.5 rounded-full">{t('dealAdvisor.aiDealStrategist')}</span>
             </p>
-            <p className="text-[11px] text-emerald-600">Powered by SpontiCoupon</p>
+            <p className="text-[11px] text-emerald-600">{t('dealAdvisor.poweredBy')}</p>
           </div>
         </div>
         <button
@@ -162,8 +164,8 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
             </div>
-            <p className="text-sm font-semibold text-emerald-800">Hey! I&apos;m Ava.</p>
-            <p className="text-xs text-emerald-600 mt-1">I&apos;ll help you price your deal for maximum results. Let&apos;s go!</p>
+            <p className="text-sm font-semibold text-emerald-800">{t('dealAdvisor.heyImAva')}</p>
+            <p className="text-xs text-emerald-600 mt-1">{t('dealAdvisor.helpPriceDeal')}</p>
           </div>
         )}
 
@@ -188,11 +190,11 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
                 {/* Pricing suggestion card */}
                 {msg.suggested_pricing && (
                   <div className="mt-2 bg-white border border-emerald-200 rounded-xl p-3 shadow-sm">
-                    <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide mb-2">Ava&apos;s Recommendation</p>
+                    <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wide mb-2">{t('dealAdvisor.avasRecommendation')}</p>
                     <div className="flex items-center gap-3 mb-2">
                       {msg.suggested_pricing.original_price && (
                         <div className="text-center">
-                          <p className="text-[10px] text-gray-400">Original</p>
+                          <p className="text-[10px] text-gray-400">{t('dealAdvisor.original')}</p>
                           <p className="text-sm font-bold text-gray-500 line-through">{formatCurrency(msg.suggested_pricing.original_price)}</p>
                         </div>
                       )}
@@ -200,7 +202,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
                         <>
                           <ArrowRight className="w-3 h-3 text-emerald-400" />
                           <div className="text-center">
-                            <p className="text-[10px] text-gray-400">Deal Price</p>
+                            <p className="text-[10px] text-gray-400">{t('dealAdvisor.dealPrice')}</p>
                             <p className="text-lg font-bold text-emerald-600">{formatCurrency(msg.suggested_pricing.deal_price)}</p>
                           </div>
                         </>
@@ -213,7 +215,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
                     </div>
                     {msg.suggested_pricing.deposit_amount && (
                       <p className="text-[11px] text-gray-500 mb-2">
-                        Suggested deposit: {formatCurrency(msg.suggested_pricing.deposit_amount)}
+                        {t('dealAdvisor.suggestedDeposit', { amount: formatCurrency(msg.suggested_pricing.deposit_amount) })}
                       </p>
                     )}
                     <button
@@ -221,7 +223,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
                       onClick={() => handleApplyPricing(msg.suggested_pricing!)}
                       className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold py-2 rounded-lg transition-all shadow-md shadow-emerald-500/20"
                     >
-                      Use Ava&apos;s Pricing
+                      {t('dealAdvisor.useAvasPricing')}
                     </button>
                   </div>
                 )}
@@ -237,7 +239,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
               <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
             </div>
             <div className="bg-white text-gray-400 text-sm rounded-2xl rounded-bl-md px-3.5 py-2.5 border border-emerald-100 shadow-sm">
-              <Loader2 className="w-4 h-4 animate-spin inline" /> Thinking...
+              <Loader2 className="w-4 h-4 animate-spin inline" /> {t('dealAdvisor.thinking')}
             </div>
           </div>
         )}
@@ -248,9 +250,9 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
       {messages.length === 0 && !loading && (
         <div className="px-4 pb-2 flex flex-wrap gap-1.5">
           {[
-            'What discount should I offer?',
-            'How should I price my deposit?',
-            'What works best for my category?',
+            t('dealAdvisor.sugDiscount'),
+            t('dealAdvisor.sugDeposit'),
+            t('dealAdvisor.sugCategory'),
           ].map(q => (
             <button
               key={q}
@@ -272,7 +274,7 @@ export default function DealAdvisor({ dealType, currentPricing, onApplyPricing }
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !loading && sendMessage(input)}
             className="flex-1 text-sm px-3.5 py-2.5 rounded-xl border border-emerald-200 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-400"
-            placeholder="Ask Ava about pricing..."
+            placeholder={t('dealAdvisor.askAboutPricing')}
             disabled={loading}
           />
           <button

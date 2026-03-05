@@ -12,6 +12,7 @@ import { PAYMENT_PROCESSORS, PROCESSOR_LIST } from '@/lib/constants/payment-proc
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 import type { VendorPaymentMethod } from '@/lib/types/database';
 import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
+import { useLanguage } from '@/lib/i18n';
 
 // Square-icon logos vs wide wordmark logos need different aspect ratios
 const SQUARE_LOGOS: Set<string> = new Set(['zelle', 'cashapp', 'square']);
@@ -50,6 +51,7 @@ function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?:
 }
 
 export default function VendorPaymentsPage() {
+  const { t } = useLanguage();
   const [methods, setMethods] = useState<VendorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -239,10 +241,10 @@ export default function VendorPaymentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <DollarSign className="w-7 h-7 text-green-500" />
-            Get Paid
+            {t('vendor.payments.title')}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Set up how you receive payments from customers — directly to your account
+            {t('vendor.payments.subtitle')}
           </p>
         </div>
         <button
@@ -276,7 +278,7 @@ export default function VendorPaymentsPage() {
 
       {/* How You Get Paid — 3 Cards */}
       <div className="mb-8">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">How You Get Paid</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{t('vendor.payments.howYouGetPaid')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Automated */}
           <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
@@ -498,7 +500,7 @@ export default function VendorPaymentsPage() {
 
       {/* Your Payment Methods */}
       <div className="mb-2">
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Your Payment Methods</h2>
+        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{t('vendor.payments.yourPaymentMethods')}</h2>
       </div>
 
       {methods.length === 0 && !showAddForm ? (

@@ -8,10 +8,12 @@ import { DealTypeLegend } from '@/components/ui/SpontiBadge';
 import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
 export function BentoDeals() {
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,13 +63,13 @@ export function BentoDeals() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-500 rounded-full px-5 py-2 mb-3 shadow-md">
                 <Sparkles className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">MORE DEALS</span>
+                <span className="text-sm font-bold text-white tracking-wide">{t('home.bento.badge')}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">
-                Explore All Deals
+                {t('home.bento.title')}
               </h2>
               <p className="text-gray-500 mt-2 text-base sm:text-lg">
-                Deals from everywhere — online, in-store, and more
+                {t('home.bento.subtitle')}
               </p>
               <DealTypeLegend className="mt-3 flex-wrap" />
             </div>
@@ -75,7 +77,7 @@ export function BentoDeals() {
               href="/deals"
               className="text-primary-500 font-semibold inline-flex items-center gap-1 hover:text-primary-600 transition-colors group"
             >
-              View All Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('home.bento.viewAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </ScrollReveal>
@@ -102,7 +104,7 @@ export function BentoDeals() {
               href="/deals"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
             >
-              Browse All Deals <ArrowRight className="w-5 h-5" />
+              {t('home.bento.browseAll')} <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
         </ScrollReveal>

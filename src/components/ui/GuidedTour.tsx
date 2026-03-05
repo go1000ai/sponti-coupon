@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Joyride, { CallBackProps, STATUS, ACTIONS, EVENTS, Step, TooltipRenderProps } from 'react-joyride';
 import { X, ChevronRight, SkipForward } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface GuidedTourProps {
   tourKey: string;
@@ -20,6 +21,7 @@ function CustomTooltip({
   isLastStep,
   size,
 }: TooltipRenderProps) {
+  const { t } = useLanguage();
   return (
     <div
       {...tooltipProps}
@@ -28,12 +30,12 @@ function CustomTooltip({
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-500 to-orange-400 px-4 sm:px-5 py-3 flex items-center justify-between rounded-t-2xl">
         <p className="text-white text-sm font-semibold">
-          {step.title || `Step ${index + 1} of ${size}`}
+          {step.title || t('guidedTour.stepOf', { current: String(index + 1), total: String(size) })}
         </p>
         <button
           {...closeProps}
           className="p-1 rounded-full hover:bg-white/20 transition-colors"
-          aria-label="Close tour"
+          aria-label={t('chatbot.closeTour')}
         >
           <X className="w-4 h-4 text-white" />
         </button>
@@ -53,7 +55,7 @@ function CustomTooltip({
           className="text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1"
         >
           <SkipForward className="w-3.5 h-3.5" />
-          Skip
+          {t('guidedTour.skip')}
         </button>
 
         <span className="text-xs text-gray-400 font-medium">
@@ -65,9 +67,9 @@ function CustomTooltip({
             {...primaryProps}
             className="bg-gradient-to-r from-primary-500 to-orange-400 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm flex items-center gap-1"
           >
-            {isLastStep ? 'Got it!' : (
+            {isLastStep ? t('guidedTour.gotIt') : (
               <>
-                Next
+                {t('guidedTour.next')}
                 <ChevronRight className="w-3.5 h-3.5" />
               </>
             )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import {
   Star,
@@ -52,6 +53,7 @@ function SkeletonRow() {
 
 export default function AdminFeaturedPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [featured, setFeatured] = useState<FeaturedDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -235,8 +237,8 @@ export default function AdminFeaturedPage() {
         <div className="flex items-center gap-3">
           <Star className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Featured Deals</h1>
-            <p className="text-sm text-gray-500">Manage which deals appear in the featured section on the homepage</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.featured.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.featured.subtitle")}</p>
           </div>
         </div>
         <button
@@ -259,10 +261,10 @@ export default function AdminFeaturedPage() {
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center w-16">#</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Deal</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.featured.deal")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.featured.vendor")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Claims</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Added</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.featured.added")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Actions</th>
               </tr>
             </thead>
@@ -271,7 +273,7 @@ export default function AdminFeaturedPage() {
                 <tr>
                   <td colSpan={6} className="p-12 text-center">
                     <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                    <p className="text-gray-400">No featured deals yet.</p>
+                    <p className="text-gray-400">{t("admin.featured.noFeatured")} yet.</p>
                     <p className="text-sm text-gray-300 mt-1">Click &ldquo;Add Featured Deal&rdquo; to get started.</p>
                   </td>
                 </tr>

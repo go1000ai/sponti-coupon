@@ -12,6 +12,7 @@ import {
   ArrowRight, ArrowDown, Star, Shield, Sparkles,
   ExternalLink, Loader2, XCircle,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 /* ─────── Plan Config (matches pricing page) ─────── */
 const PLANS = [
@@ -101,6 +102,7 @@ const TIER_NAMES: Record<string, string> = {
 };
 
 function SubscriptionContent() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -231,8 +233,8 @@ function SubscriptionContent() {
         <div className="flex items-center gap-3">
           <CreditCard className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Subscription</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your plan and unlock more features</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.subscription.title')}</h1>
+            <p className="text-gray-500 text-sm mt-1">{t('vendor.subscription.subtitle')}</p>
           </div>
         </div>
         <button
@@ -245,7 +247,7 @@ function SubscriptionContent() {
           ) : (
             <ExternalLink className="w-4 h-4" />
           )}
-          Manage Billing
+          {t('vendor.subscription.manageBilling')}
         </button>
       </div>
 
@@ -268,7 +270,7 @@ function SubscriptionContent() {
                <Rocket className="w-6 h-6" />}
             </div>
             <div>
-              <p className="text-sm text-white opacity-90">Current Plan</p>
+              <p className="text-sm text-white opacity-90">{t('vendor.subscription.currentPlan')}</p>
               <h2 className="text-2xl font-bold capitalize">{currentTier}</h2>
               <p className="text-sm text-white opacity-90 mt-1">
                 {formatCurrency(SUBSCRIPTION_TIERS[currentTier as SubscriptionTier].price)}/month
@@ -284,10 +286,10 @@ function SubscriptionContent() {
                 : 'bg-yellow-400/30 text-white'
             }`}>
               <Shield className="w-3 h-3" />
-              {vendor?.subscription_status === 'active' ? 'Active' :
-               vendor?.subscription_status === 'trialing' ? 'Trial' :
-               vendor?.subscription_status === 'past_due' ? 'Past Due' :
-               vendor?.subscription_status || 'Inactive'}
+              {vendor?.subscription_status === 'active' ? t('vendor.subscription.active') :
+               vendor?.subscription_status === 'trialing' ? t('vendor.subscription.trial') :
+               vendor?.subscription_status === 'past_due' ? t('vendor.subscription.pastDue') :
+               vendor?.subscription_status || t('vendor.subscription.inactive')}
             </span>
           </div>
         </div>
@@ -295,8 +297,8 @@ function SubscriptionContent() {
         {/* Click-to-cancel — California ARL compliance */}
         <div className="mt-5 pt-5 border-t border-white/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <p className="text-xs text-white/70 leading-relaxed max-w-sm">
-            Your subscription auto-renews {vendor?.subscription_status === 'trialing' ? 'after your trial ends' : 'each billing period'}.
-            Cancel anytime — your access continues until the end of the current period.
+            {t('vendor.subscription.autoRenewMessage', { context: vendor?.subscription_status === 'trialing' ? t('vendor.subscription.afterTrial') : t('vendor.subscription.eachBillingPeriod') })}
+            {' '}{t('vendor.subscription.cancelAnytime')}
           </p>
           <button
             onClick={handleOpenPortal}
@@ -304,7 +306,7 @@ function SubscriptionContent() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white/90 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl transition-colors whitespace-nowrap shrink-0"
           >
             {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-            Cancel Plan
+            {t('vendor.subscription.cancelPlan')}
           </button>
         </div>
       </div>
@@ -320,7 +322,7 @@ function SubscriptionContent() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Monthly
+            {t('vendor.subscription.monthly')}
           </button>
           <button
             onClick={() => setIsAnnual(true)}
@@ -330,11 +332,11 @@ function SubscriptionContent() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Annual
+            {t('vendor.subscription.annual')}
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
               isAnnual ? 'bg-green-500 text-white' : 'bg-green-100 text-green-600'
             }`}>
-              SAVE 20%
+              {t('vendor.subscription.save20')}
             </span>
           </button>
         </div>
@@ -369,7 +371,7 @@ function SubscriptionContent() {
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
                   <div className="bg-green-500 text-white text-[11px] font-bold px-5 py-1.5 rounded-full shadow-lg shadow-green-200/50 flex items-center gap-1.5 whitespace-nowrap">
                     <Check className="w-3.5 h-3.5" />
-                    CURRENT PLAN
+                    {t('vendor.subscription.currentPlanBadge')}
                   </div>
                 </div>
               )}
@@ -396,7 +398,7 @@ function SubscriptionContent() {
                     <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
                       {formatCurrency(price)}
                     </span>
-                    <span className="text-gray-400 text-base font-medium">/mo</span>
+                    <span className="text-gray-400 text-base font-medium">{t('vendor.subscription.perMo')}</span>
                   </div>
                   {isAnnual && (
                     <p className="text-xs text-green-600 font-medium mt-1.5">
@@ -436,7 +438,7 @@ function SubscriptionContent() {
                 <div className="mt-auto">
                   {isCurrent ? (
                     <button disabled className="w-full py-3.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-400 cursor-not-allowed">
-                      Current Plan
+                      {t('vendor.subscription.currentPlan')}
                     </button>
                   ) : isUpgrade ? (
                     <button
@@ -452,7 +454,7 @@ function SubscriptionContent() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          Upgrade
+                          {t('vendor.subscription.upgrade')}
                           <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                         </>
                       )}
@@ -467,7 +469,7 @@ function SubscriptionContent() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <>
-                          Downgrade
+                          {t('vendor.subscription.downgrade')}
                           <ArrowDown className="w-3.5 h-3.5" />
                         </>
                       )}
@@ -491,15 +493,15 @@ function SubscriptionContent() {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h3 className="text-xl font-bold text-white">Enterprise</h3>
+                <h3 className="text-xl font-bold text-white">{t('vendor.subscription.enterprise')}</h3>
                 {currentTier === 'enterprise' && (
                   <span className="bg-green-400/30 text-white text-[11px] font-bold px-3 py-1 rounded-full">
-                    CURRENT PLAN
+                    {t('vendor.subscription.currentPlanBadge')}
                   </span>
                 )}
               </div>
               <p className="text-white text-sm mt-0.5 opacity-90">
-                For regional chains, franchises &amp; multi-location businesses
+                {t('vendor.subscription.enterpriseDesc')}
               </p>
             </div>
           </div>
@@ -507,7 +509,7 @@ function SubscriptionContent() {
             <div className="text-right">
               <span className="text-3xl font-bold text-white">
                 {formatCurrency(getPrice('enterprise'))}
-                <span className="text-base font-medium text-white opacity-80">/mo</span>
+                <span className="text-base font-medium text-white opacity-80">{t('vendor.subscription.perMo')}</span>
               </span>
               {isAnnual && (
                 <p className="text-xs text-green-300 font-medium mt-0.5">
@@ -517,7 +519,7 @@ function SubscriptionContent() {
             </div>
             {currentTier === 'enterprise' ? (
               <button disabled className="px-6 py-3 rounded-lg font-semibold bg-white/20 text-white/60 cursor-not-allowed whitespace-nowrap">
-                Current Plan
+                {t('vendor.subscription.currentPlan')}
               </button>
             ) : tierOrder.indexOf('enterprise') > currentTierIndex ? (
               <button
@@ -528,7 +530,7 @@ function SubscriptionContent() {
                 {changing === 'enterprise' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Upgrade'
+                  t('vendor.subscription.upgrade')
                 )}
               </button>
             ) : (
@@ -540,7 +542,7 @@ function SubscriptionContent() {
                 {changing === 'enterprise' ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  'Downgrade'
+                  t('vendor.subscription.downgrade')
                 )}
               </button>
             )}
@@ -548,10 +550,10 @@ function SubscriptionContent() {
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Unlimited Deals', desc: 'Sponti + Steady, no limits' },
-            { label: 'API Access', desc: 'Integrate with POS, CRM & more' },
-            { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
-            { label: 'Dedicated Manager', desc: 'Priority support & onboarding' },
+            { label: t('vendor.subscription.unlimitedDeals'), desc: t('vendor.subscription.unlimitedDealsDesc') },
+            { label: t('vendor.subscription.apiAccess'), desc: t('vendor.subscription.apiAccessDesc') },
+            { label: t('vendor.subscription.customBranding'), desc: t('vendor.subscription.customBrandingDesc') },
+            { label: t('vendor.subscription.dedicatedManager'), desc: t('vendor.subscription.dedicatedManagerDesc') },
           ].map(item => (
             <div key={item.label} className="bg-white/15 rounded-xl p-4">
               <p className="font-semibold text-white text-sm">{item.label}</p>
@@ -564,34 +566,34 @@ function SubscriptionContent() {
       {/* Feature Comparison Table (matches pricing page) */}
       <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Compare Plans</h2>
-          <p className="text-sm text-gray-500 mt-1">See what&apos;s included in each plan</p>
+          <h2 className="text-lg font-bold text-gray-900">{t('vendor.subscription.comparePlans')}</h2>
+          <p className="text-sm text-gray-500 mt-1">{t('vendor.subscription.comparePlansDesc')}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[28%]">Feature</th>
+                <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[28%]">{t('vendor.subscription.feature')}</th>
                 <th className={`text-center py-4 px-6 font-semibold w-[18%] ${currentTier === 'starter' ? 'text-green-600 bg-green-50/40' : 'text-accent-600'}`}>
                   Starter
-                  {currentTier === 'starter' && <span className="block text-[10px] text-green-500 font-normal">Current</span>}
+                  {currentTier === 'starter' && <span className="block text-[10px] text-green-500 font-normal">{t('vendor.subscription.current')}</span>}
                 </th>
                 <th className={`text-center py-4 px-6 font-semibold w-[18%] ${currentTier === 'pro' ? 'text-green-600 bg-green-50/40' : 'text-primary-600'}`}>
                   Pro
-                  {currentTier === 'pro' && <span className="block text-[10px] text-green-500 font-normal">Current</span>}
+                  {currentTier === 'pro' && <span className="block text-[10px] text-green-500 font-normal">{t('vendor.subscription.current')}</span>}
                 </th>
                 <th className={`text-center py-4 px-6 font-semibold w-[18%] ${
                   currentTier === 'business' ? 'text-green-600 bg-green-50/40' : 'text-gray-900 bg-secondary-50/40'
                 }`}>
                   Business
                   {currentTier === 'business'
-                    ? <span className="block text-[10px] text-green-500 font-normal">Current</span>
-                    : <span className="block text-[10px] text-secondary-400 font-normal">Best Value</span>
+                    ? <span className="block text-[10px] text-green-500 font-normal">{t('vendor.subscription.current')}</span>
+                    : <span className="block text-[10px] text-secondary-400 font-normal">{t('vendor.subscription.bestValue')}</span>
                   }
                 </th>
                 <th className={`text-center py-4 px-6 font-semibold w-[18%] ${currentTier === 'enterprise' ? 'text-green-600 bg-green-50/40' : 'text-gray-900'}`}>
                   Enterprise
-                  {currentTier === 'enterprise' && <span className="block text-[10px] text-green-500 font-normal">Current</span>}
+                  {currentTier === 'enterprise' && <span className="block text-[10px] text-green-500 font-normal">{t('vendor.subscription.current')}</span>}
                 </th>
               </tr>
             </thead>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Calendar,
   ChevronLeft,
@@ -93,6 +94,7 @@ function statusColor(status: string): string {
 
 export default function AdminDealCalendarPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<CalendarDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -326,7 +328,7 @@ export default function AdminDealCalendarPage() {
         <div className="flex items-center gap-3">
           <Calendar className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Deal Calendar</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.deals.calendar")}</h1>
             <p className="text-sm text-gray-500">
               Monthly view of all deals &mdash; {deals.length} total
             </p>

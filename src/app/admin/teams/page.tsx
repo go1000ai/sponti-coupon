@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   UsersRound,
   Search,
@@ -31,6 +32,7 @@ const ROLE_CONFIG = {
 
 export default function AdminTeamsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -110,7 +112,7 @@ export default function AdminTeamsPage() {
         <div className="flex items-center gap-3">
           <UsersRound className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.teams.title")}</h1>
             <p className="text-sm text-gray-500">{members.length} total team members</p>
           </div>
         </div>
@@ -176,11 +178,11 @@ export default function AdminTeamsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Member Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Email</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Role</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Joined Date</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.teams.memberName")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.teams.email")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.teams.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.teams.role")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.teams.joinedDate")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -197,7 +199,7 @@ export default function AdminTeamsPage() {
                 <tr>
                   <td colSpan={5} className="p-12 text-center">
                     <UsersRound className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No team members found</p>
+                    <p className="text-gray-500 font-medium">{t("admin.teams.noMembers")} found</p>
                     <p className="text-sm text-gray-400 mt-1">Try adjusting your search or filters</p>
                   </td>
                 </tr>

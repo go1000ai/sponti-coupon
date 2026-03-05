@@ -21,6 +21,7 @@ import {
 import type { Deal, Claim, Redemption } from '@/lib/types/database';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
+import { useLanguage } from '@/lib/i18n';
 
 // ─── Theme colors ────────────────────────────────────────────────────────────
 const COLORS = {
@@ -260,6 +261,7 @@ const supabase = createClient();
 // =============================================================================
 export default function VendorAnalyticsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
 
   // ─── State ─────────────────────────────────────────────────────────────────
@@ -732,8 +734,8 @@ export default function VendorAnalyticsPage() {
               <BarChart3 className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#1A1A2E]">Analytics</h1>
-              <p className="text-gray-500 text-sm">Performance insights and Ava&apos;s recommendations</p>
+              <h1 className="text-3xl font-bold text-[#1A1A2E]">{t('vendor.analytics.title')}</h1>
+              <p className="text-gray-500 text-sm">{t('vendor.analytics.subtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1">
@@ -747,7 +749,7 @@ export default function VendorAnalyticsPage() {
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : range === '90d' ? '90 Days' : 'All Time'}
+                {t(`vendor.analytics.range.${range}`)}
               </button>
             ))}
           </div>
@@ -759,14 +761,14 @@ export default function VendorAnalyticsPage() {
         <KPICard
           icon={Tag}
           iconColor={COLORS.primary}
-          label="Total Deals"
+          label={t('vendor.analytics.totalDeals')}
           value={kpis.totalDeals}
           delay={0}
         />
         <KPICard
           icon={Users}
           iconColor={COLORS.blue}
-          label="Total Claims"
+          label={t('vendor.analytics.totalClaims')}
           value={kpis.totalClaims}
           trend={kpis.claimsTrend}
           trendLabel={timeRange !== 'all' ? `vs prev ${timeRange}` : undefined}
@@ -775,7 +777,7 @@ export default function VendorAnalyticsPage() {
         <KPICard
           icon={QrCode}
           iconColor={COLORS.blue}
-          label="Redemptions"
+          label={t('vendor.analytics.redemptions')}
           value={kpis.totalRedemptions}
           trend={kpis.redemptionsTrend}
           trendLabel={timeRange !== 'all' ? `vs prev ${timeRange}` : undefined}
@@ -784,7 +786,7 @@ export default function VendorAnalyticsPage() {
         <KPICard
           icon={TrendingUp}
           iconColor={COLORS.positive}
-          label="Conversion Rate"
+          label={t('vendor.analytics.conversionRate')}
           value={Math.round(kpis.conversionRate)}
           suffix="%"
           delay={150}
@@ -792,7 +794,7 @@ export default function VendorAnalyticsPage() {
         <KPICard
           icon={DollarSign}
           iconColor="#16a34a"
-          label="Deposit Revenue"
+          label={t('vendor.analytics.depositRevenue')}
           value={kpis.totalRevenue}
           prefix="$"
           delay={200}
@@ -800,7 +802,7 @@ export default function VendorAnalyticsPage() {
         <KPICard
           icon={Activity}
           iconColor={COLORS.cyan}
-          label="Avg Claims/Deal"
+          label={t('vendor.analytics.avgClaimsPerDeal')}
           value={Math.round(kpis.avgClaimsPerDeal)}
           delay={250}
         />

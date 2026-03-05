@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Globe,
   Store,
@@ -32,6 +33,7 @@ interface ScrapeResult {
 
 export default function AdminWebsiteImportPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [selectedVendor, setSelectedVendor] = useState('');
   const [url, setUrl] = useState('');
@@ -118,8 +120,8 @@ export default function AdminWebsiteImportPage() {
         <div className="flex items-center gap-3">
           <Globe className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Website Import</h1>
-            <p className="text-sm text-gray-500">Import deals from vendor websites</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.websiteImport.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.websiteImport.subtitle")}</p>
           </div>
         </div>
       </div>

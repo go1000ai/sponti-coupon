@@ -10,24 +10,11 @@ import {
   Zap, BadgeCheck
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
-const traditionalPlatform = [
-  { icon: ReceiptText, text: 'Up to 50% commission taken from every sale' },
-  { icon: HandCoins, text: 'Platform collects & controls all customer payments' },
-  { icon: Clock, text: 'Wait 60–90 days to receive your earnings' },
-  { icon: TrendingDown, text: 'The more you sell, the more they take' },
-  { icon: CalendarX, text: 'Locked into long-term contracts' },
-  { icon: Ban, text: 'Hidden fees, chargebacks, and fine print' },
-];
-
-const spontiCoupon = [
-  { icon: PiggyBank, text: '$0 commission — not now, not ever' },
-  { icon: Landmark, text: 'Deposits go directly to YOUR account' },
-  { icon: Zap, text: 'Get paid instantly — no waiting 60-90 days' },
-  { icon: TrendingUp, text: 'Flat monthly rate — predictable costs' },
-  { icon: Wallet, text: 'You keep 100% of every transaction' },
-  { icon: CircleCheck, text: 'No contracts, no hidden fees — cancel anytime' },
-];
+// Icon mappings for traditional and SpontiCoupon comparison lists
+const traditionalIcons = [ReceiptText, HandCoins, Clock, TrendingDown, CalendarX, Ban];
+const spontiIcons = [PiggyBank, Landmark, Zap, TrendingUp, Wallet, CircleCheck];
 
 function AnimatedBar({ targetPercent, color, label, amount, delay = 0 }: {
   targetPercent: number;
@@ -61,6 +48,7 @@ function AnimatedBar({ targetPercent, color, label, amount, delay = 0 }: {
 }
 
 export function CompetitorComparison() {
+  const { t } = useLanguage();
   const { ref: savingsRef, displayValue: savingsValue } = useCountUp(4801, 2000);
 
   return (
@@ -71,13 +59,13 @@ export function CompetitorComparison() {
           <div className="text-center mb-8 sm:mb-12 md:mb-16">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-orange-50 rounded-full px-5 py-2 mb-4 shadow-sm">
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-primary-600">The Smart Choice</span>
+              <span className="text-sm font-semibold text-primary-600">{t('home.comparison.badge')}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Why Businesses Choose SpontiCoupon
+              {t('home.comparison.title')}
             </h2>
             <p className="text-gray-500 mt-3 text-lg max-w-2xl mx-auto">
-              See how we compare to commission-based deal platforms
+              {t('home.comparison.subtitle')}
             </p>
           </div>
         </ScrollReveal>
@@ -92,26 +80,26 @@ export function CompetitorComparison() {
                   <ReceiptText className="w-6 h-6 text-white" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-600">Traditional Deal Platforms</h3>
-                  <p className="text-sm text-gray-400">Commission-based model</p>
+                  <h3 className="text-xl font-bold text-gray-600">{t('home.comparison.tradTitle')}</h3>
+                  <p className="text-sm text-gray-400">{t('home.comparison.tradModel')}</p>
                 </div>
               </div>
               <div className="space-y-4">
-                {traditionalPlatform.map((item) => (
-                  <div key={item.text} className="flex items-start gap-3">
+                {traditionalIcons.map((Icon, i) => (
+                  <div key={i} className="flex items-start gap-3">
                     <div className="bg-red-50 rounded-lg p-1.5 shrink-0 mt-0.5">
-                      <item.icon className="w-4 h-4 text-red-400" strokeWidth={2} />
+                      <Icon className="w-4 h-4 text-red-400" strokeWidth={2} />
                     </div>
-                    <p className="text-gray-600 text-sm">{item.text}</p>
+                    <p className="text-gray-600 text-sm">{t(`home.comparison.tradItem${i + 1}` as Parameters<typeof t>[0])}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <p className="text-3xl font-bold text-gray-400">Up to 50%</p>
-                <p className="text-sm text-gray-400">of every sale goes to the platform</p>
+                <p className="text-3xl font-bold text-gray-400">{t('home.comparison.tradPercent')}</p>
+                <p className="text-sm text-gray-400">{t('home.comparison.tradPercentDesc')}</p>
               </div>
               <div className="mt-3 bg-red-50 border border-red-100 rounded-lg p-3">
-                <p className="text-xs text-red-600 font-medium">On a $100 deal, you could lose up to $50 per transaction. Then wait up to 90 days to get the rest.</p>
+                <p className="text-xs text-red-600 font-medium">{t('home.comparison.tradWarning')}</p>
               </div>
             </div>
           </ScrollReveal>
@@ -120,7 +108,7 @@ export function CompetitorComparison() {
           <ScrollReveal animation="slide-left" delay={150}>
             <div className="card p-5 sm:p-8 border-primary-200 bg-white ring-2 ring-primary-500/20 h-full relative !overflow-visible">
               <div className="absolute -top-3 right-4 sm:right-6 bg-gradient-to-r from-primary-500 to-orange-500 text-white text-[10px] sm:text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-md shadow-orange-200">
-                RECOMMENDED
+                {t('home.comparison.recommended')}
               </div>
               <div className="flex items-center gap-3 mb-4 sm:mb-6">
                 <div className="bg-gradient-to-br from-primary-500 to-orange-600 rounded-xl p-2.5 shadow-lg shadow-orange-200">
@@ -128,25 +116,25 @@ export function CompetitorComparison() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">SpontiCoupon</h3>
-                  <p className="text-sm text-gray-400">Flat-rate model</p>
+                  <p className="text-sm text-gray-400">{t('home.comparison.spontiModel')}</p>
                 </div>
               </div>
               <div className="space-y-4">
-                {spontiCoupon.map((item) => (
-                  <div key={item.text} className="flex items-start gap-3">
+                {spontiIcons.map((Icon, i) => (
+                  <div key={i} className="flex items-start gap-3">
                     <div className="bg-green-50 rounded-lg p-1.5 shrink-0 mt-0.5">
-                      <item.icon className="w-4 h-4 text-green-500" strokeWidth={2} />
+                      <Icon className="w-4 h-4 text-green-500" strokeWidth={2} />
                     </div>
-                    <p className="text-gray-900 text-sm">{item.text}</p>
+                    <p className="text-gray-900 text-sm">{t(`home.comparison.spontiItem${i + 1}` as Parameters<typeof t>[0])}</p>
                   </div>
                 ))}
               </div>
               <div className="mt-6 pt-6 border-t border-primary-100">
                 <p className="text-3xl font-bold text-primary-500">$0</p>
-                <p className="text-sm text-gray-500">commission — flat monthly subscription</p>
+                <p className="text-sm text-gray-500">{t('home.comparison.spontiPercentDesc')}</p>
               </div>
               <div className="mt-3 bg-green-50 border border-green-100 rounded-lg p-3">
-                <p className="text-xs text-green-700 font-medium">On a $100 deal, you keep $100. Money hits your account instantly.</p>
+                <p className="text-xs text-green-700 font-medium">{t('home.comparison.spontiHighlight')}</p>
               </div>
             </div>
           </ScrollReveal>
@@ -156,43 +144,43 @@ export function CompetitorComparison() {
         <ScrollReveal animation="scale-up">
           <div className="card p-5 sm:p-8 md:p-12 bg-gradient-to-br from-secondary-500 to-secondary-700 text-white">
             <h3 className="text-xl sm:text-2xl font-bold text-center mb-2">
-              See the Difference on $10,000 in Monthly Sales
+              {t('home.comparison.savingsTitle')}
             </h3>
             <p className="text-center text-white mb-6 sm:mb-10 text-sm sm:text-base">
-              Here&apos;s what you actually take home
+              {t('home.comparison.savingsSubtitle')}
             </p>
 
             <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
               <AnimatedBar
                 targetPercent={50}
                 color="bg-gradient-to-r from-red-400 to-red-500"
-                label="Commission Platform (50%)"
-                amount="You keep $5,000"
+                label={t('home.comparison.commissionBar')}
+                amount={t('home.comparison.youKeep5k')}
                 delay={0}
               />
               <AnimatedBar
                 targetPercent={98}
                 color="bg-gradient-to-r from-emerald-400 to-green-500"
-                label="SpontiCoupon ($199/mo)"
-                amount="You keep $9,801"
+                label={t('home.comparison.spontiBar')}
+                amount={t('home.comparison.youKeep9801')}
                 delay={300}
               />
             </div>
 
             {/* Savings callout */}
             <div ref={savingsRef} className="text-center mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-white/20 px-1">
-              <p className="text-white text-xs sm:text-sm uppercase tracking-wide mb-2">You take home more every month</p>
+              <p className="text-white text-xs sm:text-sm uppercase tracking-wide mb-2">{t('home.comparison.takeHomeMore')}</p>
               <p className="text-4xl sm:text-5xl md:text-6xl font-bold text-primary-400">
                 ${savingsValue.toLocaleString()}
               </p>
               <p className="text-white mt-2 text-sm sm:text-base">
-                That&apos;s <span className="text-white font-semibold opacity-100">${(savingsValue * 12).toLocaleString()}</span> more in your pocket every year
+                {t('home.comparison.annualSavings').split('{{amount}}')[0]}<span className="text-white font-semibold opacity-100">${(savingsValue * 12).toLocaleString()}</span>{t('home.comparison.annualSavings').split('{{amount}}')[1]}
               </p>
               <p className="text-white/90 text-xs sm:text-sm mt-3 sm:mt-4 font-medium">
-                Your entire annual subscription pays for itself in <span className="text-primary-400 font-bold">less than one month</span>. That&apos;s 11 months of pure profit.
+                {t('home.comparison.paysForItself')}
               </p>
               <p className="text-white text-[11px] sm:text-xs mt-2">
-                Need unlimited deals? Our Enterprise plan at $499/mo gives you <span className="text-primary-400 font-semibold">unlimited Sponti + Steady deals</span> — and you&apos;d still take home $4,501/mo more vs. commission platforms.
+                {t('home.comparison.enterpriseNote')}
               </p>
             </div>
           </div>
@@ -202,30 +190,30 @@ export function CompetitorComparison() {
         <ScrollReveal animation="fade-up" delay={200}>
           <div className="mt-16">
             <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">
-              Feature-by-Feature Comparison
+              {t('home.comparison.tableTitle')}
             </h3>
             <div className="card overflow-hidden border-gray-200">
               <div className="overflow-x-auto">
                 <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-3 px-2.5 sm:py-4 sm:px-6 font-semibold text-gray-600">Feature</th>
-                      <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-gray-400">Traditional Platforms</th>
+                      <th className="text-left py-3 px-2.5 sm:py-4 sm:px-6 font-semibold text-gray-600">{t('home.comparison.thFeature')}</th>
+                      <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-gray-400">{t('home.comparison.thTraditional')}</th>
                       <th className="text-center py-3 px-2 sm:py-4 sm:px-6 font-semibold text-primary-600 bg-primary-50/50">SpontiCoupon</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {[
-                      { feature: 'Commission per sale', trad: 'Up to 50%', sponti: '0%', spontiHighlight: true },
-                      { feature: 'When you get paid', trad: '60–90 days', sponti: 'Instantly', spontiHighlight: true },
-                      { feature: 'Who controls the money', trad: 'The platform', sponti: 'You — always', spontiHighlight: true },
-                      { feature: 'Monthly cost', trad: '$0 + huge commissions', sponti: 'Flat $49–$199/mo', spontiHighlight: false },
-                      { feature: 'Contract length', trad: '6–12 month lock-in', sponti: 'No contract — cancel anytime', spontiHighlight: true },
-                      { feature: 'Hidden fees', trad: 'Marketing fees, setup fees, penalties', sponti: 'None', spontiHighlight: true },
-                      { feature: 'Sponti Deals (same day)', trad: 'Not available', sponti: '4–24 hr Sponti Coupons', spontiHighlight: true },
-                      { feature: 'Customer deposit', trad: 'Platform collects & holds', sponti: 'Direct to your account', spontiHighlight: true },
-                      { feature: 'QR + 6-digit redemption', trad: 'QR only (some)', sponti: 'QR + 6-digit code', spontiHighlight: false },
-                      { feature: 'Vendor dashboard', trad: 'Limited analytics', sponti: 'Real-time analytics', spontiHighlight: false },
+                      { feature: t('home.comparison.row1Feature'), trad: t('home.comparison.row1Trad'), sponti: t('home.comparison.row1Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row2Feature'), trad: t('home.comparison.row2Trad'), sponti: t('home.comparison.row2Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row3Feature'), trad: t('home.comparison.row3Trad'), sponti: t('home.comparison.row3Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row4Feature'), trad: t('home.comparison.row4Trad'), sponti: t('home.comparison.row4Sponti'), spontiHighlight: false },
+                      { feature: t('home.comparison.row5Feature'), trad: t('home.comparison.row5Trad'), sponti: t('home.comparison.row5Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row6Feature'), trad: t('home.comparison.row6Trad'), sponti: t('home.comparison.row6Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row7Feature'), trad: t('home.comparison.row7Trad'), sponti: t('home.comparison.row7Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row8Feature'), trad: t('home.comparison.row8Trad'), sponti: t('home.comparison.row8Sponti'), spontiHighlight: true },
+                      { feature: t('home.comparison.row9Feature'), trad: t('home.comparison.row9Trad'), sponti: t('home.comparison.row9Sponti'), spontiHighlight: false },
+                      { feature: t('home.comparison.row10Feature'), trad: t('home.comparison.row10Trad'), sponti: t('home.comparison.row10Sponti'), spontiHighlight: false },
                     ].map((row) => (
                       <tr key={row.feature} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-2.5 px-2.5 sm:py-3.5 sm:px-6 font-medium text-gray-900">{row.feature}</td>
@@ -254,14 +242,13 @@ export function CompetitorComparison() {
         <ScrollReveal animation="scale-up" delay={100}>
           <div className="mt-12 text-center bg-gradient-to-r from-primary-50 to-orange-50 border border-primary-200 rounded-2xl p-8">
             <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              Stop Giving Away Your Revenue
+              {t('home.comparison.ctaTitle')}
             </h3>
             <p className="text-gray-600 max-w-xl mx-auto mb-6">
-              Other platforms take up to 50% of every sale and make you wait months for your money.
-              With SpontiCoupon, every dollar goes directly to you — instantly.
+              {t('home.comparison.ctaDesc')}
             </p>
             <a href="#plans" className="btn-primary inline-flex items-center gap-2">
-              <Zap className="w-4 h-4" /> Start Your Free Trial
+              <Zap className="w-4 h-4" /> {t('home.comparison.ctaButton')}
             </a>
           </div>
         </ScrollReveal>

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import {
   ResponsiveContainer,
@@ -212,6 +213,7 @@ export default function AdminDealDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const dealId = params.id as string;
 
   // Data state
@@ -518,12 +520,12 @@ export default function AdminDealDetailPage() {
     return (
       <div className="max-w-7xl mx-auto p-6">
         <Link href="/admin/deals" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Deals
+          <ArrowLeft className="w-4 h-4" /> {t('admin.deals.backToDeals')}
         </Link>
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-          <p className="text-gray-500 text-lg">{error || 'Deal not found'}</p>
+          <p className="text-gray-500 text-lg">{error || t('admin.deals.notFound')}</p>
           <Link href="/admin/deals" className="mt-4 inline-block text-primary-500 hover:text-primary-600 font-medium text-sm">
-            Return to deals list
+            {t('admin.deals.returnToList')}
           </Link>
         </div>
       </div>
@@ -544,7 +546,7 @@ export default function AdminDealDetailPage() {
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scale-up">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Delete Deal</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">{t('admin.deals.deleteDeal')}</h3>
             <p className="text-gray-600 text-sm mb-6">
               Are you sure you want to delete &quot;{deal.title}&quot;? This will permanently remove the deal and all associated claims. This action cannot be undone.
             </p>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminPagination from '@/components/admin/AdminPagination';
 import {
   Headphones,
@@ -175,6 +176,7 @@ function StatusCard({
 /* ── Main Page ──────────────────────────── */
 export default function AdminSupportPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
@@ -281,7 +283,7 @@ export default function AdminSupportPage() {
         <div className="flex items-center gap-3">
           <Headphones className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.support.title")}</h1>
             <p className="text-sm text-gray-500">
               {statusCounts.total} total &middot; {statusCounts.open} open &middot; {statusCounts.in_progress} in progress
             </p>
@@ -397,11 +399,11 @@ export default function AdminSupportPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Subject</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">User</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Role</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Priority</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.support.subject")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.support.user")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.support.role")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.support.status")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.support.priority")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Category</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Updated</th>
                 <th className="p-4 font-semibold text-sm text-gray-500"></th>
@@ -412,7 +414,7 @@ export default function AdminSupportPage() {
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
                     <MessageSquare className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    No support tickets found.
+                    {t("admin.support.noTickets")} found.
                   </td>
                 </tr>
               ) : (

@@ -5,6 +5,7 @@ import type { VendorMedia } from '@/lib/types/database';
 import {
   X, Loader2, Upload, FolderOpen, CheckCircle2, Star, GripVertical, LinkIcon,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export interface SelectedImage {
   url: string;
@@ -32,6 +33,7 @@ export default function ImagePickerModal({
   initialMainImage,
   maxImages = 11,
 }: ImagePickerModalProps) {
+  const { t } = useLanguage();
   const [media, setMedia] = useState<VendorMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -82,8 +84,8 @@ export default function ImagePickerModal({
     setUploading(true);
     setError('');
     for (const file of Array.from(files)) {
-      if (!allowedTypes.includes(file.type)) { setError('Invalid file type.'); continue; }
-      if (file.size > 5 * 1024 * 1024) { setError('File too large (max 5MB).'); continue; }
+      if (!allowedTypes.includes(file.type)) { setError(t('imagePickerModal.invalidFileType')); continue; }
+      if (file.size > 5 * 1024 * 1024) { setError(t('imagePickerModal.fileTooLarge')); continue; }
       try {
         const formData = new FormData();
         formData.append('file', file);
@@ -99,10 +101,10 @@ export default function ImagePickerModal({
           setMainImage(prev => prev || data.url);
           fetchMedia();
         } else {
-          setError(data.error || 'Upload failed');
+          setError(data.error || t('imagePickerModal.uploadFailed'));
         }
       } catch {
-        setError('Upload failed.');
+        setError(t('imagePickerModal.uploadFailed'));
       }
     }
     setUploading(false);
@@ -222,10 +224,10 @@ export default function ImagePickerModal({
           <div>
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <FolderOpen className="w-5 h-5 text-[#E8632B]" />
-              Select Deal Images
+              {t('imagePickerModal.selectDealImages')}
             </h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              Pick images, choose your main image, and drag to reorder
+              {t('imagePickerModal.pickAndReorder')}
             </p>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
@@ -244,7 +246,7 @@ export default function ImagePickerModal({
                 className="flex items-center gap-2 px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] transition-all disabled:opacity-50 shrink-0"
               >
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                Upload
+                {t('imagePickerModal.upload')}
               </button>
               <input
                 ref={fileInputRef}
@@ -262,7 +264,7 @@ export default function ImagePickerModal({
                   value={pasteUrl}
                   onChange={e => setPasteUrl(e.target.value)}
                   className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#E8632B]/30 focus:border-[#E8632B]"
-                  placeholder="Paste image URL..."
+                  placeholder={t('imagePickerModal.pasteImageUrl')}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addPasteUrl(); } }}
                 />
                 <button onClick={addPasteUrl} disabled={!pasteUrl.trim()} className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors shrink-0">
@@ -278,7 +280,7 @@ export default function ImagePickerModal({
             )}
 
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Your Library ({libraryImages.length})
+              {t('imagePickerModal.yourLibrary', { count: String(libraryImages.length) })}
             </p>
 
             {loading ? (
@@ -288,8 +290,8 @@ export default function ImagePickerModal({
             ) : libraryImages.length === 0 ? (
               <div className="text-center py-16">
                 <FolderOpen className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-500 mb-1">No images in your library yet.</p>
-                <p className="text-sm text-gray-400">Upload an image or paste a URL to get started.</p>
+                <p className="text-gray-500 mb-1">{t('imagePickerModal.noImagesYet')}</p>
+                <p className="text-sm text-gray-400">{t('imagePickerModal.uploadOrPaste')}</p>
               </div>
             ) : (
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -344,13 +346,13 @@ export default function ImagePickerModal({
           {/* Right panel: Selected images with reorder */}
           <div className="lg:w-72 p-5 overflow-y-auto bg-gray-50/50">
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-              Selected ({selected.length}/{maxImages})
+              {t('imagePickerModal.selected', { current: String(selected.length), max: String(maxImages) })}
             </p>
 
             {selected.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-sm text-gray-400">No images selected yet.</p>
-                <p className="text-xs text-gray-400 mt-1">Click images from the library to select them.</p>
+                <p className="text-sm text-gray-400">{t('imagePickerModal.noImagesSelectedYet')}</p>
+                <p className="text-xs text-gray-400 mt-1">{t('imagePickerModal.clickToSelect')}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -387,7 +389,7 @@ export default function ImagePickerModal({
                       <div className="flex-1 min-w-0">
                         {isMain ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#E8632B] uppercase">
-                            <Star className="w-3 h-3 fill-[#E8632B]" /> Main Image
+                            <Star className="w-3 h-3 fill-[#E8632B]" /> {t('imagePickerModal.mainImage')}
                           </span>
                         ) : (
                           <button
@@ -395,7 +397,7 @@ export default function ImagePickerModal({
                             onClick={(e) => { e.stopPropagation(); setAsMain(url); }}
                             className="text-[10px] text-gray-500 hover:text-[#E8632B] font-medium transition-colors"
                           >
-                            Set as main
+                            {t('imagePickerModal.setAsMain')}
                           </button>
                         )}
                         <p className="text-[9px] text-gray-400 truncate">#{idx + 1}</p>
@@ -415,7 +417,7 @@ export default function ImagePickerModal({
 
             {selected.length > 1 && (
               <p className="text-[10px] text-gray-400 mt-3 text-center">
-                Drag to reorder. Click &quot;Set as main&quot; to change the main image.
+                {t('imagePickerModal.dragToReorder')}
               </p>
             )}
           </div>
@@ -425,22 +427,25 @@ export default function ImagePickerModal({
         <div className="border-t p-4 flex items-center justify-between">
           <p className="text-sm text-gray-500">
             {selected.length === 0
-              ? 'No images selected'
-              : `${selected.length} image${selected.length > 1 ? 's' : ''} selected${mainImage ? ' (main set)' : ''}`}
+              ? t('imagePickerModal.noImagesSelectedFooter')
+              : (selected.length > 1
+                  ? t('imagePickerModal.imagesSelectedFooter', { count: String(selected.length) })
+                  : t('imagePickerModal.imageSelectedFooter', { count: String(selected.length) }))
+                + (mainImage ? ` ${t('imagePickerModal.mainSet')}` : '')}
           </p>
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
               className="px-4 py-2 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
             >
-              Cancel
+              {t('imagePickerModal.cancel')}
             </button>
             <button
               onClick={handleConfirm}
               disabled={selected.length === 0}
               className="px-5 py-2.5 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-[#D55A25] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Confirm Selection ({selected.length})
+              {t('imagePickerModal.confirmSelection', { count: String(selected.length) })}
             </button>
           </div>
         </div>

@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   UtensilsCrossed, Sparkles, Dumbbell, Gamepad2, ShoppingBag,
   Coffee, Scissors, Car, GraduationCap, Heart, X, ArrowRight, Check
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
-const CATEGORIES = [
-  { name: 'Restaurants', slug: 'restaurants', icon: UtensilsCrossed, gradient: 'from-orange-500 to-red-500', bg: 'bg-orange-50', ring: 'ring-orange-500', text: 'text-orange-600' },
-  { name: 'Spa & Beauty', slug: 'beauty-spa', icon: Sparkles, gradient: 'from-pink-500 to-rose-500', bg: 'bg-pink-50', ring: 'ring-pink-500', text: 'text-pink-600' },
-  { name: 'Fitness', slug: 'health-fitness', icon: Dumbbell, gradient: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', ring: 'ring-emerald-500', text: 'text-emerald-600' },
-  { name: 'Entertainment', slug: 'entertainment', icon: Gamepad2, gradient: 'from-sky-500 to-blue-500', bg: 'bg-sky-50', ring: 'ring-sky-500', text: 'text-sky-600' },
-  { name: 'Shopping', slug: 'shopping', icon: ShoppingBag, gradient: 'from-blue-500 to-blue-500', bg: 'bg-blue-50', ring: 'ring-blue-500', text: 'text-blue-600' },
-  { name: 'Food & Drink', slug: 'food-drink', icon: Coffee, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', ring: 'ring-amber-500', text: 'text-amber-600' },
-  { name: 'Hair & Grooming', slug: 'hair-grooming', icon: Scissors, gradient: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-50', ring: 'ring-cyan-500', text: 'text-cyan-600' },
-  { name: 'Automotive', slug: 'automotive', icon: Car, gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', ring: 'ring-slate-500', text: 'text-slate-600' },
-  { name: 'Classes', slug: 'classes', icon: GraduationCap, gradient: 'from-yellow-500 to-amber-500', bg: 'bg-yellow-50', ring: 'ring-yellow-500', text: 'text-yellow-600' },
-  { name: 'Wellness', slug: 'wellness', icon: Heart, gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', ring: 'ring-rose-500', text: 'text-rose-600' },
+const CATEGORY_DEFS = [
+  { nameKey: 'restaurants', slug: 'restaurants', icon: UtensilsCrossed, gradient: 'from-orange-500 to-red-500', bg: 'bg-orange-50', ring: 'ring-orange-500', text: 'text-orange-600' },
+  { nameKey: 'spaBeauty', slug: 'beauty-spa', icon: Sparkles, gradient: 'from-pink-500 to-rose-500', bg: 'bg-pink-50', ring: 'ring-pink-500', text: 'text-pink-600' },
+  { nameKey: 'fitness', slug: 'health-fitness', icon: Dumbbell, gradient: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', ring: 'ring-emerald-500', text: 'text-emerald-600' },
+  { nameKey: 'entertainment', slug: 'entertainment', icon: Gamepad2, gradient: 'from-sky-500 to-blue-500', bg: 'bg-sky-50', ring: 'ring-sky-500', text: 'text-sky-600' },
+  { nameKey: 'shopping', slug: 'shopping', icon: ShoppingBag, gradient: 'from-blue-500 to-blue-500', bg: 'bg-blue-50', ring: 'ring-blue-500', text: 'text-blue-600' },
+  { nameKey: 'foodDrink', slug: 'food-drink', icon: Coffee, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', ring: 'ring-amber-500', text: 'text-amber-600' },
+  { nameKey: 'hairGrooming', slug: 'hair-grooming', icon: Scissors, gradient: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-50', ring: 'ring-cyan-500', text: 'text-cyan-600' },
+  { nameKey: 'automotive', slug: 'automotive', icon: Car, gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', ring: 'ring-slate-500', text: 'text-slate-600' },
+  { nameKey: 'classes', slug: 'classes', icon: GraduationCap, gradient: 'from-yellow-500 to-amber-500', bg: 'bg-yellow-50', ring: 'ring-yellow-500', text: 'text-yellow-600' },
+  { nameKey: 'wellness', slug: 'wellness', icon: Heart, gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', ring: 'ring-rose-500', text: 'text-rose-600' },
 ];
 
 const STORAGE_KEY = 'sponti_preferences_dismissed';
@@ -28,6 +29,14 @@ export function PreferencePicker() {
   const [selected, setSelected] = useState<string[]>([]);
   const [step, setStep] = useState<'pick' | 'ready'>('pick');
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const CATEGORIES = useMemo(() =>
+    CATEGORY_DEFS.map(cat => ({
+      ...cat,
+      name: t(`preferencePicker.${cat.nameKey}`),
+    })),
+  [t]);
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY);
@@ -94,13 +103,13 @@ export function PreferencePicker() {
               <div className="relative">
                 <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 mb-4">
                   <SpontiIcon className="w-3.5 h-3.5" />
-                  <span className="text-white/90 text-[11px] font-semibold tracking-wide uppercase">Personalize</span>
+                  <span className="text-white/90 text-[11px] font-semibold tracking-wide uppercase">{t('preferencePicker.personalize')}</span>
                 </div>
                 <h3 className="text-2xl font-extrabold text-white leading-tight">
-                  What deals interest you?
+                  {t('preferencePicker.whatInterests')}
                 </h3>
                 <p className="text-white/70 text-sm mt-1.5">
-                  Tap your favorites for a personalized feed
+                  {t('preferencePicker.tapFavorites')}
                 </p>
               </div>
             </div>
@@ -142,7 +151,10 @@ export function PreferencePicker() {
             <div className="px-5 sm:px-6 pt-5 pb-6">
               {selected.length > 0 && (
                 <p className="text-center text-xs text-gray-400 mb-3">
-                  {selected.length} {selected.length === 1 ? 'category' : 'categories'} selected
+                  {selected.length === 1
+                    ? t('preferencePicker.categorySelected', { count: String(selected.length) })
+                    : t('preferencePicker.categoriesSelected', { count: String(selected.length) })
+                  }
                 </p>
               )}
               <div className="flex gap-3">
@@ -150,7 +162,7 @@ export function PreferencePicker() {
                   onClick={dismiss}
                   className="px-5 py-3 text-gray-400 text-sm font-medium hover:text-gray-600 transition-colors"
                 >
-                  Skip
+                  {t('preferencePicker.skip')}
                 </button>
                 <button
                   onClick={handleContinue}
@@ -160,7 +172,7 @@ export function PreferencePicker() {
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
                   }`}
                 >
-                  {selected.length > 0 ? 'Show My Deals' : 'Show All Deals'}
+                  {selected.length > 0 ? t('preferencePicker.showMyDeals') : t('preferencePicker.showAllDeals')}
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -178,23 +190,21 @@ export function PreferencePicker() {
             </div>
 
             <h3 className="text-2xl font-extrabold text-gray-900 mb-2">
-              You&apos;re all set!
+              {t('preferencePicker.allSet')}
             </h3>
             <p className="text-gray-500 text-sm mb-1 leading-relaxed">
-              We&apos;ll prioritize{' '}
-              <span className="font-bold text-gray-900">
-                {selected.map(s => CATEGORIES.find(c => c.slug === s)?.name).join(', ')}
-              </span>{' '}
-              deals for you.
+              {t('preferencePicker.prioritizeDeals', {
+                categories: selected.map(s => CATEGORIES.find(c => c.slug === s)?.name).join(', '),
+              })}
             </p>
             <p className="text-xs text-gray-400 mb-6">
-              Change anytime in settings
+              {t('preferencePicker.changeAnytime')}
             </p>
             <button
               onClick={handleExplore}
               className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-primary-500 to-orange-500 text-white font-bold text-sm shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30 hover:scale-[1.01] transition-all duration-200"
             >
-              Explore Deals <ArrowRight className="w-4 h-4" />
+              {t('preferencePicker.exploreDeals')} <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   BarChart3,
   TrendingUp,
@@ -64,6 +65,7 @@ function formatDateLabel(dateStr: string) {
 
 export default function AdminAnalyticsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState('30d');
@@ -107,8 +109,8 @@ export default function AdminAnalyticsPage() {
         <div className="flex items-center gap-3">
           <BarChart3 className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-            <p className="text-sm text-gray-500">Platform performance overview</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.analytics.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.analytics.subtitle")}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

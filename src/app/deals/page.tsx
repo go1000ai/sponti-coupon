@@ -7,6 +7,7 @@ import { MapPin, Search, SlidersHorizontal, Tag, Sparkles, Flame, LayoutGrid, Ma
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { geocodeAddress } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
 
@@ -16,6 +17,7 @@ type SortOption = 'distance' | 'newest' | 'discount';
 
 export default function DealsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [vendorPaymentLogos, setVendorPaymentLogos] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,7 @@ export default function DealsPage() {
           <div className="max-w-7xl mx-auto flex flex-col items-center gap-1 text-center">
             <div className="flex items-center gap-2">
               <Navigation className="w-4 h-4" />
-              <span className="text-sm font-medium">Enable location or enter a ZIP code below to find nearby deals</span>
+              <span className="text-sm font-medium">{t('deals.enableLocation')}</span>
             </div>
           </div>
         </div>
@@ -161,19 +163,20 @@ export default function DealsPage() {
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-md">Browse Deals</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-md">{t('deals.title')}</h1>
                 <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
               </div>
               <p className="text-white/80 mt-1 text-sm sm:text-base">
-                {deals.length} deal{deals.length !== 1 ? 's' : ''} available
-                {userLocation && ` within ${filters.radius} miles`}
+                {userLocation
+                  ? t('deals.dealsAvailableWithin', { count: String(deals.length), s: deals.length !== 1 ? 's' : '', radius: String(filters.radius) })
+                  : t('deals.dealsAvailable', { count: String(deals.length), s: deals.length !== 1 ? 's' : '' })}
               </p>
             </div>
 
             {spontiCount > 0 && (
               <div className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-primary-500/20 to-orange-500/20 border border-primary-400/30 text-primary-300 px-3 py-1.5 rounded-full text-sm font-medium">
                 <Flame className="w-3.5 h-3.5 text-primary-400" />
-                {spontiCount} Sponti Live
+                {t('deals.spontiLive', { count: String(spontiCount) })}
               </div>
             )}
           </div>
@@ -187,9 +190,9 @@ export default function DealsPage() {
                 onChange={e => setSortBy(e.target.value as SortOption)}
                 className="w-full sm:w-auto appearance-none bg-white/10 border border-white/20 rounded-lg pl-8 pr-8 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary-500 cursor-pointer"
               >
-                <option value="distance" className="text-gray-900">Nearest</option>
-                <option value="newest" className="text-gray-900">Newest</option>
-                <option value="discount" className="text-gray-900">Best Discount</option>
+                <option value="distance" className="text-gray-900">{t('deals.sortNearest')}</option>
+                <option value="newest" className="text-gray-900">{t('deals.sortNewest')}</option>
+                <option value="discount" className="text-gray-900">{t('deals.sortBestDiscount')}</option>
               </select>
               <ArrowUpDown className="absolute left-2.5 top-3 w-3.5 h-3.5 text-white/60 pointer-events-none" />
             </div>
@@ -207,7 +210,7 @@ export default function DealsPage() {
                   }`}
                 >
                   <LayoutGrid className="w-4 h-4" />
-                  <span className="sm:inline">Grid</span>
+                  <span className="sm:inline">{t('deals.gridView')}</span>
                 </button>
                 <button
                   onClick={() => setViewMode('map')}
@@ -218,7 +221,7 @@ export default function DealsPage() {
                   }`}
                 >
                   <Map className="w-4 h-4" />
-                  <span className="sm:inline">Map</span>
+                  <span className="sm:inline">{t('deals.mapView')}</span>
                 </button>
               </div>
 
@@ -231,7 +234,7 @@ export default function DealsPage() {
                 }`}
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                Filters
+                {t('deals.filters')}
               </button>
             </div>
           </div>
@@ -248,7 +251,7 @@ export default function DealsPage() {
                   onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="game show, brunch, yoga, spa..."
+                  placeholder={t('deals.searchPlaceholder')}
                 />
               </div>
 
@@ -260,7 +263,7 @@ export default function DealsPage() {
                   onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer"
                 >
-                  <option value="" className="text-gray-900">All Categories</option>
+                  <option value="" className="text-gray-900">{t('deals.allCategories')}</option>
                   {categories.map(cat => (
                     <option key={cat} value={cat} className="text-gray-900">{cat}</option>
                   ))}
@@ -294,7 +297,7 @@ export default function DealsPage() {
                     }
                   }}
                   className="w-full pl-10 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="City, ZIP, or address"
+                  placeholder={t('deals.locationPlaceholder')}
                 />
                 {geocoding && (
                   <div className="absolute right-3 top-3.5">
@@ -310,7 +313,7 @@ export default function DealsPage() {
                 className="w-full py-3 px-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
               >
                 {RADIUS_OPTIONS.map(r => (
-                  <option key={r} value={r} className="text-gray-900">{r === 0 ? 'All — No limit' : `${r} miles`}</option>
+                  <option key={r} value={r} className="text-gray-900">{r === 0 ? t('deals.noLimit') : t('deals.milesRadius', { radius: String(r) })}</option>
                 ))}
               </select>
             </div>
@@ -324,7 +327,7 @@ export default function DealsPage() {
                     filters.type === '' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
-                  All Deals
+                  {t('deals.allDeals')}
                 </button>
                 <button
                   onClick={() => setFilters(f => ({ ...f, type: 'sponti_coupon' }))}
@@ -332,7 +335,7 @@ export default function DealsPage() {
                     filters.type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-orange-500 text-white shadow-lg shadow-primary-500/30' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
-                  <SpontiIcon className="w-3.5 h-3.5" /> Sponti Coupons
+                  <SpontiIcon className="w-3.5 h-3.5" /> {t('deals.spontiCoupons')}
                 </button>
                 <button
                   onClick={() => setFilters(f => ({ ...f, type: 'regular' }))}
@@ -340,7 +343,7 @@ export default function DealsPage() {
                     filters.type === 'regular' ? 'bg-gradient-to-r from-accent-500 to-blue-600 text-white shadow-lg shadow-accent-500/30' : 'bg-white/15 text-white/80 hover:bg-white/25'
                   }`}
                 >
-                  <Tag className="w-3.5 h-3.5" /> Steady Deals
+                  <Tag className="w-3.5 h-3.5" /> {t('deals.steadyDeals')}
                 </button>
               </div>
 
@@ -350,7 +353,7 @@ export default function DealsPage() {
                 className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-semibold rounded-xl hover:from-primary-600 hover:to-orange-600 transition-all shadow-lg shadow-primary-500/30 hover:shadow-xl hover:scale-[1.02] flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Search className="w-4 h-4" />
-                {geocoding ? 'Finding location...' : 'Search Deals'}
+                {geocoding ? t('deals.findingLocation') : t('deals.searchDeals')}
               </button>
             </div>
           </div>
@@ -385,8 +388,8 @@ export default function DealsPage() {
                   <Tag className="w-8 h-8 text-gray-300" />
                 </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-400">No deals found</h2>
-              <p className="text-gray-400 mt-2">Try adjusting your filters or expanding your search radius</p>
+              <h2 className="text-2xl font-bold text-gray-400">{t('deals.noDeals')}</h2>
+              <p className="text-gray-400 mt-2">{t('deals.noDealsHint')}</p>
             </div>
           ) : viewMode === 'map' ? (
             <DealsMap

@@ -8,6 +8,7 @@ import {
   XCircle, ChevronDown, Sparkles,
 } from 'lucide-react';
 import type { Review, AutoResponseTone } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface ReviewsResponse {
   reviews: Review[];
@@ -31,6 +32,7 @@ const TONE_LIST: AutoResponseTone[] = ['professional', 'friendly', 'casual', 'gr
 
 export default function VendorReviewsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [data, setData] = useState<ReviewsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -220,7 +222,7 @@ export default function VendorReviewsPage() {
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <MessageSquare className="w-7 h-7 sm:w-8 sm:h-8 text-primary-500 flex-shrink-0" />
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reviews</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{t('vendor.reviews.title')}</h1>
           <p className="text-sm sm:text-base text-gray-500 mt-0.5 sm:mt-1">Manage customer reviews and reputation</p>
         </div>
       </div>
@@ -269,7 +271,7 @@ export default function VendorReviewsPage() {
       {/* Rating Distribution */}
       {data && data.total_reviews > 0 && (
         <div className="card p-4 sm:p-6 mb-6 sm:mb-8">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">Rating Distribution</h2>
+          <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">{t('vendor.reviews.ratingDistribution')}</h2>
           <div className="space-y-2">
             {[5, 4, 3, 2, 1].map(stars => {
               const count = data.distribution?.[stars] || 0;

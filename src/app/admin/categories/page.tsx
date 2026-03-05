@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import {
@@ -34,6 +35,7 @@ const emptyFormData: CategoryFormData = {
 
 export default function AdminCategoriesPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<CategoryRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -224,7 +226,7 @@ export default function AdminCategoriesPage() {
         <div className="flex items-center gap-3">
           <LayoutGrid className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Categories Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.categories.title")}</h1>
             <p className="text-sm text-gray-500">
               {categories.length} total categories
             </p>
@@ -245,18 +247,18 @@ export default function AdminCategoriesPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Icon</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Slug</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Created</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.categories.icon")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.categories.name")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.categories.slug")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.categories.created")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {categories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-400">
-                    No categories found. Add one to get started.
+                    {t("admin.categories.noCategories")}. Add one to get started.
                   </td>
                 </tr>
               ) : (

@@ -8,6 +8,7 @@ import {
 import { Html5Qrcode } from 'html5-qrcode';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   stripe: 'Stripe',
@@ -71,6 +72,7 @@ interface RedemptionResult {
 type Step = 'input' | 'preview' | 'success' | 'collected';
 
 export default function ScanPage() {
+  const { t } = useLanguage();
   const [codeInput, setCodeInput] = useState('');
   const [scanning, setScanning] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -435,8 +437,8 @@ export default function ScanPage() {
         <div className="inline-flex bg-primary-50 rounded-full p-4 mb-4">
           <QrCode className="w-10 h-10 text-primary-500" />
         </div>
-        <h1 className="text-3xl font-bold text-gray-900">Redeem Deal</h1>
-        <p className="text-gray-500 mt-2">Enter the customer&apos;s 6-digit code or scan their QR code</p>
+        <h1 className="text-3xl font-bold text-gray-900">{t('vendor.scan.redeemDeal')}</h1>
+        <p className="text-gray-500 mt-2">{t('vendor.scan.enterCode')}</p>
       </div>
 
       {/* ═══ STEP 1: INPUT ═══ */}
@@ -450,7 +452,7 @@ export default function ScanPage() {
                 mode === 'code' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <Hash className="w-4 h-4" /> 6-Digit Code
+              <Hash className="w-4 h-4" /> {t('vendor.scan.sixDigitCode')}
             </button>
             <button
               onClick={() => { setMode('qr'); resetScanner(); }}
@@ -458,7 +460,7 @@ export default function ScanPage() {
                 mode === 'qr' ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600'
               }`}
             >
-              <Camera className="w-4 h-4" /> QR Code / URL
+              <Camera className="w-4 h-4" /> {t('vendor.scan.qrCodeUrl')}
             </button>
           </div>
 
@@ -469,12 +471,12 @@ export default function ScanPage() {
                 <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-semibold text-red-600">
-                    {error.code === 'EXPIRED' ? 'Code Expired' :
-                     error.code === 'ALREADY_REDEEMED' ? 'Already Redeemed' :
-                     error.code === 'INVALID' ? 'Invalid Code' :
-                     error.code === 'WRONG_VENDOR' ? 'Wrong Vendor' :
-                     error.code === 'NO_DEPOSIT' ? 'Deposit Not Confirmed' :
-                     'Verification Failed'}
+                    {error.code === 'EXPIRED' ? t('vendor.scan.codeExpired') :
+                     error.code === 'ALREADY_REDEEMED' ? t('vendor.scan.alreadyRedeemedTitle') :
+                     error.code === 'INVALID' ? t('vendor.scan.invalidCodeTitle') :
+                     error.code === 'WRONG_VENDOR' ? t('vendor.scan.wrongVendor') :
+                     error.code === 'NO_DEPOSIT' ? t('vendor.scan.noDeposit') :
+                     t('vendor.scan.verificationFailed')}
                   </h3>
                   <p className="text-sm text-red-500 mt-1">{error.error}</p>
                 </div>
@@ -486,7 +488,7 @@ export default function ScanPage() {
             {mode === 'code' ? (
               <div className="space-y-4">
                 <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
-                  Enter the customer&apos;s 6-digit redemption code
+                  {t('vendor.scan.enterCustomerCode')}
                 </label>
                 <div className="flex justify-center gap-2" onPaste={handleDigitPaste}>
                   {digits.map((digit, i) => (
@@ -510,9 +512,9 @@ export default function ScanPage() {
                 >
                   {scanning ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.verifying')}
                     </span>
-                  ) : 'Verify Code'}
+                  ) : t('vendor.scan.verifyCode')}
                 </button>
               </div>
             ) : (
@@ -529,9 +531,9 @@ export default function ScanPage() {
 
                 {cameraError && (
                   <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3">
-                    <p className="font-medium mb-1">Camera unavailable</p>
+                    <p className="font-medium mb-1">{t('vendor.scan.cameraUnavailable')}</p>
                     <p className="text-xs">{cameraError}</p>
-                    <p className="text-xs mt-2 font-medium">Use the <strong>6-Digit Code</strong> tab instead.</p>
+                    <p className="text-xs mt-2 font-medium">{t('vendor.scan.useSixDigitTab')}</p>
                   </div>
                 )}
               </div>
@@ -547,8 +549,8 @@ export default function ScanPage() {
             <div className="inline-flex bg-amber-50 rounded-full p-3 mb-3">
               <AlertCircle className="w-8 h-8 text-amber-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Confirm Redemption</h2>
-            <p className="text-sm text-gray-500 mt-1">Review the details before redeeming</p>
+            <h2 className="text-xl font-bold text-gray-900">{t('vendor.scan.confirmRedemptionTitle')}</h2>
+            <p className="text-sm text-gray-500 mt-1">{t('vendor.scan.reviewBeforeRedeeming')}</p>
           </div>
 
           {/* Customer Info */}
@@ -596,7 +598,7 @@ export default function ScanPage() {
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium text-blue-700">
-                  Deposit paid via {paymentLabel(preview.claim.payment_method_type)}
+                  {t('vendor.scan.depositPaidVia', { method: paymentLabel(preview.claim.payment_method_type) || '' })}
                 </span>
                 {preview.claim.payment_tier && (
                   <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded">
@@ -611,23 +613,23 @@ export default function ScanPage() {
           <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5 mb-4">
             <div className="flex items-center gap-2 mb-3">
               <DollarSign className="w-5 h-5 text-primary-500" />
-              <h3 className="font-bold text-gray-900">Payment Summary</h3>
+              <h3 className="font-bold text-gray-900">{t('vendor.scan.paymentSummary')}</h3>
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Deal Price</span>
+                <span className="text-gray-600">{t('vendor.scan.dealPrice')}</span>
                 <span className="font-medium">{formatCurrency(preview.claim.deal.deal_price)}</span>
               </div>
               {preview.claim.deal.deposit_amount != null && preview.claim.deal.deposit_amount > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Deposit Paid</span>
+                  <span className="text-gray-600">{t('vendor.scan.depositPaid')}</span>
                   <span className="font-medium text-green-600">&minus; {formatCurrency(preview.claim.deal.deposit_amount)}</span>
                 </div>
               )}
               <div className="border-t border-primary-200 pt-2 mt-2">
                 <div className="flex justify-between">
                   <span className="font-bold text-gray-900 text-base">
-                    {preview.claim.remaining_balance > 0 ? 'To Collect' : 'Total'}
+                    {preview.claim.remaining_balance > 0 ? t('vendor.scan.toCollect') : t('vendor.scan.total')}
                   </span>
                   <span className="font-bold text-primary-500 text-xl">
                     {formatCurrency(preview.claim.remaining_balance > 0 ? preview.claim.remaining_balance : preview.claim.deal.deal_price)}
@@ -646,11 +648,11 @@ export default function ScanPage() {
             >
               {confirming ? (
                 <span className="flex items-center justify-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" /> Redeeming...
+                  <Loader2 className="w-5 h-5 animate-spin" /> {t('vendor.scan.redeeming')}
                 </span>
               ) : (
                 <span className="flex items-center justify-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" /> Confirm Redemption
+                  <CheckCircle2 className="w-5 h-5" /> {t('vendor.scan.confirmRedeem')}
                 </span>
               )}
             </button>
@@ -659,7 +661,7 @@ export default function ScanPage() {
               disabled={confirming}
               className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-500 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" /> Cancel
+              <ArrowLeft className="w-4 h-4" /> {t('vendor.scan.cancel')}
             </button>
           </div>
         </div>
@@ -672,11 +674,11 @@ export default function ScanPage() {
             <div className="inline-flex bg-green-50 rounded-full p-4 mb-4">
               <CheckCircle2 className="w-12 h-12 text-green-500" />
             </div>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Redemption Successful!</h2>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">{t('vendor.scan.redemptionSuccessful')}</h2>
 
             {result.customer && (
               <div className="bg-gray-50 rounded-lg p-4 mt-4 text-left">
-                <h3 className="font-semibold text-gray-900 mb-2">Customer</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{t('vendor.scan.customer')}</h3>
                 <p className="text-gray-700">{result.customer.name || 'Customer'}</p>
                 <p className="text-gray-500 text-sm">{result.customer.email}</p>
               </div>
@@ -684,7 +686,7 @@ export default function ScanPage() {
 
             {result.deal && (
               <div className="bg-gray-50 rounded-lg p-4 mt-3 text-left">
-                <h3 className="font-semibold text-gray-900 mb-2">Deal</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{t('vendor.scan.deal')}</h3>
                 <div className="flex items-center gap-2 mb-1">
                   {result.deal.deal_type === 'sponti_coupon' && (
                     <span className="bg-primary-50 text-primary-600 text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -700,7 +702,7 @@ export default function ScanPage() {
                 </div>
                 {result.payment_method_type && (
                   <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
-                    <CreditCard className="w-3 h-3" /> Deposit via {paymentLabel(result.payment_method_type)}
+                    <CreditCard className="w-3 h-3" /> {t('vendor.scan.depositVia', { method: paymentLabel(result.payment_method_type) || '' })}
                   </p>
                 )}
               </div>
@@ -711,7 +713,7 @@ export default function ScanPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-3 text-left">
                 <div className="flex items-center gap-2 mb-2">
                   <Star className="w-4 h-4 text-blue-500" />
-                  <h3 className="font-semibold text-blue-700 text-sm">Loyalty Rewards</h3>
+                  <h3 className="font-semibold text-blue-700 text-sm">{t('vendor.scan.loyaltyRewards')}</h3>
                 </div>
                 {result.loyalty_awards.map((award, i) => (
                   <div key={i} className="flex justify-between text-sm mt-1">
@@ -728,7 +730,7 @@ export default function ScanPage() {
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500" />
                   <span className="text-sm font-medium text-amber-700">
-                    Customer earned {result.sponti_points.earned} SpontiPoints (Balance: {result.sponti_points.balance} pts)
+                    {t('vendor.scan.customerEarnedPoints', { earned: String(result.sponti_points.earned), balance: String(result.sponti_points.balance) })}
                   </span>
                 </div>
               </div>
@@ -738,23 +740,23 @@ export default function ScanPage() {
             <div className="bg-gradient-to-br from-primary-50 to-orange-50 border-2 border-primary-200 rounded-xl p-5 mt-4">
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign className="w-5 h-5 text-primary-500" />
-                <h3 className="font-bold text-gray-900">Payment Summary</h3>
+                <h3 className="font-bold text-gray-900">{t('vendor.scan.paymentSummary')}</h3>
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Deal Price</span>
+                  <span className="text-gray-600">{t('vendor.scan.dealPrice')}</span>
                   <span className="font-medium">{formatCurrency(result.deal?.deal_price || 0)}</span>
                 </div>
                 {result.deal?.deposit_amount != null && result.deal.deposit_amount > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Deposit Paid</span>
+                    <span className="text-gray-600">{t('vendor.scan.depositPaid')}</span>
                     <span className="font-medium text-green-600">&minus; {formatCurrency(result.deal.deposit_amount)}</span>
                   </div>
                 )}
                 <div className="border-t border-primary-200 pt-2 mt-2">
                   <div className="flex justify-between">
                     <span className="font-bold text-gray-900 text-base">
-                      {(result.remaining_balance || 0) > 0 ? 'Collect from Customer' : 'Paid in Full'}
+                      {(result.remaining_balance || 0) > 0 ? t('vendor.scan.collectFromCustomer') : t('vendor.scan.paidInFullLabel')}
                     </span>
                     <span className={`font-bold text-xl ${(result.remaining_balance || 0) > 0 ? 'text-primary-500' : 'text-green-600'}`}>
                       {formatCurrency(result.remaining_balance || 0)}
@@ -773,13 +775,13 @@ export default function ScanPage() {
                   className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
                 >
                   <span className="flex items-center justify-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Paid in Full — Complete Transaction
+                    <CheckCircle2 className="w-4 h-4" /> {t('vendor.scan.paidInFullComplete')}
                   </span>
                 </button>
               )}
               {(result.remaining_balance || 0) > 0 && (
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-center">
-                How is the customer paying the balance?
+                {t('vendor.scan.howCustomerPaying')}
               </p>
               )}
 
@@ -787,18 +789,18 @@ export default function ScanPage() {
               {(result.remaining_balance || 0) > 0 && stripeEnabled === false ? (
                 <div className="text-center py-2">
                   <p className="text-xs text-gray-400">
-                    Stripe not connected —{' '}
+                    {t('vendor.scan.stripeNotConnected')}{' '}
                     <a href="/vendor/settings" className="text-blue-500 hover:underline">
-                      set up Stripe Connect in Settings
+                      {t('vendor.scan.setupStripeConnect')}
                     </a>{' '}
-                    to offer card payment links.
+                    {t('vendor.scan.toOfferCardLinks')}
                   </p>
                 </div>
               ) : (result.remaining_balance || 0) > 0 && stripePaid ? (
                 <div className="bg-green-50 border border-green-300 rounded-xl p-4 text-center">
                   <CheckCircle2 className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                  <p className="font-bold text-green-700 text-sm">Stripe Payment Received!</p>
-                  <p className="text-xs text-green-600 mt-1">Customer paid — transaction complete</p>
+                  <p className="font-bold text-green-700 text-sm">{t('vendor.scan.stripePaymentReceived')}</p>
+                  <p className="text-xs text-green-600 mt-1">{t('vendor.scan.customerPaidComplete')}</p>
                 </div>
               ) : (result.remaining_balance || 0) > 0 && !paymentLink ? (
                 <button
@@ -808,11 +810,11 @@ export default function ScanPage() {
                 >
                   {generatingLink ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Generating link...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.generatingLink')}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      <CreditCard className="w-4 h-4" /> Customer Pays via Stripe
+                      <CreditCard className="w-4 h-4" /> {t('vendor.scan.customerPaysViaStripe')}
                     </span>
                   )}
                 </button>
@@ -820,7 +822,7 @@ export default function ScanPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                    <p className="text-xs font-semibold text-blue-700">Waiting for customer payment…</p>
+                    <p className="text-xs font-semibold text-blue-700">{t('vendor.scan.waitingForPayment')}</p>
                   </div>
                   <div className="flex gap-2">
                     <input
@@ -842,10 +844,10 @@ export default function ScanPage() {
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
                   >
-                    <ExternalLink className="w-4 h-4" /> Open on Customer&apos;s Phone
+                    <ExternalLink className="w-4 h-4" /> {t('vendor.scan.openOnCustomerPhone')}
                   </a>
                   <p className="text-[11px] text-blue-500 text-center">
-                    This screen will auto-update once payment is confirmed
+                    {t('vendor.scan.autoUpdateMessage')}
                   </p>
                 </div>
               )}
@@ -863,11 +865,11 @@ export default function ScanPage() {
                 >
                   {collecting ? (
                     <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Recording...
+                      <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.recording')}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      <CheckCircle2 className="w-4 h-4" /> Collected In Person — Done
+                      <CheckCircle2 className="w-4 h-4" /> {t('vendor.scan.collectedInPersonDone')}
                     </span>
                   )}
                 </button>
@@ -887,13 +889,13 @@ export default function ScanPage() {
                       className="w-full py-2.5 border-2 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 text-sm font-medium rounded-xl transition-colors"
                     >
                       <span className="flex items-center justify-center gap-2">
-                        <XCircle className="w-4 h-4" /> Cancel Redemption
+                        <XCircle className="w-4 h-4" /> {t('vendor.scan.cancelRedemption')}
                       </span>
                     </button>
                   ) : (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
                       <p className="text-sm text-red-700 font-medium text-center">
-                        Are you sure? This will undo the redemption and restore the customer&apos;s code.
+                        {t('vendor.scan.cancelConfirmMessage')}
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -903,16 +905,16 @@ export default function ScanPage() {
                         >
                           {cancelling ? (
                             <span className="flex items-center justify-center gap-2">
-                              <Loader2 className="w-4 h-4 animate-spin" /> Cancelling...
+                              <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.cancelling')}
                             </span>
-                          ) : 'Yes, Cancel'}
+                          ) : t('vendor.scan.yesCancel')}
                         </button>
                         <button
                           onClick={() => setShowCancelConfirm(false)}
                           disabled={cancelling}
                           className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors"
                         >
-                          No, Keep It
+                          {t('vendor.scan.noKeepIt')}
                         </button>
                       </div>
                     </div>
@@ -925,7 +927,7 @@ export default function ScanPage() {
               onClick={resetScanner}
               className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-500 transition-colors"
             >
-              Redeem Next Code
+              {t('vendor.scan.redeemNextCode')}
             </button>
           </div>
         </div>
@@ -938,23 +940,23 @@ export default function ScanPage() {
             <div className="inline-flex bg-green-50 rounded-full p-4 mb-4">
               <DollarSign className="w-12 h-12 text-green-500" />
             </div>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Transaction Complete!</h2>
-            <p className="text-gray-500 mt-1">Payment collected and recorded successfully.</p>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">{t('vendor.scan.transactionComplete')}</h2>
+            <p className="text-gray-500 mt-1">{t('vendor.scan.paymentCollectedRecorded')}</p>
 
             {result?.deal && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-5 mt-6">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Deal</span>
+                    <span className="text-gray-600">{t('vendor.scan.deal')}</span>
                     <span className="font-medium">{result.deal.title}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Customer</span>
-                    <span className="font-medium">{result.customer?.name || 'Customer'}</span>
+                    <span className="text-gray-600">{t('vendor.scan.customer')}</span>
+                    <span className="font-medium">{result.customer?.name || t('vendor.scan.customer')}</span>
                   </div>
                   <div className="border-t border-green-200 pt-2 mt-2">
                     <div className="flex justify-between">
-                      <span className="font-bold text-gray-900">Total Collected</span>
+                      <span className="font-bold text-gray-900">{t('vendor.scan.totalCollected')}</span>
                       <span className="font-bold text-green-600 text-lg">
                         {formatCurrency(result.deal.deal_price)}
                       </span>
@@ -965,7 +967,7 @@ export default function ScanPage() {
             )}
 
             <button onClick={resetScanner} className="btn-primary w-full mt-6">
-              Redeem Next Code
+              {t('vendor.scan.redeemNextCode')}
             </button>
           </div>
         </div>

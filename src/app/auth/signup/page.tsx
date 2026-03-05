@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Phone, MapPin, Store, Building2, CheckCircle, ArrowRight, Gift, Sparkles } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
 export default function SignupPage() {
   return (
@@ -16,6 +17,7 @@ export default function SignupPage() {
 }
 
 function SignupForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialType = searchParams.get('type') === 'vendor' ? 'vendor' : 'customer';
   const selectedPlan = searchParams.get('plan') || 'starter';
@@ -75,27 +77,27 @@ function SignupForm() {
     setError('');
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.signup.errors.passwordsMismatch'));
       return;
     }
     if (form.password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('auth.signup.errors.passwordTooShort'));
       return;
     }
     if (accountType === 'vendor' && !form.businessName.trim()) {
-      setError('Business name is required');
+      setError(t('auth.signup.errors.businessNameRequired'));
       return;
     }
     if (accountType === 'vendor' && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
-      setError('Business address is required (street address, city, state, and ZIP code)');
+      setError(t('auth.signup.errors.addressRequired'));
       return;
     }
     if (accountType === 'vendor' && !vendorTermsAccepted) {
-      setError('You must read and agree to the Vendor Terms of Service to continue.');
+      setError(t('auth.signup.errors.termsRequired'));
       return;
     }
     if (accountType === 'vendor' && !arlConsentAccepted) {
-      setError('You must acknowledge and agree to the auto-renewal terms to continue.');
+      setError(t('auth.signup.errors.arlRequired'));
       return;
     }
 
@@ -253,26 +255,24 @@ function SignupForm() {
           <div className="inline-flex bg-green-100 rounded-full p-4 mb-6">
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">Check Your Email</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">{t('auth.signup.checkEmail')}</h1>
           <p className="text-gray-500 mb-2">
-            We sent a confirmation link to:
+            {t('auth.signup.confirmationSent')}
           </p>
           <p className="text-lg font-semibold text-gray-900 mb-6">{form.email}</p>
           <div className="card p-6">
             {accountType === 'customer' ? (
               <p className="text-sm text-gray-600 leading-relaxed">
-                Click the link in your email to confirm your account.
-                Once confirmed, you&apos;ll be ready to browse and claim deals near you!
+                {t('auth.signup.customerConfirmMsg')}
               </p>
             ) : (
               <p className="text-sm text-gray-600 leading-relaxed">
-                Click the link in your email to confirm your account.
-                You&apos;ll be taken directly to set up your subscription after confirming.
+                {t('auth.signup.vendorConfirmMsg')}
               </p>
             )}
           </div>
           <p className="text-sm text-gray-400 mt-6">
-            Didn&apos;t receive it? Check your spam folder or{' '}
+            {t('auth.signup.didntReceive')}{' '}
             <button
               onClick={() => setShowConfirmation(false)}
               className="text-primary-500 font-semibold hover:underline"
@@ -295,12 +295,12 @@ function SignupForm() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {accountType === 'vendor' && hasPlanFromPricing ? 'Create Your Business Account' : 'Create Account'}
+            {accountType === 'vendor' && hasPlanFromPricing ? t('auth.signup.createBusinessAccount') : t('auth.signup.createAccount')}
           </h1>
           <p className="text-gray-500 mt-2">
             {accountType === 'vendor'
-              ? 'Start growing your business with Sponti Deals'
-              : 'Start saving with Sponti Deals near you'}
+              ? t('auth.signup.vendorSubtitle')
+              : t('auth.signup.customerSubtitle')}
           </p>
         </div>
 
@@ -316,7 +316,7 @@ function SignupForm() {
             }`}
           >
             <User className="w-4 h-4" />
-            Customer
+            {t('auth.signup.customer')}
           </button>
           <button
             type="button"
@@ -328,7 +328,7 @@ function SignupForm() {
             }`}
           >
             <Store className="w-4 h-4" />
-            Business
+            {t('auth.signup.business')}
           </button>
         </div>
 
@@ -338,21 +338,20 @@ function SignupForm() {
             <div className="inline-flex bg-primary-50 rounded-full p-4 mb-5">
               <Store className="w-10 h-10 text-primary-500" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Choose Your Plan First</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">{t('auth.signup.choosePlanFirst')}</h2>
             <p className="text-gray-500 text-sm mb-6 leading-relaxed">
-              Pick the plan that fits your business on our pricing page.
-              {' '}You&apos;ll come right back here to complete your sign-up.
+              {t('auth.signup.choosePlanDesc')}
             </p>
             <Link
               href="/pricing"
               className="group btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base font-bold"
             >
               <Sparkles className="w-5 h-5" />
-              Go to Pricing Page
+              {t('auth.signup.goToPricing')}
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <p className="text-xs text-gray-400 mt-4">
-              2 months free on Pro &amp; Business plans for founding vendors
+              {t('auth.signup.foundersPromo')}
             </p>
           </div>
         )}
@@ -370,14 +369,14 @@ function SignupForm() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    {planDisplayName} Plan
+                    {t('auth.signup.planBadge', { plan: planDisplayName })}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {selectedPromo === 'founders'
-                      ? '2 Months Free + 20% Off Forever (Founders Rate)'
+                      ? t('auth.signup.foundersRate')
                       : selectedInterval === 'year'
-                      ? 'Annual billing — save 20%'
-                      : 'Monthly billing'}
+                      ? t('auth.signup.annualBilling')
+                      : t('auth.signup.monthlyBilling')}
                   </p>
                 </div>
               </div>
@@ -385,7 +384,7 @@ function SignupForm() {
                 href="/pricing"
                 className="text-xs text-primary-500 hover:underline font-semibold whitespace-nowrap"
               >
-                Change plan
+                {t('auth.signup.changePlan')}
               </Link>
             </div>
           </div>
@@ -401,10 +400,10 @@ function SignupForm() {
           {/* Vendor-only: Business Name */}
           {accountType === 'vendor' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessName')} *</label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder="Your Business Name" required />
+                <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.businessName')} required />
               </div>
             </div>
           )}
@@ -413,32 +412,32 @@ function SignupForm() {
           {accountType === 'customer' && (
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.firstName')}</label>
                 <div className="relative">
                   <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="firstName" value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder="John" required />
+                  <input name="firstName" value={form.firstName} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.firstName')} required />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                <input name="lastName" value={form.lastName} onChange={handleChange} className="input-field" placeholder="Doe" required />
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.lastName')}</label>
+                <input name="lastName" value={form.lastName} onChange={handleChange} className="input-field" placeholder={t('auth.signup.lastName')} required />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.email')}</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-              <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="you@example.com" required />
+              <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.emailPlaceholder')} required />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone {accountType === 'customer' ? '(optional)' : ''}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.phone')} {accountType === 'customer' ? '(optional)' : ''}</label>
             <div className="relative">
               <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-              <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder="(555) 123-4567" />
+              <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.phonePlaceholder')} />
             </div>
           </div>
 
@@ -446,26 +445,26 @@ function SignupForm() {
           {accountType === 'vendor' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Address <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessAddress')} <span className="text-red-500">*</span></label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main St" required />
+                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.addressPlaceholder')} required />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessCategory')}</label>
                 <select name="category" value={form.category} onChange={handleChange} className="input-field">
-                  <option value="">Select a category</option>
-                  <option value="restaurant">Restaurant</option>
-                  <option value="salon">Salon & Beauty</option>
-                  <option value="fitness">Fitness & Gym</option>
-                  <option value="wellness">Wellness & Spa</option>
-                  <option value="cafe">Cafe & Coffee</option>
-                  <option value="retail">Retail & Shopping</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="automotive">Automotive</option>
-                  <option value="photography">Photography</option>
-                  <option value="other">Other</option>
+                  <option value="">{t('auth.signup.selectCategory')}</option>
+                  <option value="restaurant">{t('auth.signup.categories.restaurant')}</option>
+                  <option value="salon">{t('auth.signup.categories.salonBeauty')}</option>
+                  <option value="fitness">{t('auth.signup.categories.fitnessGym')}</option>
+                  <option value="wellness">{t('auth.signup.categories.wellnessSpa')}</option>
+                  <option value="cafe">{t('auth.signup.categories.cafeCoffee')}</option>
+                  <option value="retail">{t('auth.signup.categories.retailShopping')}</option>
+                  <option value="entertainment">{t('auth.signup.categories.entertainment')}</option>
+                  <option value="automotive">{t('auth.signup.categories.automotive')}</option>
+                  <option value="photography">{t('auth.signup.categories.photography')}</option>
+                  <option value="other">{t('auth.signup.categories.other')}</option>
                 </select>
               </div>
             </>
@@ -473,35 +472,35 @@ function SignupForm() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">City {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.city')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder="Orlando" required={accountType === 'vendor'} />
+                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.cityPlaceholder')} required={accountType === 'vendor'} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">State {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
-              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder="FL" required={accountType === 'vendor'} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.state')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder={t('auth.signup.statePlaceholder')} required={accountType === 'vendor'} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ZIP {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
-              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder="33101" required={accountType === 'vendor'} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.zip')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder={t('auth.signup.zipPlaceholder')} required={accountType === 'vendor'} />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.password')}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-              <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="At least 6 characters" required />
+              <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.passwordHint')} required />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.confirmPassword')}</label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-              <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="Confirm your password" required />
+              <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.confirmPasswordPlaceholder')} required />
             </div>
           </div>
 
@@ -515,14 +514,14 @@ function SignupForm() {
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 shrink-0"
               />
               <span className="text-xs text-gray-500 leading-relaxed">
-                I have read and agree to the{' '}
+                {t('auth.signup.vendorTermsAgree.prefix')}{' '}
                 <Link href="/vendor-terms" target="_blank" className="text-primary-500 hover:underline font-medium">
-                  Vendor Terms of Service
+                  {t('auth.signup.vendorTermsAgree.vendorTerms')}
                 </Link>{' '}
-                and{' '}
+                {t('auth.signup.and')}{' '}
                 <Link href="/terms" target="_blank" className="text-primary-500 hover:underline font-medium">
-                  Terms of Service
-                </Link>. I understand that I am legally obligated to honor all deals I publish, and that my account may be suspended or terminated if I fail to do so.
+                  {t('auth.signup.termsOfService')}
+                </Link>. {t('auth.signup.vendorTermsAgree.suffix')}
               </span>
             </label>
           )}
@@ -537,50 +536,50 @@ function SignupForm() {
                 className="mt-0.5 w-4 h-4 rounded border-amber-400 text-primary-500 focus:ring-primary-500 shrink-0"
               />
               <span className="text-xs text-gray-700 leading-relaxed">
-                <strong className="text-amber-800">Auto-Renewal Consent:</strong>{' '}
-                I understand my <strong>{planDisplayName} Plan</strong> subscription will automatically renew{' '}
-                {selectedInterval === 'year' ? 'annually' : 'monthly'} at{' '}
-                <strong>${recurringAmount}/month</strong>
-                {selectedPromo === 'founders'
-                  ? ' after my 2-month free period ends'
-                  : ' after my 14-day free trial ends'}, and will continue renewing until I cancel.
-                I may cancel anytime at <strong>Vendor Dashboard → Subscription → Cancel Plan</strong> or by emailing{' '}
+                <strong className="text-amber-800">{t('auth.signup.arlConsent.title')}</strong>{' '}
+                {t('auth.signup.arlConsent.body', {
+                  plan: planDisplayName,
+                  frequency: selectedInterval === 'year' ? t('auth.signup.arlConsent.annually') : t('auth.signup.arlConsent.monthly'),
+                  amount: `$${recurringAmount}`,
+                  trialText: selectedPromo === 'founders' ? t('auth.signup.arlConsent.afterFreeMonths') : t('auth.signup.arlConsent.afterFreeTrial'),
+                })}
+                {' '}{t('auth.signup.arlConsent.cancelInfo')}{' '}
                 <a href="mailto:billing@sponticoupon.com" className="text-primary-500 underline">billing@sponticoupon.com</a>.
-                I agree to these recurring charges.
+                {' '}{t('auth.signup.arlConsent.agree')}
               </span>
             </label>
           )}
 
           <button type="submit" disabled={loading || (accountType === 'vendor' && (!vendorTermsAccepted || !arlConsentAccepted))} className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed">
             {loading
-              ? 'Creating Account...'
+              ? t('auth.signup.creatingAccount')
               : accountType === 'vendor'
-              ? (selectedPromo === 'founders' ? 'Start 2 Months Free' : 'Start My Free Trial')
-              : 'Create Account'}
+              ? (selectedPromo === 'founders' ? t('auth.signup.startFreeMonths') : t('auth.signup.startFreeTrial'))
+              : t('auth.signup.createAccount')}
           </button>
 
           {accountType === 'vendor' && (
             <p className="text-xs text-gray-400 text-center">
               {selectedPromo === 'founders'
-                ? 'Credit card required. 2 months free, then Founders Rate. Cancel anytime.'
-                : '14-day free trial. Cancel anytime.'}
+                ? t('auth.signup.foundersNote')
+                : t('auth.signup.trialNote')}
             </p>
           )}
 
           {/* CalOPPA — privacy link required at all data collection points */}
           <p className="text-xs text-gray-400 text-center">
-            By creating an account, you agree to our{' '}
-            <Link href="/terms" target="_blank" className="hover:underline">Terms of Service</Link>{' '}
-            and{' '}
-            <Link href="/privacy" target="_blank" className="hover:underline">Privacy Policy</Link>.
+            {t('auth.signup.agreeTerms')}{' '}
+            <Link href="/terms" target="_blank" className="hover:underline">{t('auth.signup.termsOfService')}</Link>{' '}
+            {t('auth.signup.and')}{' '}
+            <Link href="/privacy" target="_blank" className="hover:underline">{t('auth.signup.privacyPolicy')}</Link>.
           </p>
         </form>
         </>
         )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary-500 font-semibold hover:underline">Sign In</Link>
+          {t('auth.signup.alreadyHaveAccount')}{' '}
+          <Link href="/auth/login" className="text-primary-500 font-semibold hover:underline">{t('auth.signup.signIn')}</Link>
         </p>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
@@ -15,6 +15,7 @@ import { WhyChooseUs } from '@/components/sections/WhyChooseUs';
 import { ROICalculator } from '@/components/sections/ROICalculator';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 /* ─────── Founders Launch Promo ─────── */
 const FOUNDERS_LAUNCH_STATIC = {
@@ -25,133 +26,10 @@ const FOUNDERS_LAUNCH_STATIC = {
   founderDiscount: 20,             // permanent % off after free period
 };
 
-/* ─────── Plan Config ─────── */
-const PLANS = [
-  {
-    key: 'starter' as const,
-    icon: Rocket,
-    gradient: 'from-accent-500 to-accent-600',
-    tagline: 'Perfect for getting started',
-    features: [
-      '2 Sponti + 4 Steady deals/mo',
-      'QR code + 6-digit redemption',
-      'Basic analytics (KPI cards)',
-      'Deal usage tracking',
-      'Email support',
-      'Zero transaction fees',
-    ],
-  },
-  {
-    key: 'pro' as const,
-    icon: Zap,
-    gradient: 'from-primary-500 to-primary-600',
-    tagline: 'Most popular for growing businesses',
-    features: [
-      '15 Sponti + 30 Steady deals/mo',
-      'Everything in Starter, plus:',
-      'Basic charts (3 charts)',
-      'Custom deal scheduling',
-      'Loyalty rewards program',
-      'Priority support',
-      'Zero transaction fees',
-    ],
-  },
-  {
-    key: 'business' as const,
-    icon: Crown,
-    gradient: 'from-secondary-500 to-secondary-600',
-    tagline: 'For serious local businesses',
-    badge: 'BEST VALUE',
-    features: [
-      '50 Sponti + 100 Steady deals/mo',
-      'Everything in Pro, plus:',
-      'Featured on homepage + more exposure',
-      'Ava — Deal Assistant & Insights',
-      'Ava imports your website & creates deals',
-      'Advanced analytics (8+ charts)',
-      'Competitor benchmarking',
-      'Loyalty rewards program',
-      'Up to 5 team members',
-      'Multi-location support',
-    ],
-  },
-];
-
 const ENTERPRISE = {
   key: 'enterprise' as const,
   icon: Star,
 };
-
-/* ─────── FAQ Data ─────── */
-const FAQ_ITEMS = [
-  {
-    q: 'How does the Founders Launch work?',
-    a: 'The first 200 vendors to sign up for a Pro or Business plan get 2 full months completely free. After the free period, you lock in our permanent Founders Rate — 20% off for life. Credit card is required at sign-up but you won\'t be charged until month 3. Cancel anytime.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Absolutely. There are no contracts or cancellation fees. You can cancel your subscription at any time from your dashboard, effective at the end of your billing period.',
-  },
-  {
-    q: 'Are there any transaction fees?',
-    a: 'None. SpontiCoupon never takes a cut of your sales. Customer deposits go directly to your payment account. We only charge the flat monthly subscription fee.',
-  },
-  {
-    q: 'How do customer deposits work?',
-    a: 'When a customer claims a Sponti Coupon, they pay the deposit directly to your connected payment account (Stripe, PayPal, Venmo, etc.). SpontiCoupon never touches the money.',
-  },
-  {
-    q: 'Can I upgrade or downgrade my plan?',
-    a: 'Yes, you can change your plan at any time. Upgrades take effect immediately, and downgrades apply at the end of your current billing period. The price difference is prorated.',
-  },
-  {
-    q: 'What payment methods do you accept for subscriptions?',
-    a: 'We accept all major credit cards (Visa, Mastercard, Amex) through our secure payment processor. Your billing is handled through Stripe for maximum security.',
-  },
-  {
-    q: 'Do I need technical skills to use SpontiCoupon?',
-    a: 'Not at all. Our platform is designed for local business owners. You can create deals, manage customers, and track analytics through our simple dashboard. Ava, our AI deal strategist, also helps you create deals and optimize pricing.',
-  },
-];
-
-/* ─────── Category Icons for Social Proof ─────── */
-const CATEGORIES = [
-  { icon: Utensils, label: 'Restaurants' },
-  { icon: Scissors, label: 'Salons' },
-  { icon: Dumbbell, label: 'Fitness' },
-  { icon: Heart, label: 'Wellness' },
-  { icon: Coffee, label: 'Cafes' },
-  { icon: ShoppingBag, label: 'Retail' },
-  { icon: Music, label: 'Entertainment' },
-  { icon: Car, label: 'Auto' },
-  { icon: Camera, label: 'Photo' },
-];
-
-/* ─────── Feature Comparison Matrix ─────── */
-const FEATURE_MATRIX = [
-  { feature: 'Sponti deals/month', starter: '2', pro: '15', business: '50', enterprise: 'Unlimited' },
-  { feature: 'Steady deals/month', starter: '4', pro: '30', business: '100', enterprise: 'Unlimited' },
-  { feature: 'QR code redemption', starter: true, pro: true, business: true, enterprise: true },
-  { feature: '6-digit backup codes', starter: true, pro: true, business: true, enterprise: true },
-  { feature: 'Basic analytics (KPI cards)', starter: true, pro: true, business: true, enterprise: true },
-  { feature: 'Basic charts (3 charts)', starter: false, pro: true, business: true, enterprise: true },
-  { feature: 'Advanced analytics (8+ charts + table)', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Ava Deal Assistant', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Ava Insights & scoring', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Ava Deal Advisor', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Ava Website Import', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Competitor benchmarking', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Custom scheduling', starter: false, pro: true, business: true, enterprise: true },
-  { feature: 'Loyalty rewards program', starter: false, pro: true, business: true, enterprise: true },
-  { feature: 'Multi-location support', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Team members', starter: '0', pro: '0', business: 'Up to 5', enterprise: 'Unlimited' },
-  { feature: 'Priority support', starter: false, pro: true, business: true, enterprise: true },
-  { feature: 'Featured on homepage', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Dedicated support', starter: false, pro: false, business: true, enterprise: true },
-  { feature: 'Custom branding', starter: false, pro: false, business: false, enterprise: true },
-  { feature: 'API access & integrations', starter: false, pro: false, business: false, enterprise: true },
-  { feature: 'Zero transaction fees', starter: true, pro: true, business: true, enterprise: true },
-];
 
 /* ════════════════════════════════════════════════════════════════
    PRICING PAGE COMPONENT
@@ -164,6 +42,7 @@ export default function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [spotsTaken, setSpotsTaken] = useState(0);
+  const { t } = useLanguage();
 
   // Fetch real founder spots count from DB
   useEffect(() => {
@@ -174,6 +53,108 @@ export default function PricingPage() {
   }, []);
 
   const FOUNDERS_LAUNCH = { ...FOUNDERS_LAUNCH_STATIC, spotsTaken };
+
+  /* ─────── Translated Plan Config ─────── */
+  const PLANS = useMemo(() => [
+    {
+      key: 'starter' as const,
+      icon: Rocket,
+      gradient: 'from-accent-500 to-accent-600',
+      tagline: t('pricing.starterTagline'),
+      features: [
+        t('pricing.starterF1'),
+        t('pricing.starterF2'),
+        t('pricing.starterF3'),
+        t('pricing.starterF4'),
+        t('pricing.starterF5'),
+        t('pricing.starterF6'),
+      ],
+    },
+    {
+      key: 'pro' as const,
+      icon: Zap,
+      gradient: 'from-primary-500 to-primary-600',
+      tagline: t('pricing.proTagline'),
+      features: [
+        t('pricing.proF1'),
+        t('pricing.proF2'),
+        t('pricing.proF3'),
+        t('pricing.proF4'),
+        t('pricing.proF5'),
+        t('pricing.proF6'),
+        t('pricing.proF7'),
+      ],
+    },
+    {
+      key: 'business' as const,
+      icon: Crown,
+      gradient: 'from-secondary-500 to-secondary-600',
+      tagline: t('pricing.businessTagline'),
+      badge: t('pricing.bestValue'),
+      features: [
+        t('pricing.businessF1'),
+        t('pricing.businessF2'),
+        t('pricing.businessF3'),
+        t('pricing.businessF4'),
+        t('pricing.businessF5'),
+        t('pricing.businessF6'),
+        t('pricing.businessF7'),
+        t('pricing.businessF8'),
+        t('pricing.businessF9'),
+        t('pricing.businessF10'),
+      ],
+    },
+  ], [t]);
+
+  /* ─────── Translated FAQ Data ─────── */
+  const FAQ_ITEMS = useMemo(() => [
+    { q: t('pricing.faqQ1'), a: t('pricing.faqA1') },
+    { q: t('pricing.faqQ2'), a: t('pricing.faqA2') },
+    { q: t('pricing.faqQ3'), a: t('pricing.faqA3') },
+    { q: t('pricing.faqQ4'), a: t('pricing.faqA4') },
+    { q: t('pricing.faqQ5'), a: t('pricing.faqA5') },
+    { q: t('pricing.faqQ6'), a: t('pricing.faqA6') },
+    { q: t('pricing.faqQ7'), a: t('pricing.faqA7') },
+  ], [t]);
+
+  /* ─────── Translated Category Icons ─────── */
+  const CATEGORIES = useMemo(() => [
+    { icon: Utensils, label: t('pricing.catRestaurants') },
+    { icon: Scissors, label: t('pricing.catSalons') },
+    { icon: Dumbbell, label: t('pricing.catFitness') },
+    { icon: Heart, label: t('pricing.catWellness') },
+    { icon: Coffee, label: t('pricing.catCafes') },
+    { icon: ShoppingBag, label: t('pricing.catRetail') },
+    { icon: Music, label: t('pricing.catEntertainment') },
+    { icon: Car, label: t('pricing.catAuto') },
+    { icon: Camera, label: t('pricing.catPhoto') },
+  ], [t]);
+
+  /* ─────── Translated Feature Comparison Matrix ─────── */
+  const FEATURE_MATRIX = useMemo(() => [
+    { feature: t('pricing.featureSpontiDeals'), starter: '2', pro: '15', business: '50', enterprise: t('pricing.unlimited') },
+    { feature: t('pricing.featureSteadyDeals'), starter: '4', pro: '30', business: '100', enterprise: t('pricing.unlimited') },
+    { feature: t('pricing.featureQrCode'), starter: true, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureBackupCodes'), starter: true, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureBasicAnalytics'), starter: true, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureBasicCharts'), starter: false, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureAdvancedAnalytics'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureAvaDealAssistant'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureAvaInsights'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureAvaDealAdvisor'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureAvaWebsiteImport'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureCompetitorBenchmarking'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureCustomScheduling'), starter: false, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureLoyaltyRewards'), starter: false, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureMultiLocation'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureTeamMembers'), starter: '0', pro: '0', business: t('pricing.upTo5'), enterprise: t('pricing.unlimited') },
+    { feature: t('pricing.featurePrioritySupport'), starter: false, pro: true, business: true, enterprise: true },
+    { feature: t('pricing.featureFeaturedHomepage'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureDedicatedSupport'), starter: false, pro: false, business: true, enterprise: true },
+    { feature: t('pricing.featureCustomBranding'), starter: false, pro: false, business: false, enterprise: true },
+    { feature: t('pricing.featureApiAccess'), starter: false, pro: false, business: false, enterprise: true },
+    { feature: t('pricing.featureZeroFees'), starter: true, pro: true, business: true, enterprise: true },
+  ], [t]);
 
   const handleCheckout = async (tier: string) => {
     setLoadingPlan(tier);
@@ -194,9 +175,9 @@ export default function PricingPage() {
         window.location.href = data.url;
         return;
       }
-      setCheckoutError(data.error || 'Unable to start checkout. Please try again or contact support.');
+      setCheckoutError(data.error || t('pricing.checkoutErrorFallback'));
     } catch {
-      setCheckoutError('Unable to connect to our payment system. Please try again in a moment.');
+      setCheckoutError(t('pricing.checkoutNetworkError'));
     }
     setLoadingPlan(null);
   };
@@ -233,19 +214,19 @@ export default function PricingPage() {
               <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-primary-500/30 to-amber-500/30 backdrop-blur-sm rounded-2xl px-6 py-3.5 mb-8 border border-white/30">
                 <div className="flex items-center gap-2">
                   <Gift className="w-5 h-5 text-primary-400 animate-bounce" />
-                  <span className="text-sm font-bold text-white">Founders Launch</span>
+                  <span className="text-sm font-bold text-white">{t('pricing.foundersLaunch')}</span>
                 </div>
                 <span className="hidden sm:block w-px h-5 bg-white/30" />
                 <span className="text-sm text-white">
-                  First <span className="font-bold">{FOUNDERS_LAUNCH.totalSpots}</span> vendors get{' '}
-                  <span className="font-bold text-primary-300">{FOUNDERS_LAUNCH.freeMonths} months free</span>
-                  {' '}+ {FOUNDERS_LAUNCH.founderDiscount}% off forever
+                  {t('pricing.firstVendorsGet', { total: String(FOUNDERS_LAUNCH.totalSpots) })}{' '}
+                  <span className="font-bold text-primary-300">{t('pricing.monthsFree', { months: String(FOUNDERS_LAUNCH.freeMonths) })}</span>
+                  {' '}{t('pricing.plusDiscountForever', { discount: String(FOUNDERS_LAUNCH.founderDiscount) })}
                 </span>
                 <span className="hidden sm:block w-px h-5 bg-white/30" />
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-amber-300" />
                   <span className="text-xs font-bold text-amber-300">
-                    {FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken} spots left
+                    {t('pricing.spotsLeft', { spots: String(FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken) })}
                   </span>
                 </div>
               </div>
@@ -255,16 +236,16 @@ export default function PricingPage() {
           <ScrollReveal animation="fade-up">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/20">
               <Sparkles className="w-4 h-4 text-primary-400 animate-sparkle" />
-              <span className="text-sm font-semibold text-white">Simple, Transparent Pricing</span>
+              <span className="text-sm font-semibold text-white">{t('pricing.title')}</span>
             </div>
           </ScrollReveal>
 
           <ScrollReveal animation="fade-up" delay={100}>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
-              Simple Pricing.
+              {t('pricing.simplePricing')}
               <br />
               <span className="bg-gradient-to-r from-primary-400 to-amber-400 bg-clip-text text-transparent">
-                Powerful Results.
+                {t('pricing.powerfulResults')}
               </span>
             </h1>
           </ScrollReveal>
@@ -273,15 +254,15 @@ export default function PricingPage() {
             <p className="text-lg sm:text-xl text-white mt-5 max-w-2xl mx-auto">
               {FOUNDERS_LAUNCH.active ? (
                 <>
-                  <span className="text-white font-semibold">2 months free</span> on Pro &amp; Business plans. Zero commission. Zero transaction fees.
+                  <span className="text-white font-semibold">{t('pricing.heroPromo')}</span> {t('pricing.heroPromoSuffix')}
                   <br />
-                  <span className="text-white font-medium">Credit card required — cancel anytime.</span>
+                  <span className="text-white font-medium">{t('pricing.heroPromoCreditCard')}</span>
                 </>
               ) : (
                 <>
-                  14-day free trial. Zero commission. Zero transaction fees.
+                  {t('pricing.heroNoPromo')}
                   <br />
-                  <span className="text-white font-medium">Customer deposits go directly to you.</span>
+                  <span className="text-white font-medium">{t('pricing.heroNoPromoCreditCard')}</span>
                 </>
               )}
             </p>
@@ -309,10 +290,10 @@ export default function PricingPage() {
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
                 </div>
                 <p ref={businessCountRef} className="text-lg font-bold text-gray-900">
-                  Trusted by {businessCount}+ local businesses
+                  {t('pricing.trustedBy', { count: String(businessCount) })}
                 </p>
               </div>
-              <p className="text-gray-500 text-sm">From restaurants to salons, fitness studios to retail shops</p>
+              <p className="text-gray-500 text-sm">{t('pricing.trustedBySubtitle')}</p>
             </div>
           </ScrollReveal>
 
@@ -337,9 +318,9 @@ export default function PricingPage() {
           <ScrollReveal animation="fade-up" delay={300}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12">
               {[
-                { value: '$0', label: 'Transaction fees', sublabel: 'You keep 100% of every sale' },
-                { value: '24hr', label: 'Sponti Coupons', sublabel: 'Same-day sponti deals' },
-                { value: '5min', label: 'Setup time', sublabel: 'Post your first deal today' },
+                { value: '$0', label: t('pricing.transactionFees'), sublabel: t('pricing.youKeep100') },
+                { value: '24hr', label: t('pricing.spontiCoupons'), sublabel: t('pricing.sameDayDeals') },
+                { value: '5min', label: t('pricing.setupTime'), sublabel: t('pricing.postFirstDeal') },
               ].map((stat) => (
                 <div key={stat.label} className="text-center p-6 rounded-xl bg-gray-50 border border-gray-100">
                   <p className="text-3xl font-bold bg-gradient-to-r from-primary-500 to-orange-500 bg-clip-text text-transparent">
@@ -369,7 +350,7 @@ export default function PricingPage() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Monthly
+                {t('pricing.monthly')}
               </button>
               <button
                 onClick={() => setIsAnnual(true)}
@@ -379,11 +360,11 @@ export default function PricingPage() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                Annual
+                {t('pricing.annual')}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-all duration-300 ${
                   isAnnual ? 'bg-green-500 text-white' : 'bg-green-500/30 text-green-600'
                 }`}>
-                  SAVE 20%
+                  {t('pricing.savePercent', { percent: '20' })}
                 </span>
               </button>
             </div>
@@ -396,11 +377,11 @@ export default function PricingPage() {
                 <span className="text-red-500 text-xs font-bold">!</span>
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-800">Unable to start checkout</p>
+                <p className="text-sm font-medium text-red-800">{t('pricing.unableToStartCheckout')}</p>
                 <p className="text-sm text-red-600 mt-0.5">{checkoutError}</p>
               </div>
               <button onClick={() => setCheckoutError(null)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                <span className="sr-only">Dismiss</span>
+                <span className="sr-only">{t('pricing.dismiss')}</span>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -411,18 +392,20 @@ export default function PricingPage() {
             <div className="text-center mb-12 max-w-2xl mx-auto">
               <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-200 rounded-full px-5 py-2 mb-4">
                 <Gift className="w-4 h-4 text-primary-500" />
-                <span className="text-sm font-bold text-primary-600">Founders Launch — Limited Offer</span>
+                <span className="text-sm font-bold text-primary-600">{t('pricing.foundersLaunchLimited')}</span>
               </div>
               <p className="text-gray-600 leading-relaxed">
-                The first <span className="font-bold text-gray-900">{FOUNDERS_LAUNCH.totalSpots} vendors</span> to sign up
-                for a Pro or Business plan get{' '}
-                <span className="font-bold text-primary-500">{FOUNDERS_LAUNCH.freeMonths} months completely free</span>,
-                then lock in a permanent{' '}
-                <span className="font-bold text-green-600">{FOUNDERS_LAUNCH.founderDiscount}% Founders Rate for life</span>.
-                {' '}Credit card required at sign-up — you won&apos;t be charged until month 3. Cancel anytime.
+                {t('pricing.foundersLaunchDesc', {
+                  total: String(FOUNDERS_LAUNCH.totalSpots),
+                  months: String(FOUNDERS_LAUNCH.freeMonths),
+                  discount: String(FOUNDERS_LAUNCH.founderDiscount),
+                })}
               </p>
               <p className="text-sm text-gray-400 mt-2">
-                {FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken} of {FOUNDERS_LAUNCH.totalSpots} founding spots remaining
+                {t('pricing.foundersLaunchRemaining', {
+                  remaining: String(FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken),
+                  total: String(FOUNDERS_LAUNCH.totalSpots),
+                })}
               </p>
             </div>
           )}
@@ -442,7 +425,7 @@ export default function PricingPage() {
                       <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
                         <div className="bg-gradient-to-r from-primary-500 to-amber-500 text-white text-[11px] font-bold px-5 py-1.5 rounded-full shadow-lg shadow-primary-200/50 flex items-center gap-1.5 whitespace-nowrap animate-pulse">
                           <Gift className="w-3.5 h-3.5" />
-                          2 MONTHS FREE
+                          {t('pricing.twoMonthsFree')}
                         </div>
                       </div>
                     )}
@@ -458,7 +441,7 @@ export default function PricingPage() {
                           {FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(plan.key) ? (
                             <>
                               <Gift className="w-3.5 h-3.5" />
-                              2 MONTHS FREE &middot; {plan.badge}
+                              {t('pricing.twoMonthsFree')} &middot; {plan.badge}
                             </>
                           ) : (
                             <>
@@ -487,22 +470,22 @@ export default function PricingPage() {
                             {/* Promo: 2 months free + founders rate */}
                             <div className="flex items-center gap-2 mb-1">
                               <span className="bg-gradient-to-r from-primary-500 to-amber-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wide">
-                                2 Months Free
+                                {t('pricing.twoMonthsFreeTag')}
                               </span>
                             </div>
                             <div className="flex items-baseline gap-2">
                               <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
                                 $0
                               </span>
-                              <span className="text-gray-600 text-base font-medium">/mo</span>
+                              <span className="text-gray-600 text-base font-medium">{t('pricing.moSuffix')}</span>
                             </div>
                             <p className="text-xs text-gray-500 mt-1.5">
-                              <span className="line-through">{formatCurrency(price)}/mo</span>
+                              <span className="line-through">{formatCurrency(price)}{t('pricing.moSuffix')}</span>
                               {' '}&rarr;{' '}
                               <span className="text-green-600 font-semibold">
-                                {formatCurrency(Math.round(price * (1 - FOUNDERS_LAUNCH.founderDiscount / 100)))}/mo after
+                                {t('pricing.foundersRateAfter', { price: formatCurrency(Math.round(price * (1 - FOUNDERS_LAUNCH.founderDiscount / 100))) })}
                               </span>
-                              {' '}(Founders Rate — {FOUNDERS_LAUNCH.founderDiscount}% off forever)
+                              {' '}{t('pricing.foundersRateDiscount', { discount: String(FOUNDERS_LAUNCH.founderDiscount) })}
                             </p>
                           </>
                         ) : (
@@ -511,11 +494,11 @@ export default function PricingPage() {
                               <span className={`text-5xl font-extrabold bg-gradient-to-r ${plan.gradient} bg-clip-text text-transparent`}>
                                 {formatCurrency(price)}
                               </span>
-                              <span className="text-gray-600 text-base font-medium">/mo</span>
+                              <span className="text-gray-600 text-base font-medium">{t('pricing.moSuffix')}</span>
                             </div>
                             {isAnnual && (
                               <p className="text-xs text-green-600 font-medium mt-1.5">
-                                {formatCurrency(price * 12)}/year &middot; Save {formatCurrency(tier.price * 12 - price * 12)}
+                                {formatCurrency(price * 12)}{t('pricing.yearSuffix')} &middot; {t('pricing.saveSuffix', { amount: formatCurrency(tier.price * 12 - price * 12) })}
                               </p>
                             )}
                           </>
@@ -562,19 +545,19 @@ export default function PricingPage() {
                                 {isLoading ? (
                                   <>
                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                    Loading...
+                                    {t('pricing.loadingText')}
                                   </>
                                 ) : (
                                   <>
-                                    {isPromo ? 'Start 2 Months Free' : 'Start My Free Trial'}
+                                    {isPromo ? t('pricing.start2MonthsFree') : t('pricing.startMyFreeTrial')}
                                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                                   </>
                                 )}
                               </button>
                               <p className="text-[11px] text-gray-500 text-center mt-3">
                                 {isPromo
-                                  ? 'Credit card required. Cancel anytime.'
-                                  : '14-day free trial. Cancel anytime.'
+                                  ? t('pricing.creditCardRequired')
+                                  : t('pricing.fourteenDayTrial')
                                 }
                               </p>
                             </>
@@ -597,14 +580,14 @@ export default function PricingPage() {
                     <ENTERPRISE.icon className="w-7 h-7 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Enterprise</h3>
+                    <h3 className="text-xl font-bold text-white">{t('pricing.enterprise.name')}</h3>
                     <p className="text-white text-sm mt-0.5 opacity-90">
-                      For regional chains, franchises &amp; multi-location businesses
+                      {t('pricing.enterpriseTagline')}
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-white">/mo</span></span>
+                  <span className="text-3xl font-bold text-white">{formatCurrency(getPrice('enterprise'))}<span className="text-base font-medium text-white">{t('pricing.moSuffix')}</span></span>
                   <button
                     onClick={() => handleCheckout('enterprise')}
                     disabled={loadingPlan !== null}
@@ -613,20 +596,20 @@ export default function PricingPage() {
                     {loadingPlan === 'enterprise' ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Loading...
+                        {t('pricing.loadingText')}
                       </>
                     ) : (
-                      'Start Free Trial'
+                      t('pricing.startTrial')
                     )}
                   </button>
                 </div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
                 {[
-                  { label: 'Unlimited Deals', desc: 'Sponti + Steady, no limits' },
-                  { label: 'Unlimited Team Members', desc: 'Add your whole team with no caps' },
-                  { label: 'Custom Branding', desc: 'White-label deal pages & domain' },
-                  { label: 'API + Integrations', desc: 'POS, CRM & dedicated support' },
+                  { label: t('pricing.unlimitedDeals'), desc: t('pricing.unlimitedDealsDesc') },
+                  { label: t('pricing.unlimitedTeam'), desc: t('pricing.unlimitedTeamDesc') },
+                  { label: t('pricing.customBranding'), desc: t('pricing.customBrandingDesc') },
+                  { label: t('pricing.apiIntegrations'), desc: t('pricing.apiIntegrationsDesc') },
                 ].map(item => (
                   <div key={item.label} className="bg-white/15 rounded-xl p-3 sm:p-4 text-center sm:text-left">
                     <p className="font-semibold text-white text-sm">{item.label}</p>
@@ -644,9 +627,9 @@ export default function PricingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900">Compare Plans</h2>
-              <p className="text-gray-500 mt-2">See what&apos;s included in each plan</p>
-              <p className="text-xs text-gray-400 mt-1 sm:hidden">← Scroll to compare →</p>
+              <h2 className="text-3xl font-bold text-gray-900">{t('pricing.comparePlans')}</h2>
+              <p className="text-gray-500 mt-2">{t('pricing.comparePlansSubtitle')}</p>
+              <p className="text-xs text-gray-400 mt-1 sm:hidden">&larr; {t('pricing.scrollToCompare')} &rarr;</p>
             </div>
           </ScrollReveal>
 
@@ -656,16 +639,16 @@ export default function PricingPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[32%]">Feature</th>
-                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">Starter</th>
-                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">Pro</th>
+                      <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[32%]">{t('pricing.features')}</th>
+                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">{t('pricing.starter.name')}</th>
+                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">{t('pricing.pro.name')}</th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-900 bg-secondary-50/40 w-[17%]">
-                        Business
-                        <span className="block text-[10px] text-secondary-400 font-normal">Best Value</span>
+                        {t('pricing.business.name')}
+                        <span className="block text-[10px] text-secondary-400 font-normal">{t('pricing.bestValue')}</span>
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-amber-600 bg-amber-50/40 w-[17%]">
-                        Enterprise
-                        <span className="block text-[10px] text-amber-500 font-normal">Custom</span>
+                        {t('pricing.enterprise.name')}
+                        <span className="block text-[10px] text-amber-500 font-normal">{t('pricing.custom')}</span>
                       </th>
                     </tr>
                   </thead>
@@ -702,7 +685,7 @@ export default function PricingPage() {
                   onClick={() => setShowAllFeatures(true)}
                   className="w-full py-3.5 text-center text-sm font-semibold text-primary-500 hover:bg-primary-50 transition-colors border-t border-gray-100 flex items-center justify-center gap-1"
                 >
-                  Show all features
+                  {t('pricing.showAllFeatures')}
                   <ChevronDown className="w-4 h-4" />
                 </button>
               )}
@@ -717,14 +700,13 @@ export default function PricingPage() {
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-600 text-xs font-bold px-4 py-1.5 rounded-full mb-4">
-                💰 ROI Calculator
+                {t('pricing.roiCalculator')}
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
-                See exactly what you&apos;re giving away
+                {t('pricing.roiTitle')}
               </h2>
               <p className="text-gray-500 max-w-xl mx-auto">
-                Enter your current platform&apos;s commission rate and your monthly numbers.
-                We&apos;ll show you how much more stays in your pocket with SpontiCoupon.
+                {t('pricing.roiSubtitle')}
               </p>
             </div>
           </ScrollReveal>
@@ -732,11 +714,9 @@ export default function PricingPage() {
           {/* No-brainer callout */}
           <ScrollReveal animation="fade-up" delay={100}>
             <div className="max-w-2xl mx-auto mb-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-5 text-white text-center shadow-lg shadow-orange-200/50">
-              <p className="text-lg font-black mb-1">Here&apos;s the math that makes this a no-brainer:</p>
+              <p className="text-lg font-black mb-1">{t('pricing.roiCalloutTitle')}</p>
               <p className="text-sm text-orange-100 leading-relaxed">
-                Even if you paid a full year of SpontiCoupon upfront in a single month —
-                the commission you&apos;d <em>stop giving away</em> to your current platform
-                more than covers it. Every dollar after that is <strong className="text-white">pure profit you used to hand over for free.</strong>
+                {t('pricing.roiCalloutBody')}
               </p>
             </div>
           </ScrollReveal>
@@ -752,8 +732,8 @@ export default function PricingPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-900">Frequently Asked Questions</h2>
-              <p className="text-gray-500 mt-2">Everything you need to know about SpontiCoupon pricing</p>
+              <h2 className="text-3xl font-bold text-gray-900">{t('pricing.faqTitle')}</h2>
+              <p className="text-gray-500 mt-2">{t('pricing.faqSubtitle')}</p>
             </div>
           </ScrollReveal>
 
@@ -797,19 +777,18 @@ export default function PricingPage() {
 
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               {FOUNDERS_LAUNCH.active
-                ? 'Join the Founders Launch — 2 Months Free'
-                : 'Try SpontiCoupon Free for 14 Days'
+                ? t('pricing.ctaFoundersTitle')
+                : t('pricing.ctaTrialTitle')
               }
             </h2>
             <p className="text-lg text-white mb-8 max-w-xl mx-auto">
               {FOUNDERS_LAUNCH.active ? (
-                <>
-                  Be one of the first {FOUNDERS_LAUNCH.totalSpots} vendors and lock in{' '}
-                  <span className="text-white font-semibold">{FOUNDERS_LAUNCH.founderDiscount}% off forever</span>.
-                  {' '}Zero commission. Customer deposits go directly to you.
-                </>
+                t('pricing.ctaFoundersBody', {
+                  total: String(FOUNDERS_LAUNCH.totalSpots),
+                  discount: String(FOUNDERS_LAUNCH.founderDiscount),
+                })
               ) : (
-                'Join 500+ local businesses already using SpontiCoupon. Start your free trial today — cancel anytime.'
+                t('pricing.ctaTrialBody')
               )}
             </p>
 
@@ -819,7 +798,7 @@ export default function PricingPage() {
                 className="group btn-primary w-full sm:w-auto px-10 py-4 text-base font-bold shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/35 hover:scale-105 transition-all duration-300 text-center"
               >
                 <span className="flex items-center justify-center gap-2">
-                  {FOUNDERS_LAUNCH.active ? 'Claim My Founders Spot' : 'Start My Free Trial'}
+                  {FOUNDERS_LAUNCH.active ? t('pricing.claimMyFoundersSpot') : t('pricing.startMyFreeTrial')}
                   <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </button>
@@ -829,15 +808,15 @@ export default function PricingPage() {
             <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 sm:gap-6 text-white text-xs">
               <div className="flex items-center gap-1.5">
                 <Gift className="w-4 h-4 text-primary-400" />
-                <span>{FOUNDERS_LAUNCH.active ? '2 months free' : '14-day free trial'}</span>
+                <span>{FOUNDERS_LAUNCH.active ? t('pricing.heroPromo') : t('pricing.fourteenDayTrial')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-green-400" />
-                <span>Zero commission</span>
+                <span>{t('pricing.zeroCommission')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Zap className="w-4 h-4 text-green-400" />
-                <span>Cancel anytime</span>
+                <span>{t('pricing.cancelAnytime')}</span>
               </div>
             </div>
           </ScrollReveal>

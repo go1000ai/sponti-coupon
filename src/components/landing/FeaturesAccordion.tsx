@@ -8,53 +8,55 @@ import {
   Zap, ShieldCheck, BadgePercent, Lock, QrCode, Bell, Heart,
   ChevronDown, ArrowRight, Sparkles
 } from 'lucide-react';
-
-const features = [
-  {
-    icon: Zap,
-    title: '24-Hour Sponti Deals',
-    description: 'Every Sponti Coupon is a time-limited Sponti Deal available for just 24 hours. New deals drop daily from local businesses, creating exciting urgency and exclusive savings you won\'t find anywhere else.',
-    gradient: 'from-primary-500 to-orange-600',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Verified Local Businesses',
-    description: 'Every merchant on SpontiCoupon goes through our verification process. We vet each business for quality, legitimacy, and positive customer reviews so you can shop with complete confidence.',
-    gradient: 'from-emerald-500 to-teal-600',
-  },
-  {
-    icon: BadgePercent,
-    title: 'Save Up to 70%',
-    description: 'Our deals offer real, transparent savings — no inflated "original prices." See exactly what you\'re saving with clear pricing breakdowns on every deal.',
-    gradient: 'from-blue-500 to-blue-600',
-  },
-  {
-    icon: Lock,
-    title: 'Deposit Protection',
-    description: 'Your deposit is secured through our payment partner. If a business can\'t honor your deal, you get a full refund — no questions asked.',
-    gradient: 'from-sky-500 to-blue-600',
-  },
-  {
-    icon: QrCode,
-    title: 'QR Code Redemption',
-    description: 'Redeeming your deal is as easy as showing your QR code. Just visit the business, let them scan your unique code, and enjoy your savings instantly.',
-    gradient: 'from-cyan-500 to-blue-600',
-  },
-  {
-    icon: Bell,
-    title: 'Real-Time Deal Alerts',
-    description: 'Never miss a deal again. Set your favorite categories and locations, and we\'ll notify you the moment a matching deal drops.',
-    gradient: 'from-amber-500 to-orange-600',
-  },
-  {
-    icon: Heart,
-    title: 'The SpontiCoupon Promise',
-    description: 'We stand behind every deal. If your experience doesn\'t match what was advertised, our support team will make it right with a credit or full refund.',
-    gradient: 'from-rose-500 to-pink-600',
-  },
-];
+import { useLanguage } from '@/lib/i18n';
 
 export function FeaturesAccordion() {
+  const { t } = useLanguage();
+
+  const features = [
+    {
+      icon: Zap,
+      title: t('home.featuresAccordion.feat1Title'),
+      description: t('home.featuresAccordion.feat1Desc'),
+      gradient: 'from-primary-500 to-orange-600',
+    },
+    {
+      icon: ShieldCheck,
+      title: t('home.featuresAccordion.feat2Title'),
+      description: t('home.featuresAccordion.feat2Desc'),
+      gradient: 'from-emerald-500 to-teal-600',
+    },
+    {
+      icon: BadgePercent,
+      title: t('home.featuresAccordion.feat3Title'),
+      description: t('home.featuresAccordion.feat3Desc'),
+      gradient: 'from-blue-500 to-blue-600',
+    },
+    {
+      icon: Lock,
+      title: t('home.featuresAccordion.feat4Title'),
+      description: t('home.featuresAccordion.feat4Desc'),
+      gradient: 'from-sky-500 to-blue-600',
+    },
+    {
+      icon: QrCode,
+      title: t('home.featuresAccordion.feat5Title'),
+      description: t('home.featuresAccordion.feat5Desc'),
+      gradient: 'from-cyan-500 to-blue-600',
+    },
+    {
+      icon: Bell,
+      title: t('home.featuresAccordion.feat6Title'),
+      description: t('home.featuresAccordion.feat6Desc'),
+      gradient: 'from-amber-500 to-orange-600',
+    },
+    {
+      icon: Heart,
+      title: t('home.featuresAccordion.feat7Title'),
+      description: t('home.featuresAccordion.feat7Desc'),
+      gradient: 'from-rose-500 to-pink-600',
+    },
+  ];
   const [openIndex, setOpenIndex] = useState(0);
   const orb1Ref = useParallax(0.05);
   const orb2Ref = useParallax(0.12);
@@ -77,13 +79,13 @@ export function FeaturesAccordion() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-amber-50 rounded-full px-5 py-2 mb-3 shadow-sm">
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-primary-600">Why SpontiCoupon</span>
+              <span className="text-sm font-semibold text-primary-600">{t('home.featuresAccordion.badge')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              Everything You Need to Save Big
+              {t('home.featuresAccordion.title')}
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">
-              Discover what makes SpontiCoupon the smartest way to shop local
+              {t('home.featuresAccordion.subtitle')}
             </p>
           </div>
         </ScrollReveal>
@@ -146,11 +148,11 @@ export function FeaturesAccordion() {
               href="/deals"
               className="btn-primary inline-flex items-center gap-2 text-base px-8 py-3.5 hover:scale-105 transition-transform duration-200 animate-glow"
             >
-              Browse Deals Now
+              {t('home.featuresAccordion.browseDeals')}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <p className="text-gray-400 text-sm mt-3">
-              No sign-up required to browse
+              {t('home.featuresAccordion.noSignup')}
             </p>
           </div>
         </ScrollReveal>

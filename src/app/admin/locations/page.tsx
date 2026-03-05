@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   MapPin,
   Search,
@@ -27,6 +28,7 @@ interface LocationRow {
 
 export default function AdminLocationsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [locations, setLocations] = useState<LocationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,7 +107,7 @@ export default function AdminLocationsPage() {
         <div className="flex items-center gap-3">
           <MapPin className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Locations</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.locations.title")}</h1>
             <p className="text-sm text-gray-500">{locations.length} total locations</p>
           </div>
         </div>
@@ -159,11 +161,11 @@ export default function AdminLocationsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Address</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">City</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">State</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.locations.name")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.locations.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.locations.address")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.locations.city")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.locations.state")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Primary</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Created</th>
               </tr>
@@ -182,7 +184,7 @@ export default function AdminLocationsPage() {
                 <tr>
                   <td colSpan={7} className="p-12 text-center">
                     <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No locations found</p>
+                    <p className="text-gray-500 font-medium">{t("admin.locations.noLocations")}</p>
                   </td>
                 </tr>
               ) : (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ShoppingBag, MapPin, Clock } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 const ACTIVITIES = [
   { name: 'Jessica M.', action: 'claimed', deal: '50% Off Thai Massage', city: 'Orlando', ago: '2 min ago' },
@@ -15,6 +16,7 @@ const ACTIVITIES = [
 ];
 
 export function LiveActivity() {
+  const { t } = useLanguage();
   const [visibleActivities, setVisibleActivities] = useState(ACTIVITIES.slice(0, 4));
   const [fadeIndex, setFadeIndex] = useState(-1);
 
@@ -42,8 +44,8 @@ export function LiveActivity() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-4">
           <div className="pulse-dot w-2.5 h-2.5 rounded-full bg-green-500" />
-          <span className="text-sm font-semibold text-gray-900">Live Activity</span>
-          <span className="text-xs text-gray-400">Real-time deal activity near you</span>
+          <span className="text-sm font-semibold text-gray-900">{t('home.liveActivity.title')}</span>
+          <span className="text-xs text-gray-400">{t('home.liveActivity.subtitle')}</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

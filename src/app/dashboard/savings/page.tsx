@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import {
   DollarSign,
@@ -88,6 +89,7 @@ function AnimatedCounter({ target, duration = 1500 }: { target: number; duration
 
 export default function SavingsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -188,11 +190,11 @@ export default function SavingsPage() {
 
   // Milestones
   const milestones: Milestone[] = [
-    { amount: 25, label: '$25 Saved!', icon: <Star className="w-6 h-6" />, color: 'text-amber-500', bgColor: 'bg-amber-100' },
-    { amount: 50, label: '$50 Saved!', icon: <Trophy className="w-6 h-6" />, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
-    { amount: 100, label: '$100 Saved!', icon: <Award className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
-    { amount: 250, label: '$250 Saved!', icon: <Crown className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
-    { amount: 500, label: '$500 Saved!', icon: <Diamond className="w-6 h-6" />, color: 'text-primary-500', bgColor: 'bg-primary-100' },
+    { amount: 25, label: t('customer.savings.saved25'), icon: <Star className="w-6 h-6" />, color: 'text-amber-500', bgColor: 'bg-amber-100' },
+    { amount: 50, label: t('customer.savings.saved50'), icon: <Trophy className="w-6 h-6" />, color: 'text-emerald-500', bgColor: 'bg-emerald-100' },
+    { amount: 100, label: t('customer.savings.saved100'), icon: <Award className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
+    { amount: 250, label: t('customer.savings.saved250'), icon: <Crown className="w-6 h-6" />, color: 'text-blue-500', bgColor: 'bg-blue-100' },
+    { amount: 500, label: t('customer.savings.saved500'), icon: <Diamond className="w-6 h-6" />, color: 'text-primary-500', bgColor: 'bg-primary-100' },
   ];
 
   if (loading) {
@@ -207,8 +209,8 @@ export default function SavingsPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Savings</h1>
-        <p className="text-gray-500 mt-1">Track your savings and achievements</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{t('customer.savings.title')}</h1>
+        <p className="text-gray-500 mt-1">{t('customer.savings.subtitle')}</p>
       </div>
 
       {/* Hero stat */}
@@ -216,12 +218,12 @@ export default function SavingsPage() {
         <div className="bg-green-500 rounded-2xl p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
           <DollarSign className="w-8 h-8 text-white" />
         </div>
-        <p className="text-sm font-medium text-green-600 mb-2">Total Lifetime Savings</p>
+        <p className="text-sm font-medium text-green-600 mb-2">{t('customer.savings.totalLifetimeSavings')}</p>
         <p className="text-4xl md:text-5xl font-extrabold text-green-700">
           <AnimatedCounter target={totalSavings} />
         </p>
         <p className="text-sm text-green-500 mt-2">
-          across {redemptionHistory.length} redeemed deal{redemptionHistory.length !== 1 ? 's' : ''}
+          {t('customer.savings.acrossDeals', { count: redemptionHistory.length, s: redemptionHistory.length !== 1 ? 's' : '' })}
         </p>
       </div>
 
@@ -233,7 +235,7 @@ export default function SavingsPage() {
               <Calendar className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">This Month</p>
+              <p className="text-xs font-medium text-gray-500">{t('customer.savings.thisMonth')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(currentMonthSavings)}</p>
             </div>
           </div>
@@ -244,7 +246,7 @@ export default function SavingsPage() {
               ) : (
                 <ArrowDownRight className="w-4 h-4" />
               )}
-              {Math.abs(Math.round(monthlyChange))}% vs last month
+              {t('customer.savings.vsLastMonth', { percent: Math.abs(Math.round(monthlyChange)) })}
             </div>
           )}
         </div>
@@ -254,7 +256,7 @@ export default function SavingsPage() {
               <TrendingUp className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Last Month</p>
+              <p className="text-xs font-medium text-gray-500">{t('customer.savings.lastMonth')}</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(previousMonthSavings)}</p>
             </div>
           </div>
@@ -271,7 +273,7 @@ export default function SavingsPage() {
             <div className="bg-blue-500 rounded-xl p-2.5">
               <BarChart3 className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Savings by Category</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('customer.savings.savingsByCategory')}</h2>
           </div>
           <div className="space-y-4">
             {categorySavings.map((cat) => (
@@ -306,7 +308,7 @@ export default function SavingsPage() {
           <div className="bg-amber-500 rounded-xl p-2.5">
             <Trophy className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">Milestones</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('customer.savings.milestones')}</h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {milestones.map((milestone) => {
@@ -328,7 +330,7 @@ export default function SavingsPage() {
                 </span>
                 {unlocked && (
                   <span className="text-[10px] font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
-                    Unlocked
+                    {t('customer.savings.unlocked')}
                   </span>
                 )}
               </div>
@@ -344,7 +346,7 @@ export default function SavingsPage() {
             <div className="bg-blue-500 rounded-xl p-2.5">
               <Calendar className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Redemption History</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('customer.savings.redemptionHistory')}</h2>
           </div>
           <div className="space-y-0 divide-y divide-gray-50">
             {redemptionHistory.map((claim) => {
@@ -384,9 +386,9 @@ export default function SavingsPage() {
           <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <DollarSign className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-500">No savings yet</h3>
+          <h3 className="text-lg font-semibold text-gray-500">{t('customer.savings.noSavingsYet')}</h3>
           <p className="text-gray-400 mt-1">
-            Redeem your first deal to start tracking your savings!
+            {t('customer.savings.noSavingsDesc')}
           </p>
         </div>
       )}

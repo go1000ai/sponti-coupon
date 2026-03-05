@@ -8,10 +8,12 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 type DealTab = 'all' | 'sponti_coupon' | 'regular';
 
 export function FeaturedDeals() {
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<DealTab>('all');
@@ -34,9 +36,9 @@ export function FeaturedDeals() {
   }, [activeTab]);
 
   const tabs: { key: DealTab; label: string; icon: React.ReactNode }[] = [
-    { key: 'all', label: 'All Deals', icon: <Flame className="w-4 h-4" /> },
-    { key: 'sponti_coupon', label: 'Sponti Coupons', icon: <SpontiIcon className="w-4 h-4" /> },
-    { key: 'regular', label: 'Steady Deals', icon: <Tag className="w-4 h-4" /> },
+    { key: 'all', label: t('home.featured.allDeals'), icon: <Flame className="w-4 h-4" /> },
+    { key: 'sponti_coupon', label: t('home.featured.spontiCoupons'), icon: <SpontiIcon className="w-4 h-4" /> },
+    { key: 'regular', label: t('home.featured.steadyDeals'), icon: <Tag className="w-4 h-4" /> },
   ];
 
   return (
@@ -48,20 +50,20 @@ export function FeaturedDeals() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-orange-50 rounded-full px-5 py-2 mb-3 shadow-sm">
                 <Flame className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
-                <span className="text-sm font-semibold text-primary-600">Hot Right Now</span>
+                <span className="text-sm font-semibold text-primary-600">{t('home.featured.badge')}</span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Today&apos;s Best Deals
+                {t('home.featured.title')}
               </h2>
               <p className="text-gray-500 mt-2 text-lg">
-                Grab these deals before they&apos;re gone
+                {t('home.featured.subtitle')}
               </p>
             </div>
             <Link
               href="/deals"
               className="text-primary-500 font-semibold inline-flex items-center gap-1 hover:text-primary-600 transition-colors"
             >
-              View All Deals <ArrowRight className="w-4 h-4" />
+              {t('home.featured.viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </ScrollReveal>
@@ -101,8 +103,8 @@ export function FeaturedDeals() {
         ) : deals.length === 0 ? (
           <div className="text-center py-12">
             <Tag className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-xl font-bold text-gray-400">No deals available right now</h3>
-            <p className="text-gray-400 mt-1">Check back soon for new deals!</p>
+            <h3 className="text-xl font-bold text-gray-400">{t('home.featured.noDeals')}</h3>
+            <p className="text-gray-400 mt-1">{t('home.featured.checkBack')}</p>
           </div>
         ) : (
           <DealCarousel showArrows arrowVariant="light" resetKey={activeTab}>
@@ -126,7 +128,7 @@ export function FeaturedDeals() {
                 href="/deals"
                 className="inline-flex items-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-primary-500 text-primary-500 font-semibold hover:bg-primary-500 hover:text-white transition-all duration-300 hover:scale-105"
               >
-                Browse All Deals <ArrowRight className="w-5 h-5" />
+                {t('home.featured.browseAll')} <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
           </ScrollReveal>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { OliviaChatbot } from '@/components/support/OliviaChatbot';
 import {
   Headphones,
@@ -52,40 +53,42 @@ interface Message {
   created_at: string;
 }
 
-const CATEGORIES = [
-  { value: 'general', label: 'General' },
-  { value: 'billing', label: 'Billing' },
-  { value: 'technical', label: 'Technical' },
-  { value: 'account', label: 'Account' },
-];
+function getCategories(t: (key: string) => string) {
+  return [
+    { value: 'general', label: t('customer.support.categoryGeneral') },
+    { value: 'billing', label: t('customer.support.categoryBilling') },
+    { value: 'technical', label: t('customer.support.categoryTechnical') },
+    { value: 'account', label: t('customer.support.categoryAccount') },
+  ];
+}
 
 /* ── Helpers ──────────────────────────── */
-function getStatusBadge(status: string) {
-  const map: Record<string, { bg: string; text: string; label: string }> = {
-    open: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Open' },
-    in_progress: { bg: 'bg-yellow-50', text: 'text-yellow-600', label: 'In Progress' },
-    resolved: { bg: 'bg-green-50', text: 'text-green-600', label: 'Resolved' },
-    closed: { bg: 'bg-gray-100', text: 'text-gray-500', label: 'Closed' },
+function getStatusBadge(status: string, t: (key: string) => string) {
+  const map: Record<string, { bg: string; text: string; labelKey: string }> = {
+    open: { bg: 'bg-blue-50', text: 'text-blue-600', labelKey: 'customer.support.statusOpen' },
+    in_progress: { bg: 'bg-yellow-50', text: 'text-yellow-600', labelKey: 'customer.support.statusInProgress' },
+    resolved: { bg: 'bg-green-50', text: 'text-green-600', labelKey: 'customer.support.statusResolved' },
+    closed: { bg: 'bg-gray-100', text: 'text-gray-500', labelKey: 'customer.support.statusClosed' },
   };
   const s = map[status] || map.open;
   return (
     <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full font-medium ${s.bg} ${s.text}`}>
-      {s.label}
+      {t(s.labelKey)}
     </span>
   );
 }
 
-function getCategoryBadge(category: string) {
-  const map: Record<string, { bg: string; text: string; label: string }> = {
-    billing: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Billing' },
-    technical: { bg: 'bg-cyan-50', text: 'text-cyan-600', label: 'Technical' },
-    account: { bg: 'bg-blue-50', text: 'text-blue-600', label: 'Account' },
-    general: { bg: 'bg-gray-50', text: 'text-gray-500', label: 'General' },
+function getCategoryBadge(category: string, t: (key: string) => string) {
+  const map: Record<string, { bg: string; text: string; labelKey: string }> = {
+    billing: { bg: 'bg-blue-50', text: 'text-blue-600', labelKey: 'customer.support.categoryBilling' },
+    technical: { bg: 'bg-cyan-50', text: 'text-cyan-600', labelKey: 'customer.support.categoryTechnical' },
+    account: { bg: 'bg-blue-50', text: 'text-blue-600', labelKey: 'customer.support.categoryAccount' },
+    general: { bg: 'bg-gray-50', text: 'text-gray-500', labelKey: 'customer.support.categoryGeneral' },
   };
   const c = map[category] || map.general;
   return (
     <span className={`inline-flex items-center text-xs px-2 py-1 rounded-full font-medium ${c.bg} ${c.text}`}>
-      {c.label}
+      {t(c.labelKey)}
     </span>
   );
 }
@@ -130,18 +133,20 @@ function NewTicketModal({
   onClose: () => void;
   onSubmit: (data: { subject: string; category: string; message: string; attachments?: Attachment[] }) => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState('general');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const CATEGORIES = getCategories(t);
 
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
-    if (!subject.trim()) { setError('Subject is required'); return; }
-    if (!message.trim()) { setError('Message is required'); return; }
+    if (!subject.trim()) { setError(t('customer.support.subjectRequired')); return; }
+    if (!message.trim()) { setError(t('customer.support.messageRequired')); return; }
     setSubmitting(true);
     setError('');
     try {
@@ -157,7 +162,7 @@ function NewTicketModal({
       setMessage('');
       setAttachments([]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create ticket');
+      setError(err instanceof Error ? err.message : t('customer.support.failedToCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -167,7 +172,7 @@ function NewTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-gray-900">New Support Ticket</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('customer.support.newSupportTicket')}</h2>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -182,18 +187,18 @@ function NewTicketModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.support.subject')} *</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="input-field"
-              placeholder="Brief description of your issue"
+              placeholder={t('customer.support.subjectPlaceholder')}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.support.category')}</label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -206,13 +211,13 @@ function NewTicketModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.support.message')} *</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               className="input-field resize-none"
               rows={5}
-              placeholder="Describe your issue in detail..."
+              placeholder={t('customer.support.messagePlaceholder')}
             />
           </div>
 
@@ -240,7 +245,7 @@ function NewTicketModal({
               disabled={submitting}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -248,7 +253,7 @@ function NewTicketModal({
               className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              Submit Ticket
+              {t('customer.support.submitTicket')}
             </button>
           </div>
         </div>
@@ -265,6 +270,7 @@ function TicketDetailView({
   ticketId: string;
   onBack: () => void;
 }) {
+  const { t } = useLanguage();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
@@ -289,7 +295,7 @@ function TicketDetailView({
       setTicket(data.ticket);
       setMessages(data.messages || []);
     } catch {
-      showToast('error', 'Failed to load ticket');
+      showToast('error', t('customer.support.failedToLoad'));
     } finally {
       setLoading(false);
     }
@@ -335,14 +341,14 @@ function TicketDetailView({
         });
         if (!res.ok) {
           const err = await res.json();
-          showToast('error', err.error || 'Upload failed');
+          showToast('error', err.error || t('customer.support.uploadFailed'));
           continue;
         }
         const data = await res.json();
         setReplyAttachments(prev => [...prev, { url: data.url, filename: data.filename, size: data.size }]);
       }
     } catch {
-      showToast('error', 'Upload failed');
+      showToast('error', t('customer.support.uploadFailed'));
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -367,10 +373,10 @@ function TicketDetailView({
       }
       setReplyText('');
       setReplyAttachments([]);
-      showToast('success', 'Reply sent');
+      showToast('success', t('customer.support.replySent'));
       fetchTicket();
     } catch (err) {
-      showToast('error', err instanceof Error ? err.message : 'Failed to send reply');
+      showToast('error', err instanceof Error ? err.message : t('customer.support.failedToSend'));
     } finally {
       setReplySending(false);
     }
@@ -387,8 +393,8 @@ function TicketDetailView({
   if (!ticket) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-500">Ticket not found</p>
-        <button onClick={onBack} className="mt-3 text-primary-500 text-sm font-medium">Go back</button>
+        <p className="text-gray-500">{t('customer.support.ticketNotFound')}</p>
+        <button onClick={onBack} className="mt-3 text-primary-500 text-sm font-medium">{t('customer.support.goBack')}</button>
       </div>
     );
   }
@@ -412,18 +418,18 @@ function TicketDetailView({
         className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 mb-4 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to tickets
+        {t('customer.support.backToTickets')}
       </button>
 
       {/* Ticket header */}
       <div className="card p-5 mb-4">
         <h2 className="text-lg font-bold text-gray-900 mb-2">{ticket.subject}</h2>
         <div className="flex items-center gap-3 flex-wrap">
-          {getStatusBadge(ticket.status)}
-          {getCategoryBadge(ticket.category)}
+          {getStatusBadge(ticket.status, t)}
+          {getCategoryBadge(ticket.category, t)}
           <span className="text-xs text-gray-400 flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Created {formatTimeAgo(ticket.created_at)}
+            {t('customer.support.created')} {formatTimeAgo(ticket.created_at)}
           </span>
         </div>
       </div>
@@ -432,7 +438,7 @@ function TicketDetailView({
       <div className="card p-5 mb-4">
         <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
           {messages.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-8">No messages yet.</p>
+            <p className="text-center text-gray-400 text-sm py-8">{t('customer.support.noMessagesYet')}</p>
           ) : (
             messages.map((msg) => {
               const isUser = msg.sender_type === 'user';
@@ -460,7 +466,7 @@ function TicketDetailView({
                       {isUser && <User className="w-3 h-3" />}
                       {isAdmin && <Shield className="w-3 h-3" />}
                       {isAI && <Bot className="w-3 h-3" />}
-                      <span>{isUser ? 'You' : isAdmin ? 'Support Team' : 'AI Assistant'}</span>
+                      <span>{isUser ? t('customer.support.you') : isAdmin ? t('customer.support.supportTeam') : t('customer.support.aiAssistant')}</span>
                       <span className={`${isUser ? 'text-white/50' : 'text-gray-400'}`}>
                         {formatTimestamp(msg.created_at)}
                       </span>
@@ -526,7 +532,7 @@ function TicketDetailView({
               <textarea
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
-                placeholder="Type your reply..."
+                placeholder={t('customer.support.typeYourReply')}
                 className="input-field resize-none"
                 rows={3}
                 onKeyDown={(e) => {
@@ -550,7 +556,7 @@ function TicketDetailView({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 className="p-2.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
-                title="Attach image"
+                title={t('customer.support.attachImage')}
               >
                 {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
               </button>
@@ -558,7 +564,7 @@ function TicketDetailView({
                 onClick={handleSendReply}
                 disabled={replySending || !replyText.trim()}
                 className="p-2.5 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50"
-                title="Send reply"
+                title={t('customer.support.sendReply')}
               >
                 {replySending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
               </button>
@@ -567,7 +573,7 @@ function TicketDetailView({
         </div>
       ) : (
         <div className="card p-4 text-center text-sm text-gray-400">
-          This ticket is closed. You can create a new ticket if you need further assistance.
+          {t('customer.support.ticketClosed')}
         </div>
       )}
     </div>
@@ -577,6 +583,7 @@ function TicketDetailView({
 /* ── Main Page ──────────────────────────── */
 export default function CustomerSupportPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -635,7 +642,7 @@ export default function CustomerSupportPage() {
       throw new Error(err.error || 'Failed to create ticket');
     }
     setShowNewTicket(false);
-    showToast('success', 'Ticket created successfully');
+    showToast('success', t('customer.support.ticketCreated'));
     fetchTickets();
   };
 
@@ -676,8 +683,8 @@ export default function CustomerSupportPage() {
       <div className="flex items-center gap-3 mb-6">
         <Headphones className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support & Help</h1>
-          <p className="text-sm text-gray-500">Chat with Olivia or open a support ticket</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('customer.support.title')}</h1>
+          <p className="text-sm text-gray-500">{t('customer.support.subtitle')}</p>
         </div>
       </div>
 
@@ -691,7 +698,7 @@ export default function CustomerSupportPage() {
             <div className="w-full border-t border-gray-200" />
           </div>
           <div className="relative bg-gray-50 px-4">
-            <span className="text-sm text-gray-400">Need more help?</span>
+            <span className="text-sm text-gray-400">{t('customer.support.needMoreHelp')}</span>
           </div>
         </div>
         <div className="mt-4 text-center">
@@ -700,16 +707,16 @@ export default function CustomerSupportPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors shadow-sm"
           >
             <TicketIcon className="w-4 h-4" />
-            Open Support Ticket
+            {t('customer.support.openSupportTicket')}
           </button>
-          <p className="text-xs text-gray-400 mt-2">Our team will respond within 24 hours</p>
+          <p className="text-xs text-gray-400 mt-2">{t('customer.support.responseTime')}</p>
         </div>
       </div>
 
       {/* Ticket List */}
       {tickets.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Your Tickets</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('customer.support.yourTickets')}</h2>
           <div className="space-y-3">
             {tickets.map((ticket) => (
               <button
@@ -725,11 +732,11 @@ export default function CustomerSupportPage() {
                       </h3>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {getStatusBadge(ticket.status)}
-                      {getCategoryBadge(ticket.category)}
+                      {getStatusBadge(ticket.status, t)}
+                      {getCategoryBadge(ticket.category, t)}
                       <span className="text-xs text-gray-400 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Updated {formatTimeAgo(ticket.updated_at)}
+                        {t('customer.support.updated')} {formatTimeAgo(ticket.updated_at)}
                       </span>
                     </div>
                   </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -122,6 +123,7 @@ const PAGE_SIZE = 15;
 
 export default function AdminVendorsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [vendors, setVendors] = useState<VendorWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -513,7 +515,7 @@ export default function AdminVendorsPage() {
         <div className="flex items-center gap-3">
           <Store className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Vendor Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.vendors.title")}</h1>
             <p className="text-sm text-gray-500">{vendors.length} total vendors</p>
           </div>
         </div>
@@ -560,7 +562,7 @@ export default function AdminVendorsPage() {
             onChange={(e) => setTierFilter(e.target.value)}
             className="input-field w-full sm:w-40"
           >
-            <option value="all">All Tiers</option>
+            <option value="all">{t("admin.vendors.allTiers")}</option>
             <option value="starter">Starter</option>
             <option value="pro">Pro</option>
             <option value="business">Business</option>
@@ -576,21 +578,21 @@ export default function AdminVendorsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Business</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Email</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Tier</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Location</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Deals</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Claims</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.vendors.business")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.email")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.vendors.tier")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.status")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.customers.location")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">{t("admin.vendors.deals")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">{t("admin.vendors.claims")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paginatedVendors.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
-                    No vendors found matching your filters.
+                    {t("admin.vendors.noVendors")} matching your filters.
                   </td>
                 </tr>
               ) : (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Gift, Stamp, Star, Check, Lock, Loader2, Award, Calendar, ChevronRight } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, Vendor } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface LoyaltyCardData {
   id: string;
@@ -21,6 +22,7 @@ interface LoyaltyCardData {
 }
 
 export function LoyaltyCards() {
+  const { t } = useLanguage();
   const [cards, setCards] = useState<LoyaltyCardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeeming, setRedeeming] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export function LoyaltyCards() {
     <div className="mb-8">
       <Link href="/dashboard/loyalty?tab=business" className="flex items-center gap-2 mb-4 group">
         <Gift className="w-5 h-5 text-primary-500" />
-        <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary-500 transition-colors">My Loyalty Rewards</h2>
+        <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary-500 transition-colors">{t('loyaltyCardsWidget.myLoyaltyRewards')}</h2>
         <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors" />
       </Link>
 
@@ -106,6 +108,7 @@ function PunchCardView({
   onRedeem: (cardId: string) => void;
   redeeming: string | null;
 }) {
+  const { t } = useLanguage();
   const program = card.program;
   if (!program) return null;
 
@@ -163,15 +166,15 @@ function PunchCardView({
         {/* Progress text */}
         <p className="text-center text-sm font-medium text-gray-900">
           {canClaim ? (
-            <span className="text-green-600">Reward ready!</span>
+            <span className="text-green-600">{t('loyaltyCardsWidget.rewardReady')}</span>
           ) : (
-            <>{current}/{required} stamps <span className="text-gray-400">— {required - current} more to go</span></>
+            <>{t('loyaltyCardsWidget.stamps', { current: String(current), required: String(required) })} <span className="text-gray-400">— {t('loyaltyCardsWidget.moreToGo', { count: String(required - current) })}</span></>
           )}
         </p>
 
         {/* Reward info */}
         <div className="mt-3 bg-orange-50 rounded-lg px-3 py-2 text-center">
-          <p className="text-xs text-gray-500">Reward:</p>
+          <p className="text-xs text-gray-500">{t('loyaltyCardsWidget.reward')}</p>
           <p className="text-sm font-bold text-primary-600">{program.punch_reward}</p>
         </div>
 
@@ -183,7 +186,7 @@ function PunchCardView({
             className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
           >
             {redeeming === card.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-            Claim Reward
+            {t('loyaltyCardsWidget.claimReward')}
           </button>
         )}
       </div>
@@ -203,6 +206,7 @@ function PointsCardView({
   onRedeem: (cardId: string, rewardId: string) => void;
   redeeming: string | null;
 }) {
+  const { t } = useLanguage();
   const program = card.program;
   if (!program) return null;
 
@@ -232,14 +236,14 @@ function PointsCardView({
         {/* Points Balance */}
         <div className="text-center mb-3">
           <p className="text-3xl font-extrabold text-gray-900">{card.current_points.toLocaleString()}</p>
-          <p className="text-xs text-gray-400 font-medium">POINTS</p>
+          <p className="text-xs text-gray-400 font-medium">{t('loyaltyCardsWidget.points')}</p>
         </div>
 
         {/* Progress bar to next reward */}
         {nextReward && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-              <span>Next: {nextReward.name}</span>
+              <span>{t('loyaltyCardsWidget.next', { name: nextReward.name })}</span>
               <span className="font-medium">{nextReward.points_cost} pts</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -250,8 +254,8 @@ function PointsCardView({
             </div>
             <p className="text-[10px] text-gray-400 mt-1">
               {nextReward.points_cost - card.current_points > 0
-                ? `${nextReward.points_cost - card.current_points} more points needed`
-                : 'Ready to redeem!'
+                ? t('loyaltyCardsWidget.morePointsNeeded', { count: String(nextReward.points_cost - card.current_points) })
+                : t('loyaltyCardsWidget.readyToRedeem')
               }
             </p>
           </div>
@@ -278,7 +282,7 @@ function PointsCardView({
                       disabled={!!isRedeeming}
                       className="text-[10px] font-bold text-green-600 bg-green-100 hover:bg-green-200 px-2 py-1 rounded-full transition-colors"
                     >
-                      {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Redeem'}
+                      {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : t('loyaltyCardsWidget.redeem')}
                     </button>
                   )}
                 </div>
@@ -295,6 +299,7 @@ function PointsCardView({
    Compact Expiration Badge
    ────────────────────────────────────────── */
 function CompactExpirationBadge({ expiresAt }: { expiresAt: string }) {
+  const { t } = useLanguage();
   const expDate = new Date(expiresAt);
   const now = new Date();
   const isExpired = expDate < now;
@@ -311,8 +316,8 @@ function CompactExpirationBadge({ expiresAt }: { expiresAt: string }) {
     }`}>
       <Calendar className="w-3 h-3 shrink-0" />
       {isExpired
-        ? 'Expired'
-        : `Expires ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+        ? t('loyaltyCardsWidget.expired')
+        : t('loyaltyCardsWidget.expires', { date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })
       }
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Users, Mail, Copy, Check, Filter } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface CustomerClaim {
   claim_id: string;
@@ -26,6 +27,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function VendorCustomersPage() {
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<CustomerClaim[]>([]);
   const [deals, setDeals] = useState<DealOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,8 +73,8 @@ export default function VendorCustomersPage() {
           <Users className="w-7 h-7 text-primary-500" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-gray-500 text-sm">Everyone who claimed your deals</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('vendor.customers.title')}</h1>
+          <p className="text-gray-500 text-sm">{t('vendor.customers.subtitle')}</p>
         </div>
       </div>
 

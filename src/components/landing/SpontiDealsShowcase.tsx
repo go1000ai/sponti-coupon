@@ -10,10 +10,12 @@ import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 type DealWithDistance = Deal & { distance?: number | null };
 
 export function SpontiDealsShowcase() {
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
   const { lat, lng } = useGeolocation();
@@ -61,13 +63,13 @@ export function SpontiDealsShowcase() {
           <ScrollReveal animation="fade-up">
             <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl sm:rounded-3xl p-5 sm:p-8 text-center">
               <SpontiIcon className="w-12 h-12 text-primary-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-white mb-2">Sponti Deals Drop Daily</h3>
-              <p className="text-gray-300 mb-6">New Sponti Coupons with 50-70% off appear every day. Check back soon!</p>
+              <h3 className="text-xl font-bold text-white mb-2">{t('home.spontiShowcase.emptyTitle')}</h3>
+              <p className="text-gray-300 mb-6">{t('home.spontiShowcase.emptyDesc')}</p>
               <Link
                 href="/deals"
                 className="btn-primary inline-flex items-center gap-2 px-6 py-3"
               >
-                Browse Steady Deals <ArrowRight className="w-4 h-4" />
+                {t('home.spontiShowcase.browseSteady')} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </ScrollReveal>
@@ -85,7 +87,7 @@ export function SpontiDealsShowcase() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 rounded-full px-5 py-2 mb-3 shadow-md">
                 <SpontiIcon className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">SPONTI DEALS</span>
+                <span className="text-sm font-bold text-white tracking-wide">{t('home.spontiShowcase.badge')}</span>
                 <span className="pulse-dot w-2 h-2 rounded-full bg-white ml-1" />
               </div>
               <h2 className="flex items-center gap-3">
@@ -97,18 +99,18 @@ export function SpontiDealsShowcase() {
                   className="h-9 sm:h-12 w-auto drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]"
                 />
                 <span className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white drop-shadow-lg whitespace-nowrap">
-                  Coupons
+                  {t('home.spontiShowcase.coupons')}
                 </span>
               </h2>
               <p className="text-gray-300 mt-1 text-base sm:text-lg">
-                24-hour exclusive deals — grab them before they&apos;re gone
+                {t('home.spontiShowcase.subtitle')}
               </p>
             </div>
             <Link
               href="/deals?type=sponti_coupon"
               className="text-primary-400 font-semibold inline-flex items-center gap-1 hover:text-primary-300 transition-colors group"
             >
-              See All Sponti Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('home.spontiShowcase.seeAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </ScrollReveal>
@@ -135,7 +137,7 @@ export function SpontiDealsShowcase() {
               href="/deals?type=sponti_coupon"
               className="btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base hover:scale-105 transition-transform duration-200 shadow-xl"
             >
-              See All Sponti Deals <SpontiIcon className="w-4 h-4" />
+              {t('home.spontiShowcase.seeAll')} <SpontiIcon className="w-4 h-4" />
             </Link>
           </div>
         </ScrollReveal>

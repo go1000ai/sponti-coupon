@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import { formatCurrency, formatPercentage, getDistanceFromLatLng } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
@@ -87,6 +88,7 @@ function DealCard({ deal, showDistance }: { deal: DealWithDistance; showDistance
 
 export default function DealsForYouPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { lat, lng, loading: geoLoading } = useGeolocation();
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [recommendedDeals, setRecommendedDeals] = useState<DealWithDistance[]>([]);
@@ -176,10 +178,10 @@ export default function DealsForYouPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-          Deals For You
+          {t('customer.forYou.title')}
         </h1>
         <p className="text-gray-500 mt-1">
-          Personalized deals based on your location and interests
+          {t('customer.forYou.subtitle')}
         </p>
       </div>
 
@@ -188,12 +190,12 @@ export default function DealsForYouPage() {
           <div className="bg-primary-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <Compass className="w-8 h-8 text-primary-500" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">No deals available</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{t('customer.forYou.noDealsAvailable')}</h3>
           <p className="text-gray-400 mt-1 mb-6">
-            Check back soon for new deals in your area!
+            {t('customer.forYou.checkBackSoon')}
           </p>
           <Link href="/deals" className="btn-primary inline-flex items-center gap-2">
-            <Compass className="w-4 h-4" /> Browse All Deals
+            <Compass className="w-4 h-4" /> {t('customer.forYou.browseAllDeals')}
           </Link>
         </div>
       ) : (
@@ -206,11 +208,11 @@ export default function DealsForYouPage() {
                   <Heart className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Recommended for You</h2>
+                  <h2 className="text-lg font-bold text-gray-900">{t('customer.forYou.recommendedForYou')}</h2>
                   <p className="text-sm text-gray-400">
                     {hasHistory
-                      ? 'Based on your purchase history'
-                      : 'Popular deals you might like'}
+                      ? t('customer.forYou.basedOnHistory')
+                      : t('customer.forYou.popularDeals')}
                   </p>
                 </div>
               </div>
@@ -230,8 +232,8 @@ export default function DealsForYouPage() {
                   <MapPin className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Near You</h2>
-                  <p className="text-sm text-gray-400">Deals closest to your location</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('customer.forYou.nearYou')}</h2>
+                  <p className="text-sm text-gray-400">{t('customer.forYou.nearYouDesc')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -250,8 +252,8 @@ export default function DealsForYouPage() {
                   <Flame className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Trending</h2>
-                  <p className="text-sm text-gray-400">Most popular deals right now</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('customer.forYou.trending')}</h2>
+                  <p className="text-sm text-gray-400">{t('customer.forYou.trendingDesc')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -270,8 +272,8 @@ export default function DealsForYouPage() {
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Just Added</h2>
-                  <p className="text-sm text-gray-400">Fresh deals you haven&apos;t seen yet</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('customer.forYou.justAdded')}</h2>
+                  <p className="text-sm text-gray-400">{t('customer.forYou.justAddedDesc')}</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -289,7 +291,7 @@ export default function DealsForYouPage() {
               className="btn-primary inline-flex items-center gap-2 px-8 py-3"
             >
               <Compass className="w-5 h-5" />
-              Browse All Deals
+              {t('customer.forYou.browseAllDeals')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

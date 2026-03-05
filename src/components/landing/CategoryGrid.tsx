@@ -7,92 +7,23 @@ import {
   UtensilsCrossed, Sparkles, Dumbbell, Gamepad2, ShoppingBag,
   Coffee, Scissors, Car, GraduationCap, Heart, Compass
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
-// slug values must match the vendor category values stored in the database
-const categories = [
-  {
-    name: 'Restaurants',
-    slug: 'Restaurants',
-    icon: UtensilsCrossed,
-    gradient: 'from-orange-500 to-red-500',
-    bg: 'bg-orange-50',
-    count: 124,
-  },
-  {
-    name: 'Beauty & Spa',
-    slug: 'Beauty & Spa',
-    icon: Sparkles,
-    gradient: 'from-pink-500 to-rose-500',
-    bg: 'bg-pink-50',
-    count: 89,
-  },
-  {
-    name: 'Health & Fitness',
-    slug: 'Health & Fitness',
-    icon: Dumbbell,
-    gradient: 'from-emerald-500 to-teal-500',
-    bg: 'bg-emerald-50',
-    count: 67,
-  },
-  {
-    name: 'Entertainment',
-    slug: 'Entertainment',
-    icon: Gamepad2,
-    gradient: 'from-sky-500 to-blue-500',
-    bg: 'bg-sky-50',
-    count: 93,
-  },
-  {
-    name: 'Shopping',
-    slug: 'Shopping',
-    icon: ShoppingBag,
-    gradient: 'from-blue-500 to-blue-500',
-    bg: 'bg-blue-50',
-    count: 156,
-  },
-  {
-    name: 'Food & Drink',
-    slug: 'Food & Drink',
-    icon: Coffee,
-    gradient: 'from-amber-500 to-orange-500',
-    bg: 'bg-amber-50',
-    count: 78,
-  },
-  {
-    name: 'Hair & Grooming',
-    slug: 'Hair & Grooming',
-    icon: Scissors,
-    gradient: 'from-cyan-500 to-blue-500',
-    bg: 'bg-cyan-50',
-    count: 45,
-  },
-  {
-    name: 'Automotive',
-    slug: 'Automotive',
-    icon: Car,
-    gradient: 'from-slate-500 to-gray-600',
-    bg: 'bg-slate-50',
-    count: 32,
-  },
-  {
-    name: 'Education',
-    slug: 'Education',
-    icon: GraduationCap,
-    gradient: 'from-yellow-500 to-amber-500',
-    bg: 'bg-yellow-50',
-    count: 41,
-  },
-  {
-    name: 'Wellness',
-    slug: 'Wellness',
-    icon: Heart,
-    gradient: 'from-rose-500 to-pink-600',
-    bg: 'bg-rose-50',
-    count: 58,
-  },
+// Category metadata - names are translated via i18n keys
+const categoryMeta = [
+  { key: 'restaurants', slug: 'Restaurants', icon: UtensilsCrossed, gradient: 'from-orange-500 to-red-500', bg: 'bg-orange-50', count: 124 },
+  { key: 'beautySpa', slug: 'Beauty & Spa', icon: Sparkles, gradient: 'from-pink-500 to-rose-500', bg: 'bg-pink-50', count: 89 },
+  { key: 'healthFitness', slug: 'Health & Fitness', icon: Dumbbell, gradient: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', count: 67 },
+  { key: 'entertainment', slug: 'Entertainment', icon: Gamepad2, gradient: 'from-sky-500 to-blue-500', bg: 'bg-sky-50', count: 93 },
+  { key: 'shopping', slug: 'Shopping', icon: ShoppingBag, gradient: 'from-blue-500 to-blue-500', bg: 'bg-blue-50', count: 156 },
+  { key: 'foodDrink', slug: 'Food & Drink', icon: Coffee, gradient: 'from-amber-500 to-orange-500', bg: 'bg-amber-50', count: 78 },
+  { key: 'hairGrooming', slug: 'Hair & Grooming', icon: Scissors, gradient: 'from-cyan-500 to-blue-500', bg: 'bg-cyan-50', count: 45 },
+  { key: 'automotive', slug: 'Automotive', icon: Car, gradient: 'from-slate-500 to-gray-600', bg: 'bg-slate-50', count: 32 },
+  { key: 'education', slug: 'Education', icon: GraduationCap, gradient: 'from-yellow-500 to-amber-500', bg: 'bg-yellow-50', count: 41 },
+  { key: 'wellness', slug: 'Wellness', icon: Heart, gradient: 'from-rose-500 to-pink-600', bg: 'bg-rose-50', count: 58 },
 ];
 
-function TiltCategoryCard({ cat, onClick }: { cat: typeof categories[0]; onClick: () => void }) {
+function TiltCategoryCard({ cat, name, dealsLabel, onClick }: { cat: typeof categoryMeta[0]; name: string; dealsLabel: string; onClick: () => void }) {
   const tiltRef = useTilt(6);
 
   return (
@@ -105,15 +36,16 @@ function TiltCategoryCard({ cat, onClick }: { cat: typeof categories[0]; onClick
           <cat.icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={1.8} />
         </div>
         <h3 className="font-semibold text-gray-900 text-[11px] sm:text-sm mb-0.5 sm:mb-1 leading-tight">
-          {cat.name}
+          {name}
         </h3>
-        <p className="text-[10px] sm:text-xs text-gray-400">{cat.count}+ deals</p>
+        <p className="text-[10px] sm:text-xs text-gray-400">{dealsLabel}</p>
       </button>
     </div>
   );
 }
 
 export function CategoryGrid() {
+  const { t } = useLanguage();
   const router = useRouter();
 
   return (
@@ -123,22 +55,24 @@ export function CategoryGrid() {
           <div className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-blue-50 rounded-full px-5 py-2 mb-3 shadow-sm">
               <Compass className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-blue-600">Explore Categories</span>
+              <span className="text-sm font-semibold text-blue-600">{t('home.categories.badge')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              What Are You Looking For?
+              {t('home.categories.title')}
             </h2>
             <p className="text-gray-500 mt-2 text-base sm:text-lg">
-              Browse deals by category to find exactly what you need
+              {t('home.categories.subtitle')}
             </p>
           </div>
         </ScrollReveal>
 
         <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4 lg:gap-6">
-          {categories.map((cat, i) => (
+          {categoryMeta.map((cat, i) => (
             <ScrollReveal key={cat.slug} animation="scale-up" delay={i * 60}>
               <TiltCategoryCard
                 cat={cat}
+                name={t(`home.categories.${cat.key}` as Parameters<typeof t>[0])}
+                dealsLabel={t('home.categories.dealsCount').replace('{{count}}', String(cat.count))}
                 onClick={() => router.push(`/deals?category=${cat.slug}`)}
               />
             </ScrollReveal>

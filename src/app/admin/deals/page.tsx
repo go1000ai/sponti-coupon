@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatPercentage, formatCurrency } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
@@ -164,6 +165,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AdminDealsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
 
   // Data
@@ -557,7 +559,7 @@ export default function AdminDealsPage() {
             <Tag className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Deal Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.deals.title")}</h1>
             <p className="text-sm text-gray-500">
               {deals.length} total deals &middot; {activeCount} active &middot; {spontiCount} Sponti &middot; {steadyCount} Steady
             </p>
@@ -860,17 +862,17 @@ export default function AdminDealsPage() {
             className="input-field w-full sm:w-36"
           >
             <option value="all">All Statuses</option>
-            <option value="active">Active</option>
+            <option value="active">{t("common.active")}</option>
             <option value="draft">Draft</option>
-            <option value="paused">Paused</option>
-            <option value="expired">Expired</option>
+            <option value="paused">{t("common.paused")}</option>
+            <option value="expired">{t("common.expired")}</option>
           </select>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="input-field w-full sm:w-36"
           >
-            <option value="all">All Types</option>
+            <option value="all">{t("admin.deals.allTypes")}</option>
             <option value="sponti_coupon">Sponti</option>
             <option value="regular">Steady</option>
           </select>
@@ -908,7 +910,7 @@ export default function AdminDealsPage() {
       {filteredDeals.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-16 text-center opacity-0 animate-[fadeIn_0.5s_ease-out_forwards]">
           <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-400 mb-1">No deals found</h3>
+          <h3 className="text-lg font-semibold text-gray-400 mb-1">{t("admin.deals.noDeals")}</h3>
           <p className="text-sm text-gray-400">Try adjusting your filters or create a new deal.</p>
         </div>
       ) : viewMode === 'gallery' ? (

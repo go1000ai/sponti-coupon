@@ -9,6 +9,8 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage, formatDistance } from '@/lib/utils';
 import { PAYMENT_PROCESSORS } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
+import { useLanguage } from '@/lib/i18n';
+import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import type { Deal } from '@/lib/types/database';
 
 interface DealCardProps {
@@ -18,7 +20,9 @@ interface DealCardProps {
   paymentLogos?: string[]; // processor_type strings e.g. ['stripe', 'venmo', 'zelle']
 }
 
-export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardProps) {
+export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: DealCardProps) {
+  const { t } = useLanguage();
+  const deal = useTranslatedDeal(rawDeal);
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
 
@@ -48,18 +52,18 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
           <DealTypeBadge type={deal.deal_type} size="md" />
           {/* Verified badge */}
           <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow w-fit">
-            <ShieldCheck className="w-2.5 h-2.5" /> Verified
+            <ShieldCheck className="w-2.5 h-2.5" /> {t('dealDetail.verified')}
           </span>
         </div>
 
         {/* Discount badge - top right */}
         <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
           <div className="bg-white text-primary-500 font-bold text-sm sm:text-lg px-2.5 sm:px-3 py-1 rounded-full shadow-lg">
-            {formatPercentage(deal.discount_percentage)} OFF
+            {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
           </div>
           {isOwnDeal && (
             <span className="inline-flex items-center gap-1 bg-secondary-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-              <Store className="w-2.5 h-2.5" /> Your Deal
+              <Store className="w-2.5 h-2.5" /> {t('dealDetail.yourDeal')}
             </span>
           )}
         </div>
@@ -69,7 +73,7 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <div className="flex items-center gap-2 text-white text-xs mb-1">
               <Clock className="w-3 h-3" />
-              <span>{isSponti ? 'Sponti expires:' : 'Steady ends:'}</span>
+              <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
             </div>
             <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
           </div>
@@ -102,14 +106,14 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
           </div>
           {/* Savings badge */}
           <span className="inline-flex items-center mt-1.5 bg-green-50 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full">
-            You save {formatCurrency(savings)}
+            {t('dealDetail.youSaveAmount', { amount: formatCurrency(savings) })}
           </span>
         </div>
 
         {/* Deposit info */}
         {isSponti && deal.deposit_amount && (
           <span className="inline-flex items-center mt-2 text-xs bg-primary-50 text-primary-600 px-2 py-1 rounded-full font-medium">
-            {formatCurrency(deal.deposit_amount)} deposit
+            {t('dealDetail.depositAmountLabel', { amount: formatCurrency(deal.deposit_amount) })}
           </span>
         )}
 
@@ -136,12 +140,12 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
             )}
             <span className="flex items-center gap-1">
               <Users className="w-3 h-3" />
-              {deal.claims_count} claimed
+              {t('dealDetail.claimedCount', { count: String(deal.claims_count) })}
             </span>
           </div>
           {deal.claims_count > 0 && (
             <span className="text-green-500 font-medium">
-              Claimed {Math.max(1, Math.floor(Math.random() * 20))}m ago
+              {t('dealDetail.claimedAgo', { time: String(Math.max(1, Math.floor(Math.random() * 20))) })}
             </span>
           )}
         </div>
@@ -150,11 +154,11 @@ export function DealCard({ deal, distance, isOwnDeal, paymentLogos }: DealCardPr
         {deal.max_claims && (
           <div className="mt-2">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>{deal.claims_count} claimed</span>
+              <span>{t('dealDetail.claimedCount', { count: String(deal.claims_count) })}</span>
               <span className={`font-medium ${deal.max_claims - deal.claims_count <= 5 ? 'text-red-500' : 'text-gray-500'}`}>
                 {deal.max_claims - deal.claims_count <= 5
-                  ? `Only ${deal.max_claims - deal.claims_count} left!`
-                  : `${deal.max_claims - deal.claims_count} left`
+                  ? t('dealDetail.onlyLeft', { count: String(deal.max_claims - deal.claims_count) })
+                  : t('dealDetail.left', { count: String(deal.max_claims - deal.claims_count) })
                 }
               </span>
             </div>

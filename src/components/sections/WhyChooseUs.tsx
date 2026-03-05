@@ -5,75 +5,21 @@ import Image from 'next/image';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { XCircle, Megaphone, Share2, DollarSign, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
-const PAIN_POINTS = [
-  {
-    num: '01',
-    emoji: '💸',
-    title: 'Commission Fees',
-    bad: 'They take up to 50% of every sale',
-    good: '$0 commission — you keep 100%',
-    explain: 'Most platforms charge 30–50% of every transaction. On a $50 deal, you could lose $25 in commission alone. With SpontiCoupon, you pay a flat monthly fee and keep every dollar from every sale.',
-  },
-  {
-    num: '02',
-    emoji: '⏳',
-    title: 'Slow Payouts',
-    bad: 'Wait 60–90 days to get paid',
-    good: 'Deposits go to you instantly',
-    explain: 'Competitors hold your earnings for months while they earn interest on your money. SpontiCoupon routes customer deposits straight to your account — no waiting, no holding period.',
-  },
-  {
-    num: '03',
-    emoji: '🔒',
-    title: 'Payment Control',
-    bad: 'Platform holds your money',
-    good: 'You control every payment',
-    explain: 'On other platforms, they collect the payment and decide when (or if) to release it. With SpontiCoupon, payments go directly to you. Your money, your control, from day one.',
-  },
-  {
-    num: '04',
-    emoji: '📋',
-    title: 'Long Contracts',
-    bad: '6–12 month lock-in agreements',
-    good: 'No contract — cancel anytime',
-    explain: 'Many deal sites lock vendors into 6–12 month contracts with early termination fees. SpontiCoupon is month-to-month. If it\'s not working for you, cancel anytime — no penalties, no questions.',
-  },
-  {
-    num: '05',
-    emoji: '🙈',
-    title: 'Hidden Fees',
-    bad: 'Marketing fees, setup fees, penalties',
-    good: 'One flat monthly price',
-    explain: 'Setup fees, featured placement charges, marketing add-ons, cancellation penalties — they add up fast. SpontiCoupon has one transparent monthly price. What you see is what you pay.',
-  },
-  {
-    num: '06',
-    emoji: '📉',
-    title: 'Devalued Brand',
-    bad: 'Deep discounts cheapen your image',
-    good: 'You set the deal on your terms',
-    explain: 'Other platforms push extreme discounts that train customers to only visit when there\'s a coupon. You choose your discount level, set your own terms, and protect your brand value.',
-  },
-  {
-    num: '07',
-    emoji: '🔄',
-    title: 'No Repeat Customers',
-    bad: 'One-time bargain hunters, then gone',
-    good: 'Built-in loyalty program included',
-    explain: 'Other platforms send you deal-chasers who never return. SpontiCoupon includes a built-in loyalty rewards program — customers earn points with every visit and come back to redeem them. You build real, lasting relationships instead of one-time transactions.',
-  },
-  {
-    num: '08',
-    emoji: '📊',
-    title: 'Limited Insights',
-    bad: 'Basic or no analytics',
-    good: 'Ava insights, ROI dashboard & more',
-    explain: 'Most platforms give you a basic redemption count and nothing else. SpontiCoupon provides Ava-powered insights with an ROI dashboard, customer tracking, repeat rates, revenue estimates, and actionable recommendations.',
-  },
+const PAIN_POINT_KEYS = [
+  { num: '01', emoji: '\uD83D\uDCB8', titleKey: 'whyChooseUs.pain01Title', badKey: 'whyChooseUs.pain01Bad', goodKey: 'whyChooseUs.pain01Good', explainKey: 'whyChooseUs.pain01Explain' },
+  { num: '02', emoji: '\u231B', titleKey: 'whyChooseUs.pain02Title', badKey: 'whyChooseUs.pain02Bad', goodKey: 'whyChooseUs.pain02Good', explainKey: 'whyChooseUs.pain02Explain' },
+  { num: '03', emoji: '\uD83D\uDD12', titleKey: 'whyChooseUs.pain03Title', badKey: 'whyChooseUs.pain03Bad', goodKey: 'whyChooseUs.pain03Good', explainKey: 'whyChooseUs.pain03Explain' },
+  { num: '04', emoji: '\uD83D\uDCCB', titleKey: 'whyChooseUs.pain04Title', badKey: 'whyChooseUs.pain04Bad', goodKey: 'whyChooseUs.pain04Good', explainKey: 'whyChooseUs.pain04Explain' },
+  { num: '05', emoji: '\uD83D\uDE48', titleKey: 'whyChooseUs.pain05Title', badKey: 'whyChooseUs.pain05Bad', goodKey: 'whyChooseUs.pain05Good', explainKey: 'whyChooseUs.pain05Explain' },
+  { num: '06', emoji: '\uD83D\uDCC9', titleKey: 'whyChooseUs.pain06Title', badKey: 'whyChooseUs.pain06Bad', goodKey: 'whyChooseUs.pain06Good', explainKey: 'whyChooseUs.pain06Explain' },
+  { num: '07', emoji: '\uD83D\uDD04', titleKey: 'whyChooseUs.pain07Title', badKey: 'whyChooseUs.pain07Bad', goodKey: 'whyChooseUs.pain07Good', explainKey: 'whyChooseUs.pain07Explain' },
+  { num: '08', emoji: '\uD83D\uDCCA', titleKey: 'whyChooseUs.pain08Title', badKey: 'whyChooseUs.pain08Bad', goodKey: 'whyChooseUs.pain08Good', explainKey: 'whyChooseUs.pain08Explain' },
 ];
 
 export function WhyChooseUs() {
+  const { t } = useLanguage();
   const [flippedCard, setFlippedCard] = useState<string | null>(null);
 
   const toggleCard = (num: string) => {
@@ -84,60 +30,60 @@ export function WhyChooseUs() {
     <section className="pt-20 pb-28 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {/* ── Section Label ── */}
+        {/* -- Section Label -- */}
         <ScrollReveal animation="fade-up">
           <div className="flex items-center justify-center sm:justify-start gap-3 mb-8">
             <div className="w-10 h-1 rounded-full bg-gradient-to-r from-primary-500 to-orange-400" />
             <span className="text-xs font-bold uppercase tracking-[0.2em] text-primary-500">
-              Why Choose Us
+              {t('whyChooseUs.sectionLabel')}
             </span>
           </div>
         </ScrollReveal>
 
-        {/* ── Two-Column Header ── */}
+        {/* -- Two-Column Header -- */}
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-start mb-16">
           <ScrollReveal animation="fade-up" delay={100}>
             <h2 className="font-bebas text-5xl sm:text-6xl lg:text-7xl leading-[0.95] text-gray-900 tracking-wide text-center md:text-left">
-              Every Dollar You Earn
+              {t('whyChooseUs.headlineLine1')}
               <br />
-              Should Be{' '}
-              <span className="font-instrument italic text-primary-500">Yours.</span>
+              {t('whyChooseUs.headlineLine2')}{' '}
+              <span className="font-instrument italic text-primary-500">{t('whyChooseUs.headlineAccent')}</span>
             </h2>
           </ScrollReveal>
 
           <ScrollReveal animation="fade-up" delay={200}>
             <div className="md:pt-4 text-center md:text-left">
               <p className="text-lg text-gray-600 leading-relaxed">
-                Traditional deal platforms take{' '}
-                <span className="font-bold text-red-500">up to 50%</span> of every sale you make.
-                Then they hold your money for months.
+                {t('whyChooseUs.descLine1')}{' '}
+                <span className="font-bold text-red-500">{t('whyChooseUs.descHighlight')}</span>{' '}
+                {t('whyChooseUs.descLine1End')}
               </p>
               <p className="text-lg text-gray-600 leading-relaxed mt-3">
-                We built SpontiCoupon to fix that.
+                {t('whyChooseUs.descLine2')}
               </p>
               <p className="text-lg font-semibold text-gray-900 leading-relaxed mt-3">
-                Zero commission. Zero hidden fees. You keep everything.
+                {t('whyChooseUs.descLine3')}
               </p>
             </div>
           </ScrollReveal>
         </div>
 
-        {/* ── Pain Points Title ── */}
+        {/* -- Pain Points Title -- */}
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-10">
             <h3 className="font-bebas text-3xl sm:text-4xl text-gray-900 tracking-wide">
-              What&apos;s Wrong With Other Platforms
+              {t('whyChooseUs.painPointsTitle')}
             </h3>
             <p className="text-gray-500 mt-2 max-w-xl mx-auto">
-              Here&apos;s what vendors deal with on traditional coupon sites — and how we do it differently.
+              {t('whyChooseUs.painPointsSubtitle')}
             </p>
           </div>
         </ScrollReveal>
 
-        {/* ── 2×4 Pain Point Card Grid (overlay on hover/tap) ── */}
-        <p className="text-center text-xs text-gray-400 mb-4 sm:hidden">Tap a card to learn more</p>
+        {/* -- 2x4 Pain Point Card Grid (overlay on hover/tap) -- */}
+        <p className="text-center text-xs text-gray-400 mb-4 sm:hidden">{t('whyChooseUs.tapToLearnMore')}</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
-          {PAIN_POINTS.map((item, index) => {
+          {PAIN_POINT_KEYS.map((item, index) => {
             const isActive = flippedCard === item.num;
             return (
               <ScrollReveal key={item.num} animation="fade-up" delay={index * 80}>
@@ -153,16 +99,16 @@ export function WhyChooseUs() {
                   {/* Front content (always visible) */}
                   <div className="relative z-10 flex flex-col h-full">
                     <span className="text-3xl block mb-2">{item.emoji}</span>
-                    <h3 className="text-base font-bold text-gray-900 mb-auto">{item.title}</h3>
+                    <h3 className="text-base font-bold text-gray-900 mb-auto">{t(item.titleKey)}</h3>
 
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center gap-2">
                         <XCircle className="w-4 h-4 text-red-400 shrink-0" />
-                        <p className="text-sm text-red-500/90 leading-snug">{item.bad}</p>
+                        <p className="text-sm text-red-500/90 leading-snug">{t(item.badKey)}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         <SpontiIcon className="w-4 h-4 shrink-0" />
-                        <p className="text-sm text-green-600 font-medium leading-snug">{item.good}</p>
+                        <p className="text-sm text-green-600 font-medium leading-snug">{t(item.goodKey)}</p>
                       </div>
                     </div>
                   </div>
@@ -173,10 +119,10 @@ export function WhyChooseUs() {
                   }`}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-2xl">{item.emoji}</span>
-                      <h3 className="text-sm font-bold text-white">{item.title}</h3>
+                      <h3 className="text-sm font-bold text-white">{t(item.titleKey)}</h3>
                     </div>
                     <p className="text-[13px] text-gray-200 leading-relaxed flex-1 overflow-y-auto">
-                      {item.explain}
+                      {t(item.explainKey)}
                     </p>
                     <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-white/10">
                       <SpontiIcon className="w-3.5 h-3.5" />
@@ -189,38 +135,35 @@ export function WhyChooseUs() {
           })}
         </div>
 
-        {/* ── Coming Soon: Automated Social Media Posts ── */}
+        {/* -- Coming Soon: Automated Social Media Posts -- */}
         <ScrollReveal animation="fade-up">
           <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary-500/5 via-amber-50 to-primary-500/5 border border-primary-200/60 p-6 sm:p-8 md:p-10 mb-16">
             {/* Coming Soon badge */}
             <div className="flex justify-center mb-6">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500 to-amber-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md shadow-primary-200/40 uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5" />
-                Coming Soon
+                {t('whyChooseUs.comingSoon')}
               </div>
             </div>
 
             <div className="text-center max-w-3xl mx-auto mb-8">
               <h3 className="font-bebas text-3xl sm:text-4xl text-gray-900 tracking-wide mb-3">
-                Automated Social Media Posts
+                {t('whyChooseUs.socialPostsTitle')}
               </h3>
               <p className="text-gray-600 leading-relaxed text-base sm:text-lg">
-                Soon you&apos;ll be able to publish your coupons directly to your social media platforms
-                <span className="font-semibold text-gray-900"> and </span>
-                our SpontiCoupon channels — all with a single click.
-                No more hiring a social media manager or spending hours creating posts.
+                {t('whyChooseUs.socialPostsDesc')}
               </p>
             </div>
 
-            {/* How it works — 3 steps */}
+            {/* How it works -- 3 steps */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
               <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-orange-50 mb-3">
                   <Megaphone className="w-6 h-6 text-primary-500" />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900 mb-1.5">Create Your Deal</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">{t('whyChooseUs.socialStep1Title')}</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Build a coupon from your dashboard — we auto-generate a professional, branded social media post for you.
+                  {t('whyChooseUs.socialStep1Desc')}
                 </p>
               </div>
 
@@ -228,9 +171,9 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-orange-50 mb-3">
                   <Share2 className="w-6 h-6 text-primary-500" />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900 mb-1.5">One-Click Publish</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">{t('whyChooseUs.socialStep2Title')}</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Post to your Instagram, Facebook, and TikTok — plus get featured on SpontiCoupon&apos;s own social channels for extra exposure.
+                  {t('whyChooseUs.socialStep2Desc')}
                 </p>
               </div>
 
@@ -238,9 +181,9 @@ export function WhyChooseUs() {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 mb-3">
                   <DollarSign className="w-6 h-6 text-green-500" />
                 </div>
-                <h4 className="text-sm font-bold text-gray-900 mb-1.5">Save Thousands</h4>
+                <h4 className="text-sm font-bold text-gray-900 mb-1.5">{t('whyChooseUs.socialStep3Title')}</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Skip the $500–$2,000/mo social media manager. Your deals get professional posts and maximum reach — included in your plan.
+                  {t('whyChooseUs.socialStep3Desc')}
                 </p>
               </div>
             </div>
@@ -248,30 +191,25 @@ export function WhyChooseUs() {
             {/* Savings callout + plan availability */}
             <div className="bg-white/80 rounded-xl border border-primary-100 p-5 sm:p-6 text-center">
               <p className="text-sm text-gray-600 leading-relaxed">
-                Most small businesses spend{' '}
-                <span className="font-bold text-red-500">$500 – $2,000/month</span>{' '}
-                on a social media manager or agency. With SpontiCoupon&apos;s automated posting, you get
-                professional deal promotions across all your platforms — saving you{' '}
-                <span className="font-bold text-green-600">$6,000 – $24,000 per year</span>.
+                {t('whyChooseUs.socialSavingsDesc', {
+                  redAmount: '$500 \u2013 $2,000/month',
+                  greenAmount: '$6,000 \u2013 $24,000 per year',
+                })}
               </p>
               <div className="flex items-center justify-center gap-2 mt-4">
                 <SpontiIcon className="w-4 h-4" />
                 <span className="text-xs font-semibold text-gray-500">
-                  Available on <span className="text-gray-900">Business</span> &amp; <span className="text-gray-900">Enterprise</span> plans
+                  {t('whyChooseUs.socialAvailableOn')}{' '}
+                  <span className="text-gray-900">{t('whyChooseUs.socialBusinessPlan')}</span> &amp;{' '}
+                  <span className="text-gray-900">{t('whyChooseUs.socialEnterprisePlan')}</span>{' '}
+                  {t('whyChooseUs.socialPlansLabel')}
                 </span>
               </div>
             </div>
           </div>
         </ScrollReveal>
 
-        {/* ── Bottom Math Comparison Banner ── */}
-        {/*
-          Math breakdown (realistic):
-          - $100 service → 50% off coupon → customer pays $50
-          - Competitor: takes 50% commission on the $50 → vendor gets $25, waits 60-90 days
-          - SpontiCoupon: $0 commission → vendor gets the full $50, paid instantly
-          - Difference: $25 more in your pocket
-        */}
+        {/* -- Bottom Math Comparison Banner -- */}
         <ScrollReveal animation="scale-up">
           <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-secondary-500 via-secondary-600 to-secondary-700 p-6 sm:p-8 md:p-10">
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-8 items-center">
@@ -283,30 +221,30 @@ export function WhyChooseUs() {
                     <XCircle className="w-5 h-5 text-red-400" />
                   </div>
                   <span className="text-sm font-semibold text-red-300 uppercase tracking-wider">
-                    Competitor
+                    {t('whyChooseUs.competitor')}
                   </span>
                 </div>
                 <div className="space-y-1.5 text-white text-sm leading-relaxed mb-4">
-                  <p>$100 service &rarr; 50% off coupon</p>
-                  <p>Customer pays <span className="font-semibold">$50</span></p>
-                  <p>Platform takes <span className="text-red-300 font-semibold">50% commission</span></p>
+                  <p>{t('whyChooseUs.servicePrice')} &rarr; {t('whyChooseUs.couponDiscount')}</p>
+                  <p>{t('whyChooseUs.customerPays')} <span className="font-semibold">{t('whyChooseUs.customerPaysAmount')}</span></p>
+                  <p>{t('whyChooseUs.competitorCommission')} <span className="text-red-300 font-semibold">{t('whyChooseUs.competitorCommissionRate')}</span></p>
                 </div>
                 <div className="border-t border-white/20 pt-3">
-                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Vendor keeps</p>
-                  <p className="text-3xl font-extrabold text-red-400">$25</p>
-                  <p className="text-xs text-white/80 mt-1">...and waits 60–90 days for it</p>
+                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">{t('whyChooseUs.competitorKeeps')}</p>
+                  <p className="text-3xl font-extrabold text-red-400">{t('whyChooseUs.competitorKeepsAmount')}</p>
+                  <p className="text-xs text-white/80 mt-1">{t('whyChooseUs.competitorWait')}</p>
                 </div>
               </div>
 
               {/* Center: VS + Verdict */}
               <div className="text-center px-4 py-2 md:py-0">
                 <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-white/10 border border-white/20 mb-4">
-                  <span className="text-xl font-extrabold text-white">VS</span>
+                  <span className="text-xl font-extrabold text-white">{t('whyChooseUs.vsLabel')}</span>
                 </div>
                 <p className="text-sm text-white max-w-[200px] mx-auto leading-relaxed">
-                  Same deal. Same discount.
+                  {t('whyChooseUs.sameDealLine')}
                   <br />
-                  <span className="font-bold text-primary-400">$25 more in your pocket.</span>
+                  <span className="font-bold text-primary-400">{t('whyChooseUs.moreInPocket', { amount: '$25' })}</span>
                 </p>
               </div>
 
@@ -325,14 +263,14 @@ export function WhyChooseUs() {
                   />
                 </div>
                 <div className="space-y-1.5 text-white text-sm leading-relaxed mb-4">
-                  <p>$100 service &rarr; 50% off coupon</p>
-                  <p>Customer pays <span className="font-semibold">$50</span></p>
-                  <p><span className="text-primary-300 font-semibold">$0 commission</span> — you keep it all</p>
+                  <p>{t('whyChooseUs.servicePrice')} &rarr; {t('whyChooseUs.couponDiscount')}</p>
+                  <p>{t('whyChooseUs.customerPays')} <span className="font-semibold">{t('whyChooseUs.customerPaysAmount')}</span></p>
+                  <p><span className="text-primary-300 font-semibold">{t('whyChooseUs.spontiCommission')}</span> {t('whyChooseUs.spontiCommissionNote')}</p>
                 </div>
                 <div className="border-t border-primary-500/30 pt-3">
-                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">Vendor keeps</p>
-                  <p className="text-3xl font-extrabold text-primary-400">$50</p>
-                  <p className="text-xs text-white/80 mt-1">...deposited to your account instantly</p>
+                  <p className="text-xs text-white/80 uppercase tracking-wide mb-1">{t('whyChooseUs.spontiKeeps')}</p>
+                  <p className="text-3xl font-extrabold text-primary-400">{t('whyChooseUs.spontiKeepsAmount')}</p>
+                  <p className="text-xs text-white/80 mt-1">{t('whyChooseUs.spontiPaid')}</p>
                 </div>
               </div>
             </div>

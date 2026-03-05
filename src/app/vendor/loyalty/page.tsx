@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
+import { useLanguage } from '@/lib/i18n';
 import { UpgradePrompt } from '@/components/vendor/UpgradePrompt';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import {
@@ -97,10 +98,12 @@ function ProgramCard({
   program,
   delay,
   onClick,
+  t,
 }: {
   program: ProgramWithStats;
   delay: number;
   onClick: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const isPunch = program.program_type === 'punch_card';
 
@@ -128,11 +131,11 @@ function ProgramCard({
           <div className="flex items-center gap-1.5">
             {program.is_active ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-[9px] font-bold text-green-100 uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> {t('vendor.loyalty.live')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-full text-[9px] font-bold text-white/60 uppercase tracking-wider">
-                Paused
+                {t('vendor.loyalty.paused')}
               </span>
             )}
           </div>
@@ -140,7 +143,7 @@ function ProgramCard({
 
         <div className="relative mt-3">
           <h3 className="text-lg font-extrabold text-white truncate">{program.name}</h3>
-          <p className="text-white/60 text-xs font-medium mt-0.5 capitalize">{program.program_type.replace('_', ' ')}</p>
+          <p className="text-white/60 text-xs font-medium mt-0.5 capitalize">{isPunch ? t('vendor.loyalty.punchCardType') : t('vendor.loyalty.pointsType')}</p>
         </div>
       </div>
 
@@ -151,11 +154,11 @@ function ProgramCard({
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-bold text-gray-900">{program.member_count}</span>
-              <span className="text-xs text-gray-400">members</span>
+              <span className="text-xs text-gray-400">{t('vendor.loyalty.membersLabel')}</span>
             </div>
             {isPunch && (
               <span className="text-xs font-semibold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
-                {program.punches_required} stamps
+                {t('vendor.loyalty.stampsCount', { count: program.punches_required ?? 0 })}
               </span>
             )}
             {!isPunch && (
@@ -188,19 +191,19 @@ function ProgramCard({
           const cardInGrace = expDate < now && graceEndDate > now;
           if (cardIsLocked) return (
             <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5">
-              <Lock className="w-3 h-3" /> Committed until {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Lock className="w-3 h-3" /> {t('vendor.loyalty.committedUntil', { date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
             </div>
           );
           if (cardInGrace) return (
             <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-orange-600 bg-orange-50 rounded-lg px-2.5 py-1.5">
-              <Calendar className="w-3 h-3" /> Grace period until {graceEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Calendar className="w-3 h-3" /> {t('vendor.loyalty.gracePeriodBadge', { date: graceEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
             </div>
           );
           return null;
         })()}
 
         <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 group-hover:text-primary-500 transition-colors">
-          <span>View Details</span>
+          <span>{t('vendor.loyalty.viewDetails')}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
       </div>
@@ -216,11 +219,13 @@ function ProgramModal({
   onClose,
   onDeleted,
   onUpdated,
+  t,
 }: {
   programId: string;
   onClose: () => void;
   onDeleted: () => void;
   onUpdated: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const [program, setProgram] = useState<LoyaltyProgram | null>(null);
   const [rewards, setRewards] = useState<LoyaltyReward[]>([]);
@@ -282,9 +287,9 @@ function ProgramModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: programId, ...form }),
       });
-      if (res.ok) { showMsg('success', 'Program updated!'); setIsEditing(false); fetchDetail(); onUpdated(); }
-      else { const d = await res.json(); showMsg('error', d.error || 'Failed.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.programUpdated')); setIsEditing(false); fetchDetail(); onUpdated(); }
+      else { const d = await res.json(); showMsg('error', d.error || t('vendor.loyalty.failed')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
@@ -307,11 +312,11 @@ function ProgramModal({
         body: JSON.stringify({ id: programId, is_active: !program.is_active }),
       });
       if (res.ok) {
-        showMsg('success', program.is_active ? 'Program paused.' : 'Program activated! Any other programs have been paused.');
+        showMsg('success', program.is_active ? t('vendor.loyalty.programPaused') : t('vendor.loyalty.programActivated'));
         fetchDetail(); onUpdated();
       } else {
         const data = await res.json();
-        showMsg('error', data.error || 'Failed to update.');
+        showMsg('error', data.error || t('vendor.loyalty.failedToUpdate'));
       }
     } catch { /* ignore */ }
     setSaving(false);
@@ -324,21 +329,21 @@ function ProgramModal({
       if (res.ok) { onDeleted(); onClose(); }
       else {
         const data = await res.json();
-        showMsg('error', data.error || 'Failed to delete.');
+        showMsg('error', data.error || t('vendor.loyalty.deleteProgram'));
         setShowDeleteConfirm(false);
       }
-    } catch { showMsg('error', 'Network error.'); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
   const handleAddReward = async () => {
-    if (!rewardForm.name.trim() || rewardForm.points_cost < 1) { showMsg('error', 'Name and cost required.'); return; }
+    if (!rewardForm.name.trim() || rewardForm.points_cost < 1) { showMsg('error', t('vendor.loyalty.nameAndCostRequired')); return; }
     setSaving(true);
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rewardForm, program_id: programId }) });
-      if (res.ok) { showMsg('success', 'Reward added!'); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to add reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.rewardAdded')); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToAddReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
@@ -346,18 +351,18 @@ function ProgramModal({
     setSaving(true);
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...rewardForm, program_id: programId }) });
-      if (res.ok) { showMsg('success', 'Updated!'); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to update reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.updated')); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToUpdateReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
   const handleDeleteReward = async (id: string) => {
     try {
       const res = await fetch(`/api/vendor/loyalty/rewards?id=${id}`, { method: 'DELETE' });
-      if (res.ok) { showMsg('success', 'Deleted.'); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to delete reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.deleted')); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToDeleteReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
   };
 
   if (loading) {
@@ -396,18 +401,18 @@ function ProgramModal({
                   <h2 className="text-xl font-extrabold text-white">{program.name}</h2>
                   {program.is_active && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-[9px] font-bold text-green-100 uppercase">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> {t('vendor.loyalty.live')}
                     </span>
                   )}
                 </div>
                 <p className="text-white/70 text-sm">
-                  {isPunch ? `${program.punches_required} stamps → ${program.punch_reward}` : `${program.points_per_dollar} pt${Number(program.points_per_dollar) !== 1 ? 's' : ''} per $${Number(program.point_value) || 1}`}
+                  {isPunch ? t('vendor.loyalty.stampsArrow', { required: program.punches_required ?? 0, reward: program.punch_reward || '' }) : t('vendor.loyalty.ptsPerDollar', { pts: program.points_per_dollar ?? 0, value: Number(program.point_value) || 1 })}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
-              <button onClick={handleToggleActive} disabled={saving || !!isLocked} title={isLocked ? `Locked until ${programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : program.is_active ? 'Pause program' : 'Activate program'} className={`p-2 rounded-xl transition-all ${isLocked ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white'}`}>
+              <button onClick={handleToggleActive} disabled={saving || !!isLocked} title={isLocked ? t('vendor.loyalty.committedUntil', { date: programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '' }) : program.is_active ? t('vendor.loyalty.pauseProgram') : t('vendor.loyalty.activateProgram')} className={`p-2 rounded-xl transition-all ${isLocked ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white'}`}>
                 {isLocked ? <Lock className="w-5 h-5" /> : program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </button>
               <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1, expires_at: (program as unknown as Record<string, unknown>).expires_at as string || 'never' }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
@@ -421,17 +426,17 @@ function ProgramModal({
 
           {!program.is_active && (
             <div className="relative mt-3 bg-white/10 rounded-xl px-3 py-2 text-sm text-white/80 flex items-center gap-2">
-              <ToggleLeft className="w-4 h-4 shrink-0" /> Program paused — not awarding stamps/points.
+              <ToggleLeft className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.programPausedBanner')}
             </div>
           )}
           {isLocked && (
             <div className="relative mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-2 text-sm text-amber-100 flex items-center gap-2">
-              <Lock className="w-4 h-4 shrink-0" /> Committed until {programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — {memberCount} active member{memberCount !== 1 ? 's' : ''}
+              <Lock className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.committedUntilWithMembers', { date: programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '', count: memberCount })}
             </div>
           )}
           {isInGracePeriod && (
             <div className="relative mt-3 bg-orange-500/20 border border-orange-400/30 rounded-xl px-3 py-2 text-sm text-orange-100 flex items-center gap-2">
-              <Calendar className="w-4 h-4 shrink-0" /> Grace period — customers can redeem until {graceEnd?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Calendar className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.gracePeriodCustomers', { date: graceEnd?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '' })}
             </div>
           )}
           {(() => {
@@ -442,7 +447,7 @@ function ProgramModal({
             return (
               <div className={`relative mt-3 rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${isExpired ? 'bg-red-500/20 text-red-100' : 'bg-white/10 text-white/80'}`}>
                 <Calendar className="w-4 h-4 shrink-0" />
-                {isExpired ? 'Expired' : 'Expires'} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {isExpired ? t('vendor.loyalty.expired') : t('vendor.loyalty.expires')} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
             );
           })()}
@@ -464,35 +469,35 @@ function ProgramModal({
             <div className="bg-gray-50 rounded-2xl p-5 space-y-4 animate-slide-up-fade">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-gray-900">Program Name</label>
-                  <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={t => setForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+                  <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.programName')}</label>
+                  <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={v => setForm(f => ({ ...f, name: v }))} label={t('vendor.loyalty.suggestName')} />
                 </div>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-gray-900">Description</label>
-                  <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={t => setForm(f => ({ ...f, description: t }))} label="Write Description" />
+                  <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.description')}</label>
+                  <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={v => setForm(f => ({ ...f, description: v }))} label={t('vendor.loyalty.writeDescription')} />
                 </div>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 resize-none" rows={2} />
               </div>
               {isPunch ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Stamps Required</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('vendor.loyalty.punchesRequired')}</label>
                     <input type="number" min={1} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-semibold text-gray-900">Reward</label>
-                      <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={t => setForm(f => ({ ...f, punch_reward: t }))} label="Suggest" />
+                      <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.reward')}</label>
+                      <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={v => setForm(f => ({ ...f, punch_reward: v }))} label={t('vendor.loyalty.suggestReward')} />
                     </div>
                     <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-900">Points Configuration</label>
+                  <label className="block text-sm font-semibold text-gray-900">{t('vendor.loyalty.pointsConfiguration')}</label>
                   <div className="flex items-center gap-2 flex-wrap">
                     <input
                       type="number"
@@ -503,7 +508,7 @@ function ProgramModal({
                       onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, points_per_dollar: 1 })); }}
                       className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <span className="text-sm text-gray-500">pt{form.points_per_dollar !== 1 ? 's' : ''} per</span>
+                    <span className="text-sm text-gray-500">{t('vendor.loyalty.ptsPer')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="text-lg font-bold text-gray-400">$</span>
                       <input
@@ -515,35 +520,35 @@ function ProgramModal({
                         onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, point_value: 0.01 })); }}
                         className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                      <span className="text-sm text-gray-500">spent</span>
+                      <span className="text-sm text-gray-500">{t('vendor.loyalty.spent')}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400">$50 purchase = <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points &middot; 1 pt = ${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</p>
+                  <p className="text-xs text-gray-400">{t('vendor.loyalty.purchaseEarns', { points: form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0 })} &middot; {t('vendor.loyalty.onePointEquals', { value: form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00' })}</p>
                 </div>
               )}
               {/* Program Duration */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1.5 text-gray-400" />
-                  Program Duration
+                  {t('vendor.loyalty.programDuration')}
                 </label>
                 <select
                   value={form.expires_at}
                   onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium transition-all appearance-none cursor-pointer"
                 >
-                  <option value="never" disabled>Select a duration...</option>
-                  <option value="3_months">Extend 3 months</option>
-                  <option value="6_months">Extend 6 months</option>
-                  <option value="12_months">Extend 1 year</option>
+                  <option value="never" disabled>{t('vendor.loyalty.selectDuration')}</option>
+                  <option value="3_months">{t('vendor.loyalty.extendThreeMonths')}</option>
+                  <option value="6_months">{t('vendor.loyalty.extendSixMonths')}</option>
+                  <option value="12_months">{t('vendor.loyalty.extendOneYear')}</option>
                 </select>
-                <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> You can extend the duration but not shorten it while customers are enrolled.</p>
+                <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> {t('vendor.loyalty.extendDurationNote')}</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={handleUpdate} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:shadow-xl transition-all text-sm">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('vendor.loyalty.save')}
                 </button>
-                <button onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-gray-400 hover:text-gray-600 text-sm font-semibold">Cancel</button>
+                <button onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-gray-400 hover:text-gray-600 text-sm font-semibold">{t('vendor.loyalty.cancel')}</button>
               </div>
             </div>
           )}
@@ -552,10 +557,10 @@ function ProgramModal({
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { icon: Users, label: 'Members', value: stats.total_members, color: 'blue' },
-                { icon: TrendingUp, label: isPunch ? 'Total Stamps' : 'Total Points', value: isPunch ? stats.total_punches : stats.total_points.toLocaleString(), color: 'green' },
-                { icon: Award, label: 'Redeemed', value: stats.rewards_redeemed, color: 'amber' },
-                { icon: Gift, label: 'Active Rewards', value: rewards.filter(r => r.is_active).length || (isPunch ? 1 : 0), color: 'primary' },
+                { icon: Users, label: t('vendor.loyalty.members'), value: stats.total_members, color: 'blue' },
+                { icon: TrendingUp, label: isPunch ? t('vendor.loyalty.totalPunches') : t('vendor.loyalty.totalPoints'), value: isPunch ? stats.total_punches : stats.total_points.toLocaleString(), color: 'green' },
+                { icon: Award, label: t('vendor.loyalty.rewardsRedeemed'), value: stats.rewards_redeemed, color: 'amber' },
+                { icon: Gift, label: t('vendor.loyalty.activeRewards'), value: rewards.filter(r => r.is_active).length || (isPunch ? 1 : 0), color: 'primary' },
               ].map((s, i) => {
                 const colorMap: Record<string, string> = { blue: 'from-blue-500/10 to-blue-500/10 text-blue-600', green: 'from-emerald-500/10 to-green-500/10 text-emerald-600', amber: 'from-amber-500/10 to-yellow-500/10 text-amber-600', primary: 'from-primary-500/10 to-orange-500/10 text-primary-600' };
                 const iconColor: Record<string, string> = { blue: 'text-blue-500', green: 'text-emerald-500', amber: 'text-amber-500', primary: 'text-primary-500' };
@@ -575,22 +580,22 @@ function ProgramModal({
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-500" /> Reward Tiers
+                  <Award className="w-4 h-4 text-amber-500" /> {t('vendor.loyalty.rewardTiers')}
                 </h3>
                 <button onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }} className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 transition-all">
-                  <Plus className="w-3.5 h-3.5" /> Add
+                  <Plus className="w-3.5 h-3.5" /> {t('vendor.loyalty.add')}
                 </button>
               </div>
               {rewards.length === 0 && !showAddReward ? (
                 <div className="p-6 text-center space-y-3">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 font-medium flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> Setup incomplete — add at least one reward tier so customers can redeem points.
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {t('vendor.loyalty.setupIncomplete')}
                   </div>
                   <button
                     onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }}
                     className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-all"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add Your First Reward
+                    <Plus className="w-3.5 h-3.5" /> {t('vendor.loyalty.addYourFirstReward')}
                   </button>
                 </div>
               ) : (
@@ -599,19 +604,19 @@ function ProgramModal({
                     editingRewardId === reward.id ? (
                       <div key={reward.id} className="p-4 bg-blue-50/50">
                         <div className="flex justify-end mb-2 gap-2 flex-wrap">
-                          <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest Name" />
-                          <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={t => setRewardForm(f => ({ ...f, description: t }))} label="Suggest Desc" />
+                          <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={v => setRewardForm(f => ({ ...f, name: v }))} label={t('vendor.loyalty.suggestName')} />
+                          <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={v => setRewardForm(f => ({ ...f, description: v }))} label={t('vendor.loyalty.suggestDesc')} />
                         </div>
                         <div className="grid grid-cols-3 gap-2 mb-3">
-                          <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder="Name" />
-                          <input value={rewardForm.description} onChange={e => setRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder="Description" />
-                          <input type="number" min={1} value={rewardForm.points_cost} onChange={e => setRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder="Points" />
+                          <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.namePlaceholder')} />
+                          <input value={rewardForm.description} onChange={e => setRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.descriptionInputPlaceholder')} />
+                          <input type="number" min={1} value={rewardForm.points_cost} onChange={e => setRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.pointsPlaceholderShort')} />
                         </div>
                         <div className="flex gap-2">
                           <button onClick={() => handleUpdateReward(reward.id)} disabled={saving} className="text-xs bg-blue-500 text-white px-3 py-1.5 rounded-lg font-semibold inline-flex items-center gap-1">
-                            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save
+                            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} {t('vendor.loyalty.save')}
                           </button>
-                          <button onClick={() => { setEditingRewardId(null); setRewardForm(emptyRewardForm); }} className="text-xs text-gray-500 px-3 py-1.5">Cancel</button>
+                          <button onClick={() => { setEditingRewardId(null); setRewardForm(emptyRewardForm); }} className="text-xs text-gray-500 px-3 py-1.5">{t('vendor.loyalty.cancel')}</button>
                         </div>
                       </div>
                     ) : (
@@ -624,7 +629,7 @@ function ProgramModal({
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-xs font-extrabold text-primary-500 bg-primary-50 px-2 py-1 rounded-full">{reward.points_cost} pts</span>
+                          <span className="text-xs font-extrabold text-primary-500 bg-primary-50 px-2 py-1 rounded-full">{reward.points_cost} {t('vendor.loyalty.ptsLabel')}</span>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                             <button onClick={() => { setEditingRewardId(reward.id); setRewardForm({ name: reward.name, description: reward.description || '', points_cost: reward.points_cost }); }} className="p-1.5 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50"><Pencil className="w-3 h-3" /></button>
                             <button onClick={() => handleDeleteReward(reward.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"><Trash2 className="w-3 h-3" /></button>
@@ -638,10 +643,10 @@ function ProgramModal({
               {showAddReward && (
                 <div className="p-4 bg-green-50/50 border-t border-green-100">
                   <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                    <span className="text-xs font-semibold text-gray-700">New Reward Tier</span>
+                    <span className="text-xs font-semibold text-gray-700">{t('vendor.loyalty.newRewardTier')}</span>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest Name" />
-                      <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={t => setRewardForm(f => ({ ...f, description: t }))} label="Suggest Desc" />
+                      <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={v => setRewardForm(f => ({ ...f, name: v }))} label={t('vendor.loyalty.suggestName')} />
+                      <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={v => setRewardForm(f => ({ ...f, description: v }))} label={t('vendor.loyalty.suggestDesc')} />
                       <button
                         onClick={async () => {
                           setSuggestingFullReward(true);
@@ -664,32 +669,32 @@ function ProgramModal({
                               try {
                                 const reward = typeof data.text === 'string' ? JSON.parse(data.text) : data.text;
                                 setRewardForm({ name: reward.name || '', description: reward.description || '', points_cost: reward.points_cost || 100 });
-                              } catch { showMsg('error', 'AI returned invalid format. Try again.'); }
+                              } catch { showMsg('error', t('vendor.loyalty.aiInvalidFormat')); }
                             } else {
                               const data = await res.json();
-                              showMsg('error', data.error || 'AI suggestion failed.');
+                              showMsg('error', data.error || t('vendor.loyalty.aiSuggestionFailed'));
                             }
-                          } catch { showMsg('error', 'Network error.'); }
+                          } catch { showMsg('error', t('vendor.loyalty.networkError')); }
                           setSuggestingFullReward(false);
                         }}
                         disabled={suggestingFullReward}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all disabled:opacity-50"
                       >
                         {suggestingFullReward ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" />}
-                        {suggestingFullReward ? 'Thinking...' : 'Ava: Fill All'}
+                        {suggestingFullReward ? t('vendor.loyalty.thinking') : t('vendor.loyalty.avaFillAll')}
                       </button>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder="Reward name" />
-                    <input value={rewardForm.description} onChange={e => setRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder="Description" />
-                    <input type="number" min={1} value={rewardForm.points_cost} onChange={e => setRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder="Points cost" />
+                    <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.rewardNamePlaceholder')} />
+                    <input value={rewardForm.description} onChange={e => setRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.descriptionInputPlaceholder')} />
+                    <input type="number" min={1} value={rewardForm.points_cost} onChange={e => setRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder={t('vendor.loyalty.pointsCostPlaceholder')} />
                   </div>
                   <div className="flex gap-2">
                     <button onClick={handleAddReward} disabled={saving} className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg font-semibold inline-flex items-center gap-1 shadow-lg shadow-green-500/20">
-                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} Add
+                      {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />} {t('vendor.loyalty.add')}
                     </button>
-                    <button onClick={() => { setShowAddReward(false); setRewardForm(emptyRewardForm); }} className="text-xs text-gray-500 px-3 py-1.5">Cancel</button>
+                    <button onClick={() => { setShowAddReward(false); setRewardForm(emptyRewardForm); }} className="text-xs text-gray-500 px-3 py-1.5">{t('vendor.loyalty.cancel')}</button>
                   </div>
                 </div>
               )}
@@ -700,14 +705,14 @@ function ProgramModal({
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <button onClick={() => { setShowMembers(!showMembers); if (!showMembers && members.length === 0) fetchMembers(); }} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
               <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500" /> Members {stats && <span className="text-gray-400 font-normal">({stats.total_members})</span>}
+                <Users className="w-4 h-4 text-blue-500" /> {t('vendor.loyalty.members')} {stats && <span className="text-gray-400 font-normal">({stats.total_members})</span>}
               </h3>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${showMembers ? 'rotate-180' : ''}`} />
             </button>
             {showMembers && (
               <div className="border-t border-gray-100">
                 {members.length === 0 ? (
-                  <div className="p-6 text-center text-sm text-gray-400">No members yet. Customers join when they redeem a deal.</div>
+                  <div className="p-6 text-center text-sm text-gray-400">{t('vendor.loyalty.noMembersYet')}</div>
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {members.map(m => {
@@ -717,7 +722,7 @@ function ProgramModal({
                         : 0;
                       const closeToReward = isPunch && m.current_punches >= required - 2 && m.current_punches < required;
                       const rewardReady = isPunch && m.current_punches >= required;
-                      const lastActive = getTimeAgo(m.updated_at);
+                      const lastActive = getTimeAgo(m.updated_at, t);
 
                       return (
                         <div key={m.id} className="px-5 py-3.5 hover:bg-gray-50/30 transition-colors">
@@ -736,10 +741,10 @@ function ProgramModal({
                                   {m.customer?.first_name || ''} {m.customer?.last_name || ''}
                                 </p>
                                 {rewardReady && (
-                                  <span className="text-[9px] font-bold bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full flex-shrink-0">REWARD READY</span>
+                                  <span className="text-[9px] font-bold bg-green-100 text-green-600 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('vendor.loyalty.rewardReady')}</span>
                                 )}
                                 {closeToReward && !rewardReady && (
-                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">ALMOST THERE</span>
+                                  <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded-full flex-shrink-0">{t('vendor.loyalty.almostThere')}</span>
                                 )}
                               </div>
                               <p className="text-[10px] text-gray-400 truncate">{m.customer?.email}</p>
@@ -748,7 +753,7 @@ function ProgramModal({
                             {/* Current Progress */}
                             <div className="text-right flex-shrink-0">
                               <p className="text-xs font-bold text-primary-500">
-                                {isPunch ? `${m.current_punches}/${required}` : `${m.current_points.toLocaleString()} pts`}
+                                {isPunch ? `${m.current_punches}/${required}` : `${m.current_points.toLocaleString()} ${t('vendor.loyalty.ptsLabel')}`}
                               </p>
                               <p className="text-[10px] text-gray-400">{lastActive}</p>
                             </div>
@@ -771,9 +776,9 @@ function ProgramModal({
 
                           {/* Lifetime stats row */}
                           <div className="flex items-center gap-4 mt-1.5 text-[10px] text-gray-400">
-                            <span>Lifetime: <b className="text-gray-500">{isPunch ? `${m.total_punches_earned} stamps` : `${m.total_points_earned.toLocaleString()} pts`}</b></span>
+                            <span>{t('vendor.loyalty.lifetime')} <b className="text-gray-500">{isPunch ? `${m.total_punches_earned} ${t('vendor.loyalty.stampsLabel')}` : `${m.total_points_earned.toLocaleString()} ${t('vendor.loyalty.ptsLabel')}`}</b></span>
                             {!isPunch && m.total_points_earned > 0 && (
-                              <span>Redeemed: <b className="text-gray-500">{(m.total_points_earned - m.current_points).toLocaleString()} pts</b></span>
+                              <span>{t('vendor.loyalty.redeemed')} <b className="text-gray-500">{(m.total_points_earned - m.current_points).toLocaleString()} {t('vendor.loyalty.ptsLabel')}</b></span>
                             )}
                           </div>
                         </div>
@@ -789,26 +794,26 @@ function ProgramModal({
           <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
             <button onClick={() => { setShowActivity(!showActivity); if (!showActivity && transactions.length === 0) fetchTransactions(); }} className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
               <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <Activity className="w-4 h-4 text-green-500" /> Recent Activity
+                <Activity className="w-4 h-4 text-green-500" /> {t('vendor.loyalty.recentActivity')}
               </h3>
               <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-300 ${showActivity ? 'rotate-180' : ''}`} />
             </button>
             {showActivity && (
               <div className="border-t border-gray-100">
                 {transactions.length === 0 ? (
-                  <div className="p-6 text-center text-sm text-gray-400">No activity yet.</div>
+                  <div className="p-6 text-center text-sm text-gray-400">{t('vendor.loyalty.noActivityYet')}</div>
                 ) : (
                   <div className="divide-y divide-gray-50">
-                    {transactions.map(t => (
-                      <div key={t.id} className="px-5 py-3 flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${t.transaction_type.startsWith('earn') ? 'bg-green-100' : 'bg-amber-100'}`}>
-                          {t.transaction_type.startsWith('earn') ? <TrendingUp className="w-3.5 h-3.5 text-green-600" /> : <Award className="w-3.5 h-3.5 text-amber-600" />}
+                    {transactions.map(tx => (
+                      <div key={tx.id} className="px-5 py-3 flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tx.transaction_type.startsWith('earn') ? 'bg-green-100' : 'bg-amber-100'}`}>
+                          {tx.transaction_type.startsWith('earn') ? <TrendingUp className="w-3.5 h-3.5 text-green-600" /> : <Award className="w-3.5 h-3.5 text-amber-600" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-gray-900 truncate">{t.description}</p>
+                          <p className="text-xs font-medium text-gray-900 truncate">{tx.description}</p>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.transaction_type.startsWith('earn') ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                          {t.transaction_type.includes('punch') ? `${t.punches_amount > 0 ? '+' : ''}${t.punches_amount}` : `${t.points_amount > 0 ? '+' : ''}${t.points_amount} pts`}
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${tx.transaction_type.startsWith('earn') ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                          {tx.transaction_type.includes('punch') ? `${tx.punches_amount > 0 ? '+' : ''}${tx.punches_amount}` : `${tx.points_amount > 0 ? '+' : ''}${tx.points_amount} ${t('vendor.loyalty.ptsLabel')}`}
                         </span>
                       </div>
                     ))}
@@ -822,15 +827,15 @@ function ProgramModal({
           <div className="pt-2">
             {!showDeleteConfirm ? (
               <button onClick={() => setShowDeleteConfirm(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors inline-flex items-center gap-1">
-                <Trash2 className="w-3 h-3" /> Delete this program
+                <Trash2 className="w-3 h-3" /> {t('vendor.loyalty.deleteThisProgram')}
               </button>
             ) : (
               <div className="bg-red-50 rounded-2xl p-4 border border-red-200 animate-slide-up-fade">
-                <p className="text-sm font-medium text-red-700 mb-3">Delete this program? All cards, rewards, and history will be permanently removed.</p>
+                <p className="text-sm font-medium text-red-700 mb-3">{t('vendor.loyalty.deleteConfirmMessage')}</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">Keep</button>
+                  <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50">{t('vendor.loyalty.keep')}</button>
                   <button onClick={handleDelete} disabled={saving} className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 inline-flex items-center gap-1.5 shadow-lg shadow-red-500/20">
-                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} Delete
+                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />} {t('vendor.loyalty.delete')}
                   </button>
                 </div>
               </div>
@@ -848,9 +853,11 @@ function ProgramModal({
 function CreateProgramModal({
   onClose,
   onCreated,
+  t,
 }: {
   onClose: () => void;
   onCreated: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const [form, setForm] = useState<ProgramForm>(emptyProgramForm);
   const [saving, setSaving] = useState(false);
@@ -890,14 +897,14 @@ function CreateProgramModal({
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'AI suggestion failed.'); setAiSuggesting(false); return; }
+      if (!res.ok) { setError(data.error || t('vendor.loyalty.aiSuggestionFailed')); setAiSuggesting(false); return; }
 
       // Parse the JSON response
       let suggestion;
       try {
         suggestion = typeof data.text === 'string' ? JSON.parse(data.text) : data.text;
       } catch {
-        setError('AI returned an invalid response. Please try again.');
+        setError(t('vendor.loyalty.aiInvalidResponse'));
         setAiSuggesting(false);
         return;
       }
@@ -916,16 +923,16 @@ function CreateProgramModal({
       if (suggestion.suggested_rewards) {
         setAiSuggestions(suggestion.suggested_rewards);
       }
-    } catch { setError('Network error during AI suggestion.'); }
+    } catch { setError(t('vendor.loyalty.networkErrorAI')); }
     setAiSuggesting(false);
   };
 
   const handleCreate = async () => {
-    if (!form.name.trim()) { setError('Program name is required.'); return; }
-    if (form.program_type === 'punch_card' && (!form.punch_reward.trim() || form.punches_required < 1)) { setError('Set stamps and reward.'); return; }
-    if (form.program_type === 'points' && form.points_per_dollar <= 0) { setError('Points per dollar must be > 0.'); return; }
+    if (!form.name.trim()) { setError(t('vendor.loyalty.programNameRequired')); return; }
+    if (form.program_type === 'punch_card' && (!form.punch_reward.trim() || form.punches_required < 1)) { setError(t('vendor.loyalty.setPunchesAndReward')); return; }
+    if (form.program_type === 'points' && form.points_per_dollar <= 0) { setError(t('vendor.loyalty.pointsPerDollarPositive')); return; }
     if (form.program_type === 'points' && (!aiSuggestions || aiSuggestions.length === 0) && manualRewards.length === 0) {
-      setError('Points programs require at least one reward tier. Use "AI: Build My Program" or add rewards manually below.');
+      setError(t('vendor.loyalty.pointsNeedRewards'));
       return;
     }
 
@@ -947,8 +954,8 @@ function CreateProgramModal({
         }
         onCreated(); onClose();
       }
-      else { setError(data.error || 'Failed.'); }
-    } catch { setError('Network error.'); }
+      else { setError(data.error || t('vendor.loyalty.failed')); }
+    } catch { setError(t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
@@ -962,8 +969,8 @@ function CreateProgramModal({
             <X className="w-5 h-5" />
           </button>
           <div className="relative">
-            <h2 className="text-2xl font-extrabold text-white">Create Loyalty Program</h2>
-            <p className="text-white/60 text-sm mt-1">Choose a type and customize it for your business</p>
+            <h2 className="text-2xl font-extrabold text-white">{t('vendor.loyalty.createLoyaltyProgram')}</h2>
+            <p className="text-white/60 text-sm mt-1">{t('vendor.loyalty.chooseTypeCustomize')}</p>
           </div>
         </div>
 
@@ -977,28 +984,28 @@ function CreateProgramModal({
           {/* Type Selector */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              { type: 'punch_card' as const, icon: Stamp, label: 'Punch Card', desc: 'Buy X, get Y free', color: 'primary', tag: 'Popular', tagIcon: Zap },
-              { type: 'points' as const, icon: Star, label: 'Points System', desc: 'Flexible points per purchase', color: 'blue', tag: 'Premium', tagIcon: Crown },
-            ].map(t => {
-              const sel = form.program_type === t.type;
-              const grad = t.color === 'primary' ? 'from-primary-500 to-orange-500' : 'from-blue-500 to-blue-500';
-              const bg = t.color === 'primary' ? 'from-primary-50 to-orange-50' : 'from-blue-50 to-blue-50';
-              const ring = t.color === 'primary' ? 'ring-primary-500' : 'ring-blue-500';
+              { type: 'punch_card' as const, icon: Stamp, label: t('vendor.loyalty.punchCardLabel'), desc: t('vendor.loyalty.punchCardDesc'), color: 'primary', tag: t('vendor.loyalty.popular'), tagIcon: Zap },
+              { type: 'points' as const, icon: Star, label: t('vendor.loyalty.pointsSystemLabel'), desc: t('vendor.loyalty.pointsSystemDesc'), color: 'blue', tag: t('vendor.loyalty.premium'), tagIcon: Crown },
+            ].map(opt => {
+              const sel = form.program_type === opt.type;
+              const grad = opt.color === 'primary' ? 'from-primary-500 to-orange-500' : 'from-blue-500 to-blue-500';
+              const bg = opt.color === 'primary' ? 'from-primary-50 to-orange-50' : 'from-blue-50 to-blue-50';
+              const ring = opt.color === 'primary' ? 'ring-primary-500' : 'ring-blue-500';
               return (
                 <button
-                  key={t.type}
-                  onClick={() => setForm(f => ({ ...f, program_type: t.type }))}
+                  key={opt.type}
+                  onClick={() => setForm(f => ({ ...f, program_type: opt.type }))}
                   className={`relative group p-5 rounded-2xl border-2 text-left transition-all duration-300 ${
                     sel ? `border-transparent ring-2 ${ring} bg-gradient-to-br ${bg} shadow-xl scale-[1.02]` : 'border-gray-200 bg-white hover:shadow-lg hover:scale-[1.01]'
                   }`}
                 >
                   {sel && <div className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-gradient-to-br ${grad} flex items-center justify-center animate-check-pop"><Check className="w-3 h-3 text-white" strokeWidth={3} /></div>}
                   <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-3 ${sel ? `bg-gradient-to-br ${grad} shadow-lg` : 'bg-gray-100'}`}>
-                    <t.icon className={`w-5 h-5 ${sel ? 'text-white' : 'text-gray-400'}`} />
+                    <opt.icon className={`w-5 h-5 ${sel ? 'text-white' : 'text-gray-400'}`} />
                   </div>
-                  <h3 className={`font-bold text-sm ${sel ? 'text-gray-900' : 'text-gray-600'}`}>{t.label}</h3>
-                  <p className="text-[10px] text-gray-500 mt-0.5">{t.desc}</p>
-                  {sel && <div className="mt-2 flex items-center gap-1 text-[10px] font-bold" style={{ color: t.color === 'primary' ? '#E8632B' : '#3B82F6' }}><t.tagIcon className="w-3 h-3" /> {t.tag}</div>}
+                  <h3 className={`font-bold text-sm ${sel ? 'text-gray-900' : 'text-gray-600'}`}>{opt.label}</h3>
+                  <p className="text-[10px] text-gray-500 mt-0.5">{opt.desc}</p>
+                  {sel && <div className="mt-2 flex items-center gap-1 text-[10px] font-bold" style={{ color: opt.color === 'primary' ? '#E8632B' : '#3B82F6' }}><opt.tagIcon className="w-3 h-3" /> {opt.tag}</div>}
                 </button>
               );
             })}
@@ -1012,9 +1019,9 @@ function CreateProgramModal({
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-secondary-500 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-secondary-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
             >
               {aiSuggesting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing your business...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.loyalty.analyzingBusiness')}</>
               ) : (
-                <><Sparkles className="w-4 h-4" /> AI: Build My Program</>
+                <><Sparkles className="w-4 h-4" /> {t('vendor.loyalty.aiBuildProgram')}</>
               )}
             </button>
           )}
@@ -1023,8 +1030,8 @@ function CreateProgramModal({
           {aiSuggestions && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2 animate-slide-up-fade">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-blue-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Suggested Reward Tiers</p>
-                <button onClick={() => setAiSuggestions(null)} className="text-[10px] text-gray-400 hover:text-red-500">Clear</button>
+                <p className="text-xs font-semibold text-blue-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> {t('vendor.loyalty.aiSuggestedRewardTiers')}</p>
+                <button onClick={() => setAiSuggestions(null)} className="text-[10px] text-gray-400 hover:text-red-500">{t('vendor.loyalty.clear')}</button>
               </div>
               {aiSuggestions.map((r, i) => (
                 <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
@@ -1032,53 +1039,53 @@ function CreateProgramModal({
                     <span className="font-semibold text-gray-900">{r.name}</span>
                     {r.description && <span className="text-gray-400 text-xs ml-2">{r.description}</span>}
                   </div>
-                  <span className="text-blue-600 font-bold text-xs">{r.points_cost} pts</span>
+                  <span className="text-blue-600 font-bold text-xs">{r.points_cost} {t('vendor.loyalty.ptsLabel')}</span>
                 </div>
               ))}
-              <p className="text-[10px] text-green-600 font-medium flex items-center gap-1"><Check className="w-3 h-3" /> These rewards will be created automatically with your program.</p>
+              <p className="text-[10px] text-green-600 font-medium flex items-center gap-1"><Check className="w-3 h-3" /> {t('vendor.loyalty.rewardsAutoCreated')}</p>
             </div>
           )}
 
           {/* Name */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-900">Program Name</label>
-              <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={t => setForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+              <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.programName')}</label>
+              <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={v => setForm(f => ({ ...f, name: v }))} label={t('vendor.loyalty.suggestName')} />
             </div>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all" placeholder={form.program_type === 'punch_card' ? 'e.g., Coffee Stamp Card' : 'e.g., Rewards Points'} />
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all" placeholder={form.program_type === 'punch_card' ? t('vendor.loyalty.punchCardPlaceholder') : t('vendor.loyalty.pointsPlaceholder')} />
           </div>
 
           {/* Description */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-semibold text-gray-900">Description <span className="text-gray-400 font-normal">(optional)</span></label>
-              <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={t => setForm(f => ({ ...f, description: t }))} label="Write Description" />
+              <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.descriptionOptional')}</label>
+              <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={v => setForm(f => ({ ...f, description: v }))} label={t('vendor.loyalty.writeDescription')} />
             </div>
-            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 resize-none transition-all" rows={2} placeholder="A short description for your customers" />
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 resize-none transition-all" rows={2} placeholder={t('vendor.loyalty.descriptionPlaceholder')} />
           </div>
 
           {/* Type-specific */}
           {form.program_type === 'punch_card' ? (
             <div className="bg-gradient-to-br from-primary-50 to-orange-50 rounded-2xl p-5 border border-primary-100/50 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">Stamps Required</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">{t('vendor.loyalty.punchesRequired')}</label>
                 <div className="flex items-center gap-3">
                   <input type="number" min={1} max={50} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-20 px-3 py-2.5 bg-white border-2 border-primary-200 rounded-xl text-center text-xl font-extrabold text-primary-600 focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
-                  <span className="text-sm text-gray-500">stamps to earn reward</span>
+                  <span className="text-sm text-gray-500">{t('vendor.loyalty.stampsToEarnReward')}</span>
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-gray-900">Reward</label>
-                  <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={t => setForm(f => ({ ...f, punch_reward: t }))} label="Suggest Reward" />
+                  <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.reward')}</label>
+                  <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={v => setForm(f => ({ ...f, punch_reward: v }))} label={t('vendor.loyalty.suggestReward')} />
                 </div>
-                <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" placeholder="e.g., Free Medium Coffee" />
+                <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-primary-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" placeholder={t('vendor.loyalty.rewardPlaceholder')} />
               </div>
             </div>
           ) : (
             <div className="bg-gradient-to-br from-blue-50 to-blue-50 rounded-2xl p-5 border border-blue-100/50 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-3">Points Earned Per Purchase</label>
+                <label className="block text-sm font-semibold text-gray-900 mb-3">{t('vendor.loyalty.pointsEarnedPerPurchase')}</label>
                 <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="number"
@@ -1089,7 +1096,7 @@ function CreateProgramModal({
                     onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, points_per_dollar: 1 })); }}
                     className="w-28 px-4 py-3 bg-white border-2 border-blue-200 rounded-xl text-center text-xl font-extrabold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <span className="text-sm font-medium text-gray-500">point{form.points_per_dollar !== 1 ? 's' : ''} per</span>
+                  <span className="text-sm font-medium text-gray-500">{t('vendor.loyalty.pointsPer')}</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-lg font-bold text-gray-400">$</span>
                     <input
@@ -1101,17 +1108,16 @@ function CreateProgramModal({
                       onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, point_value: 0.01 })); }}
                       className="w-28 px-4 py-3 bg-white border-2 border-blue-200 rounded-xl text-center text-xl font-extrabold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <span className="text-sm font-medium text-gray-500">spent</span>
+                    <span className="text-sm font-medium text-gray-500">{t('vendor.loyalty.spent')}</span>
                   </div>
                 </div>
               </div>
               <div className="bg-white/60 rounded-lg px-3 py-2.5 space-y-1">
                 <p className="text-xs text-gray-500">
-                  A <span className="font-bold text-gray-700">$50</span> purchase earns{' '}
-                  <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points
+                  {t('vendor.loyalty.purchaseEarns', { points: form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0 })}
                 </p>
                 <p className="text-[11px] text-gray-400">
-                  1 point = <span className="font-semibold text-gray-600">${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</span> in value
+                  {t('vendor.loyalty.onePointEquals', { value: form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00' })}
                 </p>
               </div>
             </div>
@@ -1122,18 +1128,18 @@ function CreateProgramModal({
             <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100/50 space-y-3 animate-slide-up-fade">
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-500" /> Reward Tiers <span className="text-red-500 text-xs">*Required</span>
+                  <Award className="w-4 h-4 text-amber-500" /> {t('vendor.loyalty.rewardTiers')} <span className="text-red-500 text-xs">{t('vendor.loyalty.rewardTiersRequired')}</span>
                 </h3>
                 <button
                   onClick={() => { setShowManualRewardForm(true); setManualRewardForm({ name: '', description: '', points_cost: 100 }); }}
                   className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Reward
+                  <Plus className="w-3.5 h-3.5" /> {t('vendor.loyalty.addRewardButton')}
                 </button>
               </div>
 
               {manualRewards.length === 0 && !showManualRewardForm && (
-                <p className="text-xs text-gray-400 text-center py-2">Add at least one reward tier, or use &quot;AI: Build My Program&quot; above.</p>
+                <p className="text-xs text-gray-400 text-center py-2">{t('vendor.loyalty.addRewardHint')}</p>
               )}
 
               {manualRewards.map((r, i) => (
@@ -1143,7 +1149,7 @@ function CreateProgramModal({
                     {r.description && <span className="text-gray-400 text-xs ml-2">{r.description}</span>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-primary-600 font-bold text-xs">{r.points_cost} pts</span>
+                    <span className="text-primary-600 font-bold text-xs">{r.points_cost} {t('vendor.loyalty.ptsLabel')}</span>
                     <button onClick={() => setManualRewards(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500 p-1"><Trash2 className="w-3 h-3" /></button>
                   </div>
                 </div>
@@ -1152,7 +1158,7 @@ function CreateProgramModal({
               {showManualRewardForm && (
                 <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-700">New Reward</span>
+                    <span className="text-xs font-semibold text-gray-700">{t('vendor.loyalty.newReward')}</span>
                     <button
                       onClick={async () => {
                         setSuggestingReward(true);
@@ -1184,18 +1190,18 @@ function CreateProgramModal({
                       className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all disabled:opacity-50"
                     >
                       {suggestingReward ? <Loader2 className="w-3 h-3 animate-spin" /> : <img src="/ava.png" alt="Ava" className="w-3 h-3 rounded-full object-cover" />}
-                      {suggestingReward ? 'Thinking...' : 'Ava: Suggest Reward'}
+                      {suggestingReward ? t('vendor.loyalty.thinking') : t('vendor.loyalty.avaSuggestReward')}
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <input value={manualRewardForm.name} onChange={e => setManualRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Reward name" />
-                    <input value={manualRewardForm.description} onChange={e => setManualRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Description" />
-                    <input type="number" min={1} value={manualRewardForm.points_cost} onChange={e => setManualRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Points cost" />
+                    <input value={manualRewardForm.name} onChange={e => setManualRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder={t('vendor.loyalty.rewardNamePlaceholder')} />
+                    <input value={manualRewardForm.description} onChange={e => setManualRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder={t('vendor.loyalty.descriptionInputPlaceholder')} />
+                    <input type="number" min={1} value={manualRewardForm.points_cost} onChange={e => setManualRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder={t('vendor.loyalty.pointsCostPlaceholder')} />
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        if (!manualRewardForm.name.trim() || manualRewardForm.points_cost < 1) { setError('Reward name and points cost are required.'); return; }
+                        if (!manualRewardForm.name.trim() || manualRewardForm.points_cost < 1) { setError(t('vendor.loyalty.rewardNamePointsRequired')); return; }
                         setManualRewards(prev => [...prev, { ...manualRewardForm }]);
                         setManualRewardForm({ name: '', description: '', points_cost: 100 });
                         setShowManualRewardForm(false);
@@ -1203,9 +1209,9 @@ function CreateProgramModal({
                       }}
                       className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg font-semibold inline-flex items-center gap-1"
                     >
-                      <Plus className="w-3 h-3" /> Add
+                      <Plus className="w-3 h-3" /> {t('vendor.loyalty.add')}
                     </button>
-                    <button onClick={() => setShowManualRewardForm(false)} className="text-xs text-gray-500 px-3 py-1.5">Cancel</button>
+                    <button onClick={() => setShowManualRewardForm(false)} className="text-xs text-gray-500 px-3 py-1.5">{t('vendor.loyalty.cancel')}</button>
                   </div>
                 </div>
               )}
@@ -1216,22 +1222,22 @@ function CreateProgramModal({
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">
               <Calendar className="w-4 h-4 inline mr-1.5 text-gray-400" />
-              Program Duration
+              {t('vendor.loyalty.programDuration')}
             </label>
             <select
               value={form.expires_at}
               onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
               className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all appearance-none cursor-pointer"
             >
-              <option value="never" disabled>Select a duration...</option>
-              <option value="3_months">3 months</option>
-              <option value="6_months">6 months</option>
-              <option value="12_months">1 year</option>
+              <option value="never" disabled>{t('vendor.loyalty.selectDuration')}</option>
+              <option value="3_months">{t('vendor.loyalty.threeMonthsOption')}</option>
+              <option value="6_months">{t('vendor.loyalty.sixMonthsOption')}</option>
+              <option value="12_months">{t('vendor.loyalty.twelveMonthsOption')}</option>
             </select>
             <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex gap-2 items-start">
               <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
               <p className="text-[11px] text-amber-700 leading-relaxed">
-                <span className="font-semibold">Commitment:</span> Once customers enroll, you cannot cancel or shorten this program. After it expires, customers get 30 extra days to redeem their rewards.
+                <span className="font-semibold">{t('vendor.loyalty.commitmentLabel')}</span> {t('vendor.loyalty.commitmentText')}
               </p>
             </div>
           </div>
@@ -1244,7 +1250,7 @@ function CreateProgramModal({
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             {saving ? <Loader2 className="w-5 h-5 animate-spin relative" /> : <Save className="w-5 h-5 relative" />}
-            <span className="relative">Create Program</span>
+            <span className="relative">{t('vendor.loyalty.createProgramButton')}</span>
           </button>
         </div>
       </div>
@@ -1258,6 +1264,7 @@ function CreateProgramModal({
 export default function LoyaltyPage() {
   const { user } = useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
+  const { t } = useLanguage();
 
   const [programs, setPrograms] = useState<ProgramWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1291,7 +1298,7 @@ export default function LoyaltyPage() {
           </div>
           <div className="absolute inset-0 rounded-2xl bg-primary-500/20 animate-ping" />
         </div>
-        <p className="text-sm text-gray-400 animate-pulse">Loading loyalty programs...</p>
+        <p className="text-sm text-gray-400 animate-pulse">{t('vendor.loyalty.loadingPrograms')}</p>
       </div>
     );
   }
@@ -1315,9 +1322,9 @@ export default function LoyaltyPage() {
           </div>
           <div>
             <h1 className="text-3xl font-extrabold bg-gradient-to-r from-secondary-500 via-secondary-400 to-primary-500 bg-clip-text text-transparent">
-              Loyalty Programs
+              {t('vendor.loyalty.title')}
             </h1>
-            <p className="text-gray-400 text-sm mt-0.5">Create and manage your reward programs</p>
+            <p className="text-gray-400 text-sm mt-0.5">{t('vendor.loyalty.subtitle')}</p>
           </div>
         </div>
         <button
@@ -1326,7 +1333,7 @@ export default function LoyaltyPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
           <Plus className="w-5 h-5 relative" />
-          <span className="relative">New Program</span>
+          <span className="relative">{t('vendor.loyalty.newProgram')}</span>
         </button>
       </div>
 
@@ -1341,9 +1348,9 @@ export default function LoyaltyPage() {
             <AlertCircle className="w-5 h-5 text-white" />
           </div>
           <div className="relative text-sm text-amber-800">
-            <p className="font-bold text-amber-900 mb-1.5">Only one program can be active at a time</p>
+            <p className="font-bold text-amber-900 mb-1.5">{t('vendor.loyalty.oneActiveBannerTitle')}</p>
             <p className="text-amber-700/90 leading-relaxed">
-              Once customers enroll, you&apos;re committed to honoring the program until it expires. After expiration, customers get <span className="font-semibold text-amber-800">30 extra days</span> to redeem their earned rewards. You can always <span className="font-semibold text-amber-800">extend</span> your program&apos;s duration to keep it going longer.
+              {t('vendor.loyalty.oneActiveBannerDesc')}
             </p>
           </div>
         </div>
@@ -1364,9 +1371,9 @@ export default function LoyaltyPage() {
                   <Sparkles className="w-6 h-6 text-amber-400" />
                 </div>
               </div>
-              <h3 className="text-2xl font-extrabold text-gray-900 mb-3">No Loyalty Programs Yet</h3>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-3">{t('vendor.loyalty.noLoyaltyProgramsYet')}</h3>
               <p className="text-gray-400 text-sm mb-8 max-w-md mx-auto leading-relaxed">
-                Create punch cards or points programs to reward repeat customers. You can create multiple programs for different product lines or promotions.
+                {t('vendor.loyalty.noProgramsDescription')}
               </p>
               <button
                 onClick={() => setShowCreate(true)}
@@ -1374,7 +1381,7 @@ export default function LoyaltyPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/25 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                 <Plus className="w-5 h-5 relative" />
-                <span className="relative">Create Your First Program</span>
+                <span className="relative">{t('vendor.loyalty.createFirstProgram')}</span>
                 <ArrowRight className="w-4 h-4 relative group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -1388,6 +1395,7 @@ export default function LoyaltyPage() {
               program={prog}
               delay={i * 80}
               onClick={() => setSelectedProgramId(prog.id)}
+              t={t}
             />
           ))}
 
@@ -1400,14 +1408,14 @@ export default function LoyaltyPage() {
             <div className="w-14 h-14 rounded-2xl bg-gray-100 group-hover:bg-primary-100 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
               <Plus className="w-7 h-7 text-gray-400 group-hover:text-primary-500 transition-colors" />
             </div>
-            <span className="text-sm font-semibold text-gray-400 group-hover:text-primary-500 transition-colors">Add Program</span>
+            <span className="text-sm font-semibold text-gray-400 group-hover:text-primary-500 transition-colors">{t('vendor.loyalty.addProgram')}</span>
           </button>
         </div>
       )}
 
       {/* Modals */}
       {showCreate && (
-        <CreateProgramModal onClose={() => setShowCreate(false)} onCreated={() => { fetchPrograms(); }} />
+        <CreateProgramModal onClose={() => setShowCreate(false)} onCreated={() => { fetchPrograms(); }} t={t} />
       )}
       {selectedProgramId && (
         <ProgramModal
@@ -1415,6 +1423,7 @@ export default function LoyaltyPage() {
           onClose={() => setSelectedProgramId(null)}
           onDeleted={() => { fetchPrograms(); }}
           onUpdated={() => { fetchPrograms(); }}
+          t={t}
         />
       )}
     </div>
@@ -1422,17 +1431,17 @@ export default function LoyaltyPage() {
 }
 
 /* ── Utility ──────────────────────────── */
-function getTimeAgo(dateStr: string): string {
+function getTimeAgo(dateStr: string, t: (key: string, params?: Record<string, string | number>) => string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const diff = now - then;
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1) return t('vendor.loyalty.justNow');
+  if (minutes < 60) return t('vendor.loyalty.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('vendor.loyalty.hoursAgo', { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 7) return t('vendor.loyalty.daysAgo', { count: days });
+  if (days < 30) return t('vendor.loyalty.weeksAgo', { count: Math.floor(days / 7) });
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
