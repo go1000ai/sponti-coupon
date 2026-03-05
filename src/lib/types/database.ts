@@ -193,6 +193,7 @@ export interface Claim {
   // Joined fields
   deal?: Deal;
   customer?: Customer;
+  redemption?: { collection_completed: boolean; collection_completed_at: string | null; amount_collected: number | null } | null;
 }
 
 export interface Redemption {

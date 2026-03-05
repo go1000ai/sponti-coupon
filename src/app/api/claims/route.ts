@@ -306,7 +306,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('claims')
-    .select('*, deal:deals(*, vendor:vendors(business_name, logo_url, address, city, state, zip, phone, email, website, description, business_hours))')
+    .select('*, deal:deals(*, vendor:vendors(business_name, logo_url, address, city, state, zip, phone, email, website, description, business_hours)), redemption:redemptions(collection_completed, collection_completed_at, amount_collected)')
     .eq('customer_id', user.id)
     .order('created_at', { ascending: false });
 

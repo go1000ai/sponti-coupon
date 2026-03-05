@@ -265,9 +265,16 @@ export default function DashboardMyDealsPage() {
             const isSponti = deal.deal_type === 'sponti_coupon';
             const vendor = deal.vendor as Deal['vendor'];
 
+            const depositAmt = deal.deposit_amount || 0;
+            const hasRemainingBalance = depositAmt > 0 && deal.deal_price > depositAmt;
+            const balancePaid = claim.redemption?.collection_completed === true;
+            const isBalancePending = status === 'redeemed' && hasRemainingBalance && !balancePaid;
+
             const statusStyles = {
               active: { dot: 'bg-green-500', label: 'Active', text: 'text-green-700', bg: 'bg-green-50' },
-              redeemed: { dot: 'bg-blue-500', label: 'Redeemed', text: 'text-blue-700', bg: 'bg-blue-50' },
+              redeemed: isBalancePending
+                ? { dot: 'bg-amber-500', label: 'Balance Due', text: 'text-amber-700', bg: 'bg-amber-50' }
+                : { dot: 'bg-blue-500', label: 'Redeemed', text: 'text-blue-700', bg: 'bg-blue-50' },
               expired: { dot: 'bg-gray-400', label: 'Expired', text: 'text-gray-500', bg: 'bg-gray-100' },
               pending_deposit: { dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-700', bg: 'bg-yellow-50' },
             }[status];
@@ -324,6 +331,11 @@ export default function DashboardMyDealsPage() {
                 <div className="mt-3 pt-3 border-t border-gray-100">
                   {(status === 'active' || status === 'pending_deposit') ? (
                     <InlineCountdown expiresAt={claim.expires_at} />
+                  ) : status === 'redeemed' && isBalancePending ? (
+                    <p className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      Pay remaining balance to complete
+                    </p>
                   ) : status === 'redeemed' && claim.redeemed_at ? (
                     <p className="text-xs text-gray-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
@@ -642,6 +654,8 @@ function DetailModal({
   const depositAmount = deal.deposit_amount || 0;
   const hasDeposit = depositAmount > 0;
   const remainingBalance = hasDeposit ? deal.deal_price - depositAmount : 0;
+  const balancePaid = claim.redemption?.collection_completed === true;
+  const isBalancePending = status === 'redeemed' && remainingBalance > 0 && !balancePaid;
   const hasImage = deal.image_url || (deal.image_urls && deal.image_urls.length > 0);
   const displayImage = deal.image_url || (deal.image_urls && deal.image_urls[0]) || null;
   const canModify = status === 'active' || status === 'pending_deposit';
@@ -694,11 +708,14 @@ function DetailModal({
           <div className="absolute top-3 left-3 float-badge">
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm ${
               status === 'active' ? 'bg-green-500/90 text-white' :
+              isBalancePending ? 'bg-amber-500/90 text-white' :
               status === 'redeemed' ? 'bg-blue-500/90 text-white' :
               status === 'expired' ? 'bg-gray-500/90 text-white' :
               'bg-yellow-500/90 text-white'
             }`}>
-              {status === 'pending_deposit' ? 'Awaiting Deposit' : status.charAt(0).toUpperCase() + status.slice(1)}
+              {isBalancePending ? 'Balance Due' :
+               status === 'pending_deposit' ? 'Awaiting Deposit' :
+               status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
           </div>
 
@@ -870,7 +887,22 @@ function DetailModal({
                 </div>
               )}
 
-              {status === 'redeemed' && (
+              {status === 'redeemed' && isBalancePending && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-5 text-center">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+                    <AlertTriangle className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <p className="text-sm font-bold text-amber-700">Balance Due</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Pay the remaining balance to complete this transaction
+                  </p>
+                  {claim.redeemed_at && (
+                    <p className="text-xs text-gray-400 mt-2">Redeemed on {fmtDateTime(claim.redeemed_at)}</p>
+                  )}
+                </div>
+              )}
+
+              {status === 'redeemed' && !isBalancePending && (
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5 text-center">
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
                     <CheckCircle2 className="w-6 h-6 text-green-500" />
@@ -886,8 +918,8 @@ function DetailModal({
                 </div>
               )}
 
-              {/* Pay Remaining Balance — shown when redeemed with outstanding balance */}
-              {status === 'redeemed' && remainingBalance > 0 && (
+              {/* Pay Remaining Balance — shown when redeemed with outstanding unpaid balance */}
+              {isBalancePending && (
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-5">
                   <div className="text-center mb-3">
                     <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-1" />
