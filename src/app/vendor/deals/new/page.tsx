@@ -296,6 +296,7 @@ export default function NewDealPage() {
   const [draftsLoading, setDraftsLoading] = useState(false);
   const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
   const [draftToast, setDraftToast] = useState(false);
+  const [successToast, setSuccessToast] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
   const [variants, setVariants] = useState<DealVariant[]>([]);
   const [editingVariant, setEditingVariant] = useState<DealVariant | null>(null);
@@ -878,7 +879,9 @@ export default function NewDealPage() {
         return;
       }
 
-      router.push('/vendor/deals/calendar');
+      setDraftToast(false);
+      setSuccessToast(true);
+      setTimeout(() => router.push('/vendor/deals'), 1500);
     } catch {
       setError('Failed to create deal. Please try again.');
     }
@@ -965,7 +968,15 @@ export default function NewDealPage() {
         </div>
       )}
 
-      <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
+      {/* Deal Created Toast */}
+      {successToast && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-green-600/25 animate-in slide-in-from-top">
+          <CheckCircle2 className="w-5 h-5" />
+          <span className="font-medium text-sm">Deal created!</span>
+        </div>
+      )}
+
+      <Link href="/vendor/deals" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
         <ArrowLeft className="w-4 h-4" /> Back to Deals
       </Link>
 

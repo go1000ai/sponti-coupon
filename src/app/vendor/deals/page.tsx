@@ -198,6 +198,14 @@ export default function VendorDealsPage() {
                   </span>
                 </div>
 
+                {/* Deal Image */}
+                {deal.image_url && (
+                  <div className="h-36 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+
                 {/* Card Body */}
                 <div className="p-4 flex flex-col flex-1">
                   <h3 className="font-bold text-gray-900 line-clamp-2 leading-snug">{deal.title}</h3>
