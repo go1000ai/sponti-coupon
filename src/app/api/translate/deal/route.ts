@@ -139,7 +139,8 @@ export async function PUT(request: NextRequest) {
   for (const id of dealIds) {
     const found = cached?.find(c => c.deal_id === id);
     if (found) {
-      const { deal_id: _id, ...fields } = found;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { deal_id: _, ...fields } = found;
       cachedMap[id] = fields;
     } else {
       uncachedIds.push(id);
