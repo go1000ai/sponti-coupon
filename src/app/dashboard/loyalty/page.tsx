@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Gift, Stamp, Star, Check, Lock, Loader2, Award, ChevronDown, ChevronUp,
   TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store, Coins, Calendar,
@@ -45,7 +46,18 @@ interface Transaction {
 type LoyaltyTab = 'spontipoints' | 'business';
 
 export default function CustomerLoyaltyPage() {
-  const [activeTab, setActiveTab] = useState<LoyaltyTab>('spontipoints');
+  return (
+    <Suspense fallback={<div className="max-w-6xl mx-auto flex items-center justify-center py-24"><Loader2 className="w-8 h-8 text-primary-500 animate-spin" /></div>}>
+      <CustomerLoyaltyContent />
+    </Suspense>
+  );
+}
+
+function CustomerLoyaltyContent() {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get('tab');
+  const initialTab: LoyaltyTab = tabParam === 'business' ? 'business' : 'spontipoints';
+  const [activeTab, setActiveTab] = useState<LoyaltyTab>(initialTab);
   const [cards, setCards] = useState<LoyaltyCardData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);

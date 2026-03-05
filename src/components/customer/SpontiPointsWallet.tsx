@@ -135,10 +135,11 @@ export function SpontiPointsWallet() {
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-6 -translate-x-6" />
 
         <div className="relative">
-          <div className="flex items-center gap-2 mb-1">
+          <Link href="/dashboard/loyalty?tab=spontipoints" className="flex items-center gap-2 mb-1 group">
             <Sparkles className="w-5 h-5" />
             <span className="text-sm font-medium text-white/90">SpontiPoints</span>
-          </div>
+            <ChevronRight className="w-4 h-4 text-white/60 ml-auto group-hover:text-white transition-colors" />
+          </Link>
 
           <div className="flex items-end gap-3 mb-4">
             <span className="text-4xl font-bold">{data.balance.toLocaleString()}</span>

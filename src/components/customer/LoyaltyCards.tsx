@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gift, Stamp, Star, Check, Lock, Loader2, Award, Calendar } from 'lucide-react';
+import Link from 'next/link';
+import { Gift, Stamp, Star, Check, Lock, Loader2, Award, Calendar, ChevronRight } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, Vendor } from '@/lib/types/database';
 
 interface LoyaltyCardData {
@@ -66,10 +67,11 @@ export function LoyaltyCards() {
 
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-2 mb-4">
+      <Link href="/dashboard/loyalty?tab=business" className="flex items-center gap-2 mb-4 group">
         <Gift className="w-5 h-5 text-primary-500" />
-        <h2 className="text-lg font-bold text-gray-900">My Loyalty Rewards</h2>
-      </div>
+        <h2 className="text-lg font-bold text-gray-900 group-hover:text-primary-500 transition-colors">My Loyalty Rewards</h2>
+        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 transition-colors" />
+      </Link>
 
       {message && (
         <div className={`mb-4 px-4 py-2.5 rounded-xl text-sm font-medium ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
@@ -79,13 +81,13 @@ export function LoyaltyCards() {
 
       <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
         {cards.map(card => (
-          <div key={card.id} className="min-w-[300px] max-w-[340px] snap-start flex-shrink-0">
+          <Link key={card.id} href="/dashboard/loyalty?tab=business" className="min-w-[300px] max-w-[340px] snap-start flex-shrink-0 hover:scale-[1.02] transition-transform cursor-pointer">
             {card.program?.program_type === 'punch_card' ? (
               <PunchCardView card={card} onRedeem={handleRedeem} redeeming={redeeming} />
             ) : (
               <PointsCardView card={card} onRedeem={handleRedeem} redeeming={redeeming} />
             )}
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -176,7 +178,7 @@ function PunchCardView({
         {/* Claim button */}
         {canClaim && (
           <button
-            onClick={() => onRedeem(card.id)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRedeem(card.id); }}
             disabled={redeeming === card.id}
             className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white font-bold text-sm py-2.5 rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
           >
@@ -272,7 +274,7 @@ function PointsCardView({
                   </div>
                   {canAfford && (
                     <button
-                      onClick={() => onRedeem(card.id, reward.id)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRedeem(card.id, reward.id); }}
                       disabled={!!isRedeeming}
                       className="text-[10px] font-bold text-green-600 bg-green-100 hover:bg-green-200 px-2 py-1 rounded-full transition-colors"
                     >
