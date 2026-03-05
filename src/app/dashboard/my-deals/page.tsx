@@ -283,10 +283,16 @@ export default function DashboardMyDealsPage() {
               <button
                 key={claim.id}
                 onClick={() => openDetail(claim)}
-                className={`card p-4 hover:shadow-lg transition-all duration-200 w-full text-left cursor-pointer group flex flex-col ${
+                className={`card p-4 hover:shadow-lg transition-all duration-200 w-full text-left cursor-pointer group flex flex-col relative overflow-hidden ${
                   status === 'expired' ? 'opacity-60' : ''
                 }`}
               >
+                {/* Diagonal REDEEMED ribbon */}
+                {status === 'redeemed' && !isBalancePending && (
+                  <div className="absolute -right-8 top-5 rotate-45 bg-green-500 text-white text-[9px] font-extrabold tracking-wider px-8 py-0.5 shadow-md z-10">
+                    REDEEMED
+                  </div>
+                )}
                 {/* Row 1: Status + Deal type */}
                 <div className="flex items-center justify-between mb-3">
                   <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusStyles.bg} ${statusStyles.text}`}>
@@ -709,7 +715,7 @@ function DetailModal({
             <span className={`text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm ${
               status === 'active' ? 'bg-green-500/90 text-white' :
               isBalancePending ? 'bg-amber-500/90 text-white' :
-              status === 'redeemed' ? 'bg-blue-500/90 text-white' :
+              status === 'redeemed' ? 'bg-green-600/90 text-white' :
               status === 'expired' ? 'bg-gray-500/90 text-white' :
               'bg-yellow-500/90 text-white'
             }`}>
@@ -718,6 +724,13 @@ function DetailModal({
                status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
           </div>
+
+          {/* Diagonal REDEEMED ribbon on modal hero */}
+          {status === 'redeemed' && !isBalancePending && (
+            <div className="absolute -right-10 top-7 rotate-45 bg-green-500 text-white text-[11px] font-extrabold tracking-widest px-10 py-1 shadow-lg z-10">
+              REDEEMED
+            </div>
+          )}
 
           {/* Savings badge — inside image overlay */}
           <div className="absolute bottom-3 right-3">
