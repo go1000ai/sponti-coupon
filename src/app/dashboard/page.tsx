@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
@@ -51,6 +52,7 @@ interface StatCard {
 
 export default function ConsumerDashboardPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loyaltyCards, setLoyaltyCards] = useState<(LoyaltyCard & { available_rewards?: { name: string; points_cost: number }[] })[]>([]);
@@ -114,7 +116,7 @@ export default function ConsumerDashboardPage() {
 
   const statCards: StatCard[] = [
     {
-      label: 'Total Saved',
+      label: t('customer.dashboard.totalSaved'),
       value: Math.round(totalSavings * 100),
       formatted: formatCurrency(totalSavings),
       icon: <DollarSign className="w-5 h-5 text-white" />,
@@ -125,7 +127,7 @@ export default function ConsumerDashboardPage() {
       href: '/dashboard/savings',
     },
     {
-      label: 'Active Deals',
+      label: t('customer.dashboard.activeDeals'),
       value: activeClaims.length,
       formatted: String(activeClaims.length),
       icon: <ShoppingBag className="w-5 h-5 text-white" />,
@@ -136,7 +138,7 @@ export default function ConsumerDashboardPage() {
       href: '/dashboard/my-deals',
     },
     {
-      label: 'Deals Redeemed',
+      label: t('customer.dashboard.dealsRedeemed'),
       value: redeemedCount,
       formatted: String(redeemedCount),
       icon: <CheckCircle2 className="w-5 h-5 text-white" />,
@@ -147,7 +149,7 @@ export default function ConsumerDashboardPage() {
       href: '/dashboard/my-deals?status=redeemed',
     },
     {
-      label: 'Pending Savings',
+      label: t('customer.dashboard.pendingSavings'),
       value: Math.round(pendingSavings * 100),
       formatted: formatCurrency(pendingSavings),
       icon: <TrendingUp className="w-5 h-5 text-white" />,
@@ -178,11 +180,13 @@ export default function ConsumerDashboardPage() {
       <div className="animate-fade-up">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Welcome back, <span className="gradient-text">{firstName}</span>!
+            {t('customer.dashboard.welcome', { name: firstName }).split(firstName).map((part, i, arr) =>
+              i < arr.length - 1 ? <span key={i}>{part}<span className="gradient-text">{firstName}</span></span> : part
+            )}
           </h1>
           <Sparkles className="w-6 h-6 text-primary-400 animate-pulse-slow" />
         </div>
-        <p className="text-gray-500 mt-1">Here is an overview of your deals and savings.</p>
+        <p className="text-gray-500 mt-1">{t('customer.dashboard.overview')}</p>
       </div>
 
       {/* Stats cards — staggered */}
@@ -217,8 +221,8 @@ export default function ConsumerDashboardPage() {
             <Compass className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">Browse Deals</h3>
-            <p className="text-sm text-gray-500">Discover new deals near you</p>
+            <h3 className="font-semibold text-gray-900">{t('customer.dashboard.browseDeals')}</h3>
+            <p className="text-sm text-gray-500">{t('customer.dashboard.discoverDeals')}</p>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
@@ -228,8 +232,8 @@ export default function ConsumerDashboardPage() {
             <QrCode className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900">View My QR Codes</h3>
-            <p className="text-sm text-gray-500">See your active deals and codes</p>
+            <h3 className="font-semibold text-gray-900">{t('customer.dashboard.viewMyQRCodes')}</h3>
+            <p className="text-sm text-gray-500">{t('customer.dashboard.seeActiveCodes')}</p>
           </div>
           <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
@@ -244,10 +248,10 @@ export default function ConsumerDashboardPage() {
               <div className="bg-gradient-to-br from-primary-500 to-amber-400 rounded-lg p-1.5">
                 <Gift className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Loyalty Rewards</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('customer.dashboard.loyaltyRewards')}</h2>
             </div>
             <Link href="/dashboard/loyalty" className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 group">
-              View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('customer.dashboard.viewAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -290,16 +294,16 @@ export default function ConsumerDashboardPage() {
                       ))}
                     </div>
                     <div className="flex items-center justify-between text-xs mb-1 mt-2">
-                      <span className="text-gray-400">{current} / {required} stamps</span>
+                      <span className="text-gray-400">{current} / {required} {t('customer.dashboard.stamps')}</span>
                       <span className="font-medium text-gray-500">{Math.round(progress)}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                       <div className={`h-2.5 rounded-full progress-fill ${isReady ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-primary-500 to-orange-400'}`} style={{ width: `${progress}%` }} />
                     </div>
                     <div className="mt-2 bg-orange-50 rounded-lg px-3 py-1.5 text-center">
-                      <p className="text-[10px] text-gray-400">Reward:</p>
+                      <p className="text-[10px] text-gray-400">{t('customer.dashboard.reward')}</p>
                       <p className="text-xs font-bold text-primary-600">
-                        {isReady ? `Ready to claim: ${program.punch_reward}` : `${required - current} more stamps to ${program.punch_reward}`}
+                        {isReady ? t('customer.dashboard.readyToClaim', { reward: program.punch_reward ?? '' }) : t('customer.dashboard.moreStampsTo', { count: String(required - current), reward: program.punch_reward ?? '' })}
                       </p>
                     </div>
                   </Link>
@@ -330,7 +334,7 @@ export default function ConsumerDashboardPage() {
                   </div>
                   <div className="text-center mb-3">
                     <p className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-sky-500 bg-clip-text text-transparent">{card.current_points.toLocaleString()}</p>
-                    <p className="text-xs text-gray-400">points</p>
+                    <p className="text-xs text-gray-400">{t('customer.dashboard.points')}</p>
                   </div>
                   {nextReward ? (
                     <div>
@@ -342,15 +346,15 @@ export default function ConsumerDashboardPage() {
                         <div className={`h-2.5 rounded-full progress-fill ${canRedeem ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-blue-500 to-sky-500'}`} style={{ width: `${pointsProgress}%` }} />
                       </div>
                       <div className="mt-2 bg-blue-50 rounded-lg px-3 py-1.5 text-center">
-                        <p className="text-[10px] text-gray-400">Reward:</p>
+                        <p className="text-[10px] text-gray-400">{t('customer.dashboard.reward')}</p>
                         <p className="text-xs font-bold text-blue-600">
-                          {canRedeem ? `Ready to redeem: ${nextReward.name}` : `${(nextReward.points_cost - card.current_points).toLocaleString()} more pts to ${nextReward.name}`}
+                          {canRedeem ? t('customer.dashboard.readyToRedeem', { reward: nextReward.name }) : t('customer.dashboard.morePtsTo', { count: (nextReward.points_cost - card.current_points).toLocaleString(), reward: nextReward.name })}
                         </p>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <p className="text-xs text-gray-400 text-center">Keep earning points with each redemption!</p>
+                      <p className="text-xs text-gray-400 text-center">{t('customer.dashboard.keepEarning')}</p>
                     </div>
                   )}
                 </Link>
@@ -368,23 +372,23 @@ export default function ConsumerDashboardPage() {
             <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1.5">
               <BarChart3 className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">My Savings</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('customer.dashboard.mySavings')}</h2>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="card p-5 tilt-card">
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Savings Over Time</h3>
-              <p className="text-xs text-gray-400 mb-4">How much you&apos;ve saved each month</p>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">{t('customer.dashboard.savingsOverTime')}</h3>
+              <p className="text-xs text-gray-400 mb-4">{t('customer.dashboard.savingsOverTimeDesc')}</p>
               <SavingsChart data={analytics.savings_over_time} />
             </div>
             <div className="card p-5 tilt-card">
-              <h3 className="text-sm font-semibold text-gray-900 mb-1">Deals by Category</h3>
-              <p className="text-xs text-gray-400 mb-4">Where you shop the most</p>
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">{t('customer.dashboard.dealsByCategory')}</h3>
+              <p className="text-xs text-gray-400 mb-4">{t('customer.dashboard.dealsByCategoryDesc')}</p>
               <CategoryChart data={analytics.category_breakdown} />
             </div>
           </div>
           <div className="card p-5 mt-4 tilt-card">
-            <h3 className="text-sm font-semibold text-gray-900 mb-1">Coupon Activity</h3>
-            <p className="text-xs text-gray-400 mb-4">Claimed vs. redeemed vs. expired</p>
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">{t('customer.dashboard.couponActivity')}</h3>
+            <p className="text-xs text-gray-400 mb-4">{t('customer.dashboard.couponActivityDesc')}</p>
             <ActivityChart data={analytics.redemption_activity} />
           </div>
         </div>
@@ -394,9 +398,9 @@ export default function ConsumerDashboardPage() {
       {activeClaims.length > 0 && (
         <div className="animate-fade-up" style={{ animationDelay: '800ms' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Active Deals</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('customer.dashboard.activeDeals')}</h2>
             <Link href="/dashboard/my-deals" className="text-sm text-primary-500 hover:text-primary-600 font-medium flex items-center gap-1 group">
-              View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('customer.dashboard.viewAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
           <div className="space-y-3">
@@ -421,11 +425,11 @@ export default function ConsumerDashboardPage() {
                         <div className="hidden sm:block"><CountdownTimer expiresAt={claim.expires_at} size="sm" variant={deal.deal_type === 'sponti_coupon' ? 'sponti' : 'steady'} /></div>
                       </div>
                       <div className="sm:hidden">
-                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><Clock className="w-3 h-3" /><span>Expires in:</span></div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500 mb-1"><Clock className="w-3 h-3" /><span>{t('customer.dashboard.expiresIn')}</span></div>
                         <CountdownTimer expiresAt={claim.expires_at} size="sm" variant={deal.deal_type === 'sponti_coupon' ? 'sponti' : 'steady'} />
                       </div>
                       <Link href="/dashboard/my-deals" className={`text-white px-3 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 shadow-sm w-full sm:w-auto ${deal.deal_type === 'sponti_coupon' ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700' : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700'}`}>
-                        <QrCode className="w-4 h-4" /> QR Code
+                        <QrCode className="w-4 h-4" /> {t('customer.dashboard.qrCode')}
                       </Link>
                     </div>
                   </div>
@@ -439,7 +443,7 @@ export default function ConsumerDashboardPage() {
       {/* Recent activity */}
       {recentActivity.length > 0 && (
         <div className="animate-fade-up" style={{ animationDelay: '900ms' }}>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('customer.dashboard.recentActivity')}</h2>
           <div className="card divide-y divide-gray-50">
             {recentActivity.map((claim) => {
               const deal = claim.deal;
@@ -455,11 +459,11 @@ export default function ConsumerDashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-900">
-                      {isRedeemed ? <>You redeemed <span className="font-semibold">{deal.title}</span></> : status === 'expired' ? <><span className="font-semibold">{deal.title}</span> expired</> : <>You claimed <span className="font-semibold">{deal.title}</span></>}
+                      {isRedeemed ? <>{t('customer.dashboard.youRedeemed')} <span className="font-semibold">{deal.title}</span></> : status === 'expired' ? <><span className="font-semibold">{deal.title}</span> {t('customer.dashboard.dealExpiredLabel')}</> : <>{t('customer.dashboard.youClaimed')} <span className="font-semibold">{deal.title}</span></>}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">
                       {timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                      {' '}{(deal.vendor as Deal['vendor'])?.business_name && <>at {(deal.vendor as Deal['vendor'])?.business_name}</>}
+                      {' '}{(deal.vendor as Deal['vendor'])?.business_name && <>{t('customer.dashboard.at')} {(deal.vendor as Deal['vendor'])?.business_name}</>}
                     </p>
                   </div>
                   {isRedeemed && deal && <span className="text-green-600 text-sm font-semibold flex-shrink-0">-{formatCurrency(deal.original_price - deal.deal_price)}</span>}
@@ -479,10 +483,10 @@ export default function ConsumerDashboardPage() {
               <SpontiIcon className="w-8 h-8 text-primary-500" />
             </div>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">No deals yet</h3>
-          <p className="text-gray-400 mt-1 mb-6">Start saving by claiming your first deal!</p>
+          <h3 className="text-lg font-semibold text-gray-900">{t('customer.dashboard.noDealsYet')}</h3>
+          <p className="text-gray-400 mt-1 mb-6">{t('customer.dashboard.startSavingFirst')}</p>
           <Link href="/deals" className="btn-primary inline-flex items-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all">
-            <Compass className="w-4 h-4" /> Browse Deals
+            <Compass className="w-4 h-4" /> {t('customer.dashboard.browseDeals')}
           </Link>
         </div>
       )}
