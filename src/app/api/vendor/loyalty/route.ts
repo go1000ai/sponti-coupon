@@ -267,6 +267,15 @@ export async function PUT(request: NextRequest) {
 
   const serviceClient = await createServiceRoleClient();
 
+  // If activating this program, deactivate all other programs first
+  if (body.is_active === true && programId) {
+    await serviceClient
+      .from('loyalty_programs')
+      .update({ is_active: false })
+      .eq('vendor_id', check.user.id)
+      .neq('id', programId);
+  }
+
   let query = serviceClient
     .from('loyalty_programs')
     .update(updates)

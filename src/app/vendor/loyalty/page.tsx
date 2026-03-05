@@ -274,7 +274,7 @@ function ProgramModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: programId, is_active: !program.is_active }),
       });
-      if (res.ok) { showMsg('success', program.is_active ? 'Paused.' : 'Activated!'); fetchDetail(); onUpdated(); }
+      if (res.ok) { showMsg('success', program.is_active ? 'Program paused.' : 'Program activated! Any other programs have been paused.'); fetchDetail(); onUpdated(); }
     } catch { /* ignore */ }
     setSaving(false);
   };
