@@ -59,24 +59,139 @@ export async function PUT(
           await serviceClient.rpc('decrement_claims_count', { deal_id_param: claim.deal_id });
         }
 
-        // Reverse loyalty + SpontiPoints tied to the redemption record
-        const { data: redemption } = await serviceClient
+        // Reverse loyalty + SpontiPoints tied to the redemption record(s)
+        // Use maybeSingle() instead of single() to avoid error when no rows found
+        const { data: redemptions, error: redemptionFetchError } = await serviceClient
           .from('redemptions')
           .select('id')
           .eq('claim_id', id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+          .order('created_at', { ascending: false });
 
-        if (redemption) {
-          // Reverse loyalty transactions
-          const { data: loyaltyTxns } = await serviceClient
+        console.log('[Admin Cancel] Claim ID:', id, '| Redemptions found:', redemptions?.length || 0, '| Fetch error:', redemptionFetchError);
+
+        if (redemptions && redemptions.length > 0) {
+          for (const redemption of redemptions) {
+            console.log('[Admin Cancel] Processing redemption:', redemption.id);
+
+            // Reverse loyalty transactions
+            const { data: loyaltyTxns, error: loyaltyFetchError } = await serviceClient
+              .from('loyalty_transactions')
+              .select('id, card_id, transaction_type, punches_amount, points_amount')
+              .eq('redemption_id', redemption.id);
+
+            console.log('[Admin Cancel] Loyalty txns found:', loyaltyTxns?.length || 0, '| Fetch error:', loyaltyFetchError);
+
+            if (loyaltyTxns && loyaltyTxns.length > 0) {
+              for (const txn of loyaltyTxns) {
+                if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
+                  const { data: card } = await serviceClient
+                    .from('loyalty_cards')
+                    .select('current_punches, total_punches_earned')
+                    .eq('id', txn.card_id)
+                    .single();
+                  if (card) {
+                    const { error: cardUpdateErr } = await serviceClient.from('loyalty_cards').update({
+                      current_punches: Math.max(0, card.current_punches - txn.punches_amount),
+                      total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
+                    }).eq('id', txn.card_id);
+                    console.log('[Admin Cancel] Reversed punch:', txn.id, '| Card:', txn.card_id, '| Error:', cardUpdateErr);
+                  }
+                } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
+                  const { data: card } = await serviceClient
+                    .from('loyalty_cards')
+                    .select('current_points, total_points_earned')
+                    .eq('id', txn.card_id)
+                    .single();
+                  if (card) {
+                    const { error: cardUpdateErr } = await serviceClient.from('loyalty_cards').update({
+                      current_points: Math.max(0, card.current_points - txn.points_amount),
+                      total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
+                    }).eq('id', txn.card_id);
+                    console.log('[Admin Cancel] Reversed points:', txn.id, '| Card:', txn.card_id, '| Error:', cardUpdateErr);
+                  }
+                }
+              }
+              const { error: deleteTxnErr } = await serviceClient.from('loyalty_transactions').delete().eq('redemption_id', redemption.id);
+              console.log('[Admin Cancel] Deleted loyalty txns for redemption:', redemption.id, '| Error:', deleteTxnErr);
+            }
+
+            // Also check for loyalty transactions linked by claim's customer_id that may have null redemption_id
+            // (fallback for older records where redemption_id wasn't set)
+            if (!loyaltyTxns || loyaltyTxns.length === 0) {
+              console.log('[Admin Cancel] No loyalty txns found by redemption_id, checking by customer + deal...');
+              const { data: fallbackTxns } = await serviceClient
+                .from('loyalty_transactions')
+                .select('id, card_id, transaction_type, punches_amount, points_amount, created_at')
+                .eq('customer_id', claim.customer_id)
+                .is('redemption_id', null)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+              console.log('[Admin Cancel] Fallback txns with null redemption_id:', fallbackTxns?.length || 0);
+
+              if (fallbackTxns && fallbackTxns.length > 0) {
+                // Only reverse the most recent transaction(s) that match the redemption timeframe
+                for (const txn of fallbackTxns) {
+                  if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
+                    const { data: card } = await serviceClient
+                      .from('loyalty_cards')
+                      .select('current_punches, total_punches_earned')
+                      .eq('id', txn.card_id)
+                      .single();
+                    if (card) {
+                      await serviceClient.from('loyalty_cards').update({
+                        current_punches: Math.max(0, card.current_punches - txn.punches_amount),
+                        total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
+                      }).eq('id', txn.card_id);
+                    }
+                    await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
+                    console.log('[Admin Cancel] Reversed fallback punch txn:', txn.id);
+                    break; // Only reverse one punch transaction
+                  } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
+                    const { data: card } = await serviceClient
+                      .from('loyalty_cards')
+                      .select('current_points, total_points_earned')
+                      .eq('id', txn.card_id)
+                      .single();
+                    if (card) {
+                      await serviceClient.from('loyalty_cards').update({
+                        current_points: Math.max(0, card.current_points - txn.points_amount),
+                        total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
+                      }).eq('id', txn.card_id);
+                    }
+                    await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
+                    console.log('[Admin Cancel] Reversed fallback points txn:', txn.id);
+                    break; // Only reverse one points transaction
+                  }
+                }
+              }
+            }
+
+            // Reverse SpontiPoints
+            const { error: spDeleteErr } = await serviceClient.from('spontipoints_ledger').delete().eq('redemption_id', redemption.id);
+            console.log('[Admin Cancel] Deleted SpontiPoints for redemption:', redemption.id, '| Error:', spDeleteErr);
+
+            // Delete redemption record
+            const { error: redDeleteErr } = await serviceClient.from('redemptions').delete().eq('id', redemption.id);
+            console.log('[Admin Cancel] Deleted redemption record:', redemption.id, '| Error:', redDeleteErr);
+          }
+        } else {
+          console.log('[Admin Cancel] No redemption records found for claim:', id, '— checking for orphaned loyalty data...');
+
+          // Even without a redemption record, try to clean up loyalty data
+          // This handles edge cases where the redemption record was already deleted
+          const { data: orphanedTxns } = await serviceClient
             .from('loyalty_transactions')
             .select('id, card_id, transaction_type, punches_amount, points_amount')
-            .eq('redemption_id', redemption.id);
+            .eq('customer_id', claim.customer_id)
+            .is('redemption_id', null)
+            .order('created_at', { ascending: false })
+            .limit(10);
 
-          if (loyaltyTxns && loyaltyTxns.length > 0) {
-            for (const txn of loyaltyTxns) {
+          console.log('[Admin Cancel] Orphaned loyalty txns found:', orphanedTxns?.length || 0);
+
+          if (orphanedTxns && orphanedTxns.length > 0) {
+            for (const txn of orphanedTxns) {
               if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
                 const { data: card } = await serviceClient
                   .from('loyalty_cards')
@@ -89,6 +204,9 @@ export async function PUT(
                     total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
                   }).eq('id', txn.card_id);
                 }
+                await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
+                console.log('[Admin Cancel] Reversed orphaned punch txn:', txn.id);
+                break;
               } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
                 const { data: card } = await serviceClient
                   .from('loyalty_cards')
@@ -101,16 +219,12 @@ export async function PUT(
                     total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
                   }).eq('id', txn.card_id);
                 }
+                await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
+                console.log('[Admin Cancel] Reversed orphaned points txn:', txn.id);
+                break;
               }
             }
-            await serviceClient.from('loyalty_transactions').delete().eq('redemption_id', redemption.id);
           }
-
-          // Reverse SpontiPoints
-          await serviceClient.from('spontipoints_ledger').delete().eq('redemption_id', redemption.id);
-
-          // Delete redemption record
-          await serviceClient.from('redemptions').delete().eq('id', redemption.id);
         }
 
         return NextResponse.json({ success: true, message: 'Claim cancelled successfully' });
