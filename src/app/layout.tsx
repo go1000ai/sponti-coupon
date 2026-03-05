@@ -7,6 +7,8 @@ import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistr
 import { InactivityGuard } from "@/components/auth/InactivityGuard";
 import { OliviaFloatingWidget } from "@/components/support/OliviaFloatingWidget";
 import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -384,6 +386,8 @@ export default function RootLayout({
         <InactivityGuard />
         <ServiceWorkerRegistration />
         <CookieConsentBanner />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

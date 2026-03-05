@@ -3,11 +3,16 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { v4 as uuidv4 } from 'uuid';
 import { generateUniqueRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
+import { rateLimit } from '@/lib/rate-limit';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // POST /api/claims - Create a new claim on a deal
 export async function POST(request: NextRequest) {
+  // 10 claims per 15 minutes per IP
+  const limited = rateLimit(request, { maxRequests: 10, windowMs: 15 * 60 * 1000 });
+  if (limited) return limited;
+
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 

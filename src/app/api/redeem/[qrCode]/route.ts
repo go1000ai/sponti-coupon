@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 // POST /api/redeem/[qrCode] - Vendor redeems via QR code or 6-digit code
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
 ) {
+  // 20 redemptions per 15 minutes per IP
+  const limited = rateLimit(request, { maxRequests: 20, windowMs: 15 * 60 * 1000 });
+  if (limited) return limited;
+
   const { qrCode } = await params;
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();

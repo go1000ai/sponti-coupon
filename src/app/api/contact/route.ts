@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  // 5 contact submissions per 15 minutes per IP
+  const limited = rateLimit(request, { maxRequests: 5, windowMs: 15 * 60 * 1000 });
+  if (limited) return limited;
+
   try {
     const body = await request.json();
     const { name, email, phone, businessName, locations, message, plan } = body;
