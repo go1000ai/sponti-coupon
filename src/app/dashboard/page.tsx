@@ -289,18 +289,26 @@ export default function ConsumerDashboardPage() {
                         </div>
                       ))}
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 mt-2 overflow-hidden">
-                      <div className={`h-2 rounded-full progress-fill ${isReady ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-primary-500 to-orange-400'}`} style={{ width: `${progress}%` }} />
+                    <div className="flex items-center justify-between text-xs mb-1 mt-2">
+                      <span className="text-gray-400">{current} / {required} stamps</span>
+                      <span className="font-medium text-gray-500">{Math.round(progress)}%</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1.5">
-                      {isReady ? `Reward ready: ${program.punch_reward}` : `${current}/${required} stamps — ${required - current} to go!`}
-                    </p>
+                    <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                      <div className={`h-2.5 rounded-full progress-fill ${isReady ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-primary-500 to-orange-400'}`} style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className="mt-2 bg-orange-50 rounded-lg px-3 py-1.5 text-center">
+                      <p className="text-[10px] text-gray-400">Reward:</p>
+                      <p className="text-xs font-bold text-primary-600">
+                        {isReady ? `Ready to claim: ${program.punch_reward}` : `${required - current} more stamps to ${program.punch_reward}`}
+                      </p>
+                    </div>
                   </Link>
                 );
               }
 
-              const nextReward = card.available_rewards?.[0];
+              const nextReward = card.available_rewards?.find(r => r.points_cost > card.current_points) || card.available_rewards?.[0];
               const pointsProgress = nextReward ? Math.min((card.current_points / nextReward.points_cost) * 100, 100) : 0;
+              const canRedeem = nextReward && card.current_points >= nextReward.points_cost;
 
               return (
                 <Link key={card.id} href="/dashboard/loyalty" className="card p-5 hover:shadow-lg transition-all group tilt-card">
@@ -316,20 +324,34 @@ export default function ConsumerDashboardPage() {
                       <p className="text-sm font-semibold text-gray-900 truncate">{vendorName}</p>
                       <p className="text-xs text-gray-400 truncate">{program.name}</p>
                     </div>
+                    {canRedeem && (
+                      <span className="bg-gradient-to-r from-green-400 to-emerald-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full animate-bounce-subtle shadow-sm">REWARD!</span>
+                    )}
                   </div>
-                  <div className="text-center mb-2">
-                    <p className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-sky-500 bg-clip-text text-transparent">{card.current_points}</p>
+                  <div className="text-center mb-3">
+                    <p className="text-3xl font-bold bg-gradient-to-br from-blue-600 to-sky-500 bg-clip-text text-transparent">{card.current_points.toLocaleString()}</p>
                     <p className="text-xs text-gray-400">points</p>
                   </div>
-                  {nextReward && (
-                    <>
-                      <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-                        <div className="h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-sky-500 progress-fill" style={{ width: `${pointsProgress}%` }} />
+                  {nextReward ? (
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-gray-400">{card.current_points.toLocaleString()} / {nextReward.points_cost.toLocaleString()} pts</span>
+                        <span className="font-medium text-gray-500">{Math.round(pointsProgress)}%</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1.5">
-                        {card.current_points >= nextReward.points_cost ? `Redeem: ${nextReward.name}` : `${nextReward.points_cost - card.current_points} pts to ${nextReward.name}`}
-                      </p>
-                    </>
+                      <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+                        <div className={`h-2.5 rounded-full progress-fill ${canRedeem ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-blue-500 to-sky-500'}`} style={{ width: `${pointsProgress}%` }} />
+                      </div>
+                      <div className="mt-2 bg-blue-50 rounded-lg px-3 py-1.5 text-center">
+                        <p className="text-[10px] text-gray-400">Reward:</p>
+                        <p className="text-xs font-bold text-blue-600">
+                          {canRedeem ? `Ready to redeem: ${nextReward.name}` : `${(nextReward.points_cost - card.current_points).toLocaleString()} more pts to ${nextReward.name}`}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xs text-gray-400 text-center">Keep earning points with each redemption!</p>
+                    </div>
                   )}
                 </Link>
               );
