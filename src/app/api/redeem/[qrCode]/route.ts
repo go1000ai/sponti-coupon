@@ -92,8 +92,13 @@ export async function POST(
     }, { status: 400 });
   }
 
+  // Use service role client for cross-user updates (vendor updating customer's claim)
+  // RLS on claims table restricts updates to the claim owner (customer), so vendor
+  // context would silently fail. Service role bypasses RLS after authorization checks above.
+  const serviceClient = await createServiceRoleClient();
+
   // Mark as redeemed — atomic: only update if still NOT redeemed (prevents race conditions)
-  const { data: updatedClaim, error: updateError } = await supabase
+  const { data: updatedClaim, error: updateError } = await serviceClient
     .from('claims')
     .update({
       redeemed: true,
@@ -117,7 +122,7 @@ export async function POST(
   const remainingBalance = Math.max(0, dealPrice - depositPaid);
 
   // Create redemption record with payment tracking data
-  const { data: redemptionRecord } = await supabase
+  const { data: redemptionRecord } = await serviceClient
     .from('redemptions')
     .insert({
       claim_id: claim.id,
@@ -136,7 +141,7 @@ export async function POST(
   // Awards loyalty across ALL active programs for this vendor
   const loyaltyAwards: { program_type: string; program_name: string; earned: string; current: string }[] = [];
   try {
-    const serviceClient = await createServiceRoleClient();
+    // serviceClient already created above for claim update
 
     // Get active, non-expired loyalty programs for this vendor
     const { data: programs } = await serviceClient
