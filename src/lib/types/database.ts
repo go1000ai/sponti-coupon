@@ -183,6 +183,8 @@ export interface Claim {
   redeemed: boolean;
   redeemed_at: string | null;
   review_request_sent_at: string | null;
+  expiration_reminder_3d_sent_at: string | null;
+  expiration_reminder_1d_sent_at: string | null;
   payment_method_type: string | null;
   payment_tier: string | null;
   stripe_checkout_session_id: string | null;

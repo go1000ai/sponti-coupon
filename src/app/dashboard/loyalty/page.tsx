@@ -835,6 +835,39 @@ function CardDetailModal({
                 <p className="text-sm text-gray-400 mt-1">current points</p>
               </div>
 
+              {/* Next reward progress indicator */}
+              {(() => {
+                const nextReward = card.available_rewards.find(r => r.points_cost > card.current_points);
+                const affordableReward = [...card.available_rewards].reverse().find(r => r.points_cost <= card.current_points);
+                if (nextReward) {
+                  const needed = nextReward.points_cost - card.current_points;
+                  const progress = Math.min((card.current_points / nextReward.points_cost) * 100, 100);
+                  return (
+                    <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 mt-2">
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="text-gray-500">Next reward: <span className="font-semibold text-blue-600">{nextReward.name}</span></span>
+                        <span className="font-bold text-blue-600">{nextReward.points_cost.toLocaleString()} pts</span>
+                      </div>
+                      <div className="h-2.5 bg-blue-100 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+                      </div>
+                      <p className="text-xs text-blue-600 font-semibold mt-1.5">
+                        {needed.toLocaleString()} more points needed
+                      </p>
+                    </div>
+                  );
+                } else if (affordableReward) {
+                  return (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-xl p-4 mt-2 text-center">
+                      <Gift className="w-5 h-5 text-green-500 mx-auto mb-1" />
+                      <p className="text-sm font-semibold text-green-700">You can redeem a reward!</p>
+                      <p className="text-xs text-green-600 mt-0.5">Choose from available rewards below</p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
               {/* Rewards list */}
               {card.available_rewards.length > 0 && (
                 <div className="space-y-2">

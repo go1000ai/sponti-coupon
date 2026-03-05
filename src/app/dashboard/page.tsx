@@ -46,6 +46,7 @@ interface StatCard {
   iconBg: string;
   textColor: string;
   labelColor: string;
+  href: string;
 }
 
 export default function ConsumerDashboardPage() {
@@ -121,6 +122,7 @@ export default function ConsumerDashboardPage() {
       iconBg: 'bg-gradient-to-br from-green-500 to-emerald-600',
       textColor: 'text-green-700',
       labelColor: 'text-green-600',
+      href: '/dashboard/savings',
     },
     {
       label: 'Active Deals',
@@ -131,6 +133,7 @@ export default function ConsumerDashboardPage() {
       iconBg: 'bg-gradient-to-br from-primary-500 to-orange-500',
       textColor: 'text-primary-700',
       labelColor: 'text-primary-600',
+      href: '/dashboard/my-deals',
     },
     {
       label: 'Deals Redeemed',
@@ -141,6 +144,7 @@ export default function ConsumerDashboardPage() {
       iconBg: 'bg-gradient-to-br from-blue-500 to-blue-600',
       textColor: 'text-blue-700',
       labelColor: 'text-blue-600',
+      href: '/dashboard/my-deals?status=redeemed',
     },
     {
       label: 'Pending Savings',
@@ -151,6 +155,7 @@ export default function ConsumerDashboardPage() {
       iconBg: 'bg-gradient-to-br from-blue-500 to-sky-600',
       textColor: 'text-blue-700',
       labelColor: 'text-blue-600',
+      href: '/dashboard/my-deals?status=active',
     },
   ];
 
@@ -183,23 +188,25 @@ export default function ConsumerDashboardPage() {
       {/* Stats cards — staggered */}
       <div data-tour="customer-stats" className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, i) => (
-          <div
+          <Link
             key={stat.label}
-            className={`card p-4 sm:p-5 bg-gradient-to-br ${stat.bgGradient} tilt-card animate-fade-up`}
+            href={stat.href}
+            className={`card p-4 sm:p-5 bg-gradient-to-br ${stat.bgGradient} tilt-card animate-fade-up hover:shadow-lg transition-all group cursor-pointer`}
             style={{ animationDelay: `${i * 100 + 100}ms` }}
           >
             <div className="flex items-center gap-3">
-              <div className={`${stat.iconBg} rounded-xl p-2.5 flex-shrink-0 shadow-lg`}>
+              <div className={`${stat.iconBg} rounded-xl p-2.5 flex-shrink-0 shadow-lg group-hover:scale-110 transition-transform`}>
                 {stat.icon}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className={`text-xs font-medium ${stat.labelColor}`}>{stat.label}</p>
                 <p className={`text-xl md:text-2xl font-bold ${stat.textColor} truncate`}>
                   {stat.formatted}
                 </p>
               </div>
+              <ArrowRight className={`w-4 h-4 ${stat.labelColor} opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0`} />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 

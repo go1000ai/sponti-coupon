@@ -149,8 +149,8 @@ export function SpontiPointsWallet() {
           {data.balance < data.min_redeem_points ? (
             <div className="mb-4">
               <div className="flex items-center justify-between text-xs text-white/80 mb-1">
-                <span>{data.min_redeem_points - data.balance} pts to first reward</span>
-                <span>{data.min_redeem_points} pts</span>
+                <span>{(data.min_redeem_points - data.balance).toLocaleString()} pts to first reward</span>
+                <span>{data.min_redeem_points.toLocaleString()} pts</span>
               </div>
               <div className="h-2 bg-white/20 rounded-full overflow-hidden">
                 <div
@@ -158,15 +158,21 @@ export function SpontiPointsWallet() {
                   style={{ width: `${progressToRedeem}%` }}
                 />
               </div>
+              <p className="text-xs text-white/70 mt-1.5">
+                Earn {(data.min_redeem_points - data.balance).toLocaleString()} more points to redeem {formatCurrency((data.min_redeem_points) / 100)} credit
+              </p>
             </div>
           ) : (
-            <div className="mb-4">
+            <div className="mb-4 space-y-2">
               <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
                 <Gift className="w-4 h-4" />
                 <span className="text-sm font-medium">
                   {formatCurrency(data.max_credit)} credit available!
                 </span>
               </div>
+              <p className="text-xs text-white/70">
+                100 pts = $1.00 &bull; You can redeem {formatCurrency(data.max_credit)} now ({(Math.floor(data.balance / 100) * 100).toLocaleString()} pts)
+              </p>
             </div>
           )}
 
