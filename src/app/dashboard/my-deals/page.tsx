@@ -71,19 +71,29 @@ function DashboardMyDealsContent() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [paidBanner, setPaidBanner] = useState(searchParams?.get('paid') === 'true');
 
-  const fetchClaims = useCallback(async () => {
-    setLoading(true);
+  const fetchClaims = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     const params = filter !== 'all' ? `?status=${filter}` : '';
     const response = await fetch(`/api/claims${params}`);
     const data = await response.json();
-    setClaims(data.claims || []);
-    setLoading(false);
+    const newClaims = data.claims || [];
+    setClaims(newClaims);
+    // Keep selected claim in sync with fresh data
+    setSelectedClaim(prev => prev ? newClaims.find((c: Claim) => c.id === prev.id) || null : null);
+    if (!silent) setLoading(false);
   }, [filter]);
 
   useEffect(() => {
     if (!user) return;
     fetchClaims();
   }, [user, filter, fetchClaims]);
+
+  // Poll every 10s for real-time-ish updates (e.g. vendor redeems while customer is viewing)
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(() => fetchClaims(true), 10000);
+    return () => clearInterval(interval);
+  }, [user, fetchClaims]);
 
   const getStatus = (claim: Claim): ClaimStatus => {
     if (claim.redeemed) return 'redeemed';
