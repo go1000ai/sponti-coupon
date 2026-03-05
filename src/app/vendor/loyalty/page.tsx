@@ -797,7 +797,7 @@ function CreateProgramModal({
         {/* Header */}
         <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-6 pb-10">
           <FloatingParticles count={4} />
-          <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
+          <button onClick={onClose} className="absolute top-4 right-4 z-10 p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all">
             <X className="w-5 h-5" />
           </button>
           <div className="relative">
