@@ -13,7 +13,7 @@ export async function postMarketingContent(
   item: MarketingContentItem
 ): Promise<{ success: boolean; errors: string[] }> {
   const errors: string[] = [];
-  const results: Record<string, { postId?: string; postUrl?: string }> = {};
+  const results: Record<string, string | undefined> = {};
 
   // Update status to posting
   await supabase
