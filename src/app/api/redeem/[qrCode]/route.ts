@@ -132,12 +132,13 @@ export async function POST(
   try {
     const serviceClient = await createServiceRoleClient();
 
-    // Get all active loyalty programs for this vendor
+    // Get active, non-expired loyalty programs for this vendor
     const { data: programs } = await serviceClient
       .from('loyalty_programs')
       .select('*')
       .eq('vendor_id', user.id)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
     if (programs && programs.length > 0) {
       for (const program of programs) {

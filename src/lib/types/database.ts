@@ -310,6 +310,7 @@ export interface LoyaltyProgram {
   punch_reward: string | null;
   points_per_dollar: number | null;
   point_value: number | null;
+  expires_at: string | null;
   created_at: string;
   updated_at: string;
   // Joined

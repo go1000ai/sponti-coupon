@@ -709,6 +709,11 @@ function DetailModal({
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">{deal.title}</h2>
+          {deal.id && (
+            <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+              Ref: #{(deal.id as string).slice(0, 8).toUpperCase()}
+            </p>
+          )}
           {vendor && (
             <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
               <Store className="w-3.5 h-3.5" />

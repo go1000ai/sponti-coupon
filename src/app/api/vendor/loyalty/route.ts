@@ -181,6 +181,35 @@ export async function POST(request: NextRequest) {
   }
 
   const serviceClient = await createServiceRoleClient();
+
+  // Enforce: only ONE active program at a time
+  const { data: activePrograms } = await serviceClient
+    .from('loyalty_programs')
+    .select('id, program_type')
+    .eq('vendor_id', check.user.id)
+    .eq('is_active', true);
+
+  if (activePrograms && activePrograms.length > 0) {
+    return NextResponse.json({
+      error: `You already have an active ${activePrograms[0].program_type === 'punch_card' ? 'Punch Card' : 'Points'} program. Deactivate it first before creating a new program.`,
+    }, { status: 409 });
+  }
+
+  // Accept expires_at: date string or duration preset
+  let expiresAt: string | null = null;
+  if (body.expires_at) {
+    if (body.expires_at === 'never') {
+      expiresAt = null;
+    } else if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+      const months = parseInt(body.expires_at);
+      const d = new Date();
+      d.setMonth(d.getMonth() + months);
+      expiresAt = d.toISOString();
+    } else {
+      expiresAt = body.expires_at; // raw ISO date
+    }
+  }
+
   const { data: program, error } = await serviceClient
     .from('loyalty_programs')
     .insert({
@@ -192,6 +221,7 @@ export async function POST(request: NextRequest) {
       punch_reward: program_type === 'punch_card' ? punch_reward : null,
       points_per_dollar: program_type === 'points' ? points_per_dollar : null,
       point_value: program_type === 'points' ? (point_value || 1) : null,
+      expires_at: expiresAt,
     })
     .select()
     .single();
@@ -222,6 +252,18 @@ export async function PUT(request: NextRequest) {
   if (body.punch_reward !== undefined) updates.punch_reward = body.punch_reward;
   if (body.points_per_dollar !== undefined) updates.points_per_dollar = body.points_per_dollar;
   if (body.point_value !== undefined) updates.point_value = body.point_value;
+  if (body.expires_at !== undefined) {
+    if (body.expires_at === 'never' || body.expires_at === null) {
+      updates.expires_at = null;
+    } else if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+      const months = parseInt(body.expires_at);
+      const d = new Date();
+      d.setMonth(d.getMonth() + months);
+      updates.expires_at = d.toISOString();
+    } else {
+      updates.expires_at = body.expires_at;
+    }
+  }
 
   const serviceClient = await createServiceRoleClient();
 
