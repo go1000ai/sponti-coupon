@@ -170,13 +170,16 @@ export async function GET(request: NextRequest) {
       filtered = filtered.filter((c) => c.status === status);
     }
 
-    // Apply search filter (customer name, deal title, vendor name)
+    // Apply search filter (customer name, deal title, vendor name, deal ref, redemption code, email)
     if (search) {
       filtered = filtered.filter(
         (c) =>
           c.customer_name.toLowerCase().includes(search) ||
           c.deal_title.toLowerCase().includes(search) ||
-          c.vendor_name.toLowerCase().includes(search)
+          c.vendor_name.toLowerCase().includes(search) ||
+          c.deal_id.slice(0, 8).toLowerCase().includes(search.replace('#', '')) ||
+          (c.customer_email && c.customer_email.toLowerCase().includes(search)) ||
+          (c.redemption_code && c.redemption_code.toLowerCase().includes(search))
       );
     }
 

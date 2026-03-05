@@ -479,7 +479,7 @@ export default function AdminClaimsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by customer, deal, or vendor..."
+              placeholder="Search by customer, deal, vendor, Deal Ref, or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field pl-10"
@@ -550,6 +550,7 @@ export default function AdminClaimsPage() {
                       <p className="text-sm text-gray-900 truncate max-w-[180px]">
                         {claim.deal_title}
                       </p>
+                      <p className="text-[10px] text-gray-400 font-mono">Ref: #{claim.deal_id.slice(0, 8).toUpperCase()}</p>
                       <span className={`inline-flex items-center text-[10px] px-1.5 py-0.5 rounded font-medium mt-0.5 ${
                         claim.deal_type === 'sponti_coupon'
                           ? 'bg-orange-50 text-orange-600'
