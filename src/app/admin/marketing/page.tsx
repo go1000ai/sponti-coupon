@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
-  Sparkles, Calendar, CheckCircle2, XCircle, Clock, Send, Eye,
-  RefreshCw, Loader2, ChevronDown, ExternalLink, Edit3, Trash2,
+  Sparkles, CheckCircle2, XCircle, Clock, Send,
+  RefreshCw, Loader2, Edit3,
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
   Facebook, Instagram,
 } from 'lucide-react';
