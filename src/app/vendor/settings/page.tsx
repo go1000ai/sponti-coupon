@@ -949,6 +949,8 @@ export default function VendorSettingsPage() {
                           ) : (
                             <a
                               href="/api/social/connect/facebook/authorize"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
                               Connect
@@ -990,6 +992,8 @@ export default function VendorSettingsPage() {
                           ) : (
                             <a
                               href="/api/social/connect/instagram/authorize"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
                               Connect
@@ -1031,6 +1035,8 @@ export default function VendorSettingsPage() {
                           ) : (
                             <a
                               href="/api/social/connect/twitter/authorize"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
                               Connect
@@ -1072,6 +1078,8 @@ export default function VendorSettingsPage() {
                           ) : (
                             <a
                               href="/api/social/connect/tiktok/authorize"
+                              target="_blank"
+                              rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
                               Connect

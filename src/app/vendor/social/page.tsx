@@ -226,6 +226,8 @@ export default function VendorSocialPage() {
                     ) : (
                       <a
                         href={connectUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-[#E8632B] hover:text-orange-700 font-medium"
                       >
                         Connect <ArrowRight className="w-3 h-3" />

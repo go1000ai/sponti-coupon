@@ -98,6 +98,8 @@ export default function StripeConnectBanner() {
                   </p>
                   <a
                     href="/api/stripe/connect/authorize"
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 mt-1.5 text-xs font-semibold text-[#635BFF] hover:underline"
                   >
                     <Image src="/logos/stripe.svg" alt="Stripe" width={40} height={16} /> Complete Onboarding
@@ -137,6 +139,8 @@ export default function StripeConnectBanner() {
           </p>
           <a
             href="/api/stripe/connect/authorize"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-[#635BFF] hover:bg-[#5851DB] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#635BFF]/20"
           >
             <Image src="/logos/stripe.svg" alt="Stripe" width={48} height={20} className="brightness-0 invert" />
