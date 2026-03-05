@@ -5,6 +5,7 @@ import {
   QrCode, CheckCircle2, XCircle, Camera, DollarSign, Hash,
   CreditCard, AlertCircle, Loader2, Star, Sparkles, ArrowLeft, ExternalLink, Copy, Check,
 } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 
@@ -88,8 +89,75 @@ export default function ScanPage() {
   const [copied, setCopied] = useState(false);
   const [stripePaid, setStripePaid] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState<boolean | null>(null); // null = loading
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const scannerContainerId = 'qr-reader';
 
-  const extractCode = (input: string): string => {
+  // Start/stop camera scanner when mode changes
+  useEffect(() => {
+    if (mode === 'qr' && step === 'input') {
+      setCameraError(null);
+      // Small delay to let the DOM element render
+      const timer = setTimeout(() => {
+        const el = document.getElementById(scannerContainerId);
+        if (!el) return;
+
+        const scanner = new Html5Qrcode(scannerContainerId);
+        scannerRef.current = scanner;
+
+        scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            // QR decoded — stop scanner and auto-verify
+            scanner.stop().catch(() => {});
+            scannerRef.current = null;
+            const code = extractCodeFromText(decodedText);
+            setCodeInput(code);
+            // Auto-verify after setting code
+            handleVerifyCode(code);
+          },
+          () => { /* ignore scan failures (no QR in frame yet) */ }
+        ).catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
+            setCameraError('Camera permission denied. Please allow camera access in your browser settings.');
+          } else if (msg.includes('NotFoundError')) {
+            setCameraError('No camera found on this device.');
+          } else {
+            setCameraError('Could not start camera. Try pasting the QR URL below instead.');
+          }
+        });
+      }, 300);
+
+      return () => {
+        clearTimeout(timer);
+        if (scannerRef.current) {
+          scannerRef.current.stop().catch(() => {});
+          scannerRef.current = null;
+        }
+      };
+    } else {
+      // Stop scanner when leaving QR mode
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, step]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, []);
+
+  const extractCodeFromText = (input: string): string => {
     const match = input.match(/redeem\/([a-f0-9-]{36})/i);
     if (match) return match[1];
     if (/^[a-f0-9-]{36}$/i.test(input.trim())) return input.trim();
@@ -128,9 +196,14 @@ export default function ScanPage() {
     }
   };
 
+  // Called by QR scanner callback to auto-verify scanned code
+  const handleVerifyCode = (code: string) => {
+    handleVerify(code);
+  };
+
   // Step 1 → Step 2: Verify code (GET - no redemption yet)
   const handleVerify = async (codeOverride?: string) => {
-    const code = codeOverride || (mode === 'code' ? digits.join('') : extractCode(codeInput));
+    const code = codeOverride || (mode === 'code' ? digits.join('') : extractCodeFromText(codeInput));
     if (!code || (mode === 'code' && code.length !== 6)) return;
 
     setScanning(true);
@@ -406,27 +479,47 @@ export default function ScanPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  QR Code or Redemption URL
-                </label>
-                <input
-                  value={codeInput}
-                  onChange={e => setCodeInput(e.target.value)}
-                  className="input-field"
-                  placeholder="Enter QR code UUID or paste full URL"
-                  onKeyDown={e => e.key === 'Enter' && handleVerify()}
-                />
-                <button
-                  onClick={() => handleVerify()}
-                  disabled={scanning || !codeInput.trim()}
-                  className="btn-primary w-full"
-                >
-                  {scanning ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
-                    </span>
-                  ) : 'Verify QR Code'}
-                </button>
+                {/* Camera viewfinder */}
+                <div className="relative rounded-xl overflow-hidden bg-black">
+                  <div id={scannerContainerId} className="w-full" style={{ minHeight: 280 }} />
+                  {scanning && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                      <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {cameraError && (
+                  <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3">
+                    <p className="font-medium mb-1">Camera unavailable</p>
+                    <p className="text-xs">{cameraError}</p>
+                  </div>
+                )}
+
+                {/* Fallback: manual URL/UUID input */}
+                <div className="border-t border-gray-100 pt-4">
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                    Or paste QR code URL / UUID manually
+                  </label>
+                  <input
+                    value={codeInput}
+                    onChange={e => setCodeInput(e.target.value)}
+                    className="input-field"
+                    placeholder="https://sponticoupon.com/redeem/..."
+                    onKeyDown={e => e.key === 'Enter' && handleVerify()}
+                  />
+                  <button
+                    onClick={() => handleVerify()}
+                    disabled={scanning || !codeInput.trim()}
+                    className="btn-primary w-full mt-2"
+                  >
+                    {scanning ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
+                      </span>
+                    ) : 'Verify Code'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
