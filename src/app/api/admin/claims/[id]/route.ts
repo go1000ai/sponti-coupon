@@ -115,57 +115,6 @@ export async function PUT(
               console.log('[Admin Cancel] Deleted loyalty txns for redemption:', redemption.id, '| Error:', deleteTxnErr);
             }
 
-            // Also check for loyalty transactions linked by claim's customer_id that may have null redemption_id
-            // (fallback for older records where redemption_id wasn't set)
-            if (!loyaltyTxns || loyaltyTxns.length === 0) {
-              console.log('[Admin Cancel] No loyalty txns found by redemption_id, checking by customer + deal...');
-              const { data: fallbackTxns } = await serviceClient
-                .from('loyalty_transactions')
-                .select('id, card_id, transaction_type, punches_amount, points_amount, created_at')
-                .eq('customer_id', claim.customer_id)
-                .is('redemption_id', null)
-                .order('created_at', { ascending: false })
-                .limit(10);
-
-              console.log('[Admin Cancel] Fallback txns with null redemption_id:', fallbackTxns?.length || 0);
-
-              if (fallbackTxns && fallbackTxns.length > 0) {
-                // Only reverse the most recent transaction(s) that match the redemption timeframe
-                for (const txn of fallbackTxns) {
-                  if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
-                    const { data: card } = await serviceClient
-                      .from('loyalty_cards')
-                      .select('current_punches, total_punches_earned')
-                      .eq('id', txn.card_id)
-                      .single();
-                    if (card) {
-                      await serviceClient.from('loyalty_cards').update({
-                        current_punches: Math.max(0, card.current_punches - txn.punches_amount),
-                        total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
-                      }).eq('id', txn.card_id);
-                    }
-                    await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
-                    console.log('[Admin Cancel] Reversed fallback punch txn:', txn.id);
-                    break; // Only reverse one punch transaction
-                  } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
-                    const { data: card } = await serviceClient
-                      .from('loyalty_cards')
-                      .select('current_points, total_points_earned')
-                      .eq('id', txn.card_id)
-                      .single();
-                    if (card) {
-                      await serviceClient.from('loyalty_cards').update({
-                        current_points: Math.max(0, card.current_points - txn.points_amount),
-                        total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
-                      }).eq('id', txn.card_id);
-                    }
-                    await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
-                    console.log('[Admin Cancel] Reversed fallback points txn:', txn.id);
-                    break; // Only reverse one points transaction
-                  }
-                }
-              }
-            }
 
             // Reverse SpontiPoints
             const { error: spDeleteErr } = await serviceClient.from('spontipoints_ledger').delete().eq('redemption_id', redemption.id);
@@ -177,53 +126,87 @@ export async function PUT(
           }
         } else {
           console.log('[Admin Cancel] No redemption records found for claim:', id, '— checking for orphaned loyalty data...');
+        }
 
-          // Even without a redemption record, try to clean up loyalty data
-          // This handles edge cases where the redemption record was already deleted
-          const { data: orphanedTxns } = await serviceClient
-            .from('loyalty_transactions')
-            .select('id, card_id, transaction_type, punches_amount, points_amount')
-            .eq('customer_id', claim.customer_id)
-            .is('redemption_id', null)
-            .order('created_at', { ascending: false })
-            .limit(10);
+        // Always check for orphaned loyalty transactions for this customer
+        // This handles: null redemption_id, dangling redemption_id (pointing to deleted record), etc.
+        const { data: allCustomerTxns } = await serviceClient
+          .from('loyalty_transactions')
+          .select('id, card_id, transaction_type, punches_amount, points_amount, redemption_id')
+          .eq('customer_id', claim.customer_id)
+          .order('created_at', { ascending: false });
 
-          console.log('[Admin Cancel] Orphaned loyalty txns found:', orphanedTxns?.length || 0);
+        if (allCustomerTxns && allCustomerTxns.length > 0) {
+          // Find which redemption_ids still exist
+          const ridMap: Record<string, boolean> = {};
+          const uniqueRedemptionIds = allCustomerTxns
+            .map(t => t.redemption_id)
+            .filter((rid): rid is string => {
+              if (rid === null || ridMap[rid]) return false;
+              ridMap[rid] = true;
+              return true;
+            });
 
-          if (orphanedTxns && orphanedTxns.length > 0) {
-            for (const txn of orphanedTxns) {
-              if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
-                const { data: card } = await serviceClient
-                  .from('loyalty_cards')
-                  .select('current_punches, total_punches_earned')
-                  .eq('id', txn.card_id)
-                  .single();
-                if (card) {
-                  await serviceClient.from('loyalty_cards').update({
-                    current_punches: Math.max(0, card.current_punches - txn.punches_amount),
-                    total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
-                  }).eq('id', txn.card_id);
-                }
-                await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
-                console.log('[Admin Cancel] Reversed orphaned punch txn:', txn.id);
-                break;
-              } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
-                const { data: card } = await serviceClient
-                  .from('loyalty_cards')
-                  .select('current_points, total_points_earned')
-                  .eq('id', txn.card_id)
-                  .single();
-                if (card) {
-                  await serviceClient.from('loyalty_cards').update({
-                    current_points: Math.max(0, card.current_points - txn.points_amount),
-                    total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
-                  }).eq('id', txn.card_id);
-                }
-                await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
-                console.log('[Admin Cancel] Reversed orphaned points txn:', txn.id);
-                break;
+          const orphanedRedemptionIdList: string[] = [];
+          if (uniqueRedemptionIds.length > 0) {
+            const { data: existingRedemptions } = await serviceClient
+              .from('redemptions')
+              .select('id')
+              .in('id', uniqueRedemptionIds);
+
+            const existingIdMap: Record<string, boolean> = {};
+            (existingRedemptions || []).forEach(r => { existingIdMap[r.id] = true; });
+            for (const rid of uniqueRedemptionIds) {
+              if (!existingIdMap[rid]) {
+                orphanedRedemptionIdList.push(rid);
               }
             }
+          }
+
+          const orphanedIdMap: Record<string, boolean> = {};
+          orphanedRedemptionIdList.forEach(rid => { orphanedIdMap[rid] = true; });
+
+          // Reverse orphaned transactions (null redemption_id OR dangling redemption_id)
+          const orphanedTxns = allCustomerTxns.filter(t =>
+            t.redemption_id === null || orphanedIdMap[t.redemption_id] === true
+          );
+
+          console.log('[Admin Cancel] Orphaned loyalty txns found:', orphanedTxns.length, '| Dangling IDs:', orphanedRedemptionIdList);
+
+          for (const txn of orphanedTxns) {
+            if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
+              const { data: card } = await serviceClient
+                .from('loyalty_cards')
+                .select('current_punches, total_punches_earned')
+                .eq('id', txn.card_id)
+                .single();
+              if (card) {
+                await serviceClient.from('loyalty_cards').update({
+                  current_punches: Math.max(0, card.current_punches - txn.punches_amount),
+                  total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
+                }).eq('id', txn.card_id);
+              }
+            } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
+              const { data: card } = await serviceClient
+                .from('loyalty_cards')
+                .select('current_points, total_points_earned')
+                .eq('id', txn.card_id)
+                .single();
+              if (card) {
+                await serviceClient.from('loyalty_cards').update({
+                  current_points: Math.max(0, card.current_points - txn.points_amount),
+                  total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
+                }).eq('id', txn.card_id);
+              }
+            }
+            await serviceClient.from('loyalty_transactions').delete().eq('id', txn.id);
+            console.log('[Admin Cancel] Reversed orphaned txn:', txn.id, '| type:', txn.transaction_type);
+          }
+
+          // Also clean up orphaned SpontiPoints
+          for (const rid of orphanedRedemptionIdList) {
+            await serviceClient.from('spontipoints_ledger').delete().eq('redemption_id', rid);
+            console.log('[Admin Cancel] Cleaned up orphaned SpontiPoints for deleted redemption:', rid);
           }
         }
 
