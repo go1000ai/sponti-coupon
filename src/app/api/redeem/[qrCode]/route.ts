@@ -92,17 +92,23 @@ export async function POST(
     }, { status: 400 });
   }
 
-  // Mark as redeemed
-  const { error: updateError } = await supabase
+  // Mark as redeemed — atomic: only update if still NOT redeemed (prevents race conditions)
+  const { data: updatedClaim, error: updateError } = await supabase
     .from('claims')
     .update({
       redeemed: true,
       redeemed_at: new Date().toISOString(),
     })
-    .eq('id', claim.id);
+    .eq('id', claim.id)
+    .eq('redeemed', false)
+    .select('id')
+    .single();
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError || !updatedClaim) {
+    return NextResponse.json({
+      error: 'This code has already been redeemed',
+      code: 'ALREADY_REDEEMED',
+    }, { status: 400 });
   }
 
   // Calculate remaining balance: deal price - deposit already paid
