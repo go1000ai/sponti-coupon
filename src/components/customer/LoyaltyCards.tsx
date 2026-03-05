@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gift, Stamp, Star, Check, Lock, Loader2, Award } from 'lucide-react';
+import { Gift, Stamp, Star, Check, Lock, Loader2, Award, Calendar } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, Vendor } from '@/lib/types/database';
 
 interface LoyaltyCardData {
@@ -128,6 +128,9 @@ function PunchCardView({
       </div>
 
       <div className="p-4">
+        {/* Expiration notice */}
+        {program.expires_at && <CompactExpirationBadge expiresAt={program.expires_at} />}
+
         {/* Stamp Grid */}
         <div className="flex flex-wrap gap-2 justify-center mb-3">
           {stamps.map((filled, i) => {
@@ -221,6 +224,9 @@ function PointsCardView({
       </div>
 
       <div className="p-4">
+        {/* Expiration notice */}
+        {program.expires_at && <CompactExpirationBadge expiresAt={program.expires_at} />}
+
         {/* Points Balance */}
         <div className="text-center mb-3">
           <p className="text-3xl font-extrabold text-gray-900">{card.current_points.toLocaleString()}</p>
@@ -279,6 +285,33 @@ function PointsCardView({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────
+   Compact Expiration Badge
+   ────────────────────────────────────────── */
+function CompactExpirationBadge({ expiresAt }: { expiresAt: string }) {
+  const expDate = new Date(expiresAt);
+  const now = new Date();
+  const isExpired = expDate < now;
+  const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isExpiringSoon = !isExpired && daysLeft <= 30;
+
+  return (
+    <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium mb-3 ${
+      isExpired
+        ? 'bg-red-50 text-red-600'
+        : isExpiringSoon
+          ? 'bg-amber-50 text-amber-700'
+          : 'bg-gray-50 text-gray-500'
+    }`}>
+      <Calendar className="w-3 h-3 shrink-0" />
+      {isExpired
+        ? 'Expired'
+        : `Expires ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      }
     </div>
   );
 }

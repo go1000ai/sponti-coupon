@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   Gift, Stamp, Star, Check, Lock, Loader2, Award, ChevronDown, ChevronUp,
-  TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store, Coins,
+  TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store, Coins, Calendar,
 } from 'lucide-react';
 import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import type { LoyaltyProgram, LoyaltyReward } from '@/lib/types/database';
@@ -423,6 +423,11 @@ function PunchCardFull({
       </div>
 
       <div className="p-5">
+        {/* Expiration notice */}
+        {program.expires_at && (
+          <ExpirationBadge expiresAt={program.expires_at} />
+        )}
+
         {/* Progress bar */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-gray-400 mb-1.5">
@@ -541,6 +546,11 @@ function PointsCardFull({
       </div>
 
       <div className="p-5">
+        {/* Expiration notice */}
+        {program.expires_at && (
+          <ExpirationBadge expiresAt={program.expires_at} />
+        )}
+
         {/* Points Balance */}
         <div className="text-center mb-4">
           <div className="inline-flex items-baseline gap-1">
@@ -753,6 +763,17 @@ function CardDetailModal({
             {program.description && (
               <p className="text-sm text-white/60 mt-3">{program.description}</p>
             )}
+
+            {program.expires_at && (() => {
+              const expDate = new Date(program.expires_at);
+              const isExpired = expDate < new Date();
+              return (
+                <div className={`mt-3 rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${isExpired ? 'bg-red-500/20 text-red-200' : 'bg-white/10 text-white/80'}`}>
+                  <Calendar className="w-4 h-4 shrink-0" />
+                  {isExpired ? 'Expired' : 'Expires'} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              );
+            })()}
           </div>
         </div>
 
@@ -926,6 +947,36 @@ function CardDetailModal({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────
+   Expiration Badge (shared by card components)
+   ────────────────────────────────────────── */
+function ExpirationBadge({ expiresAt }: { expiresAt: string }) {
+  const expDate = new Date(expiresAt);
+  const now = new Date();
+  const isExpired = expDate < now;
+  const daysLeft = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const isExpiringSoon = !isExpired && daysLeft <= 30;
+
+  return (
+    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium mb-3 ${
+      isExpired
+        ? 'bg-red-50 text-red-600 border border-red-200'
+        : isExpiringSoon
+          ? 'bg-amber-50 text-amber-700 border border-amber-200'
+          : 'bg-gray-50 text-gray-500 border border-gray-200'
+    }`}>
+      <Calendar className="w-3.5 h-3.5 shrink-0" />
+      {isExpired
+        ? 'Program expired'
+        : isExpiringSoon
+          ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} — ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+          : `Expires ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+      }
     </div>
   );
 }
