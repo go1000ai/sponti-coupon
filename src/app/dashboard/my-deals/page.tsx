@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -52,6 +52,14 @@ const sortLabels: Record<SortOption, string> = {
 };
 
 export default function DashboardMyDealsPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500" /></div>}>
+      <DashboardMyDealsContent />
+    </Suspense>
+  );
+}
+
+function DashboardMyDealsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [claims, setClaims] = useState<Claim[]>([]);
