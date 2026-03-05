@@ -82,11 +82,19 @@ export async function POST(request: NextRequest) {
 
   const sessionToken = uuidv4();
 
-  // For Sponti deals, customer gets the vendor-set redemption window (4-24h) from purchase time
-  let claimExpiresAt = deal.expires_at;
+  // Calculate claim expiration based on deal type
+  let claimExpiresAt: string;
   if (deal.deal_type === 'sponti_coupon') {
+    // Sponti deals: vendor-set redemption window (4-24h) from purchase time
     const hours = deal.redemption_hours || 24;
     claimExpiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+  } else {
+    // Steady deals: automatic redemption window based on deal duration
+    // Gives customers enough time to visit even if they claim on the last day
+    const dealDurationMs = new Date(deal.expires_at).getTime() - new Date(deal.starts_at).getTime();
+    const dealDurationDays = Math.ceil(dealDurationMs / (24 * 60 * 60 * 1000));
+    const redemptionWindowDays = dealDurationDays <= 7 ? 7 : dealDurationDays <= 21 ? 21 : 30;
+    claimExpiresAt = new Date(Date.now() + redemptionWindowDays * 24 * 60 * 60 * 1000).toISOString();
   }
 
   // ── No deposit required — instant QR + redemption code ──
