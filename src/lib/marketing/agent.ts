@@ -167,7 +167,7 @@ export async function runMarketingAgent(
         .order('created_at', { ascending: false })
         .limit(10);
 
-      const recentPostTypes = [...new Set((recentPosts || []).map(p => p.content_type))];
+      const recentPostTypes = Array.from(new Set((recentPosts || []).map(p => p.content_type)));
 
       // For vendor spotlight, pick a vendor
       let vendorName: string | undefined;
