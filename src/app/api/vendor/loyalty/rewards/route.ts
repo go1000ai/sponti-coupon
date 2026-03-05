@@ -3,7 +3,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
-async function getVendorProgram(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
+async function getVendorProgram(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>, programId?: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized', status: 401 };
 
@@ -19,18 +19,23 @@ async function getVendorProgram(supabase: Awaited<ReturnType<typeof createServer
   }
 
   const serviceClient = await createServiceRoleClient();
-  const { data: program } = await serviceClient
+
+  // If a specific program_id is provided, use it; otherwise find the vendor's points program
+  let query = serviceClient
     .from('loyalty_programs')
     .select('id, program_type')
     .eq('vendor_id', user.id)
-    .single();
+    .eq('program_type', 'points');
 
-  if (!program) {
-    return { error: 'No loyalty program found. Create one first.', status: 404 };
+  if (programId) {
+    query = query.eq('id', programId);
   }
 
-  if (program.program_type !== 'points') {
-    return { error: 'Reward tiers are only available for points-based programs.', status: 400 };
+  const { data: programs } = await query;
+  const program = programs?.[0];
+
+  if (!program) {
+    return { error: 'No points-based loyalty program found. Create one first.', status: 404 };
   }
 
   return { user, program, serviceClient };
@@ -46,20 +51,21 @@ export async function GET() {
   }
 
   const serviceClient = await createServiceRoleClient();
-  const { data: program } = await serviceClient
+  const { data: programs } = await serviceClient
     .from('loyalty_programs')
     .select('id')
     .eq('vendor_id', user.id)
-    .single();
+    .eq('program_type', 'points');
 
-  if (!program) {
+  if (!programs || programs.length === 0) {
     return NextResponse.json({ rewards: [] });
   }
 
+  const programIds = programs.map(p => p.id);
   const { data: rewards, error } = await serviceClient
     .from('loyalty_rewards')
     .select('*')
-    .eq('program_id', program.id)
+    .in('program_id', programIds)
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -72,13 +78,13 @@ export async function GET() {
 // POST /api/vendor/loyalty/rewards — Add a reward tier
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
-  const check = await getVendorProgram(supabase);
+  const body = await request.json();
+  const { name, description, points_cost, sort_order, program_id: bodyProgramId } = body;
+
+  const check = await getVendorProgram(supabase, bodyProgramId);
   if ('error' in check) {
     return NextResponse.json({ error: check.error }, { status: check.status });
   }
-
-  const body = await request.json();
-  const { name, description, points_cost, sort_order } = body;
 
   if (!name || !points_cost || points_cost < 1) {
     return NextResponse.json({ error: 'Name and points_cost (>0) are required.' }, { status: 400 });
@@ -106,13 +112,13 @@ export async function POST(request: NextRequest) {
 // PUT /api/vendor/loyalty/rewards — Update a reward
 export async function PUT(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
-  const check = await getVendorProgram(supabase);
+  const body = await request.json();
+  const { id, name, description, points_cost, sort_order, is_active, program_id: bodyProgramId } = body;
+
+  const check = await getVendorProgram(supabase, bodyProgramId);
   if ('error' in check) {
     return NextResponse.json({ error: check.error }, { status: check.status });
   }
-
-  const body = await request.json();
-  const { id, name, description, points_cost, sort_order, is_active } = body;
 
   if (!id) {
     return NextResponse.json({ error: 'Reward ID is required.' }, { status: 400 });
@@ -159,21 +165,21 @@ export async function DELETE(request: NextRequest) {
   const serviceClient = await createServiceRoleClient();
 
   // Verify reward belongs to vendor's program
-  const { data: program } = await serviceClient
+  const { data: programs } = await serviceClient
     .from('loyalty_programs')
     .select('id')
-    .eq('vendor_id', user.id)
-    .single();
+    .eq('vendor_id', user.id);
 
-  if (!program) {
+  if (!programs || programs.length === 0) {
     return NextResponse.json({ error: 'No loyalty program found.' }, { status: 404 });
   }
 
+  const programIds = programs.map(p => p.id);
   const { error } = await serviceClient
     .from('loyalty_rewards')
     .delete()
     .eq('id', id)
-    .eq('program_id', program.id);
+    .in('program_id', programIds);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -292,7 +292,7 @@ function ProgramModal({
     if (!rewardForm.name.trim() || rewardForm.points_cost < 1) { showMsg('error', 'Name and cost required.'); return; }
     setSaving(true);
     try {
-      const res = await fetch('/api/vendor/loyalty/rewards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rewardForm) });
+      const res = await fetch('/api/vendor/loyalty/rewards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rewardForm, program_id: programId }) });
       if (res.ok) { showMsg('success', 'Reward added!'); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
       else { const data = await res.json(); showMsg('error', data.error || 'Failed to add reward.'); }
     } catch { showMsg('error', 'Network error.'); }
@@ -302,7 +302,7 @@ function ProgramModal({
   const handleUpdateReward = async (id: string) => {
     setSaving(true);
     try {
-      const res = await fetch('/api/vendor/loyalty/rewards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...rewardForm }) });
+      const res = await fetch('/api/vendor/loyalty/rewards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...rewardForm, program_id: programId }) });
       if (res.ok) { showMsg('success', 'Updated!'); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
       else { const data = await res.json(); showMsg('error', data.error || 'Failed to update reward.'); }
     } catch { showMsg('error', 'Network error.'); }
