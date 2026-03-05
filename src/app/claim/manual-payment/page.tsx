@@ -13,6 +13,7 @@ import {
   QrCode, CheckCircle2, Loader2, Copy, Check,
   Smartphone, ArrowRight, Send,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export default function ManualPaymentPage() {
   return (
@@ -25,6 +26,7 @@ export default function ManualPaymentPage() {
 function ManualPaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLanguage();
   const sessionToken = searchParams.get('session_token');
   const processorType = searchParams.get('processor') as PaymentProcessorType | null;
   const paymentInfo = searchParams.get('payment_info');
@@ -101,13 +103,13 @@ function ManualPaymentContent() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="card p-8 max-w-md w-full text-center">
-          <h2 className="text-xl font-bold text-red-600 mb-2">Something went wrong</h2>
-          <p className="text-gray-500 mb-4">We couldn&apos;t process your confirmation. Please try again or check your deals.</p>
+          <h2 className="text-xl font-bold text-red-600 mb-2">{t('manualPaymentPage.somethingWentWrong')}</h2>
+          <p className="text-gray-500 mb-4">{t('manualPaymentPage.couldntProcess')}</p>
           <button onClick={() => setStatus('instructions')} className="btn-outline mr-2">
-            Try Again
+            {t('manualPaymentPage.tryAgain')}
           </button>
           <button onClick={() => router.push('/dashboard/my-deals')} className="btn-primary">
-            Go to My Deals
+            {t('manualPaymentPage.goToMyDeals')}
           </button>
         </div>
       </div>
@@ -121,9 +123,9 @@ function ManualPaymentContent() {
           <div className="inline-flex bg-green-50 rounded-full p-4 mb-4">
             <CheckCircle2 className="w-12 h-12 text-green-500" />
           </div>
-          <h2 className="text-2xl font-bold text-green-600 mb-2">You&apos;re All Set!</h2>
+          <h2 className="text-2xl font-bold text-green-600 mb-2">{t('manualPaymentPage.allSet')}</h2>
           <p className="text-gray-500 mb-6">
-            Show this code to the vendor when you visit to redeem your deal.
+            {t('manualPaymentPage.showCodeToVendor')}
           </p>
 
           {confirmResult?.qr_code && (
@@ -134,7 +136,7 @@ function ManualPaymentContent() {
 
           {confirmResult?.redemption_code && (
             <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-xs text-gray-400 mb-1">Redemption Code</p>
+              <p className="text-xs text-gray-400 mb-1">{t('manualPaymentPage.redemptionCode')}</p>
               <p className="text-2xl font-mono font-bold text-gray-900 tracking-widest">{confirmResult.redemption_code}</p>
             </div>
           )}
@@ -145,13 +147,13 @@ function ManualPaymentContent() {
 
           {claim?.deal?.expires_at && (
             <div className="bg-primary-50 rounded-lg p-4 mb-6">
-              <p className="text-sm text-primary-600 font-medium mb-2">Redeem before:</p>
+              <p className="text-sm text-primary-600 font-medium mb-2">{t('manualPaymentPage.redeemBefore')}</p>
               <CountdownTimer expiresAt={claim.deal.expires_at} size="md" variant="sponti" />
             </div>
           )}
 
           <button onClick={() => router.push('/dashboard/my-deals')} className="btn-primary w-full">
-            View My Deals
+            {t('manualPaymentPage.viewMyDeals')}
           </button>
         </div>
       </div>
@@ -167,7 +169,7 @@ function ManualPaymentContent() {
           <div className="inline-flex bg-primary-50 rounded-full p-3 mb-3">
             <Smartphone className="w-8 h-8 text-primary-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Complete Your Payment</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('manualPaymentPage.completePayment')}</h2>
           {dealTitle && (
             <p className="text-sm text-gray-500 mt-1">{dealTitle}</p>
           )}
@@ -179,12 +181,12 @@ function ManualPaymentContent() {
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-100">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">1</div>
-              <p className="font-semibold text-gray-900">Send Payment</p>
+              <p className="font-semibold text-gray-900">{t('manualPaymentPage.sendPayment')}</p>
             </div>
             {amount && (
               <div className="text-center py-3">
                 <p className="text-3xl font-bold text-primary-500">{formatCurrency(parseFloat(amount))}</p>
-                <p className="text-sm text-gray-400 mt-1">Amount to send</p>
+                <p className="text-sm text-gray-400 mt-1">{t('manualPaymentPage.amountToSend')}</p>
               </div>
             )}
           </div>
@@ -194,7 +196,7 @@ function ManualPaymentContent() {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">2</div>
               <p className="font-semibold text-gray-900">
-                Pay via {processor?.name || 'the vendor'}
+                {t('manualPaymentPage.payVia', { name: processor?.name || 'the vendor' })}
               </p>
             </div>
 
@@ -209,7 +211,7 @@ function ManualPaymentContent() {
                     height={200}
                     className="object-contain"
                   />
-                  <p className="text-xs text-gray-400 text-center mt-2">Scan to pay via {processor?.name}</p>
+                  <p className="text-xs text-gray-400 text-center mt-2">{t('manualPaymentPage.scanToPay', { name: processor?.name || '' })}</p>
                 </div>
               </div>
             )}
@@ -245,17 +247,17 @@ function ManualPaymentContent() {
             <div className="bg-primary-50 rounded-xl p-5 border border-primary-200">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-7 h-7 rounded-full bg-primary-500 text-white flex items-center justify-center text-sm font-bold">3</div>
-                <p className="font-semibold text-gray-900">Include Reference Code</p>
+                <p className="font-semibold text-gray-900">{t('manualPaymentPage.includeRefCode')}</p>
               </div>
               <p className="text-sm text-gray-600 mb-3">
-                Add this code in the payment note/memo so the vendor can verify your payment:
+                {t('manualPaymentPage.refCodeInstructions')}
               </p>
               <div className="flex items-center justify-center gap-3 bg-white rounded-lg p-4 border-2 border-primary-300">
                 <p className="text-2xl font-mono font-bold text-primary-600 tracking-widest">{paymentReference}</p>
                 <button
                   onClick={handleCopyRef}
                   className="p-2 text-gray-400 hover:text-primary-500 hover:bg-primary-50 rounded-lg transition-colors shrink-0"
-                  title="Copy reference code"
+                  title={t('manualPaymentPage.copyRefCode')}
                 >
                   {copiedRef ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -273,25 +275,24 @@ function ManualPaymentContent() {
           {status === 'confirming' ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Confirming...
+              {t('manualPaymentPage.confirming')}
             </>
           ) : (
             <>
               <Send className="w-5 h-5" />
-              I&apos;ve Sent the Payment
+              {t('manualPaymentPage.iveSentPayment')}
             </>
           )}
         </button>
 
         <p className="text-xs text-gray-400 text-center mt-2">
-          Make sure you&apos;ve completed the payment before confirming.
-          The vendor will verify the payment when you redeem.
+          {t('manualPaymentPage.makeSureCompleted')}
         </p>
 
         {/* Claim expiration */}
         {claim?.expires_at && (
           <div className="mt-4 text-center">
-            <p className="text-xs text-gray-400 mb-1">Deal expires in:</p>
+            <p className="text-xs text-gray-400 mb-1">{t('manualPaymentPage.dealExpiresIn')}</p>
             <CountdownTimer expiresAt={claim.expires_at} size="sm" variant="sponti" />
           </div>
         )}
@@ -301,7 +302,7 @@ function ManualPaymentContent() {
           onClick={() => router.push('/dashboard/my-deals')}
           className="mt-3 flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-500 transition-colors"
         >
-          Check My Deals Later <ArrowRight className="w-4 h-4" />
+          {t('manualPaymentPage.checkLater')} <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>

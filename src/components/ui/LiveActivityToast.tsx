@@ -2,18 +2,19 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { ShoppingBag, MapPin, Clock, X } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 const ACTIVITIES = [
-  { name: 'Jessica M.', action: 'claimed', deal: '50% Off Thai Massage', city: 'Orlando', ago: '2 min ago' },
-  { name: 'David P.', action: 'saved', deal: 'BOGO Craft Cocktails', city: 'Winter Park', ago: '4 min ago' },
-  { name: 'Ashley R.', action: 'claimed', deal: '40% Off Yoga Classes', city: 'Kissimmee', ago: '5 min ago' },
-  { name: 'Michael K.', action: 'redeemed', deal: '30% Off Auto Detailing', city: 'Lake Nona', ago: '8 min ago' },
-  { name: 'Sarah L.', action: 'claimed', deal: '60% Off Facial Treatment', city: 'Dr. Phillips', ago: '11 min ago' },
-  { name: 'James W.', action: 'claimed', deal: 'Kids Eat Free Weekend', city: 'Altamonte Springs', ago: '13 min ago' },
-  { name: 'Lisa T.', action: 'redeemed', deal: '$20 Off Hair Styling', city: 'Winter Garden', ago: '15 min ago' },
-  { name: 'Chris N.', action: 'claimed', deal: '45% Off Escape Room', city: 'Sanford', ago: '18 min ago' },
-  { name: 'Maria G.', action: 'claimed', deal: '55% Off Couples Dinner', city: 'Celebration', ago: '20 min ago' },
-  { name: 'Tyler B.', action: 'redeemed', deal: '35% Off Oil Change', city: 'Ocoee', ago: '22 min ago' },
+  { name: 'Jessica M.', actionKey: 'claimed', deal: '50% Off Thai Massage', city: 'Orlando', agoMinutes: 2 },
+  { name: 'David P.', actionKey: 'saved', deal: 'BOGO Craft Cocktails', city: 'Winter Park', agoMinutes: 4 },
+  { name: 'Ashley R.', actionKey: 'claimed', deal: '40% Off Yoga Classes', city: 'Kissimmee', agoMinutes: 5 },
+  { name: 'Michael K.', actionKey: 'redeemed', deal: '30% Off Auto Detailing', city: 'Lake Nona', agoMinutes: 8 },
+  { name: 'Sarah L.', actionKey: 'claimed', deal: '60% Off Facial Treatment', city: 'Dr. Phillips', agoMinutes: 11 },
+  { name: 'James W.', actionKey: 'claimed', deal: 'Kids Eat Free Weekend', city: 'Altamonte Springs', agoMinutes: 13 },
+  { name: 'Lisa T.', actionKey: 'redeemed', deal: '$20 Off Hair Styling', city: 'Winter Garden', agoMinutes: 15 },
+  { name: 'Chris N.', actionKey: 'claimed', deal: '45% Off Escape Room', city: 'Sanford', agoMinutes: 18 },
+  { name: 'Maria G.', actionKey: 'claimed', deal: '55% Off Couples Dinner', city: 'Celebration', agoMinutes: 20 },
+  { name: 'Tyler B.', actionKey: 'redeemed', deal: '35% Off Oil Change', city: 'Ocoee', agoMinutes: 22 },
 ];
 
 const SHOW_DURATION = 5500; // ms the toast stays visible
@@ -30,6 +31,7 @@ export function LiveActivityToast() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dismissed, setDismissed] = useState(false);
   const [progressActive, setProgressActive] = useState(false);
+  const { t } = useLanguage();
 
   const showToast = useCallback((index: number) => {
     setCurrentIndex(index);
@@ -71,25 +73,27 @@ export function LiveActivityToast() {
   if (dismissed) return null;
 
   const activity = ACTIVITIES[currentIndex];
+  const actionText = t(`liveActivity.${activity.actionKey}`);
+  const agoText = t('liveActivity.minAgo', { minutes: String(activity.agoMinutes) });
 
   const iconBg =
-    activity.action === 'claimed'
+    activity.actionKey === 'claimed'
       ? 'bg-primary-100'
-      : activity.action === 'redeemed'
+      : activity.actionKey === 'redeemed'
         ? 'bg-green-100'
         : 'bg-blue-100';
 
   const iconColor =
-    activity.action === 'claimed'
+    activity.actionKey === 'claimed'
       ? 'text-primary-500'
-      : activity.action === 'redeemed'
+      : activity.actionKey === 'redeemed'
         ? 'text-green-500'
         : 'text-blue-500';
 
   const progressColor =
-    activity.action === 'claimed'
+    activity.actionKey === 'claimed'
       ? 'bg-primary-500'
-      : activity.action === 'redeemed'
+      : activity.actionKey === 'redeemed'
         ? 'bg-green-500'
         : 'bg-blue-500';
 
@@ -119,7 +123,7 @@ export function LiveActivityToast() {
         <button
           onClick={() => setDismissed(true)}
           className="absolute top-2.5 right-2.5 text-gray-300 hover:text-gray-500 transition-colors p-1 rounded-full hover:bg-gray-100"
-          aria-label="Dismiss"
+          aria-label={t('liveActivity.dismiss')}
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -140,7 +144,7 @@ export function LiveActivityToast() {
           <div className="min-w-0 pt-0.5">
             <p className="text-[13px] text-gray-900 leading-snug">
               <span className="font-bold">{activity.name}</span>{' '}
-              <span className="text-gray-400">{activity.action}</span>{' '}
+              <span className="text-gray-400">{actionText}</span>{' '}
               <span className="font-semibold text-primary-500">{activity.deal}</span>
             </p>
             <div className="flex items-center gap-3 mt-1.5">
@@ -148,7 +152,7 @@ export function LiveActivityToast() {
                 <MapPin className="w-3 h-3" /> {activity.city}
               </span>
               <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> {activity.ago}
+                <Clock className="w-3 h-3" /> {agoText}
               </span>
             </div>
           </div>

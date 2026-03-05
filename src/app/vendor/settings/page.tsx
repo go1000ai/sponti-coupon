@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
+import { useLanguage } from '@/lib/i18n';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
 import type { Vendor, VendorSocialLinks, BusinessHours, BusinessHoursDay, VendorNotificationPreferences, AutoResponseSettings, AutoResponseTone } from '@/lib/types/database';
 
@@ -80,6 +81,7 @@ const DELAY_OPTIONS = [
 ];
 
 export default function VendorSettingsPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const [vendor, setVendor] = useState<Vendor | null>(null);
@@ -435,8 +437,8 @@ export default function VendorSettingsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 mt-1">Manage your business profile and preferences</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('vendor.settings.title')}</h1>
+          <p className="text-gray-500 mt-1">{t('vendor.settings.subtitle')}</p>
         </div>
       </div>
 
@@ -445,7 +447,7 @@ export default function VendorSettingsPage() {
         {vendor?.subscription_tier && (
           <div className="card p-4 flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Current Plan</p>
+              <p className="text-sm text-gray-500">{t('vendor.settings.currentPlanLabel')}</p>
               <p className="text-lg font-bold text-gray-900 capitalize">
                 {vendor.subscription_tier} Plan
               </p>
@@ -456,16 +458,16 @@ export default function VendorSettingsPage() {
               vendor.subscription_status === 'past_due' ? 'bg-yellow-50 text-yellow-600' :
               'bg-gray-100 text-gray-500'
             }`}>
-              {vendor.subscription_status === 'active' ? 'Active' :
-               vendor.subscription_status === 'trialing' ? 'Trial' :
-               vendor.subscription_status === 'past_due' ? 'Past Due' :
+              {vendor.subscription_status === 'active' ? t('vendor.settings.activeStatus') :
+               vendor.subscription_status === 'trialing' ? t('vendor.settings.trialStatus') :
+               vendor.subscription_status === 'past_due' ? t('vendor.settings.pastDueStatus') :
                vendor.subscription_status || 'N/A'}
             </span>
           </div>
         )}
         <div className="card p-4 flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Rating</p>
+            <p className="text-sm text-gray-500">{t('vendor.settings.rating')}</p>
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map(star => (
@@ -504,12 +506,12 @@ export default function VendorSettingsPage() {
       {/* Logo & Cover Upload */}
       <div className="card p-6 mb-6">
         <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">
-          Branding
+          {t('vendor.settings.branding')}
         </h2>
         <div className="grid sm:grid-cols-2 gap-6">
           {/* Logo */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Business Logo</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">{t('vendor.settings.businessLogo')}</p>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {vendor?.logo_url ? (
@@ -522,7 +524,7 @@ export default function VendorSettingsPage() {
               <div>
                 <label className="btn-secondary text-sm cursor-pointer inline-flex items-center gap-2">
                   {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                  {uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+                  {uploadingLogo ? t('vendor.settings.uploading') : t('vendor.settings.uploadLogo')}
                   <input
                     type="file"
                     accept="image/*"
@@ -534,13 +536,13 @@ export default function VendorSettingsPage() {
                     disabled={uploadingLogo}
                   />
                 </label>
-                <p className="text-xs text-gray-400 mt-1">JPG, PNG. Max 2MB</p>
+                <p className="text-xs text-gray-400 mt-1">{t('vendor.settings.logoHint')}</p>
               </div>
             </div>
           </div>
           {/* Cover */}
           <div>
-            <p className="text-sm font-medium text-gray-700 mb-2">Cover Photo</p>
+            <p className="text-sm font-medium text-gray-700 mb-2">{t('vendor.settings.coverPhoto')}</p>
             <div className="flex items-center gap-4">
               <div className="w-32 h-20 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {vendor?.cover_url ? (
@@ -553,7 +555,7 @@ export default function VendorSettingsPage() {
               <div>
                 <label className="btn-secondary text-sm cursor-pointer inline-flex items-center gap-2">
                   {uploadingCover ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                  {uploadingCover ? 'Uploading...' : 'Upload Cover'}
+                  {uploadingCover ? t('vendor.settings.uploading') : t('vendor.settings.uploadCover')}
                   <input
                     type="file"
                     accept="image/*"
@@ -565,7 +567,7 @@ export default function VendorSettingsPage() {
                     disabled={uploadingCover}
                   />
                 </label>
-                <p className="text-xs text-gray-400 mt-1">Wide image recommended</p>
+                <p className="text-xs text-gray-400 mt-1">{t('vendor.settings.coverHint')}</p>
               </div>
             </div>
           </div>
@@ -582,7 +584,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Building2 className="w-5 h-5 text-primary-500" />
-              <h2 className="text-lg font-bold text-gray-900">Business Information</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.businessInfo')}</h2>
             </div>
             {expandedSection === 'business' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -591,7 +593,7 @@ export default function VendorSettingsPage() {
             <div className="px-6 pb-6 space-y-5 border-t border-gray-100 pt-4">
               <div>
                 <label htmlFor="business_name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Business Name *
+                  {t('vendor.settings.businessName')} *
                 </label>
                 <input
                   id="business_name"
@@ -608,7 +610,7 @@ export default function VendorSettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    First Name
+                    {t('vendor.settings.firstName')}
                   </label>
                   <input
                     id="first_name"
@@ -616,12 +618,12 @@ export default function VendorSettingsPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="input-field"
-                    placeholder="Your first name"
+                    placeholder={t('vendor.settings.firstNamePlaceholder')}
                   />
                 </div>
                 <div>
                   <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Last Name
+                    {t('vendor.settings.lastName')}
                   </label>
                   <input
                     id="last_name"
@@ -629,7 +631,7 @@ export default function VendorSettingsPage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="input-field"
-                    placeholder="Your last name"
+                    placeholder={t('vendor.settings.lastNamePlaceholder')}
                   />
                 </div>
               </div>
@@ -637,7 +639,7 @@ export default function VendorSettingsPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                    About Your Business
+                    {t('vendor.settings.aboutYourBusiness')}
                   </label>
                   <AIAssistButton
                     type="business_description"
@@ -652,15 +654,15 @@ export default function VendorSettingsPage() {
                   value={businessForm.description}
                   onChange={handleBusinessChange}
                   className="input-field min-h-[100px] resize-y"
-                  placeholder="Tell customers about your business, what makes you special, what they can expect..."
+                  placeholder={t('vendor.settings.aboutPlaceholder')}
                   rows={4}
                 />
-                <p className="text-xs text-gray-400 mt-1">{businessForm.description.length}/500 characters</p>
+                <p className="text-xs text-gray-400 mt-1">{t('vendor.settings.characters', { count: businessForm.description.length })}</p>
               </div>
 
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category
+                  {t('vendor.settings.category')}
                 </label>
                 <select
                   id="category"
@@ -676,7 +678,7 @@ export default function VendorSettingsPage() {
                   }}
                   className="input-field"
                 >
-                  <option value="">Select a category</option>
+                  <option value="">{t('vendor.settings.selectCategory')}</option>
                   <option value="Restaurants">Restaurants</option>
                   <option value="Beauty & Spa">Beauty &amp; Spa</option>
                   <option value="Health & Fitness">Health &amp; Fitness</option>
@@ -692,7 +694,7 @@ export default function VendorSettingsPage() {
                   <option value="Wellness">Wellness</option>
                   <option value="Pets">Pets</option>
                   <option value="Photography">Photography</option>
-                  <option value="__custom__">Custom category...</option>
+                  <option value="__custom__">{t('vendor.settings.customCategory')}</option>
                 </select>
                 {isCustomCategory && (
                   <input
@@ -700,7 +702,7 @@ export default function VendorSettingsPage() {
                     value={businessForm.category}
                     onChange={(e) => setBusinessForm(prev => ({ ...prev, category: e.target.value }))}
                     className="input-field mt-2"
-                    placeholder="Type your custom category (e.g. Dog Grooming, Tattoo Studio)"
+                    placeholder={t('vendor.settings.customCategoryPlaceholder')}
                     autoFocus
                   />
                 )}
@@ -709,7 +711,7 @@ export default function VendorSettingsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    <Mail className="w-4 h-4 inline mr-1" /> Email *
+                    <Mail className="w-4 h-4 inline mr-1" /> {t('vendor.settings.email')} *
                   </label>
                   <input
                     id="email"
@@ -723,7 +725,7 @@ export default function VendorSettingsPage() {
                 </div>
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    <Phone className="w-4 h-4 inline mr-1" /> Phone
+                    <Phone className="w-4 h-4 inline mr-1" /> {t('vendor.settings.phone')}
                   </label>
                   <input
                     id="phone"
@@ -739,7 +741,7 @@ export default function VendorSettingsPage() {
 
               <div>
                 <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
-                  <Globe className="w-4 h-4 inline mr-1" /> Website
+                  <Globe className="w-4 h-4 inline mr-1" /> {t('vendor.settings.website')}
                 </label>
                 <input
                   id="website"
@@ -754,7 +756,7 @@ export default function VendorSettingsPage() {
 
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="w-4 h-4 inline mr-1" /> Address <span className="text-red-500">*</span>
+                  <MapPin className="w-4 h-4 inline mr-1" /> {t('vendor.settings.address')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="address"
@@ -770,15 +772,15 @@ export default function VendorSettingsPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City <span className="text-red-500">*</span></label>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.city')} <span className="text-red-500">*</span></label>
                   <input id="city" name="city" type="text" value={businessForm.city} onChange={handleBusinessChange} className="input-field" required />
                 </div>
                 <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">State <span className="text-red-500">*</span></label>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.state')} <span className="text-red-500">*</span></label>
                   <input id="state" name="state" type="text" value={businessForm.state} onChange={handleBusinessChange} className="input-field" placeholder="FL" required />
                 </div>
                 <div>
-                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">Zip Code <span className="text-red-500">*</span></label>
+                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.zipCode')} <span className="text-red-500">*</span></label>
                   <input id="zip" name="zip" type="text" value={businessForm.zip} onChange={handleBusinessChange} className="input-field" placeholder="33101" required />
                 </div>
               </div>
@@ -795,14 +797,14 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <LinkIcon className="w-5 h-5 text-pink-500" />
-              <h2 className="text-lg font-bold text-gray-900">Social Media</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.socialMedia')}</h2>
             </div>
             {expandedSection === 'social' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
 
           {expandedSection === 'social' && (
             <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
-              <p className="text-sm text-gray-500">Add your social media links so customers can find and follow you.</p>
+              <p className="text-sm text-gray-500">{t('vendor.settings.socialMediaDesc')}</p>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -897,8 +899,8 @@ export default function VendorSettingsPage() {
               <div className="flex items-center gap-3">
                 <Share2 className="w-5 h-5 text-[#E8632B]" />
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Auto-Post Connections</h2>
-                  <p className="text-xs text-gray-500 text-left">Automatically post new deals to your social media</p>
+                  <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.autoPostConnections')}</h2>
+                  <p className="text-xs text-gray-500 text-left">{t('vendor.settings.autoPostDesc')}</p>
                 </div>
               </div>
               {expandedSection === 'social_connections' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -907,13 +909,13 @@ export default function VendorSettingsPage() {
             {expandedSection === 'social_connections' && (
               <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
                 <p className="text-sm text-gray-500">
-                  Connect your social accounts to auto-post every new deal. Your followers will see new deals the moment you publish them.
+                  {t('vendor.settings.autoPostExplain')}
                 </p>
 
                 {connectionsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-                    <span className="ml-2 text-sm text-gray-500">Loading connections...</span>
+                    <span className="ml-2 text-sm text-gray-500">{t('vendor.settings.loadingConnections')}</span>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -929,10 +931,10 @@ export default function VendorSettingsPage() {
                               {fb ? (
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                                  <span className="text-xs text-green-600">{fb.account_name || 'Connected'}</span>
+                                  <span className="text-xs text-green-600">{fb.account_name || t('vendor.settings.connected')}</span>
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500">Not connected</p>
+                                <p className="text-xs text-gray-500">{t('vendor.settings.notConnected')}</p>
                               )}
                             </div>
                           </div>
@@ -944,7 +946,7 @@ export default function VendorSettingsPage() {
                               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                             >
                               {disconnecting === fb.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                              Disconnect
+                              {t('vendor.settings.disconnect')}
                             </button>
                           ) : (
                             <a
@@ -953,7 +955,7 @@ export default function VendorSettingsPage() {
                               rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
-                              Connect
+                              {t('vendor.settings.connect')}
                             </a>
                           )}
                         </div>
@@ -972,10 +974,10 @@ export default function VendorSettingsPage() {
                               {ig ? (
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                                  <span className="text-xs text-green-600">@{ig.account_username || 'Connected'}</span>
+                                  <span className="text-xs text-green-600">@{ig.account_username || t('vendor.settings.connected')}</span>
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500">Requires Instagram Business Account</p>
+                                <p className="text-xs text-gray-500">{t('vendor.settings.requiresBusinessAccount')}</p>
                               )}
                             </div>
                           </div>
@@ -987,7 +989,7 @@ export default function VendorSettingsPage() {
                               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                             >
                               {disconnecting === ig.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                              Disconnect
+                              {t('vendor.settings.disconnect')}
                             </button>
                           ) : (
                             <a
@@ -996,7 +998,7 @@ export default function VendorSettingsPage() {
                               rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
-                              Connect
+                              {t('vendor.settings.connect')}
                             </a>
                           )}
                         </div>
@@ -1015,10 +1017,10 @@ export default function VendorSettingsPage() {
                               {tw ? (
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                                  <span className="text-xs text-green-600">@{tw.account_username || 'Connected'}</span>
+                                  <span className="text-xs text-green-600">@{tw.account_username || t('vendor.settings.connected')}</span>
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500">Not connected</p>
+                                <p className="text-xs text-gray-500">{t('vendor.settings.notConnected')}</p>
                               )}
                             </div>
                           </div>
@@ -1030,7 +1032,7 @@ export default function VendorSettingsPage() {
                               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                             >
                               {disconnecting === tw.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                              Disconnect
+                              {t('vendor.settings.disconnect')}
                             </button>
                           ) : (
                             <a
@@ -1039,7 +1041,7 @@ export default function VendorSettingsPage() {
                               rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
-                              Connect
+                              {t('vendor.settings.connect')}
                             </a>
                           )}
                         </div>
@@ -1058,10 +1060,10 @@ export default function VendorSettingsPage() {
                               {tt ? (
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                                  <span className="text-xs text-green-600">@{tt.account_username || 'Connected'}</span>
+                                  <span className="text-xs text-green-600">@{tt.account_username || t('vendor.settings.connected')}</span>
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500">Not connected</p>
+                                <p className="text-xs text-gray-500">{t('vendor.settings.notConnected')}</p>
                               )}
                             </div>
                           </div>
@@ -1073,7 +1075,7 @@ export default function VendorSettingsPage() {
                               className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                             >
                               {disconnecting === tt.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                              Disconnect
+                              {t('vendor.settings.disconnect')}
                             </button>
                           ) : (
                             <a
@@ -1082,7 +1084,7 @@ export default function VendorSettingsPage() {
                               rel="noopener noreferrer"
                               className="btn-primary text-sm px-4 py-1.5"
                             >
-                              Connect
+                              {t('vendor.settings.connect')}
                             </a>
                           )}
                         </div>
@@ -1095,7 +1097,7 @@ export default function VendorSettingsPage() {
                   <div className="mt-4 p-3 bg-[#E8632B]/5 border border-[#E8632B]/20 rounded-lg">
                     <p className="text-sm text-gray-700">
                       <Info className="w-4 h-4 inline mr-1 text-[#E8632B]" />
-                      When you publish a new deal, it will be automatically posted to your connected accounts with an AI-generated caption.
+                      {t('vendor.settings.autoPostInfo')}
                     </p>
                   </div>
                 )}
@@ -1113,14 +1115,14 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Clock className="w-5 h-5 text-blue-500" />
-              <h2 className="text-lg font-bold text-gray-900">Business Hours</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.businessHours')}</h2>
             </div>
             {expandedSection === 'hours' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
 
           {expandedSection === 'hours' && (
             <div className="px-6 pb-6 border-t border-gray-100 pt-4">
-              <p className="text-sm text-gray-500 mb-4">Set your business hours so customers know when to visit.</p>
+              <p className="text-sm text-gray-500 mb-4">{t('vendor.settings.businessHoursDesc')}</p>
 
               <div className="space-y-3">
                 {DAYS_OF_WEEK.map((day) => {
@@ -1128,7 +1130,7 @@ export default function VendorSettingsPage() {
                   return (
                     <div key={day} className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
                       <div className="w-24 flex-shrink-0">
-                        <span className="text-sm font-medium text-gray-700">{DAY_LABELS[day]}</span>
+                        <span className="text-sm font-medium text-gray-700">{t(`vendor.settings.${day}`)}</span>
                       </div>
 
                       <label className="flex items-center gap-2 cursor-pointer flex-shrink-0">
@@ -1138,7 +1140,7 @@ export default function VendorSettingsPage() {
                           onChange={(e) => handleHoursChange(day, 'closed', !e.target.checked)}
                           className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                         />
-                        <span className="text-sm text-gray-600">{dayHours.closed ? 'Closed' : 'Open'}</span>
+                        <span className="text-sm text-gray-600">{dayHours.closed ? t('vendor.settings.closed') : t('vendor.settings.open')}</span>
                       </label>
 
                       {!dayHours.closed && (
@@ -1152,7 +1154,7 @@ export default function VendorSettingsPage() {
                               <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
                           </select>
-                          <span className="text-gray-400 text-sm">to</span>
+                          <span className="text-gray-400 text-sm">{t('vendor.settings.to')}</span>
                           <select
                             value={dayHours.close}
                             onChange={(e) => handleHoursChange(day, 'close', e.target.value)}
@@ -1171,7 +1173,7 @@ export default function VendorSettingsPage() {
                           onClick={() => copyHoursToAll('monday')}
                           className="text-xs text-primary-500 hover:underline whitespace-nowrap"
                         >
-                          Apply to all
+                          {t('vendor.settings.applyToAll')}
                         </button>
                       )}
                     </div>
@@ -1191,7 +1193,7 @@ export default function VendorSettingsPage() {
           >
             <div className="flex items-center gap-3">
               <Bell className="w-5 h-5 text-amber-500" />
-              <h2 className="text-lg font-bold text-gray-900">Notification Preferences</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.notificationPreferences')}</h2>
             </div>
             {expandedSection === 'notifications' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
           </button>
@@ -1199,10 +1201,10 @@ export default function VendorSettingsPage() {
           {expandedSection === 'notifications' && (
             <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
               {[
-                { key: 'email_new_claims' as const, label: 'New Claims', desc: 'Get notified when someone claims your deal' },
-                { key: 'email_redemptions' as const, label: 'Redemptions', desc: 'Get notified when a coupon is redeemed' },
-                { key: 'email_reviews' as const, label: 'New Reviews', desc: 'Get notified when a customer leaves a review' },
-                { key: 'email_digest' as const, label: 'Weekly Digest', desc: 'Receive a weekly summary of your deal performance' },
+                { key: 'email_new_claims' as const, label: t('vendor.settings.newClaims'), desc: t('vendor.settings.newClaimsDesc') },
+                { key: 'email_redemptions' as const, label: t('vendor.settings.redemptions'), desc: t('vendor.settings.redemptionsDesc') },
+                { key: 'email_reviews' as const, label: t('vendor.settings.newReviews'), desc: t('vendor.settings.newReviewsDesc') },
+                { key: 'email_digest' as const, label: t('vendor.settings.weeklyDigest'), desc: t('vendor.settings.weeklyDigestDesc') },
               ].map(({ key, label, desc }) => (
                 <label key={key} className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -1232,8 +1234,8 @@ export default function VendorSettingsPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ava.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-sm" />
               <div className="text-left">
-                <h2 className="text-lg font-bold text-gray-900">Ava Auto-Response</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Let Ava automatically reply to customer reviews</p>
+                <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.avaAutoResponse')}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{t('vendor.settings.avaAutoResponseDesc')}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1251,8 +1253,8 @@ export default function VendorSettingsPage() {
                   {/* Enable Toggle */}
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
                     <div>
-                      <p className="font-medium text-gray-900">Enable Auto-Response</p>
-                      <p className="text-sm text-gray-500 mt-0.5">Ava will automatically reply to new reviews after a delay</p>
+                      <p className="font-medium text-gray-900">{t('vendor.settings.enableAutoResponse')}</p>
+                      <p className="text-sm text-gray-500 mt-0.5">{t('vendor.settings.enableAutoResponseDesc')}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -1267,9 +1269,9 @@ export default function VendorSettingsPage() {
 
                   {/* Tone Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Response Tone</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">{t('vendor.settings.responseTone')}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {TONE_OPTIONS.map(({ value, label, desc }) => (
+                      {TONE_OPTIONS.map(({ value }) => (
                         <label
                           key={value}
                           className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
@@ -1287,8 +1289,8 @@ export default function VendorSettingsPage() {
                             className="mt-0.5 text-blue-500 focus:ring-blue-500"
                           />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">{label}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                            <p className="text-sm font-medium text-gray-900">{t(`vendor.settings.${value}`)}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{t(`vendor.settings.${value}Desc`)}</p>
                           </div>
                         </label>
                       ))}
@@ -1298,9 +1300,9 @@ export default function VendorSettingsPage() {
                   {/* Delay Dropdown */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Response Delay
+                      {t('vendor.settings.responseDelay')}
                     </label>
-                    <p className="text-xs text-gray-400 mb-2">How long to wait before auto-responding (gives you time to reply manually)</p>
+                    <p className="text-xs text-gray-400 mb-2">{t('vendor.settings.responseDelayDesc')}</p>
                     <select
                       value={autoResponseForm.delay_hours}
                       onChange={(e) => setAutoResponseForm(prev => ({ ...prev, delay_hours: parseInt(e.target.value) }))}
@@ -1322,12 +1324,12 @@ export default function VendorSettingsPage() {
                         className="mt-0.5 w-5 h-5 rounded border-gray-300 text-amber-500 focus:ring-amber-500"
                       />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Auto-respond to negative reviews</p>
-                        <p className="text-xs text-gray-500 mt-0.5">Include 1-2 star reviews in auto-responses</p>
+                        <p className="text-sm font-medium text-gray-900">{t('vendor.settings.autoRespondNegative')}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{t('vendor.settings.autoRespondNegativeDesc')}</p>
                         {autoResponseForm.include_negative && (
                           <div className="flex items-start gap-2 mt-2 text-xs text-amber-700 bg-amber-100 rounded-lg p-2">
                             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                            <span>Negative reviews may need a more personal touch. Consider responding manually to 1-2 star reviews.</span>
+                            <span>{t('vendor.settings.negativeWarning')}</span>
                           </div>
                         )}
                       </div>
@@ -1337,14 +1339,14 @@ export default function VendorSettingsPage() {
                   {/* Custom Instructions */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Custom Instructions <span className="text-gray-400 font-normal">(optional)</span>
+                      {t('vendor.settings.customInstructions')} <span className="text-gray-400 font-normal">{t('vendor.settings.customInstructionsOptional')}</span>
                     </label>
-                    <p className="text-xs text-gray-400 mb-2">Add business-specific instructions for Ava (e.g., &quot;Always mention our loyalty program&quot;)</p>
+                    <p className="text-xs text-gray-400 mb-2">{t('vendor.settings.customInstructionsDesc')}</p>
                     <textarea
                       value={autoResponseForm.custom_instructions || ''}
                       onChange={(e) => setAutoResponseForm(prev => ({ ...prev, custom_instructions: e.target.value }))}
                       className="input-field min-h-[80px] resize-y text-sm"
-                      placeholder="e.g., Always thank them by name, mention our 10% return discount, invite them to follow us on Instagram..."
+                      placeholder={t('vendor.settings.customInstructionsPlaceholder')}
                       rows={3}
                       maxLength={500}
                     />
@@ -1355,12 +1357,12 @@ export default function VendorSettingsPage() {
                   <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-blue-700">
-                      <p className="font-medium mb-1">How it works</p>
+                      <p className="font-medium mb-1">{t('vendor.settings.howItWorks')}</p>
                       <ul className="list-disc list-inside space-y-1 text-xs text-blue-600">
-                        <li>When a new review comes in, a timer starts based on your delay setting</li>
-                        <li>If you reply manually before the timer, the auto-response is cancelled</li>
-                        <li>Ava generates a reply using your chosen tone and custom instructions</li>
-                        <li>Auto-replies are marked with a badge so you can see which are Ava-generated</li>
+                        <li>{t('vendor.settings.howItWorksItems.timer')}</li>
+                        <li>{t('vendor.settings.howItWorksItems.manualCancel')}</li>
+                        <li>{t('vendor.settings.howItWorksItems.aiGenerate')}</li>
+                        <li>{t('vendor.settings.howItWorksItems.badge')}</li>
                       </ul>
                     </div>
                   </div>
@@ -1380,8 +1382,8 @@ export default function VendorSettingsPage() {
             <div className="flex items-center gap-3">
               <Navigation className="w-5 h-5 text-primary-500" />
               <div className="text-left">
-                <h2 className="text-lg font-bold text-gray-900">Guided Tour</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Dashboard walkthrough settings</p>
+                <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.guidedTour')}</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{t('vendor.settings.tourSubtitle')}</p>
               </div>
             </div>
             {expandedSection === 'tour' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
@@ -1408,15 +1410,15 @@ export default function VendorSettingsPage() {
                   className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                 />
                 <div>
-                  <p className="text-sm font-medium text-gray-700">Auto-start tour on login</p>
-                  <p className="text-xs text-gray-400">Show the guided tour automatically when you log in for the first time</p>
+                  <p className="text-sm font-medium text-gray-700">{t('vendor.settings.autoStartTour')}</p>
+                  <p className="text-xs text-gray-400">{t('vendor.settings.autoStartTourDesc')}</p>
                 </div>
               </label>
 
               {/* Restart tour button */}
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Restart Tour</p>
-                <p className="text-xs text-gray-400 mb-3">Replay the dashboard walkthrough to see all features explained step by step.</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">{t('vendor.settings.restartTour')}</p>
+                <p className="text-xs text-gray-400 mb-3">{t('vendor.settings.restartTourDesc')}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -1427,7 +1429,7 @@ export default function VendorSettingsPage() {
                   className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
                 >
                   <Play className="w-4 h-4" />
-                  Start Tour Now
+                  {t('vendor.settings.startTourNow')}
                 </button>
               </div>
 
@@ -1446,7 +1448,7 @@ export default function VendorSettingsPage() {
                   className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Reset all tours
+                  {t('vendor.settings.resetAllTours')}
                 </button>
               </div>
             </div>
@@ -1465,7 +1467,7 @@ export default function VendorSettingsPage() {
             ) : (
               <Save className="w-4 h-4" />
             )}
-            {saving ? 'Saving...' : 'Save All Settings'}
+            {saving ? t('vendor.settings.saving') : t('vendor.settings.saveAllSettings')}
           </button>
         </div>
       </form>

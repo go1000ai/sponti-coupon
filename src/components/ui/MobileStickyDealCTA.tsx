@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Flame, ArrowRight } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export function MobileStickyDealCTA() {
   const [visible, setVisible] = useState(false);
   const [dealCount, setDealCount] = useState(0);
+  const { t } = useLanguage();
 
   // Fetch deal count
   useEffect(() => {
@@ -45,14 +47,14 @@ export function MobileStickyDealCTA() {
               <Flame className="w-4 h-4 text-primary-500" />
             </div>
             <span className="text-sm font-semibold text-gray-900 truncate">
-              {dealCount} deals near you
+              {t('mobileCTA.dealsNearYou', { count: String(dealCount) })}
             </span>
           </div>
           <Link
             href="/deals"
             className="btn-primary text-sm py-2 px-4 inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap"
           >
-            Browse Deals
+            {t('mobileCTA.browseDeals')}
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

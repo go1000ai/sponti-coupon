@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { User, MapPin, Bell, Mail, Save, Check, Navigation, Play, RotateCcw } from 'lucide-react';
 import type { Customer } from '@/lib/types/database';
 
 export default function DashboardSettingsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -81,12 +83,12 @@ export default function DashboardSettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Account Settings</h1>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">{t('customer.account.title')}</h1>
 
       <div className="card p-8 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.firstName')}</label>
             <div className="relative">
               <User className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
               <input
@@ -97,7 +99,7 @@ export default function DashboardSettingsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.lastName')}</label>
             <input
               value={form.last_name}
               onChange={e => setForm(f => ({ ...f, last_name: e.target.value }))}
@@ -107,13 +109,13 @@ export default function DashboardSettingsPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.email')}</label>
           <input value={customer?.email || ''} disabled className="input-field bg-gray-50 text-gray-500" />
-          <p className="text-xs text-gray-400 mt-1">Email cannot be changed</p>
+          <p className="text-xs text-gray-400 mt-1">{t('customer.account.emailCannotChange')}</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.phone')}</label>
           <input
             value={form.phone}
             onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
@@ -124,7 +126,7 @@ export default function DashboardSettingsPage() {
 
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.city')}</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
               <input
@@ -135,7 +137,7 @@ export default function DashboardSettingsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.state')}</label>
             <input
               value={form.state}
               onChange={e => setForm(f => ({ ...f, state: e.target.value }))}
@@ -143,7 +145,7 @@ export default function DashboardSettingsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.zip')}</label>
             <input
               value={form.zip}
               onChange={e => setForm(f => ({ ...f, zip: e.target.value }))}
@@ -155,7 +157,7 @@ export default function DashboardSettingsPage() {
         {/* Notification Preferences */}
         <div className="border-t border-gray-100 pt-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Bell className="w-5 h-5" /> Notification Preferences
+            <Bell className="w-5 h-5" /> {t('customer.account.notificationPreferences')}
           </h3>
 
           <label className="flex items-center gap-3 cursor-pointer">
@@ -167,9 +169,9 @@ export default function DashboardSettingsPage() {
             />
             <div>
               <p className="font-medium text-gray-900 flex items-center gap-1">
-                <Mail className="w-4 h-4" /> Daily Deal Digest
+                <Mail className="w-4 h-4" /> {t('customer.account.dailyDealDigest')}
               </p>
-              <p className="text-sm text-gray-500">Receive top deals in your area every morning at 8am</p>
+              <p className="text-sm text-gray-500">{t('customer.account.dailyDealDigestDesc')}</p>
             </div>
           </label>
         </div>
@@ -177,7 +179,7 @@ export default function DashboardSettingsPage() {
         {/* Guided Tour */}
         <div className="border-t border-gray-100 pt-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Navigation className="w-5 h-5" /> Guided Tour
+            <Navigation className="w-5 h-5" /> {t('customer.account.guidedTour')}
           </h3>
 
           <div className="space-y-5">
@@ -198,27 +200,27 @@ export default function DashboardSettingsPage() {
                 className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
               />
               <div>
-                <p className="text-sm font-medium text-gray-700">Show tour on login</p>
-                <p className="text-xs text-gray-400">Automatically show the guided dashboard tour when you log in</p>
+                <p className="text-sm font-medium text-gray-700">{t('customer.account.showTourOnLogin')}</p>
+                <p className="text-xs text-gray-400">{t('customer.account.showTourOnLoginDesc')}</p>
               </div>
             </label>
 
             {/* Restart tour */}
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Restart Tour</p>
-              <p className="text-xs text-gray-400 mb-3">Replay the dashboard walkthrough to see all features explained step by step.</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">{t('customer.account.restartTour')}</p>
+              <p className="text-xs text-gray-400 mb-3">{t('customer.account.restartTourDesc')}</p>
               <button
                 type="button"
                 onClick={() => {
                   localStorage.removeItem('sponti_tour_customer_dashboard_done');
-                  setTourMessage('Tour will start when you visit the dashboard!');
+                  setTourMessage(t('customer.account.tourWillStart'));
                   setTimeout(() => setTourMessage(''), 3000);
                   window.location.href = '/dashboard';
                 }}
                 className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
               >
                 <Play className="w-4 h-4" />
-                Start Tour Now
+                {t('customer.account.startTourNow')}
               </button>
             </div>
 
@@ -231,13 +233,13 @@ export default function DashboardSettingsPage() {
                   keys.forEach(k => localStorage.removeItem(k));
                   localStorage.setItem('sponti_tour_auto_start', 'true');
                   setTourAutoStart(true);
-                  setTourMessage('All tours have been reset.');
+                  setTourMessage(t('customer.account.allToursReset'));
                   setTimeout(() => setTourMessage(''), 3000);
                 }}
                 className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
               >
                 <RotateCcw className="w-4 h-4" />
-                Reset all tours
+                {t('customer.account.resetAllTours')}
               </button>
             </div>
 
@@ -248,9 +250,9 @@ export default function DashboardSettingsPage() {
         </div>
 
         <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">
-          {saved ? <><Check className="w-4 h-4" /> Saved!</> :
-           saving ? 'Saving...' :
-           <><Save className="w-4 h-4" /> Save Changes</>}
+          {saved ? <><Check className="w-4 h-4" /> {t('customer.account.saved')}</> :
+           saving ? t('customer.account.saving') :
+           <><Save className="w-4 h-4" /> {t('customer.account.saveChanges')}</>}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
+import { useLanguage } from '@/lib/i18n';
 import { UpgradePrompt } from '@/components/vendor/UpgradePrompt';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import {
@@ -97,10 +98,12 @@ function ProgramCard({
   program,
   delay,
   onClick,
+  t,
 }: {
   program: ProgramWithStats;
   delay: number;
   onClick: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const isPunch = program.program_type === 'punch_card';
 
@@ -128,11 +131,11 @@ function ProgramCard({
           <div className="flex items-center gap-1.5">
             {program.is_active ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-[9px] font-bold text-green-100 uppercase tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> {t('vendor.loyalty.live')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-white/10 rounded-full text-[9px] font-bold text-white/60 uppercase tracking-wider">
-                Paused
+                {t('vendor.loyalty.paused')}
               </span>
             )}
           </div>
@@ -140,7 +143,7 @@ function ProgramCard({
 
         <div className="relative mt-3">
           <h3 className="text-lg font-extrabold text-white truncate">{program.name}</h3>
-          <p className="text-white/60 text-xs font-medium mt-0.5 capitalize">{program.program_type.replace('_', ' ')}</p>
+          <p className="text-white/60 text-xs font-medium mt-0.5 capitalize">{isPunch ? t('vendor.loyalty.punchCardType') : t('vendor.loyalty.pointsType')}</p>
         </div>
       </div>
 
@@ -151,11 +154,11 @@ function ProgramCard({
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-500" />
               <span className="text-sm font-bold text-gray-900">{program.member_count}</span>
-              <span className="text-xs text-gray-400">members</span>
+              <span className="text-xs text-gray-400">{t('vendor.loyalty.membersLabel')}</span>
             </div>
             {isPunch && (
               <span className="text-xs font-semibold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
-                {program.punches_required} stamps
+                {t('vendor.loyalty.stampsCount', { count: program.punches_required ?? 0 })}
               </span>
             )}
             {!isPunch && (
@@ -188,19 +191,19 @@ function ProgramCard({
           const cardInGrace = expDate < now && graceEndDate > now;
           if (cardIsLocked) return (
             <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5">
-              <Lock className="w-3 h-3" /> Committed until {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Lock className="w-3 h-3" /> {t('vendor.loyalty.committedUntil', { date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
             </div>
           );
           if (cardInGrace) return (
             <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-orange-600 bg-orange-50 rounded-lg px-2.5 py-1.5">
-              <Calendar className="w-3 h-3" /> Grace period until {graceEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Calendar className="w-3 h-3" /> {t('vendor.loyalty.gracePeriodBadge', { date: graceEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
             </div>
           );
           return null;
         })()}
 
         <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 group-hover:text-primary-500 transition-colors">
-          <span>View Details</span>
+          <span>{t('vendor.loyalty.viewDetails')}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
         </div>
       </div>
@@ -216,11 +219,13 @@ function ProgramModal({
   onClose,
   onDeleted,
   onUpdated,
+  t,
 }: {
   programId: string;
   onClose: () => void;
   onDeleted: () => void;
   onUpdated: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   const [program, setProgram] = useState<LoyaltyProgram | null>(null);
   const [rewards, setRewards] = useState<LoyaltyReward[]>([]);
@@ -282,9 +287,9 @@ function ProgramModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: programId, ...form }),
       });
-      if (res.ok) { showMsg('success', 'Program updated!'); setIsEditing(false); fetchDetail(); onUpdated(); }
-      else { const d = await res.json(); showMsg('error', d.error || 'Failed.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.programUpdated')); setIsEditing(false); fetchDetail(); onUpdated(); }
+      else { const d = await res.json(); showMsg('error', d.error || t('vendor.loyalty.failed')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
@@ -307,11 +312,11 @@ function ProgramModal({
         body: JSON.stringify({ id: programId, is_active: !program.is_active }),
       });
       if (res.ok) {
-        showMsg('success', program.is_active ? 'Program paused.' : 'Program activated! Any other programs have been paused.');
+        showMsg('success', program.is_active ? t('vendor.loyalty.programPaused') : t('vendor.loyalty.programActivated'));
         fetchDetail(); onUpdated();
       } else {
         const data = await res.json();
-        showMsg('error', data.error || 'Failed to update.');
+        showMsg('error', data.error || t('vendor.loyalty.failedToUpdate'));
       }
     } catch { /* ignore */ }
     setSaving(false);
@@ -324,21 +329,21 @@ function ProgramModal({
       if (res.ok) { onDeleted(); onClose(); }
       else {
         const data = await res.json();
-        showMsg('error', data.error || 'Failed to delete.');
+        showMsg('error', data.error || t('vendor.loyalty.deleteProgram'));
         setShowDeleteConfirm(false);
       }
-    } catch { showMsg('error', 'Network error.'); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
   const handleAddReward = async () => {
-    if (!rewardForm.name.trim() || rewardForm.points_cost < 1) { showMsg('error', 'Name and cost required.'); return; }
+    if (!rewardForm.name.trim() || rewardForm.points_cost < 1) { showMsg('error', t('vendor.loyalty.nameAndCostRequired')); return; }
     setSaving(true);
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...rewardForm, program_id: programId }) });
-      if (res.ok) { showMsg('success', 'Reward added!'); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to add reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.rewardAdded')); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToAddReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
@@ -346,18 +351,18 @@ function ProgramModal({
     setSaving(true);
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...rewardForm, program_id: programId }) });
-      if (res.ok) { showMsg('success', 'Updated!'); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to update reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.updated')); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToUpdateReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
     setSaving(false);
   };
 
   const handleDeleteReward = async (id: string) => {
     try {
       const res = await fetch(`/api/vendor/loyalty/rewards?id=${id}`, { method: 'DELETE' });
-      if (res.ok) { showMsg('success', 'Deleted.'); fetchDetail(); }
-      else { const data = await res.json(); showMsg('error', data.error || 'Failed to delete reward.'); }
-    } catch { showMsg('error', 'Network error.'); }
+      if (res.ok) { showMsg('success', t('vendor.loyalty.deleted')); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || t('vendor.loyalty.failedToDeleteReward')); }
+    } catch { showMsg('error', t('vendor.loyalty.networkError')); }
   };
 
   if (loading) {
@@ -396,18 +401,18 @@ function ProgramModal({
                   <h2 className="text-xl font-extrabold text-white">{program.name}</h2>
                   {program.is_active && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-400/20 border border-green-400/30 rounded-full text-[9px] font-bold text-green-100 uppercase">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> {t('vendor.loyalty.live')}
                     </span>
                   )}
                 </div>
                 <p className="text-white/70 text-sm">
-                  {isPunch ? `${program.punches_required} stamps → ${program.punch_reward}` : `${program.points_per_dollar} pt${Number(program.points_per_dollar) !== 1 ? 's' : ''} per $${Number(program.point_value) || 1}`}
+                  {isPunch ? t('vendor.loyalty.stampsArrow', { required: program.punches_required ?? 0, reward: program.punch_reward || '' }) : t('vendor.loyalty.ptsPerDollar', { pts: program.points_per_dollar ?? 0, value: Number(program.point_value) || 1 })}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
-              <button onClick={handleToggleActive} disabled={saving || !!isLocked} title={isLocked ? `Locked until ${programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : program.is_active ? 'Pause program' : 'Activate program'} className={`p-2 rounded-xl transition-all ${isLocked ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white'}`}>
+              <button onClick={handleToggleActive} disabled={saving || !!isLocked} title={isLocked ? t('vendor.loyalty.committedUntil', { date: programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '' }) : program.is_active ? t('vendor.loyalty.pauseProgram') : t('vendor.loyalty.activateProgram')} className={`p-2 rounded-xl transition-all ${isLocked ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white'}`}>
                 {isLocked ? <Lock className="w-5 h-5" /> : program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </button>
               <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1, expires_at: (program as unknown as Record<string, unknown>).expires_at as string || 'never' }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
@@ -421,17 +426,17 @@ function ProgramModal({
 
           {!program.is_active && (
             <div className="relative mt-3 bg-white/10 rounded-xl px-3 py-2 text-sm text-white/80 flex items-center gap-2">
-              <ToggleLeft className="w-4 h-4 shrink-0" /> Program paused — not awarding stamps/points.
+              <ToggleLeft className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.programPausedBanner')}
             </div>
           )}
           {isLocked && (
             <div className="relative mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-2 text-sm text-amber-100 flex items-center gap-2">
-              <Lock className="w-4 h-4 shrink-0" /> Committed until {programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — {memberCount} active member{memberCount !== 1 ? 's' : ''}
+              <Lock className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.committedUntilWithMembers', { date: programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '', count: memberCount })}
             </div>
           )}
           {isInGracePeriod && (
             <div className="relative mt-3 bg-orange-500/20 border border-orange-400/30 rounded-xl px-3 py-2 text-sm text-orange-100 flex items-center gap-2">
-              <Calendar className="w-4 h-4 shrink-0" /> Grace period — customers can redeem until {graceEnd?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              <Calendar className="w-4 h-4 shrink-0" /> {t('vendor.loyalty.gracePeriodCustomers', { date: graceEnd?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) || '' })}
             </div>
           )}
           {(() => {
@@ -442,7 +447,7 @@ function ProgramModal({
             return (
               <div className={`relative mt-3 rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${isExpired ? 'bg-red-500/20 text-red-100' : 'bg-white/10 text-white/80'}`}>
                 <Calendar className="w-4 h-4 shrink-0" />
-                {isExpired ? 'Expired' : 'Expires'} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                {isExpired ? t('vendor.loyalty.expired') : t('vendor.loyalty.expires')} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
             );
           })()}
@@ -464,35 +469,35 @@ function ProgramModal({
             <div className="bg-gray-50 rounded-2xl p-5 space-y-4 animate-slide-up-fade">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-gray-900">Program Name</label>
-                  <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={t => setForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+                  <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.programName')}</label>
+                  <AIAssistButton type="loyalty_program_name" context={{ program_type: form.program_type, current_text: form.name }} onResult={v => setForm(f => ({ ...f, name: v }))} label={t('vendor.loyalty.suggestName')} />
                 </div>
                 <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-semibold text-gray-900">Description</label>
-                  <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={t => setForm(f => ({ ...f, description: t }))} label="Write Description" />
+                  <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.description')}</label>
+                  <AIAssistButton type="loyalty_description" context={{ program_type: form.program_type, program_name: form.name, current_text: form.description }} onResult={v => setForm(f => ({ ...f, description: v }))} label={t('vendor.loyalty.writeDescription')} />
                 </div>
                 <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 resize-none" rows={2} />
               </div>
               {isPunch ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">Stamps Required</label>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">{t('vendor.loyalty.punchesRequired')}</label>
                     <input type="number" min={1} value={form.punches_required} onChange={e => setForm(f => ({ ...f, punches_required: parseInt(e.target.value) || 1 }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-semibold text-gray-900">Reward</label>
-                      <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={t => setForm(f => ({ ...f, punch_reward: t }))} label="Suggest" />
+                      <label className="text-sm font-semibold text-gray-900">{t('vendor.loyalty.reward')}</label>
+                      <AIAssistButton type="loyalty_reward" context={{ program_name: form.name, punches_required: String(form.punches_required), current_text: form.punch_reward }} onResult={v => setForm(f => ({ ...f, punch_reward: v }))} label={t('vendor.loyalty.suggestReward')} />
                     </div>
                     <input value={form.punch_reward} onChange={e => setForm(f => ({ ...f, punch_reward: e.target.value }))} className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium" />
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <label className="block text-sm font-semibold text-gray-900">Points Configuration</label>
+                  <label className="block text-sm font-semibold text-gray-900">{t('vendor.loyalty.pointsConfiguration')}</label>
                   <div className="flex items-center gap-2 flex-wrap">
                     <input
                       type="number"
@@ -503,7 +508,7 @@ function ProgramModal({
                       onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, points_per_dollar: 1 })); }}
                       className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <span className="text-sm text-gray-500">pt{form.points_per_dollar !== 1 ? 's' : ''} per</span>
+                    <span className="text-sm text-gray-500">{t('vendor.loyalty.ptsPer')}</span>
                     <div className="flex items-center gap-1.5">
                       <span className="text-lg font-bold text-gray-400">$</span>
                       <input
@@ -515,35 +520,35 @@ function ProgramModal({
                         onBlur={e => { const v = parseFloat(e.target.value); if (!v || v <= 0) setForm(f => ({ ...f, point_value: 0.01 })); }}
                         className="w-28 px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl text-center text-lg font-bold text-blue-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                      <span className="text-sm text-gray-500">spent</span>
+                      <span className="text-sm text-gray-500">{t('vendor.loyalty.spent')}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400">$50 purchase = <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points &middot; 1 pt = ${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</p>
+                  <p className="text-xs text-gray-400">{t('vendor.loyalty.purchaseEarns', { points: form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0 })} &middot; {t('vendor.loyalty.onePointEquals', { value: form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00' })}</p>
                 </div>
               )}
               {/* Program Duration */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1.5 text-gray-400" />
-                  Program Duration
+                  {t('vendor.loyalty.programDuration')}
                 </label>
                 <select
                   value={form.expires_at}
                   onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium transition-all appearance-none cursor-pointer"
                 >
-                  <option value="never" disabled>Select a duration...</option>
-                  <option value="3_months">Extend 3 months</option>
-                  <option value="6_months">Extend 6 months</option>
-                  <option value="12_months">Extend 1 year</option>
+                  <option value="never" disabled>{t('vendor.loyalty.selectDuration')}</option>
+                  <option value="3_months">{t('vendor.loyalty.extendThreeMonths')}</option>
+                  <option value="6_months">{t('vendor.loyalty.extendSixMonths')}</option>
+                  <option value="12_months">{t('vendor.loyalty.extendOneYear')}</option>
                 </select>
-                <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> You can extend the duration but not shorten it while customers are enrolled.</p>
+                <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> {t('vendor.loyalty.extendDurationNote')}</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={handleUpdate} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:shadow-xl transition-all text-sm">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {t('vendor.loyalty.save')}
                 </button>
-                <button onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-gray-400 hover:text-gray-600 text-sm font-semibold">Cancel</button>
+                <button onClick={() => setIsEditing(false)} className="px-4 py-2.5 text-gray-400 hover:text-gray-600 text-sm font-semibold">{t('vendor.loyalty.cancel')}</button>
               </div>
             </div>
           )}
@@ -552,10 +557,10 @@ function ProgramModal({
           {stats && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { icon: Users, label: 'Members', value: stats.total_members, color: 'blue' },
-                { icon: TrendingUp, label: isPunch ? 'Total Stamps' : 'Total Points', value: isPunch ? stats.total_punches : stats.total_points.toLocaleString(), color: 'green' },
-                { icon: Award, label: 'Redeemed', value: stats.rewards_redeemed, color: 'amber' },
-                { icon: Gift, label: 'Active Rewards', value: rewards.filter(r => r.is_active).length || (isPunch ? 1 : 0), color: 'primary' },
+                { icon: Users, label: t('vendor.loyalty.members'), value: stats.total_members, color: 'blue' },
+                { icon: TrendingUp, label: isPunch ? t('vendor.loyalty.totalPunches') : t('vendor.loyalty.totalPoints'), value: isPunch ? stats.total_punches : stats.total_points.toLocaleString(), color: 'green' },
+                { icon: Award, label: t('vendor.loyalty.rewardsRedeemed'), value: stats.rewards_redeemed, color: 'amber' },
+                { icon: Gift, label: t('vendor.loyalty.activeRewards'), value: rewards.filter(r => r.is_active).length || (isPunch ? 1 : 0), color: 'primary' },
               ].map((s, i) => {
                 const colorMap: Record<string, string> = { blue: 'from-blue-500/10 to-blue-500/10 text-blue-600', green: 'from-emerald-500/10 to-green-500/10 text-emerald-600', amber: 'from-amber-500/10 to-yellow-500/10 text-amber-600', primary: 'from-primary-500/10 to-orange-500/10 text-primary-600' };
                 const iconColor: Record<string, string> = { blue: 'text-blue-500', green: 'text-emerald-500', amber: 'text-amber-500', primary: 'text-primary-500' };
@@ -575,16 +580,16 @@ function ProgramModal({
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
               <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-500" /> Reward Tiers
+                  <Award className="w-4 h-4 text-amber-500" /> {t('vendor.loyalty.rewardTiers')}
                 </h3>
                 <button onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }} className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 transition-all">
-                  <Plus className="w-3.5 h-3.5" /> Add
+                  <Plus className="w-3.5 h-3.5" /> {t('vendor.loyalty.add')}
                 </button>
               </div>
               {rewards.length === 0 && !showAddReward ? (
                 <div className="p-6 text-center space-y-3">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 font-medium flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> Setup incomplete — add at least one reward tier so customers can redeem points.
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> {t('vendor.loyalty.setupIncomplete')}
                   </div>
                   <button
                     onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }}
@@ -1258,6 +1263,7 @@ function CreateProgramModal({
 export default function LoyaltyPage() {
   const { user } = useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
+  const { t } = useLanguage();
 
   const [programs, setPrograms] = useState<ProgramWithStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1388,6 +1394,7 @@ export default function LoyaltyPage() {
               program={prog}
               delay={i * 80}
               onClick={() => setSelectedProgramId(prog.id)}
+              t={t}
             />
           ))}
 
@@ -1415,6 +1422,7 @@ export default function LoyaltyPage() {
           onClose={() => setSelectedProgramId(null)}
           onDeleted={() => { fetchPrograms(); }}
           onUpdated={() => { fetchPrograms(); }}
+          t={t}
         />
       )}
     </div>

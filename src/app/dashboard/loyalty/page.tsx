@@ -6,6 +6,7 @@ import {
   Gift, Stamp, Star, Check, Lock, Loader2, Award, ChevronDown, ChevronUp,
   TrendingUp, Clock, ArrowRight, Sparkles, Trophy, History, Store, Coins, Calendar,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import type { LoyaltyProgram, LoyaltyReward } from '@/lib/types/database';
 
@@ -54,6 +55,7 @@ export default function CustomerLoyaltyPage() {
 }
 
 function CustomerLoyaltyContent() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const tabParam = searchParams?.get('tab');
   const initialTab: LoyaltyTab = tabParam === 'business' ? 'business' : 'spontipoints';
@@ -102,14 +104,14 @@ function CustomerLoyaltyContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        setMessage({ type: 'success', text: `Reward redeemed: ${data.reward_name}!` });
+        setMessage({ type: 'success', text: t('customer.loyalty.rewardRedeemedSuccess', { name: data.reward_name }) });
         fetchCards();
         fetchTransactions();
       } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to redeem.' });
+        setMessage({ type: 'error', text: data.error || t('customer.loyalty.failedToRedeem') });
       }
     } catch {
-      setMessage({ type: 'error', text: 'Network error.' });
+      setMessage({ type: 'error', text: t('customer.loyalty.networkError') });
     }
     setRedeeming(null);
     setTimeout(() => setMessage(null), 4000);
@@ -148,18 +150,18 @@ function CustomerLoyaltyContent() {
               <Gift className="w-5 h-5 text-amber-300" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white">My Loyalty Rewards</h1>
-              <p className="text-white/60 text-sm mt-0.5">Track your progress and redeem rewards</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">{t('customer.loyalty.heroTitle')}</h1>
+              <p className="text-white/60 text-sm mt-0.5">{t('customer.loyalty.heroSubtitle')}</p>
             </div>
           </div>
 
           {/* Stats row */}
           {totalPrograms > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
-              <StatCard icon={<Store className="w-4 h-4" />} value={totalPrograms} label="Programs" color="blue" />
-              <StatCard icon={<Stamp className="w-4 h-4" />} value={totalStampsEarned} label="Stamps Earned" color="orange" />
-              <StatCard icon={<Star className="w-4 h-4" />} value={totalPointsEarned.toLocaleString()} label="Points Earned" color="blue" />
-              <StatCard icon={<Trophy className="w-4 h-4" />} value={rewardsRedeemed} label="Rewards Claimed" color="green" />
+              <StatCard icon={<Store className="w-4 h-4" />} value={totalPrograms} label={t('customer.loyalty.programs')} color="blue" />
+              <StatCard icon={<Stamp className="w-4 h-4" />} value={totalStampsEarned} label={t('customer.loyalty.stampsEarned')} color="orange" />
+              <StatCard icon={<Star className="w-4 h-4" />} value={totalPointsEarned.toLocaleString()} label={t('customer.loyalty.pointsEarned')} color="blue" />
+              <StatCard icon={<Trophy className="w-4 h-4" />} value={rewardsRedeemed} label={t('customer.loyalty.rewardsClaimed')} color="green" />
             </div>
           )}
         </div>
@@ -176,7 +178,7 @@ function CustomerLoyaltyContent() {
           }`}
         >
           <Coins className="w-4 h-4" />
-          SpontiPoints
+          {t('customer.loyalty.spontiPointsTab')}
         </button>
         <button
           onClick={() => setActiveTab('business')}
@@ -187,7 +189,7 @@ function CustomerLoyaltyContent() {
           }`}
         >
           <Store className="w-4 h-4" />
-          Business Rewards
+          {t('customer.loyalty.businessRewardsTab')}
         </button>
       </div>
 
@@ -217,16 +219,16 @@ function CustomerLoyaltyContent() {
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 to-blue-100 flex items-center justify-center mx-auto mb-4">
             <Gift className="w-10 h-10 text-blue-400" />
           </div>
-          <h2 className="text-xl font-bold text-gray-700 mb-2">No Loyalty Programs Yet</h2>
+          <h2 className="text-xl font-bold text-gray-700 mb-2">{t('customer.loyalty.noLoyaltyProgramsYet')}</h2>
           <p className="text-gray-400 max-w-md mx-auto">
-            When you redeem deals from participating vendors, you&apos;ll automatically be enrolled in their loyalty programs. Start shopping to earn stamps and points!
+            {t('customer.loyalty.enrollExplanation')}
           </p>
           <a
             href="/deals"
             className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-blue-200/50 transition-all"
           >
             <Sparkles className="w-4 h-4" />
-            Browse Deals
+            {t('customer.loyalty.browseDeals')}
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -264,14 +266,14 @@ function CustomerLoyaltyContent() {
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <History className="w-5 h-5 text-blue-500" />
-                <h2 className="font-bold text-gray-900">Activity History</h2>
+                <h2 className="font-bold text-gray-900">{t('customer.loyalty.activityHistory')}</h2>
               </div>
               {transactions.length > 5 && (
                 <button
                   onClick={() => setShowAllHistory(!showAllHistory)}
                   className="text-xs font-medium text-blue-500 hover:text-blue-600 flex items-center gap-1"
                 >
-                  {showAllHistory ? 'Show Less' : `Show All (${transactions.length})`}
+                  {showAllHistory ? t('common.showLess') : t('customer.loyalty.showAll', { count: transactions.length })}
                   {showAllHistory ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                 </button>
               )}
@@ -283,7 +285,7 @@ function CustomerLoyaltyContent() {
               </div>
             ) : transactions.length === 0 ? (
               <div className="p-8 text-center text-gray-400 text-sm">
-                No activity yet. Redeem deals to start earning rewards!
+                {t('customer.loyalty.noActivityYet')}
               </div>
             ) : (
               <div className="divide-y divide-gray-50">
@@ -316,6 +318,7 @@ function CustomerLoyaltyContent() {
    SpontiPoints with Empty State Fallback
    ────────────────────────────────────────── */
 function SpontiPointsWithFallback() {
+  const { t } = useLanguage();
   const [hasData, setHasData] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -344,16 +347,16 @@ function SpontiPointsWithFallback() {
       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mx-auto mb-4">
         <Coins className="w-10 h-10 text-orange-400" />
       </div>
-      <h2 className="text-xl font-bold text-gray-700 mb-2">No SpontiPoints Yet</h2>
+      <h2 className="text-xl font-bold text-gray-700 mb-2">{t('customer.loyalty.noSpontiPointsYet')}</h2>
       <p className="text-gray-400 max-w-md mx-auto">
-        You earn 25 SpontiPoints every time you redeem a deal at any business. Once you reach 500 points, you can convert them into credit. Start redeeming deals to earn!
+        {t('customer.loyalty.spontiPointsExplanation')}
       </p>
       <a
         href="/deals"
         className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-200/50 transition-all"
       >
         <Sparkles className="w-4 h-4" />
-        Browse Deals
+        {t('customer.loyalty.browseDeals')}
         <ArrowRight className="w-4 h-4" />
       </a>
     </div>
@@ -403,6 +406,7 @@ function PunchCardFull({
   onSelect: () => void;
 }) {
   const program = card.program;
+  const { t } = useLanguage();
   if (!program) return null;
 
   const required = program.punches_required || 10;
@@ -428,7 +432,7 @@ function PunchCardFull({
           </div>
           {canClaim && (
             <span className="bg-green-400 text-green-900 text-[10px] font-bold px-2 py-0.5 rounded-full animate-pulse flex-shrink-0">
-              REWARD READY
+              {t('customer.loyalty.rewardReady')}
             </span>
           )}
         </div>
@@ -443,7 +447,7 @@ function PunchCardFull({
         {/* Progress bar */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-gray-400 mb-1.5">
-            <span className="font-medium">{current} / {required} stamps</span>
+            <span className="font-medium">{t('customer.loyalty.stamps2', { current, required })}</span>
             <span className="font-semibold text-primary-500">{Math.round(progressPct)}%</span>
           </div>
           <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
@@ -483,7 +487,7 @@ function PunchCardFull({
 
         {/* Reward info */}
         <div className="bg-orange-50 rounded-lg px-3 py-2 text-center">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Reward</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{t('customer.loyalty.reward')}</p>
           <p className="text-sm font-bold text-primary-600">{program.punch_reward}</p>
         </div>
 
@@ -491,11 +495,11 @@ function PunchCardFull({
         <div className="grid grid-cols-2 gap-2 mt-3">
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
             <p className="text-lg font-bold text-gray-900">{card.total_punches_earned}</p>
-            <p className="text-[10px] text-gray-400">Lifetime Stamps</p>
+            <p className="text-[10px] text-gray-400">{t('customer.loyalty.lifetimeStamps')}</p>
           </div>
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
             <p className="text-lg font-bold text-gray-900">{required - current > 0 ? required - current : 0}</p>
-            <p className="text-[10px] text-gray-400">Until Reward</p>
+            <p className="text-[10px] text-gray-400">{t('customer.loyalty.untilReward')}</p>
           </div>
         </div>
 
@@ -507,7 +511,7 @@ function PunchCardFull({
             className="w-full mt-4 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold text-sm py-3 rounded-xl transition-all shadow-lg shadow-green-200/50 inline-flex items-center justify-center gap-2"
           >
             {redeeming === card.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-            Claim Reward
+            {t('customer.loyalty.claimReward')}
           </button>
         )}
       </div>
@@ -530,6 +534,7 @@ function PointsCardFull({
   redeeming: string | null;
   onSelect: () => void;
 }) {
+  const { t } = useLanguage();
   const program = card.program;
   if (!program) return null;
 
@@ -569,7 +574,7 @@ function PointsCardFull({
             <span className="text-xs text-gray-400 font-bold uppercase">pts</span>
           </div>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            {card.total_points_earned.toLocaleString()} earned total
+            {t('customer.loyalty.earnedTotal', { points: card.total_points_earned.toLocaleString() })}
           </p>
         </div>
 
@@ -601,17 +606,17 @@ function PointsCardFull({
               </div>
               {/* Reward info box */}
               <div className="mt-2.5 bg-blue-50 rounded-xl px-4 py-2.5 text-center">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Reward</p>
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{t('customer.loyalty.reward')}</p>
                 {nextReward ? (
                   <p className="text-sm font-bold text-blue-600 mt-0.5">
                     {canRedeem
-                      ? `Ready to redeem: ${nextReward.name}`
-                      : `${remaining.toLocaleString()} more pts to ${nextReward.name}`
+                      ? t('customer.loyalty.readyToRedeem', { reward: nextReward.name })
+                      : t('customer.loyalty.morePointsTo', { count: remaining.toLocaleString(), reward: nextReward.name })
                     }
                   </p>
                 ) : (
                   <p className="text-sm font-bold text-blue-600 mt-0.5">
-                    Keep earning — rewards coming soon!
+                    {t('customer.loyalty.keepEarningRewards')}
                   </p>
                 )}
               </div>
@@ -648,7 +653,7 @@ function PointsCardFull({
                       disabled={!!isRedeeming}
                       className="text-[10px] font-bold text-green-600 bg-green-100 hover:bg-green-200 px-3 py-1.5 rounded-full transition-colors flex-shrink-0"
                     >
-                      {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Redeem'}
+                      {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : t('customer.loyalty.redeem')}
                     </button>
                   )}
                 </div>
@@ -656,7 +661,7 @@ function PointsCardFull({
             })}
             {rewards.length > 3 && (
               <p className="text-[11px] text-blue-500 font-medium text-center pt-1">
-                +{rewards.length - 3} more rewards available
+                {t('customer.loyalty.moreRewardsAvailable', { count: rewards.length - 3 })}
               </p>
             )}
           </div>
@@ -666,11 +671,11 @@ function PointsCardFull({
         <div className="grid grid-cols-2 gap-2 mt-4">
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
             <p className="text-lg font-bold text-gray-900">{card.total_points_earned.toLocaleString()}</p>
-            <p className="text-[10px] text-gray-400">Lifetime Earned</p>
+            <p className="text-[10px] text-gray-400">{t('customer.loyalty.lifetimeEarned')}</p>
           </div>
           <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
             <p className="text-lg font-bold text-gray-900">{card.total_points_redeemed.toLocaleString()}</p>
-            <p className="text-[10px] text-gray-400">Redeemed</p>
+            <p className="text-[10px] text-gray-400">{t('customer.loyalty.redeemed')}</p>
           </div>
         </div>
       </div>
@@ -683,6 +688,7 @@ function PointsCardFull({
    Transaction Row
    ────────────────────────────────────────── */
 function TransactionRow({ tx }: { tx: Transaction }) {
+  const { t } = useLanguage();
   const isEarn = tx.transaction_type === 'earn_punch' || tx.transaction_type === 'earn_points';
   const isPunch = tx.transaction_type === 'earn_punch' || tx.transaction_type === 'redeem_punch_reward';
 
@@ -706,7 +712,7 @@ function TransactionRow({ tx }: { tx: Transaction }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-gray-700 truncate">
-          {tx.description || (isEarn ? 'Earned reward' : 'Redeemed reward')}
+          {tx.description || (isEarn ? t('customer.loyalty.earnedReward') : t('customer.loyalty.redeemedReward'))}
         </p>
         <div className="flex items-center gap-2 text-[11px] text-gray-400">
           {tx.vendor?.business_name && (
@@ -743,6 +749,7 @@ function CardDetailModal({
   onRedeem: (cardId: string, rewardId?: string) => void;
   redeeming: string | null;
 }) {
+  const { t } = useLanguage();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(true);
 
@@ -803,7 +810,7 @@ function CardDetailModal({
               return (
                 <div className={`mt-3 rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${isExpired ? 'bg-red-500/20 text-red-200' : 'bg-white/10 text-white/80'}`}>
                   <Calendar className="w-4 h-4 shrink-0" />
-                  {isExpired ? 'Expired' : 'Expires'} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {isExpired ? t('customer.loyalty.expired') : t('customer.loyalty.expires', { date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })}
                 </div>
               );
             })()}
@@ -820,7 +827,7 @@ function CardDetailModal({
                   {card.current_punches} / {required}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {canClaim ? 'Reward ready to claim!' : `${required - card.current_punches} stamps to go`}
+                  {canClaim ? t('customer.loyalty.rewardReadyToClaim') : t('customer.loyalty.stampsToGo', { count: required - card.current_punches })}
                 </p>
               </div>
 
@@ -844,7 +851,7 @@ function CardDetailModal({
 
               {/* Reward */}
               <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200/60 rounded-xl p-4 text-center">
-                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">Reward</p>
+                <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-1">{t('customer.loyalty.reward')}</p>
                 <p className="text-lg font-bold text-primary-600">{program.punch_reward}</p>
               </div>
 
@@ -855,7 +862,7 @@ function CardDetailModal({
                   className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-green-200/50 inline-flex items-center justify-center gap-2"
                 >
                   {redeeming === card.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <Award className="w-5 h-5" />}
-                  Claim Reward
+                  {t('customer.loyalty.claimReward')}
                 </button>
               )}
             </>
@@ -865,7 +872,7 @@ function CardDetailModal({
                 <p className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-600">
                   {card.current_points.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-400 mt-1">current points</p>
+                <p className="text-sm text-gray-400 mt-1">{t('customer.loyalty.currentPoints')}</p>
               </div>
 
               {/* Progress bar — always visible */}
@@ -899,22 +906,22 @@ function CardDetailModal({
                     {/* Reward info box */}
                     {nextReward ? (
                       <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 text-center">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Next Reward</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{t('customer.loyalty.nextReward')}</p>
                         <p className="text-lg font-bold text-blue-600 mt-0.5">{nextReward.name}</p>
                         <p className="text-xs text-blue-500 mt-1">
-                          {remaining.toLocaleString()} more points to go ({nextReward.points_cost.toLocaleString()} pts)
+                          {t('customer.loyalty.morePointsToGo', { count: remaining.toLocaleString(), total: nextReward.points_cost.toLocaleString() })}
                         </p>
                       </div>
                     ) : affordableReward ? (
                       <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-xl p-4 text-center">
                         <Gift className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                        <p className="text-sm font-semibold text-green-700">You can redeem a reward!</p>
-                        <p className="text-xs text-green-600 mt-0.5">Choose from available rewards below</p>
+                        <p className="text-sm font-semibold text-green-700">{t('customer.loyalty.canRedeemReward')}</p>
+                        <p className="text-xs text-green-600 mt-0.5">{t('customer.loyalty.chooseFromRewards')}</p>
                       </div>
                     ) : (
                       <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 text-center">
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Reward</p>
-                        <p className="text-sm font-bold text-blue-600 mt-0.5">Keep earning — rewards coming soon!</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">{t('customer.loyalty.reward')}</p>
+                        <p className="text-sm font-bold text-blue-600 mt-0.5">{t('customer.loyalty.keepEarningRewards')}</p>
                       </div>
                     )}
                   </div>
@@ -924,7 +931,7 @@ function CardDetailModal({
               {/* Rewards list */}
               {card.available_rewards.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Available Rewards</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t('customer.loyalty.availableRewards')}</h3>
                   {card.available_rewards.map(reward => {
                     const canAfford = card.current_points >= reward.points_cost;
                     const isRedeeming = redeeming === card.id + reward.id;
@@ -951,7 +958,7 @@ function CardDetailModal({
                               disabled={!!isRedeeming}
                               className="text-xs font-bold text-white bg-green-500 hover:bg-green-600 px-4 py-2 rounded-xl transition-colors"
                             >
-                              {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Redeem'}
+                              {isRedeeming ? <Loader2 className="w-3 h-3 animate-spin" /> : t('customer.loyalty.redeem')}
                             </button>
                           )}
                         </div>
@@ -964,7 +971,7 @@ function CardDetailModal({
                               />
                             </div>
                             <p className="text-[10px] text-gray-400 mt-1">
-                              {(reward.points_cost - card.current_points).toLocaleString()} more points needed
+                              {t('customer.loyalty.morePointsNeeded', { count: (reward.points_cost - card.current_points).toLocaleString() })}
                             </p>
                           </div>
                         )}
@@ -982,13 +989,13 @@ function CardDetailModal({
               <p className="text-xl font-bold text-gray-900">
                 {isPunch ? card.total_punches_earned : card.total_points_earned.toLocaleString()}
               </p>
-              <p className="text-[10px] text-gray-400">Total Earned</p>
+              <p className="text-[10px] text-gray-400">{t('customer.loyalty.totalEarned')}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
               <p className="text-xl font-bold text-gray-900">
                 {isPunch ? card.current_punches : card.current_points.toLocaleString()}
               </p>
-              <p className="text-[10px] text-gray-400">Current</p>
+              <p className="text-[10px] text-gray-400">{t('customer.loyalty.current')}</p>
             </div>
             <div className="bg-gray-50 rounded-xl p-3 text-center">
               <p className="text-xl font-bold text-gray-900">
@@ -997,7 +1004,7 @@ function CardDetailModal({
                   : card.total_points_redeemed.toLocaleString()
                 }
               </p>
-              <p className="text-[10px] text-gray-400">{isPunch ? 'Rewards Won' : 'Redeemed'}</p>
+              <p className="text-[10px] text-gray-400">{isPunch ? t('customer.loyalty.rewardsWon') : t('customer.loyalty.redeemed')}</p>
             </div>
           </div>
 
@@ -1005,14 +1012,14 @@ function CardDetailModal({
           <div>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
               <History className="w-3.5 h-3.5" />
-              Activity
+              {t('customer.loyalty.activity')}
             </h3>
             {txLoading ? (
               <div className="flex justify-center py-4">
                 <Loader2 className="w-5 h-5 text-gray-300 animate-spin" />
               </div>
             ) : transactions.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">No activity yet</p>
+              <p className="text-sm text-gray-400 text-center py-4">{t('customer.loyalty.noActivityYetShort')}</p>
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {transactions.map(tx => (
@@ -1029,7 +1036,7 @@ function CardDetailModal({
             onClick={onClose}
             className="w-full py-3 bg-secondary-500 hover:bg-secondary-600 text-white rounded-xl font-semibold text-sm transition-colors"
           >
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -1042,6 +1049,7 @@ function CardDetailModal({
    Expiration Badge (shared by card components)
    ────────────────────────────────────────── */
 function ExpirationBadge({ expiresAt }: { expiresAt: string }) {
+  const { t } = useLanguage();
   const expDate = new Date(expiresAt);
   const now = new Date();
   const isExpired = expDate < now;
@@ -1058,10 +1066,10 @@ function ExpirationBadge({ expiresAt }: { expiresAt: string }) {
     }`}>
       <Calendar className="w-3.5 h-3.5 shrink-0" />
       {isExpired
-        ? 'Program expired'
+        ? t('customer.loyalty.expired')
         : isExpiringSoon
-          ? `Expires in ${daysLeft} day${daysLeft !== 1 ? 's' : ''} — ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-          : `Expires ${expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+          ? t('customer.loyalty.expiresIn', { days: daysLeft, s: daysLeft !== 1 ? 's' : '', date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })
+          : t('customer.loyalty.expires', { date: expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })
       }
     </div>
   );
