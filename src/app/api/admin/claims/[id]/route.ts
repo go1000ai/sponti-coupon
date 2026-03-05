@@ -33,7 +33,7 @@ export async function PUT(
     // Fetch the current claim
     const { data: claim, error: fetchError } = await serviceClient
       .from('claims')
-      .select('id, deal_id, redeemed, deposit_confirmed, expires_at')
+      .select('id, deal_id, customer_id, redeemed, deposit_confirmed, expires_at')
       .eq('id', id)
       .single();
 
@@ -57,6 +57,60 @@ export async function PUT(
         // Decrement claims_count only if deposit was confirmed (matches the increment logic)
         if (claim.deposit_confirmed) {
           await serviceClient.rpc('decrement_claims_count', { deal_id_param: claim.deal_id });
+        }
+
+        // Reverse loyalty + SpontiPoints tied to the redemption record
+        const { data: redemption } = await serviceClient
+          .from('redemptions')
+          .select('id')
+          .eq('claim_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (redemption) {
+          // Reverse loyalty transactions
+          const { data: loyaltyTxns } = await serviceClient
+            .from('loyalty_transactions')
+            .select('id, card_id, transaction_type, punches_amount, points_amount')
+            .eq('redemption_id', redemption.id);
+
+          if (loyaltyTxns && loyaltyTxns.length > 0) {
+            for (const txn of loyaltyTxns) {
+              if (txn.transaction_type === 'earn_punch' && txn.punches_amount) {
+                const { data: card } = await serviceClient
+                  .from('loyalty_cards')
+                  .select('current_punches, total_punches_earned')
+                  .eq('id', txn.card_id)
+                  .single();
+                if (card) {
+                  await serviceClient.from('loyalty_cards').update({
+                    current_punches: Math.max(0, card.current_punches - txn.punches_amount),
+                    total_punches_earned: Math.max(0, card.total_punches_earned - txn.punches_amount),
+                  }).eq('id', txn.card_id);
+                }
+              } else if (txn.transaction_type === 'earn_points' && txn.points_amount) {
+                const { data: card } = await serviceClient
+                  .from('loyalty_cards')
+                  .select('current_points, total_points_earned')
+                  .eq('id', txn.card_id)
+                  .single();
+                if (card) {
+                  await serviceClient.from('loyalty_cards').update({
+                    current_points: Math.max(0, card.current_points - txn.points_amount),
+                    total_points_earned: Math.max(0, card.total_points_earned - txn.points_amount),
+                  }).eq('id', txn.card_id);
+                }
+              }
+            }
+            await serviceClient.from('loyalty_transactions').delete().eq('redemption_id', redemption.id);
+          }
+
+          // Reverse SpontiPoints
+          await serviceClient.from('spontipoints_ledger').delete().eq('redemption_id', redemption.id);
+
+          // Delete redemption record
+          await serviceClient.from('redemptions').delete().eq('id', redemption.id);
         }
 
         return NextResponse.json({ success: true, message: 'Claim cancelled successfully' });
