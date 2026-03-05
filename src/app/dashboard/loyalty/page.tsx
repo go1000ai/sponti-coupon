@@ -576,27 +576,51 @@ function PointsCardFull({
           </p>
         </div>
 
-        {/* Progress bar to next reward */}
-        {nextReward && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
-              <span className="truncate flex-1">Next: <span className="font-medium text-gray-600">{nextReward.name}</span></span>
-              <span className="font-semibold text-blue-500 ml-2">{nextReward.points_cost} pts</span>
+        {/* Progress bar — always visible */}
+        {(() => {
+          // Use next reward target, or a sensible default milestone
+          const targetPoints = nextReward?.points_cost || (Math.ceil((card.current_points + 1) / 500) * 500) || 500;
+          const progress = Math.min((card.current_points / targetPoints) * 100, 100);
+          const remaining = Math.max(0, targetPoints - card.current_points);
+          const canRedeem = nextReward && card.current_points >= nextReward.points_cost;
+
+          return (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span className="text-gray-400">
+                  {card.current_points.toLocaleString()} / {targetPoints.toLocaleString()} pts
+                </span>
+                <span className="font-semibold text-blue-500">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${
+                    canRedeem
+                      ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                      : 'bg-gradient-to-r from-blue-500 to-sky-500'
+                  }`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              {/* Reward info box */}
+              <div className="mt-2.5 bg-blue-50 rounded-xl px-4 py-2.5 text-center">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Reward</p>
+                {nextReward ? (
+                  <p className="text-sm font-bold text-blue-600 mt-0.5">
+                    {canRedeem
+                      ? `Ready to redeem: ${nextReward.name}`
+                      : `${remaining.toLocaleString()} more pts to ${nextReward.name}`
+                    }
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-blue-600 mt-0.5">
+                    Keep earning — rewards coming soon!
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-blue-500 to-blue-500 rounded-full transition-all duration-700"
-                style={{ width: `${progressToNext}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-gray-400 mt-1">
-              {nextReward.points_cost - card.current_points > 0
-                ? `${(nextReward.points_cost - card.current_points).toLocaleString()} more points needed`
-                : 'Ready to redeem!'
-              }
-            </p>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Available Rewards */}
         {rewards.length > 0 && (
@@ -847,37 +871,57 @@ function CardDetailModal({
                 <p className="text-sm text-gray-400 mt-1">current points</p>
               </div>
 
-              {/* Next reward progress indicator */}
+              {/* Progress bar — always visible */}
               {(() => {
                 const nextReward = card.available_rewards.find(r => r.points_cost > card.current_points);
                 const affordableReward = [...card.available_rewards].reverse().find(r => r.points_cost <= card.current_points);
-                if (nextReward) {
-                  const needed = nextReward.points_cost - card.current_points;
-                  const progress = Math.min((card.current_points / nextReward.points_cost) * 100, 100);
-                  return (
-                    <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 mt-2">
-                      <div className="flex items-center justify-between text-xs mb-2">
-                        <span className="text-gray-500">Next reward: <span className="font-semibold text-blue-600">{nextReward.name}</span></span>
-                        <span className="font-bold text-blue-600">{nextReward.points_cost.toLocaleString()} pts</span>
+                const targetPoints = nextReward?.points_cost || (Math.ceil((card.current_points + 1) / 500) * 500) || 500;
+                const progress = Math.min((card.current_points / targetPoints) * 100, 100);
+                const remaining = Math.max(0, targetPoints - card.current_points);
+
+                return (
+                  <div>
+                    {/* Progress bar */}
+                    <div className="mb-2">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-gray-400">{card.current_points.toLocaleString()} / {targetPoints.toLocaleString()} pts</span>
+                        <span className="font-semibold text-blue-500">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-2.5 bg-blue-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-700" style={{ width: `${progress}%` }} />
+                      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${
+                            affordableReward
+                              ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                              : 'bg-gradient-to-r from-blue-500 to-sky-500'
+                          }`}
+                          style={{ width: `${progress}%` }}
+                        />
                       </div>
-                      <p className="text-xs text-blue-600 font-semibold mt-1.5">
-                        {needed.toLocaleString()} more points needed
-                      </p>
                     </div>
-                  );
-                } else if (affordableReward) {
-                  return (
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-xl p-4 mt-2 text-center">
-                      <Gift className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                      <p className="text-sm font-semibold text-green-700">You can redeem a reward!</p>
-                      <p className="text-xs text-green-600 mt-0.5">Choose from available rewards below</p>
-                    </div>
-                  );
-                }
-                return null;
+
+                    {/* Reward info box */}
+                    {nextReward ? (
+                      <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 text-center">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Next Reward</p>
+                        <p className="text-lg font-bold text-blue-600 mt-0.5">{nextReward.name}</p>
+                        <p className="text-xs text-blue-500 mt-1">
+                          {remaining.toLocaleString()} more points to go ({nextReward.points_cost.toLocaleString()} pts)
+                        </p>
+                      </div>
+                    ) : affordableReward ? (
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200/60 rounded-xl p-4 text-center">
+                        <Gift className="w-5 h-5 text-green-500 mx-auto mb-1" />
+                        <p className="text-sm font-semibold text-green-700">You can redeem a reward!</p>
+                        <p className="text-xs text-green-600 mt-0.5">Choose from available rewards below</p>
+                      </div>
+                    ) : (
+                      <div className="bg-gradient-to-r from-blue-50 to-sky-50 border border-blue-200/60 rounded-xl p-4 text-center">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Reward</p>
+                        <p className="text-sm font-bold text-blue-600 mt-0.5">Keep earning — rewards coming soon!</p>
+                      </div>
+                    )}
+                  </div>
+                );
               })()}
 
               {/* Rewards list */}
