@@ -110,6 +110,7 @@ export interface Customer {
   push_token: string | null;
   email_digest_opt_in: boolean;
   review_email_opt_out: boolean;
+  timezone: string;
   created_at: string;
 }
 

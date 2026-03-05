@@ -49,6 +49,7 @@ export async function GET(request: Request) {
           const zip = searchParams.get('zip') || meta.zip || null;
           const category = searchParams.get('category') || meta.category || null;
 
+          const vendorTz = meta.timezone || 'America/New_York';
           await adminClient.from('vendors').insert({
             id: userId,
             business_name: businessName,
@@ -59,6 +60,7 @@ export async function GET(request: Request) {
             state,
             zip,
             category,
+            timezone: vendorTz,
             subscription_tier: 'starter',
             subscription_status: 'incomplete',
           });
@@ -69,6 +71,7 @@ export async function GET(request: Request) {
           const city = searchParams.get('city') || meta.city || null;
           const state = searchParams.get('state') || meta.state || null;
           const zip = searchParams.get('zip') || meta.zip || null;
+          const customerTz = meta.timezone || 'America/New_York';
 
           await adminClient.from('customers').insert({
             id: userId,
@@ -79,6 +82,7 @@ export async function GET(request: Request) {
             city,
             state,
             zip,
+            timezone: customerTz,
           });
         }
       }

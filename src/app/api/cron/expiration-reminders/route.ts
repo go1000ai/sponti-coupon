@@ -3,8 +3,24 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { sendExpirationReminderEmail } from '@/lib/email/expiration-reminder';
 
 const MAX_EMAILS_PER_CYCLE = 50;
+// Send reminders when it's 9 AM or 7 PM in the customer's timezone
+const TARGET_HOURS = [9, 19];
 
-// GET /api/cron/expiration-reminders — Send deal expiration reminder emails
+/** Check if the current UTC time corresponds to one of the target hours in the given timezone */
+function isTargetHourInTimezone(timezone: string): boolean {
+  try {
+    const localHour = parseInt(
+      new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: timezone }).format(new Date()),
+      10
+    );
+    return TARGET_HOURS.includes(localHour);
+  } catch {
+    // Invalid timezone — fall through and send (default to America/New_York behavior)
+    return true;
+  }
+}
+
+// GET /api/cron/expiration-reminders — Send deal expiration reminder emails (timezone-aware)
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization');
@@ -25,6 +41,7 @@ export async function GET(request: NextRequest) {
 
   let sent3d = 0;
   let sent1d = 0;
+  let skippedTz = 0;
   const errors: string[] = [];
 
   // ── 3-day reminders ──
@@ -36,7 +53,7 @@ export async function GET(request: NextRequest) {
       id,
       customer_id,
       deal:deals(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
-      customer:customers(id, email, first_name, last_name, review_email_opt_out)
+      customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
     .is('expiration_reminder_3d_sent_at', null)
@@ -51,7 +68,7 @@ export async function GET(request: NextRequest) {
     for (const claim of claims3d) {
       try {
         const customer = claim.customer as unknown as {
-          id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean;
+          id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean; timezone: string;
         } | null;
         const deal = claim.deal as unknown as {
           id: string; title: string; expires_at: string; vendor_id: string; vendor: { business_name: string } | null;
@@ -68,6 +85,13 @@ export async function GET(request: NextRequest) {
 
         // Skip if 1 day or less — that's handled by the 1-day reminder
         if (daysLeft <= 1) continue;
+
+        // Timezone check — only send when it's 9 AM or 7 PM in customer's local time
+        const customerTz = customer.timezone || 'America/New_York';
+        if (!isTargetHourInTimezone(customerTz)) {
+          skippedTz++;
+          continue;
+        }
 
         // Skip opted-out customers but mark as sent
         if (customer.review_email_opt_out) {
@@ -128,7 +152,7 @@ export async function GET(request: NextRequest) {
       id,
       customer_id,
       deal:deals(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
-      customer:customers(id, email, first_name, last_name, review_email_opt_out)
+      customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
     .is('expiration_reminder_1d_sent_at', null)
@@ -143,7 +167,7 @@ export async function GET(request: NextRequest) {
     for (const claim of claims1d) {
       try {
         const customer = claim.customer as unknown as {
-          id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean;
+          id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean; timezone: string;
         } | null;
         const deal = claim.deal as unknown as {
           id: string; title: string; expires_at: string; vendor_id: string; vendor: { business_name: string } | null;
@@ -154,6 +178,13 @@ export async function GET(request: NextRequest) {
         // Check deal expires within 1 day
         const expiresDate = new Date(deal.expires_at);
         if (expiresDate <= now || expiresDate > new Date(oneDayFromNow)) continue;
+
+        // Timezone check
+        const customerTz = customer.timezone || 'America/New_York';
+        if (!isTargetHourInTimezone(customerTz)) {
+          skippedTz++;
+          continue;
+        }
 
         // Skip opted-out customers but mark as sent
         if (customer.review_email_opt_out) {
@@ -207,6 +238,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     sent_3d: sent3d,
     sent_1d: sent1d,
+    skipped_wrong_timezone: skippedTz,
     errors: errors.length > 0 ? errors : undefined,
   });
 }

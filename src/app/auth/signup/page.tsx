@@ -136,6 +136,7 @@ function SignupForm() {
         emailRedirectTo: redirectTo,
         data: {
           account_type: accountType,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           ...(accountType === 'vendor' ? {
             plan: selectedPlan,
             interval: selectedInterval,

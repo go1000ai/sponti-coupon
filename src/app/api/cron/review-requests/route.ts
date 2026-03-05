@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       customer_id,
       deal_id,
       redeemed_at,
-      customer:customers(id, email, first_name, last_name, review_email_opt_out),
+      customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone),
       deal:deals(id, title, vendor_id, vendor:vendors(business_name))
     `)
     .eq('redeemed', true)
@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
         first_name: string | null;
         last_name: string | null;
         review_email_opt_out: boolean;
+        timezone: string;
       } | null;
       const deal = claim.deal as unknown as {
         id: string;
@@ -79,6 +80,15 @@ export async function GET(request: NextRequest) {
         console.warn(`[cron/review-requests] Skipping claim ${claim.id}: missing customer email or deal title`);
         continue;
       }
+
+      // Timezone check — only send when it's 9 AM or 10 AM in customer's local time
+      try {
+        const localHour = parseInt(
+          new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: customer.timezone || 'America/New_York' }).format(new Date()),
+          10
+        );
+        if (localHour !== 9 && localHour !== 10) continue;
+      } catch { /* invalid tz — send anyway */ }
 
       // Respect unsubscribe — skip opted-out customers but mark as sent
       if (customer.review_email_opt_out) {

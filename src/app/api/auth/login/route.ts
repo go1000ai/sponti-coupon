@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const limited = rateLimit(request, { maxRequests: 5, windowMs: 15 * 60 * 1000 });
     if (limited) return limited;
 
-    const { email, password } = await request.json();
+    const { email, password, timezone } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
@@ -81,6 +81,14 @@ export async function POST(request: NextRequest) {
         const adminClient = await createServiceRoleClient();
         await adminClient.from('user_profiles').upsert({ id: data.user.id, role: 'customer' });
       }
+    }
+
+    // Update user timezone on each login (handles moves/travel)
+    if (timezone && typeof timezone === 'string') {
+      const { createServiceRoleClient } = await import('@/lib/supabase/server');
+      const svc = await createServiceRoleClient();
+      const table = role === 'vendor' ? 'vendors' : 'customers';
+      await svc.from(table).update({ timezone }).eq('id', data.user.id);
     }
 
     // Get subscription info for vendors
