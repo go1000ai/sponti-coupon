@@ -8,7 +8,7 @@ import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import {
   Gift, Plus, Pencil, Trash2, Loader2, Save, X,
   Stamp, Star, Users, TrendingUp, Award, Activity,
-  ChevronDown, ToggleLeft, ToggleRight,
+  ChevronDown, ToggleLeft, ToggleRight, Calendar,
   Sparkles, Crown, Zap, Check, ArrowRight,
 } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, LoyaltyTransaction } from '@/lib/types/database';
@@ -22,6 +22,7 @@ interface ProgramForm {
   punch_reward: string;
   points_per_dollar: number;
   point_value: number;
+  expires_at: string;
 }
 
 interface RewardForm {
@@ -59,6 +60,7 @@ const emptyProgramForm: ProgramForm = {
   punch_reward: '',
   points_per_dollar: 1,
   point_value: 1.00,
+  expires_at: 'never',
 };
 
 const emptyRewardForm: RewardForm = { name: '', description: '', points_cost: 100 };
@@ -361,7 +363,7 @@ function ProgramModal({
               <button onClick={handleToggleActive} disabled={saving} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
                 {program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </button>
-              <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1 }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
+              <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1, expires_at: (program as unknown as Record<string, unknown>).expires_at as string || 'never' }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
                 <Pencil className="w-4 h-4" />
               </button>
               <button onClick={onClose} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
@@ -375,6 +377,18 @@ function ProgramModal({
               <ToggleLeft className="w-4 h-4 shrink-0" /> Program paused — not awarding stamps/points.
             </div>
           )}
+          {(() => {
+            const exp = (program as unknown as Record<string, unknown>).expires_at as string | null;
+            if (!exp) return null;
+            const expDate = new Date(exp);
+            const isExpired = expDate < new Date();
+            return (
+              <div className={`relative mt-3 rounded-xl px-3 py-2 text-sm flex items-center gap-2 ${isExpired ? 'bg-red-500/20 text-red-100' : 'bg-white/10 text-white/80'}`}>
+                <Calendar className="w-4 h-4 shrink-0" />
+                {isExpired ? 'Expired' : 'Expires'} {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            );
+          })()}
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -450,6 +464,24 @@ function ProgramModal({
                   <p className="text-xs text-gray-400">$50 purchase = <span className="font-bold text-blue-600">{form.point_value > 0 ? Math.floor(50 / form.point_value * form.points_per_dollar) : 0}</span> points &middot; 1 pt = ${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</p>
                 </div>
               )}
+              {/* Program Duration */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1.5 text-gray-400" />
+                  Program Duration
+                </label>
+                <select
+                  value={form.expires_at}
+                  onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
+                  className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium transition-all appearance-none cursor-pointer"
+                >
+                  <option value="never">No expiration</option>
+                  <option value="3_months">3 months</option>
+                  <option value="6_months">6 months</option>
+                  <option value="12_months">1 year</option>
+                </select>
+                <p className="text-[11px] text-gray-400 mt-1.5">After expiry, no new stamps/points are awarded. Existing cards are preserved.</p>
+              </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={handleUpdate} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:shadow-xl transition-all text-sm">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
@@ -952,6 +984,25 @@ function CreateProgramModal({
               </div>
             </div>
           )}
+
+          {/* Program Duration */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">
+              <Calendar className="w-4 h-4 inline mr-1.5 text-gray-400" />
+              Program Duration
+            </label>
+            <select
+              value={form.expires_at}
+              onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
+              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all appearance-none cursor-pointer"
+            >
+              <option value="never">No expiration</option>
+              <option value="3_months">3 months</option>
+              <option value="6_months">6 months</option>
+              <option value="12_months">1 year</option>
+            </select>
+            <p className="text-[11px] text-gray-400 mt-1.5">After expiry, no new stamps/points are awarded. Existing cards are preserved.</p>
+          </div>
 
           {/* Create Button */}
           <button
