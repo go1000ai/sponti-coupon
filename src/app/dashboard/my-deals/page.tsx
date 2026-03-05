@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -52,6 +53,7 @@ const sortLabels: Record<SortOption, string> = {
 
 export default function DashboardMyDealsPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -59,6 +61,7 @@ export default function DashboardMyDealsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [paidBanner, setPaidBanner] = useState(searchParams?.get('paid') === 'true');
 
   const fetchClaims = useCallback(async () => {
     setLoading(true);
@@ -163,6 +166,20 @@ export default function DashboardMyDealsPage() {
           totalClaims={claims.length}
           activeClaims={claims.filter(c => { const s = getStatus(c); return s === 'active' || s === 'pending_deposit'; }).length}
         />
+      )}
+
+      {/* Payment Success Banner */}
+      {paidBanner && (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-bold text-green-700">Payment Successful!</p>
+            <p className="text-xs text-green-600">Your remaining balance has been paid. Thank you!</p>
+          </div>
+          <button onClick={() => setPaidBanner(false)} className="p-1 hover:bg-green-100 rounded-lg transition-colors">
+            <X className="w-4 h-4 text-green-500" />
+          </button>
+        </div>
       )}
 
       {/* Loyalty Cards */}
@@ -552,6 +569,8 @@ function DetailModal({
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'redeem' | 'vendor'>('details');
+  const [payingBalance, setPayingBalance] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   // Cancel state
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -864,6 +883,53 @@ function DetailModal({
                   {claim.redeemed_at && (
                     <p className="text-xs text-gray-400 mt-2">Used on {fmtDateTime(claim.redeemed_at)}</p>
                   )}
+                </div>
+              )}
+
+              {/* Pay Remaining Balance — shown when redeemed with outstanding balance */}
+              {status === 'redeemed' && remainingBalance > 0 && (
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-5">
+                  <div className="text-center mb-3">
+                    <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-1" />
+                    <p className="text-sm font-bold text-gray-900">Remaining Balance</p>
+                    <p className="text-2xl font-extrabold text-blue-600 mt-1">{fmtCurrency(remainingBalance)}</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      setPayingBalance(true);
+                      setPayError(null);
+                      try {
+                        const res = await fetch('/api/customer/pay-balance', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ claim_id: claim.id }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.checkout_url) {
+                          window.location.href = data.checkout_url;
+                        } else {
+                          setPayError(data.error || 'Unable to create payment. Please pay in person.');
+                        }
+                      } catch {
+                        setPayError('Network error. Please try again.');
+                      }
+                      setPayingBalance(false);
+                    }}
+                    disabled={payingBalance}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-200/50 flex items-center justify-center gap-2"
+                  >
+                    {payingBalance ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                    ) : (
+                      <><CreditCard className="w-4 h-4" /> Pay Now with Card</>
+                    )}
+                  </button>
+                  {payError && (
+                    <p className="text-xs text-red-600 mt-2 text-center">{payError}</p>
+                  )}
+                  <p className="text-[10px] text-gray-500 mt-2 text-center">
+                    Secure payment via Stripe. 100% goes directly to the vendor.
+                  </p>
                 </div>
               )}
 

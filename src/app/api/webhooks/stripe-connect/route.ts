@@ -32,6 +32,24 @@ export async function POST(request: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // Handle customer balance payment
+      if (session.metadata?.source === 'sponticoupon_customer_balance') {
+        const redemptionId = session.metadata?.redemption_id;
+        if (redemptionId && session.payment_status === 'paid') {
+          const amountPaid = (session.amount_total || 0) / 100;
+          await supabase
+            .from('redemptions')
+            .update({
+              collection_completed: true,
+              collection_completed_at: new Date().toISOString(),
+              amount_collected: amountPaid,
+            })
+            .eq('id', redemptionId);
+          console.log('[Stripe Connect Webhook] Balance collected for redemption:', redemptionId);
+        }
+        break;
+      }
+
       // Only process deal deposit checkouts
       if (session.metadata?.type !== 'deal_deposit') break;
 
