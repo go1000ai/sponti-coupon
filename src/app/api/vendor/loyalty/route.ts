@@ -195,19 +195,22 @@ export async function POST(request: NextRequest) {
     }, { status: 409 });
   }
 
+  // Require expiration — vendors must commit to a time frame
+  if (!body.expires_at || body.expires_at === 'never') {
+    return NextResponse.json({
+      error: 'All loyalty programs must have an end date so customers know the time frame. Choose 3 months, 6 months, or 1 year.',
+    }, { status: 400 });
+  }
+
   // Accept expires_at: date string or duration preset
   let expiresAt: string | null = null;
-  if (body.expires_at) {
-    if (body.expires_at === 'never') {
-      expiresAt = null;
-    } else if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
-      const months = parseInt(body.expires_at);
-      const d = new Date();
-      d.setMonth(d.getMonth() + months);
-      expiresAt = d.toISOString();
-    } else {
-      expiresAt = body.expires_at; // raw ISO date
-    }
+  if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+    const months = parseInt(body.expires_at);
+    const d = new Date();
+    d.setMonth(d.getMonth() + months);
+    expiresAt = d.toISOString();
+  } else {
+    expiresAt = body.expires_at; // raw ISO date
   }
 
   const { data: program, error } = await serviceClient
@@ -267,6 +270,55 @@ export async function PUT(request: NextRequest) {
 
   const serviceClient = await createServiceRoleClient();
 
+  // Lifecycle guards: prevent pausing/shortening programs with active members
+  if (programId && (body.is_active === false || body.expires_at !== undefined)) {
+    const { data: currentProgram } = await serviceClient
+      .from('loyalty_programs')
+      .select('expires_at, is_active')
+      .eq('id', programId)
+      .eq('vendor_id', check.user.id)
+      .single();
+
+    if (currentProgram) {
+      const { count: memberCount } = await serviceClient
+        .from('loyalty_cards')
+        .select('*', { count: 'exact', head: true })
+        .eq('program_id', programId);
+
+      const members = memberCount || 0;
+
+      // Block pausing if program has members and hasn't expired
+      if (body.is_active === false && members > 0 && currentProgram.expires_at) {
+        const expiryDate = new Date(currentProgram.expires_at);
+        if (expiryDate > new Date()) {
+          return NextResponse.json({
+            error: `This program has ${members} active member${members !== 1 ? 's' : ''} and hasn't expired yet. You must honor it until ${expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`,
+          }, { status: 403 });
+        }
+      }
+
+      // Block shortening expiration if program has members
+      if (body.expires_at !== undefined && members > 0 && currentProgram.expires_at) {
+        let newExpiry: Date | null = null;
+        if (body.expires_at === 'never' || body.expires_at === null) {
+          // Extending to no expiration is OK
+        } else if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+          const months = parseInt(body.expires_at);
+          newExpiry = new Date();
+          newExpiry.setMonth(newExpiry.getMonth() + months);
+        } else {
+          newExpiry = new Date(body.expires_at);
+        }
+
+        if (newExpiry && newExpiry < new Date(currentProgram.expires_at)) {
+          return NextResponse.json({
+            error: 'You cannot shorten the program duration while customers are enrolled. You can extend it or keep the current date.',
+          }, { status: 403 });
+        }
+      }
+    }
+  }
+
   // If activating this program, deactivate all other programs first
   if (body.is_active === true && programId) {
     await serviceClient
@@ -305,6 +357,46 @@ export async function DELETE(request: NextRequest) {
 
   const programId = request.nextUrl.searchParams.get('id');
   const serviceClient = await createServiceRoleClient();
+
+  // Lifecycle guard: prevent deleting programs with active members during commitment or grace period
+  if (programId) {
+    const { count: memberCount } = await serviceClient
+      .from('loyalty_cards')
+      .select('*', { count: 'exact', head: true })
+      .eq('program_id', programId);
+
+    const members = memberCount || 0;
+
+    if (members > 0) {
+      const { data: prog } = await serviceClient
+        .from('loyalty_programs')
+        .select('expires_at')
+        .eq('id', programId)
+        .single();
+
+      if (prog?.expires_at) {
+        const expiryDate = new Date(prog.expires_at);
+        const graceEnd = new Date(expiryDate);
+        graceEnd.setDate(graceEnd.getDate() + 30);
+        const now = new Date();
+
+        if (now < expiryDate) {
+          return NextResponse.json({
+            error: `Cannot delete a program with ${members} active member${members !== 1 ? 's' : ''}. You must honor it until ${expiryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}.`,
+          }, { status: 403 });
+        } else if (now < graceEnd) {
+          return NextResponse.json({
+            error: `This program has expired but customers have until ${graceEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to redeem their rewards (30-day grace period).`,
+          }, { status: 403 });
+        }
+      } else if (members > 0) {
+        // No expiration set but has members — block deletion
+        return NextResponse.json({
+          error: `Cannot delete a program with ${members} active member${members !== 1 ? 's' : ''}. Set an expiration date and wait for it to pass.`,
+        }, { status: 403 });
+      }
+    }
+  }
 
   let query = serviceClient
     .from('loyalty_programs')

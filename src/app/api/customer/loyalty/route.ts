@@ -49,11 +49,31 @@ export async function GET() {
     }
   }
 
-  // Attach rewards to each card
-  const cardsWithRewards = (cards || []).map(card => ({
-    ...card,
-    available_rewards: rewards[card.program_id] || [],
-  }));
+  // Attach rewards and grace period info to each card
+  const now = new Date();
+  const cardsWithRewards = (cards || []).map(card => {
+    const expiresAt = card.program?.expires_at;
+    let graceInfo = {};
+    if (expiresAt) {
+      const expiryDate = new Date(expiresAt);
+      const graceEnd = new Date(expiryDate);
+      graceEnd.setDate(graceEnd.getDate() + 30);
+      const isExpired = expiryDate < now;
+      const isInGracePeriod = isExpired && graceEnd > now;
+      const isGraceExpired = now > graceEnd;
+      graceInfo = {
+        is_expired: isExpired,
+        is_in_grace_period: isInGracePeriod,
+        is_grace_expired: isGraceExpired,
+        grace_period_end: isExpired ? graceEnd.toISOString() : null,
+      };
+    }
+    return {
+      ...card,
+      available_rewards: rewards[card.program_id] || [],
+      ...graceInfo,
+    };
+  });
 
   return NextResponse.json({ cards: cardsWithRewards });
 }

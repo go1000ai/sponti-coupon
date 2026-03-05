@@ -9,7 +9,7 @@ import {
   Gift, Plus, Pencil, Trash2, Loader2, Save, X,
   Stamp, Star, Users, TrendingUp, Award, Activity,
   ChevronDown, ToggleLeft, ToggleRight, Calendar,
-  Sparkles, Crown, Zap, Check, ArrowRight, AlertCircle,
+  Sparkles, Crown, Zap, Check, ArrowRight, AlertCircle, Lock,
 } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, LoyaltyTransaction } from '@/lib/types/database';
 
@@ -176,6 +176,29 @@ function ProgramCard({
           )}
         </div>
 
+        {/* Commitment badge */}
+        {(() => {
+          const exp = program.expires_at;
+          if (!exp) return null;
+          const expDate = new Date(exp);
+          const now = new Date();
+          const graceEndDate = new Date(expDate);
+          graceEndDate.setDate(graceEndDate.getDate() + 30);
+          const cardIsLocked = program.is_active && program.member_count > 0 && expDate > now;
+          const cardInGrace = expDate < now && graceEndDate > now;
+          if (cardIsLocked) return (
+            <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-amber-600 bg-amber-50 rounded-lg px-2.5 py-1.5">
+              <Lock className="w-3 h-3" /> Committed until {expDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+          );
+          if (cardInGrace) return (
+            <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold text-orange-600 bg-orange-50 rounded-lg px-2.5 py-1.5">
+              <Calendar className="w-3 h-3" /> Grace period until {graceEndDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </div>
+          );
+          return null;
+        })()}
+
         <div className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-400 group-hover:text-primary-500 transition-colors">
           <span>View Details</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -265,6 +288,15 @@ function ProgramModal({
     setSaving(false);
   };
 
+  // Determine if program is locked (has members + not expired)
+  const programExpiresAt = (program as unknown as Record<string, unknown>)?.expires_at as string | null;
+  const programExpiry = programExpiresAt ? new Date(programExpiresAt) : null;
+  const isExpired = programExpiry ? programExpiry < new Date() : false;
+  const memberCount = stats?.total_members || 0;
+  const isLocked = program?.is_active && memberCount > 0 && !isExpired;
+  const graceEnd = programExpiry ? new Date(programExpiry.getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+  const isInGracePeriod = isExpired && graceEnd && graceEnd > new Date();
+
   const handleToggleActive = async () => {
     if (!program) return;
     setSaving(true);
@@ -274,7 +306,13 @@ function ProgramModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: programId, is_active: !program.is_active }),
       });
-      if (res.ok) { showMsg('success', program.is_active ? 'Program paused.' : 'Program activated! Any other programs have been paused.'); fetchDetail(); onUpdated(); }
+      if (res.ok) {
+        showMsg('success', program.is_active ? 'Program paused.' : 'Program activated! Any other programs have been paused.');
+        fetchDetail(); onUpdated();
+      } else {
+        const data = await res.json();
+        showMsg('error', data.error || 'Failed to update.');
+      }
     } catch { /* ignore */ }
     setSaving(false);
   };
@@ -284,6 +322,11 @@ function ProgramModal({
     try {
       const res = await fetch(`/api/vendor/loyalty?id=${programId}`, { method: 'DELETE' });
       if (res.ok) { onDeleted(); onClose(); }
+      else {
+        const data = await res.json();
+        showMsg('error', data.error || 'Failed to delete.');
+        setShowDeleteConfirm(false);
+      }
     } catch { showMsg('error', 'Network error.'); }
     setSaving(false);
   };
@@ -364,8 +407,8 @@ function ProgramModal({
             </div>
 
             <div className="flex items-center gap-1">
-              <button onClick={handleToggleActive} disabled={saving} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
-                {program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+              <button onClick={handleToggleActive} disabled={saving || !!isLocked} title={isLocked ? `Locked until ${programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : program.is_active ? 'Pause program' : 'Activate program'} className={`p-2 rounded-xl transition-all ${isLocked ? 'bg-white/5 text-white/30 cursor-not-allowed' : 'bg-white/10 hover:bg-white/20 text-white/80 hover:text-white'}`}>
+                {isLocked ? <Lock className="w-5 h-5" /> : program.is_active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </button>
               <button onClick={() => { setIsEditing(!isEditing); if (!isEditing) setForm({ program_type: program.program_type, name: program.name, description: program.description || '', punches_required: program.punches_required || 10, punch_reward: program.punch_reward || '', points_per_dollar: Number(program.points_per_dollar) || 1, point_value: Number(program.point_value) || 1, expires_at: (program as unknown as Record<string, unknown>).expires_at as string || 'never' }); }} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-all">
                 <Pencil className="w-4 h-4" />
@@ -379,6 +422,16 @@ function ProgramModal({
           {!program.is_active && (
             <div className="relative mt-3 bg-white/10 rounded-xl px-3 py-2 text-sm text-white/80 flex items-center gap-2">
               <ToggleLeft className="w-4 h-4 shrink-0" /> Program paused — not awarding stamps/points.
+            </div>
+          )}
+          {isLocked && (
+            <div className="relative mt-3 bg-amber-500/20 border border-amber-400/30 rounded-xl px-3 py-2 text-sm text-amber-100 flex items-center gap-2">
+              <Lock className="w-4 h-4 shrink-0" /> Committed until {programExpiry?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — {memberCount} active member{memberCount !== 1 ? 's' : ''}
+            </div>
+          )}
+          {isInGracePeriod && (
+            <div className="relative mt-3 bg-orange-500/20 border border-orange-400/30 rounded-xl px-3 py-2 text-sm text-orange-100 flex items-center gap-2">
+              <Calendar className="w-4 h-4 shrink-0" /> Grace period — customers can redeem until {graceEnd?.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
           )}
           {(() => {
@@ -479,12 +532,12 @@ function ProgramModal({
                   onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 font-medium transition-all appearance-none cursor-pointer"
                 >
-                  <option value="never">No expiration</option>
-                  <option value="3_months">3 months</option>
-                  <option value="6_months">6 months</option>
-                  <option value="12_months">1 year</option>
+                  <option value="never" disabled>Select a duration...</option>
+                  <option value="3_months">Extend 3 months</option>
+                  <option value="6_months">Extend 6 months</option>
+                  <option value="12_months">Extend 1 year</option>
                 </select>
-                <p className="text-[11px] text-gray-400 mt-1.5">After expiry, no new stamps/points are awarded. Existing cards are preserved.</p>
+                <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> You can extend the duration but not shorten it while customers are enrolled.</p>
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={handleUpdate} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-primary-500 to-orange-500 text-white font-bold rounded-xl shadow-lg shadow-primary-500/20 hover:shadow-xl transition-all text-sm">
@@ -1170,12 +1223,17 @@ function CreateProgramModal({
               onChange={e => setForm(f => ({ ...f, expires_at: e.target.value }))}
               className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white text-gray-900 font-medium transition-all appearance-none cursor-pointer"
             >
-              <option value="never">No expiration</option>
+              <option value="never" disabled>Select a duration...</option>
               <option value="3_months">3 months</option>
               <option value="6_months">6 months</option>
               <option value="12_months">1 year</option>
             </select>
-            <p className="text-[11px] text-gray-400 mt-1.5">After expiry, no new stamps/points are awarded. Existing cards are preserved.</p>
+            <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex gap-2 items-start">
+              <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+              <p className="text-[11px] text-amber-700 leading-relaxed">
+                <span className="font-semibold">Commitment:</span> Once customers enroll, you cannot cancel or shorten this program. After it expires, customers get 30 extra days to redeem their rewards.
+              </p>
+            </div>
           </div>
 
           {/* Create Button */}
@@ -1279,7 +1337,7 @@ export default function LoyaltyPage() {
           <div className="text-sm text-amber-800">
             <p className="font-semibold mb-1">Only one program can be active at a time.</p>
             <p className="text-amber-700 leading-relaxed">
-              Activating a program will automatically pause your other programs. Keep in mind that pausing a program affects customers who are already enrolled — they won&apos;t be able to earn or redeem until you reactivate it. Plan your program durations accordingly (e.g., 3 months, 6 months) so customers can complete their rewards before you switch.
+              Once customers enroll in your program, you&apos;re committed to honoring it until the expiration date. After it expires, customers get 30 extra days to redeem their earned rewards. You can always extend a program&apos;s duration if you want to keep it going longer.
             </p>
           </div>
         </div>

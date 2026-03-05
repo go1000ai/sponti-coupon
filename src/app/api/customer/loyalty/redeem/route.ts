@@ -36,6 +36,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'This loyalty program is no longer active.' }, { status: 400 });
   }
 
+  // Check expiration + 30-day grace period
+  if (program.expires_at) {
+    const expiryDate = new Date(program.expires_at);
+    const graceEnd = new Date(expiryDate);
+    graceEnd.setDate(graceEnd.getDate() + 30);
+    const now = new Date();
+
+    if (now > graceEnd) {
+      return NextResponse.json({
+        error: 'The redemption grace period for this program has ended. The program expired and the 30-day grace period has passed.',
+      }, { status: 400 });
+    }
+
+    if (now > expiryDate) {
+      // Within grace period — allow but we'll include a notice in the response
+      // (handled below in the success response)
+    }
+  }
+
   if (program.program_type === 'punch_card') {
     // Punch card redemption — check if enough punches
     if (card.current_punches < program.punches_required) {
@@ -61,10 +80,15 @@ export async function POST(request: NextRequest) {
       description: `Redeemed reward: ${program.punch_reward}`,
     });
 
+    const graceNotice = program.expires_at && new Date(program.expires_at) < new Date()
+      ? `Note: This program has expired. You have until ${new Date(new Date(program.expires_at).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to redeem remaining rewards.`
+      : undefined;
+
     return NextResponse.json({
       success: true,
       reward_name: program.punch_reward,
       remaining_punches: newPunches,
+      ...(graceNotice && { grace_notice: graceNotice }),
     });
   }
 
@@ -113,10 +137,15 @@ export async function POST(request: NextRequest) {
       description: `Redeemed reward: ${reward.name}`,
     });
 
+    const graceNotice = program.expires_at && new Date(program.expires_at) < new Date()
+      ? `Note: This program has expired. You have until ${new Date(new Date(program.expires_at).getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} to redeem remaining rewards.`
+      : undefined;
+
     return NextResponse.json({
       success: true,
       reward_name: reward.name,
       remaining_points: newPoints,
+      ...(graceNotice && { grace_notice: graceNotice }),
     });
   }
 
