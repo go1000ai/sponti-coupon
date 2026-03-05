@@ -1,22 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-// Geocode an address using OpenStreetMap Nominatim
+// Geocode an address using OpenStreetMap Nominatim (with city fallback)
 async function geocode(address: string, city: string, state: string, zip: string): Promise<{ lat: number; lng: number } | null> {
-  try {
-    const query = encodeURIComponent(`${address}, ${city}, ${state} ${zip}, USA`);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
-    );
-    const data = await res.json();
-    if (data && data.length > 0) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  const queries = [
+    `${address}, ${city}, ${state} ${zip}, USA`,
+    `${city}, ${state} ${zip}, USA`,
+  ];
+  for (const q of queries) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+        { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
+      );
+      const data = await res.json();
+      if (data && data.length > 0) {
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch {
+      continue;
     }
-    return null;
-  } catch {
-    return null;
   }
+  return null;
 }
 
 // POST /api/vendor/geocode — Geocode vendor's address and update lat/lng

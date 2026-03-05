@@ -109,6 +109,39 @@ export async function PUT(
       }
     }
 
+    // Auto-geocode if address fields changed or lat/lng missing
+    const addressChanged = ['address', 'city', 'state', 'zip'].some(f => f in updates);
+    const missingCoords = !existing.lat || !existing.lng;
+    if (addressChanged || missingCoords) {
+      const addr = (updates.address || existing.address) as string;
+      const city = (updates.city || existing.city) as string;
+      const state = (updates.state || existing.state) as string;
+      const zip = (updates.zip || existing.zip) as string;
+      if (addr && city && state && zip) {
+        try {
+          // Try full address first, then city+state+zip fallback
+          const queries = [
+            `${addr}, ${city}, ${state} ${zip}, USA`,
+            `${city}, ${state} ${zip}, USA`,
+          ];
+          for (const q of queries) {
+            const geoRes = await fetch(
+              `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
+              { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
+            );
+            const geoData = await geoRes.json();
+            if (geoData?.length > 0) {
+              updates.lat = parseFloat(geoData[0].lat);
+              updates.lng = parseFloat(geoData[0].lon);
+              break;
+            }
+          }
+        } catch (geoErr) {
+          console.error('[PUT /api/admin/vendors] Geocode error:', geoErr);
+        }
+      }
+    }
+
     // Update vendor record (only if there are vendor-specific updates)
     let vendor = existing;
     if (Object.keys(updates).length > 0) {
