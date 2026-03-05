@@ -706,14 +706,14 @@ function DetailModal({
           {hasImage && displayImage ? (
             <div className="h-40 sm:h-60 relative">
               <Image src={displayImage} alt={deal.title} fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
             </div>
           ) : (
             <div className={`h-44 relative ${isSponti
               ? 'bg-gradient-to-br from-primary-600 via-primary-500 to-amber-400'
               : 'bg-gradient-to-br from-secondary-500 via-secondary-400 to-blue-500'
             }`}>
-              <div className="absolute inset-0 opacity-10" style={{
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
                 backgroundImage: 'radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px), radial-gradient(circle at 60% 80%, white 1px, transparent 1px)',
                 backgroundSize: '60px 60px, 80px 80px, 40px 40px',
               }} />
@@ -726,7 +726,7 @@ function DetailModal({
           )}
 
           {/* Close */}
-          <button onClick={onClose} className="absolute top-3 right-3 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all backdrop-blur-sm">
+          <button onClick={onClose} className="absolute top-3 right-3 z-10 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all backdrop-blur-sm">
             <X className="w-5 h-5" />
           </button>
 

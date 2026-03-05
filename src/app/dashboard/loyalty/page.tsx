@@ -403,7 +403,7 @@ function PunchCardFull({
     <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group" onClick={onSelect}>
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-500 via-primary-500 to-amber-500 px-5 py-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)] pointer-events-none" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -531,7 +531,7 @@ function PointsCardFull({
     <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group" onClick={onSelect}>
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600 px-5 py-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)] pointer-events-none" />
         <div className="relative flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
@@ -743,8 +743,8 @@ function CardDetailModal({
             ? 'bg-gradient-to-r from-orange-500 via-primary-500 to-amber-500'
             : 'bg-gradient-to-r from-blue-600 via-blue-600 to-blue-600'
         }`}>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-          <button onClick={onClose} className="absolute top-3 right-3 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all backdrop-blur-sm">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.15),transparent_50%)] pointer-events-none" />
+          <button onClick={onClose} className="absolute top-3 right-3 z-10 p-2 bg-white/20 hover:bg-white/40 text-white rounded-full transition-all backdrop-blur-sm">
             <span className="sr-only">Close</span>
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
