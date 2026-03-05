@@ -5,7 +5,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier, AutoResponseTone } from '@/lib/types/database';
 import { rateLimit } from '@/lib/rate-limit';
 
-type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_program_suggest' | 'suggest_variants';
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_reward_description' | 'loyalty_reward_full' | 'loyalty_program_suggest' | 'suggest_variants';
 
 const PROMPTS: Record<AssistType, string> = {
   business_description: `You are a marketing copywriter helping local businesses write compelling business descriptions for their profile on a coupon/deal app. Write a warm, professional, and inviting description that highlights what makes the business special. Keep it under 500 characters. Return ONLY the description text, no quotes, no labels.`,
@@ -16,6 +16,21 @@ const PROMPTS: Record<AssistType, string> = {
   loyalty_description: `You are a marketing copywriter helping a local business write a short description for their customer loyalty program. Make it exciting and clear — explain the benefit to the customer in 1-2 sentences. Be specific to the business category. Use action words and make the customer feel like they're getting an exclusive deal. Keep it under 200 characters. Return ONLY the description text, no quotes, no labels.`,
   loyalty_reward: `You are a marketing expert helping a local business decide what free reward to offer customers who complete their loyalty punch card. Suggest a specific, enticing, and realistic reward that matches the business category and would motivate repeat visits. Be concrete — not "free item" but "Free Large Iced Coffee" or "Free 30-Minute Massage". Return ONLY the reward text, no quotes, no labels, no explanation.`,
   loyalty_reward_name: `You are a marketing expert helping a local business name a points reward tier for their loyalty program. Create a short, appealing reward name (2-6 words) that sounds exclusive and desirable. Match the business category. Examples: "Free Signature Smoothie", "VIP Styling Session", "Premium Car Wash". Return ONLY the reward name, no quotes, no labels, no explanation.`,
+  loyalty_reward_description: `You are a marketing copywriter helping a local business write a short, exciting description for a loyalty reward tier. Make it sound exclusive and desirable in 1-2 sentences. Be specific to the business category and the reward name. Keep it under 150 characters. Return ONLY the description text, no quotes, no labels.`,
+  loyalty_reward_full: `You are a loyalty program strategist helping a local business create a reward tier. Based on the business category, program name, points configuration, and any existing rewards, suggest a complete reward tier.
+
+Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
+{
+  "name": "short appealing reward name (2-6 words)",
+  "description": "exciting 1-2 sentence description under 150 chars",
+  "points_cost": <number - appropriate points cost for this tier>
+}
+
+Guidelines:
+- The reward should be specific to the business category (not generic like "free item")
+- Points cost should be realistic given the points_per_dollar and point_value
+- If existing rewards are provided, suggest something at a DIFFERENT tier (don't duplicate)
+- Make the reward sound exclusive and desirable`,
   loyalty_program_suggest: `You are a loyalty program strategist for local businesses. Based on the business category, typical pricing, and any website/deal info provided, design an optimal loyalty rewards program.
 
 Return ONLY valid JSON (no markdown, no backticks) with this exact structure:
@@ -169,6 +184,22 @@ export async function POST(request: NextRequest) {
     if (context?.current_text) {
       userMessage += `\n\nHere is the current reward name (improve or suggest an alternative):\n${context.current_text}`;
     }
+  } else if (type === 'loyalty_reward_description') {
+    userMessage += `\nProgram type: Points System`;
+    if (context?.program_name) userMessage += `\nProgram name: ${context.program_name}`;
+    if (context?.reward_name) userMessage += `\nReward name: ${context.reward_name}`;
+    if (context?.points_cost) userMessage += `\nPoints cost: ${context.points_cost}`;
+    userMessage += `\n\nWrite a short, exciting description for this reward tier.`;
+    if (context?.current_text) {
+      userMessage += `\n\nHere is the current description (improve or rewrite it):\n${context.current_text}`;
+    }
+  } else if (type === 'loyalty_reward_full') {
+    userMessage += `\nProgram type: Points System`;
+    if (context?.program_name) userMessage += `\nProgram name: ${context.program_name}`;
+    if (context?.points_per_dollar) userMessage += `\nPoints per dollar: ${context.points_per_dollar}`;
+    if (context?.point_value) userMessage += `\nPoint value: $${context.point_value}`;
+    if (context?.existing_rewards) userMessage += `\nExisting rewards: ${context.existing_rewards}`;
+    userMessage += `\n\nSuggest a complete reward tier for this loyalty program. Consider the points configuration to set an appropriate points cost.`;
   } else if (type === 'loyalty_program_suggest') {
     if (context?.website_url) userMessage += `\nBusiness website: ${context.website_url}`;
     if (context?.avg_deal_price) userMessage += `\nAverage deal price: $${context.avg_deal_price}`;
@@ -238,6 +269,10 @@ function getFallbackText(type: AssistType, businessName: string, category: strin
       return `Free ${category || 'item'} of your choice`;
     case 'loyalty_reward_name':
       return `${businessName} Special Reward`;
+    case 'loyalty_reward_description':
+      return `Exclusive reward for our most loyal ${category || 'customers'}. Redeem your points for this special treat!`;
+    case 'loyalty_reward_full':
+      return JSON.stringify({ name: `Free ${category || 'Item'}`, description: `Exclusive reward for loyal customers of ${businessName}`, points_cost: 500 });
     case 'loyalty_program_suggest':
       return JSON.stringify({
         program_type: 'points',

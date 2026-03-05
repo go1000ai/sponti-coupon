@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { AutoResponseTone } from '@/lib/types/database';
 
-type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name';
+type AssistType = 'business_description' | 'deal_title' | 'deal_description' | 'review_reply' | 'loyalty_program_name' | 'loyalty_description' | 'loyalty_reward' | 'loyalty_reward_name' | 'loyalty_reward_description' | 'loyalty_reward_full';
 
 interface AIAssistButtonProps {
   type: AssistType;

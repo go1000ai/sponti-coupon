@@ -9,7 +9,7 @@ import {
   Gift, Plus, Pencil, Trash2, Loader2, Save, X,
   Stamp, Star, Users, TrendingUp, Award, Activity,
   ChevronDown, ToggleLeft, ToggleRight, Calendar,
-  Sparkles, Crown, Zap, Check, ArrowRight,
+  Sparkles, Crown, Zap, Check, ArrowRight, AlertCircle,
 } from 'lucide-react';
 import type { LoyaltyProgram, LoyaltyReward, LoyaltyTransaction } from '@/lib/types/database';
 
@@ -219,6 +219,7 @@ function ProgramModal({
   // Forms
   const [form, setForm] = useState<ProgramForm>(emptyProgramForm);
   const [rewardForm, setRewardForm] = useState<RewardForm>(emptyRewardForm);
+  const [suggestingFullReward, setSuggestingFullReward] = useState(false);
 
   const showMsg = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
@@ -293,6 +294,7 @@ function ProgramModal({
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rewardForm) });
       if (res.ok) { showMsg('success', 'Reward added!'); setShowAddReward(false); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || 'Failed to add reward.'); }
     } catch { showMsg('error', 'Network error.'); }
     setSaving(false);
   };
@@ -302,6 +304,7 @@ function ProgramModal({
     try {
       const res = await fetch('/api/vendor/loyalty/rewards', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...rewardForm }) });
       if (res.ok) { showMsg('success', 'Updated!'); setEditingRewardId(null); setRewardForm(emptyRewardForm); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || 'Failed to update reward.'); }
     } catch { showMsg('error', 'Network error.'); }
     setSaving(false);
   };
@@ -310,6 +313,7 @@ function ProgramModal({
     try {
       const res = await fetch(`/api/vendor/loyalty/rewards?id=${id}`, { method: 'DELETE' });
       if (res.ok) { showMsg('success', 'Deleted.'); fetchDetail(); }
+      else { const data = await res.json(); showMsg('error', data.error || 'Failed to delete reward.'); }
     } catch { showMsg('error', 'Network error.'); }
   };
 
@@ -525,14 +529,25 @@ function ProgramModal({
                 </button>
               </div>
               {rewards.length === 0 && !showAddReward ? (
-                <div className="p-6 text-center text-sm text-gray-400">No rewards yet. Add reward tiers for customers to redeem.</div>
+                <div className="p-6 text-center space-y-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" /> Setup incomplete — add at least one reward tier so customers can redeem points.
+                  </div>
+                  <button
+                    onClick={() => { setShowAddReward(true); setRewardForm(emptyRewardForm); }}
+                    className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary-50 hover:bg-primary-100 transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Your First Reward
+                  </button>
+                </div>
               ) : (
                 <div className="divide-y divide-gray-50">
                   {rewards.map((reward, i) => (
                     editingRewardId === reward.id ? (
                       <div key={reward.id} className="p-4 bg-blue-50/50">
-                        <div className="flex justify-end mb-2">
-                          <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest" />
+                        <div className="flex justify-end mb-2 gap-2 flex-wrap">
+                          <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+                          <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={t => setRewardForm(f => ({ ...f, description: t }))} label="Suggest Desc" />
                         </div>
                         <div className="grid grid-cols-3 gap-2 mb-3">
                           <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-blue-200 rounded-xl text-sm" placeholder="Name" />
@@ -569,8 +584,48 @@ function ProgramModal({
               )}
               {showAddReward && (
                 <div className="p-4 bg-green-50/50 border-t border-green-100">
-                  <div className="flex justify-end mb-2">
-                    <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <span className="text-xs font-semibold text-gray-700">New Reward Tier</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <AIAssistButton type="loyalty_reward_name" context={{ program_name: program.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.name }} onResult={t => setRewardForm(f => ({ ...f, name: t }))} label="Suggest Name" />
+                      <AIAssistButton type="loyalty_reward_description" context={{ program_name: program.name, reward_name: rewardForm.name, points_cost: String(rewardForm.points_cost), current_text: rewardForm.description }} onResult={t => setRewardForm(f => ({ ...f, description: t }))} label="Suggest Desc" />
+                      <button
+                        onClick={async () => {
+                          setSuggestingFullReward(true);
+                          try {
+                            const res = await fetch('/api/vendor/ai-assist', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                type: 'loyalty_reward_full',
+                                context: {
+                                  program_name: program.name,
+                                  points_per_dollar: String(program.points_per_dollar),
+                                  point_value: String(program.point_value || 1),
+                                  existing_rewards: rewards.map(r => `${r.name} (${r.points_cost} pts)`).join(', ') || 'none',
+                                },
+                              }),
+                            });
+                            if (res.ok) {
+                              const data = await res.json();
+                              try {
+                                const reward = typeof data.text === 'string' ? JSON.parse(data.text) : data.text;
+                                setRewardForm({ name: reward.name || '', description: reward.description || '', points_cost: reward.points_cost || 100 });
+                              } catch { showMsg('error', 'AI returned invalid format. Try again.'); }
+                            } else {
+                              const data = await res.json();
+                              showMsg('error', data.error || 'AI suggestion failed.');
+                            }
+                          } catch { showMsg('error', 'Network error.'); }
+                          setSuggestingFullReward(false);
+                        }}
+                        disabled={suggestingFullReward}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all disabled:opacity-50"
+                      >
+                        {suggestingFullReward ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <img src="/ava.png" alt="Ava" className="w-3.5 h-3.5 rounded-full object-cover" />}
+                        {suggestingFullReward ? 'Thinking...' : 'Ava: Fill All'}
+                      </button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     <input value={rewardForm.name} onChange={e => setRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-white border-2 border-green-200 rounded-xl text-sm" placeholder="Reward name" />
@@ -749,6 +804,10 @@ function CreateProgramModal({
   const [error, setError] = useState('');
   const [aiSuggesting, setAiSuggesting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<{ name: string; points_cost: number; description: string }[] | null>(null);
+  const [manualRewards, setManualRewards] = useState<{ name: string; points_cost: number; description: string }[]>([]);
+  const [showManualRewardForm, setShowManualRewardForm] = useState(false);
+  const [manualRewardForm, setManualRewardForm] = useState({ name: '', description: '', points_cost: 100 });
+  const [suggestingReward, setSuggestingReward] = useState(false);
 
   const handleAiSuggest = async () => {
     setAiSuggesting(true);
@@ -812,12 +871,29 @@ function CreateProgramModal({
     if (!form.name.trim()) { setError('Program name is required.'); return; }
     if (form.program_type === 'punch_card' && (!form.punch_reward.trim() || form.punches_required < 1)) { setError('Set stamps and reward.'); return; }
     if (form.program_type === 'points' && form.points_per_dollar <= 0) { setError('Points per dollar must be > 0.'); return; }
+    if (form.program_type === 'points' && (!aiSuggestions || aiSuggestions.length === 0) && manualRewards.length === 0) {
+      setError('Points programs require at least one reward tier. Use "AI: Build My Program" or add rewards manually below.');
+      return;
+    }
 
     setSaving(true);
     try {
       const res = await fetch('/api/vendor/loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
       const data = await res.json();
-      if (res.ok) { onCreated(); onClose(); }
+      if (res.ok) {
+        // Auto-create reward tiers for points programs
+        if (form.program_type === 'points') {
+          const rewardsToCreate = aiSuggestions && aiSuggestions.length > 0 ? aiSuggestions : manualRewards;
+          for (const reward of rewardsToCreate) {
+            await fetch('/api/vendor/loyalty/rewards', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: reward.name, description: reward.description, points_cost: reward.points_cost }),
+            });
+          }
+        }
+        onCreated(); onClose();
+      }
       else { setError(data.error || 'Failed.'); }
     } catch { setError('Network error.'); }
     setSaving(false);
@@ -893,7 +969,10 @@ function CreateProgramModal({
           {/* AI Suggested Rewards Preview */}
           {aiSuggestions && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2 animate-slide-up-fade">
-              <p className="text-xs font-semibold text-blue-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Suggested Reward Tiers</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-blue-700 flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI Suggested Reward Tiers</p>
+                <button onClick={() => setAiSuggestions(null)} className="text-[10px] text-gray-400 hover:text-red-500">Clear</button>
+              </div>
               {aiSuggestions.map((r, i) => (
                 <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
                   <div>
@@ -903,7 +982,7 @@ function CreateProgramModal({
                   <span className="text-blue-600 font-bold text-xs">{r.points_cost} pts</span>
                 </div>
               ))}
-              <p className="text-[10px] text-gray-400">You can add these as rewards after creating the program.</p>
+              <p className="text-[10px] text-green-600 font-medium flex items-center gap-1"><Check className="w-3 h-3" /> These rewards will be created automatically with your program.</p>
             </div>
           )}
 
@@ -982,6 +1061,101 @@ function CreateProgramModal({
                   1 point = <span className="font-semibold text-gray-600">${form.points_per_dollar > 0 ? (form.point_value / form.points_per_dollar).toFixed(2) : '0.00'}</span> in value
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Manual Reward Tiers (for points programs without AI suggestions) */}
+          {form.program_type === 'points' && !aiSuggestions && (
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100/50 space-y-3 animate-slide-up-fade">
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-500" /> Reward Tiers <span className="text-red-500 text-xs">*Required</span>
+                </h3>
+                <button
+                  onClick={() => { setShowManualRewardForm(true); setManualRewardForm({ name: '', description: '', points_cost: 100 }); }}
+                  className="text-xs text-primary-500 font-bold hover:text-primary-600 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-primary-50 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add Reward
+                </button>
+              </div>
+
+              {manualRewards.length === 0 && !showManualRewardForm && (
+                <p className="text-xs text-gray-400 text-center py-2">Add at least one reward tier, or use &quot;AI: Build My Program&quot; above.</p>
+              )}
+
+              {manualRewards.map((r, i) => (
+                <div key={i} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
+                  <div>
+                    <span className="font-semibold text-gray-900">{r.name}</span>
+                    {r.description && <span className="text-gray-400 text-xs ml-2">{r.description}</span>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-primary-600 font-bold text-xs">{r.points_cost} pts</span>
+                    <button onClick={() => setManualRewards(prev => prev.filter((_, j) => j !== i))} className="text-gray-400 hover:text-red-500 p-1"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                </div>
+              ))}
+
+              {showManualRewardForm && (
+                <div className="bg-white rounded-xl p-3 border border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-700">New Reward</span>
+                    <button
+                      onClick={async () => {
+                        setSuggestingReward(true);
+                        try {
+                          const res = await fetch('/api/vendor/ai-assist', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              type: 'loyalty_reward_full',
+                              context: {
+                                program_name: form.name,
+                                points_per_dollar: String(form.points_per_dollar),
+                                point_value: String(form.point_value),
+                                existing_rewards: manualRewards.map(r => `${r.name} (${r.points_cost} pts)`).join(', ') || 'none',
+                              },
+                            }),
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            try {
+                              const reward = typeof data.text === 'string' ? JSON.parse(data.text) : data.text;
+                              setManualRewardForm({ name: reward.name || '', description: reward.description || '', points_cost: reward.points_cost || 100 });
+                            } catch { /* ignore parse error */ }
+                          }
+                        } catch { /* ignore */ }
+                        setSuggestingReward(false);
+                      }}
+                      disabled={suggestingReward}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 transition-all disabled:opacity-50"
+                    >
+                      {suggestingReward ? <Loader2 className="w-3 h-3 animate-spin" /> : <img src="/ava.png" alt="Ava" className="w-3 h-3 rounded-full object-cover" />}
+                      {suggestingReward ? 'Thinking...' : 'Ava: Suggest Reward'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input value={manualRewardForm.name} onChange={e => setManualRewardForm(f => ({ ...f, name: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Reward name" />
+                    <input value={manualRewardForm.description} onChange={e => setManualRewardForm(f => ({ ...f, description: e.target.value }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Description" />
+                    <input type="number" min={1} value={manualRewardForm.points_cost} onChange={e => setManualRewardForm(f => ({ ...f, points_cost: parseInt(e.target.value) || 0 }))} className="px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Points cost" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!manualRewardForm.name.trim() || manualRewardForm.points_cost < 1) { setError('Reward name and points cost are required.'); return; }
+                        setManualRewards(prev => [...prev, { ...manualRewardForm }]);
+                        setManualRewardForm({ name: '', description: '', points_cost: 100 });
+                        setShowManualRewardForm(false);
+                        setError('');
+                      }}
+                      className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg font-semibold inline-flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add
+                    </button>
+                    <button onClick={() => setShowManualRewardForm(false)} className="text-xs text-gray-500 px-3 py-1.5">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
