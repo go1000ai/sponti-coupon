@@ -1332,12 +1332,18 @@ export default function LoyaltyPage() {
 
       {/* One-active-program info banner */}
       {programs.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex gap-3 items-start">
-          <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-amber-800">
-            <p className="font-semibold mb-1">Only one program can be active at a time.</p>
-            <p className="text-amber-700 leading-relaxed">
-              Once customers enroll in your program, you&apos;re committed to honoring it until the expiration date. After it expires, customers get 30 extra days to redeem their earned rewards. You can always extend a program&apos;s duration if you want to keep it going longer.
+        <div className="relative mb-4 overflow-hidden bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border border-amber-200/60 rounded-3xl px-6 py-5 flex gap-4 items-start shadow-lg shadow-amber-100/50 animate-card-pop">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-amber-200/20 rounded-full animate-float" />
+            <div className="absolute bottom-0 left-8 w-16 h-16 bg-orange-200/15 rounded-full animate-float" style={{ animationDelay: '1s' }} />
+          </div>
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-400/30 flex-shrink-0 animate-float">
+            <AlertCircle className="w-5 h-5 text-white" />
+          </div>
+          <div className="relative text-sm text-amber-800">
+            <p className="font-bold text-amber-900 mb-1.5">Only one program can be active at a time</p>
+            <p className="text-amber-700/90 leading-relaxed">
+              Once customers enroll, you&apos;re committed to honoring the program until it expires. After expiration, customers get <span className="font-semibold text-amber-800">30 extra days</span> to redeem their earned rewards. You can always <span className="font-semibold text-amber-800">extend</span> your program&apos;s duration to keep it going longer.
             </p>
           </div>
         </div>
