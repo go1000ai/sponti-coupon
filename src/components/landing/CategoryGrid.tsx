@@ -71,7 +71,7 @@ export function CategoryGrid() {
             <ScrollReveal key={cat.slug} animation="scale-up" delay={i * 60}>
               <TiltCategoryCard
                 cat={cat}
-                name={t(`home.categories.${cat.key}` as any)}
+                name={t(`home.categories.${cat.key}` as Parameters<typeof t>[0])}
                 dealsLabel={t('home.categories.dealsCount').replace('{{count}}', String(cat.count))}
                 onClick={() => router.push(`/deals?category=${cat.slug}`)}
               />

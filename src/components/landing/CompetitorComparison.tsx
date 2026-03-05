@@ -90,7 +90,7 @@ export function CompetitorComparison() {
                     <div className="bg-red-50 rounded-lg p-1.5 shrink-0 mt-0.5">
                       <Icon className="w-4 h-4 text-red-400" strokeWidth={2} />
                     </div>
-                    <p className="text-gray-600 text-sm">{t(`home.comparison.tradItem${i + 1}` as any)}</p>
+                    <p className="text-gray-600 text-sm">{t(`home.comparison.tradItem${i + 1}` as Parameters<typeof t>[0])}</p>
                   </div>
                 ))}
               </div>
@@ -125,7 +125,7 @@ export function CompetitorComparison() {
                     <div className="bg-green-50 rounded-lg p-1.5 shrink-0 mt-0.5">
                       <Icon className="w-4 h-4 text-green-500" strokeWidth={2} />
                     </div>
-                    <p className="text-gray-900 text-sm">{t(`home.comparison.spontiItem${i + 1}` as any)}</p>
+                    <p className="text-gray-900 text-sm">{t(`home.comparison.spontiItem${i + 1}` as Parameters<typeof t>[0])}</p>
                   </div>
                 ))}
               </div>

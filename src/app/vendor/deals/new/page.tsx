@@ -20,7 +20,6 @@ import MediaPicker from '@/components/vendor/MediaPicker';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
-import { useLanguage } from '@/lib/i18n';
 
 // Category-specific suggested features/perks
 const CATEGORY_FEATURES: Record<string, string[]> = {
@@ -241,7 +240,6 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
 
 export default function NewDealPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
   const searchParams = useSearchParams();

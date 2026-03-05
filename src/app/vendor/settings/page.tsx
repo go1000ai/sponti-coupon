@@ -19,15 +19,6 @@ import type { Vendor, VendorSocialLinks, BusinessHours, BusinessHoursDay, Vendor
 const DAYS_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type DayOfWeek = typeof DAYS_OF_WEEK[number];
 
-const DAY_LABELS: Record<DayOfWeek, string> = {
-  monday: 'Monday',
-  tuesday: 'Tuesday',
-  wednesday: 'Wednesday',
-  thursday: 'Thursday',
-  friday: 'Friday',
-  saturday: 'Saturday',
-  sunday: 'Sunday',
-};
 
 const DEFAULT_HOURS: BusinessHoursDay = { open: '09:00', close: '17:00', closed: false };
 

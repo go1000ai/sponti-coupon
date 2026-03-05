@@ -18,7 +18,6 @@ import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import type { Deal, VendorLocation } from '@/lib/types/database';
 import { Plus } from 'lucide-react';
-import { useLanguage } from '@/lib/i18n';
 
 // Category-specific suggested features/perks
 const CATEGORY_FEATURES: Record<string, string[]> = {
@@ -102,7 +101,6 @@ function BentoCard({
 
 function EditDealPageInner() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const { canAccess } = useVendorTier();
   const router = useRouter();
   const searchParams = useSearchParams();
