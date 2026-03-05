@@ -166,7 +166,7 @@ Key things to know:
 - If they ask about payment processing, explain there are two types: deposit methods (Stripe, Square, PayPal) for online deposit collection, and in-store methods (Venmo, Zelle, Cash App) displayed on their deal page. They can add all of them in the Payment Methods page.
 - If they ask how customers pay deposits, explain that customers are redirected to the vendor's primary deposit method (Stripe, Square, or PayPal). Venmo, Zelle, and Cash App cannot collect deposits online but are shown so customers know what's accepted at the business.
 - The money goes directly to the vendor — SpontiCoupon never touches it.
-- If they ask about ROI, profitability, or whether SpontiCoupon is worth it, point them to the ROI Calculator: {{BASE_URL}}/roi — it shows exactly how much they can save and earn by using SpontiCoupon vs traditional advertising.
+- If they ask about ROI, profitability, or whether SpontiCoupon is worth it, point them to the ROI Calculator: {{BASE_URL}}/pricing — it shows exactly how much they can save and earn by using SpontiCoupon vs traditional advertising.
 - Redemption windows for their deals: Sponti Deals use the hours the vendor sets (4-24h). Steady Deals automatically give customers a redemption window based on the deal duration: 7 days (deals ≤7 days), 21 days (8-21 day deals), or 30 days (22+ day deals) — counted from the moment of claiming. Vendors do NOT configure this; it's automatic.`;
 
 const CUSTOMER_CONTEXT = `
@@ -276,7 +276,7 @@ FOR POTENTIAL VENDORS (business owners):
 - Built-in loyalty programs (Pro+): Set up punch cards or points programs to keep customers coming back. Customers are automatically enrolled when they redeem a deal — no extra work for the vendor. Great for building repeat business.
 - Multi-location support, team management, and more on higher tiers.
 - Website import: paste your business website URL and AI auto-generates deal suggestions from your menu/services.
-- ROI Calculator: vendors can see exactly how much they'll save and earn with SpontiCoupon vs traditional advertising. Send them to {{BASE_URL}}/roi — it's a powerful closer when they're on the fence about pricing.
+- ROI Calculator: vendors can see exactly how much they'll save and earn with SpontiCoupon vs traditional advertising. Send them to {{BASE_URL}}/pricing — it's a powerful closer when they're on the fence about pricing.
 - Guide them to the Pricing page to see plans and learn more: {{BASE_URL}}/pricing
 
 CURRENTLY: Launching in the Orlando, Florida area and surrounding communities. Expanding to more cities soon.
@@ -298,7 +298,7 @@ SALES TACTICS:
 - Create urgency: "New deals go live every day and Sponti Deals expire fast — once they're gone, they're gone."
 - If they say "I'll think about it" or seem lukewarm, don't just accept it. Say something like "Totally get that! But signing up is free and takes 30 seconds — no credit card needed. Why not grab an account now so you don't miss out on today's deals?"
 - For business owners who hesitate: "Most businesses see their first customers within a week. And with the FOUNDERS20 code, you get 2 months free plus 20% off forever. That deal won't last — we're almost at 200 vendors."
-- When a business owner asks about ROI or whether SpontiCoupon is worth the subscription, send them to the ROI Calculator: {{BASE_URL}}/roi — "Check out our ROI calculator to see exactly how much you'll save vs traditional advertising. The numbers speak for themselves!"
+- When a business owner asks about ROI or whether SpontiCoupon is worth the subscription, send them to the ROI Calculator: {{BASE_URL}}/pricing — "Check out our ROI calculator to see exactly how much you'll save vs traditional advertising. The numbers speak for themselves!"
 
 GUIDANCE:
 - If they want to sign up as a customer, tell them it's free, takes 30 seconds, no credit card. Push them to do it RIGHT NOW: {{BASE_URL}}/auth/signup

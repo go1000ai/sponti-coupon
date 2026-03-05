@@ -190,7 +190,7 @@ export function ROICalculator() {
             <div className="bg-orange-50 border border-orange-300 rounded-2xl overflow-hidden">
               <Image src="/roi-after.png" alt={t('roiCalc.happyOwner')} width={400} height={300} className="w-full h-56 object-cover object-center" />
               <div className="p-5">
-                <p className="text-xs font-bold text-orange-500 uppercase tracking-wide mb-2">{t('roiCalc.spontiCosts')}</p>
+                <p className="text-xs font-bold text-orange-500 uppercase tracking-wide mb-2">SpontiCoupon {tier.name} costs you</p>
                 <p className="text-4xl font-black text-orange-600">{fmt(tier.price)}<span className="text-base font-medium text-orange-400">{t('roiCalc.moFlat')}</span></p>
                 <p className="text-sm text-orange-500 mt-1">{t('roiCalc.zeroCommission')}</p>
                 <div className="mt-3 pt-3 border-t border-orange-200">
