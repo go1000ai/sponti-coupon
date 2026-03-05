@@ -535,9 +535,6 @@ function PointsCardFull({
 
   const rewards = card.available_rewards || [];
   const nextReward = rewards.find(r => r.points_cost > card.current_points);
-  const progressToNext = nextReward
-    ? Math.min((card.current_points / nextReward.points_cost) * 100, 100)
-    : 100;
 
   return (
     <div className="card overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer group" onClick={onSelect}>
