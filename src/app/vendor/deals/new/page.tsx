@@ -575,12 +575,7 @@ export default function NewDealPage() {
   };
 
   // ── Image Upload (adds to gallery — first image becomes main) ──
-  const addImageToGallery = (rawUrl: string) => {
-    // Normalize bare URLs (e.g., "Www.example.com/img.jpg" → "https://www.example.com/img.jpg")
-    let url = rawUrl;
-    if (url && !url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('/') && !url.startsWith('data:')) {
-      url = `https://${url}`;
-    }
+  const addImageToGallery = (url: string) => {
     if (!form.image_url) {
       setForm(prev => ({ ...prev, image_url: url }));
     } else {

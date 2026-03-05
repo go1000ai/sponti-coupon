@@ -159,20 +159,15 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     console.error('Gemini image generation error:', err);
     const errMsg = err instanceof Error ? err.message : String(err);
-    const errLower = errMsg.toLowerCase();
-
-    if (errLower.includes('429') || errLower.includes('resource_exhausted') || errLower.includes('quota')) {
-      return NextResponse.json({ error: 'Image generation quota exceeded. Please try again later.' }, { status: 429 });
+    if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota')) {
+      return NextResponse.json(
+        { error: 'Image generation quota exceeded. Please try again later.' },
+        { status: 429 }
+      );
     }
-    if (errLower.includes('safety') || errLower.includes('blocked') || errLower.includes('policy') || errLower.includes('harm')) {
-      return NextResponse.json({ error: 'Your prompt was blocked by content safety filters. Please try different wording.' }, { status: 400 });
-    }
-    if (errLower.includes('permission') || errLower.includes('billing') || errLower.includes('403')) {
-      return NextResponse.json({ error: 'Image generation service access issue. Please check your Google AI Studio billing.' }, { status: 403 });
-    }
-    if (errLower.includes('not found') || errLower.includes('404') || errLower.includes('does not exist') || errLower.includes('not supported')) {
-      return NextResponse.json({ error: 'Image generation model is temporarily unavailable. Please try again later.' }, { status: 500 });
-    }
-    return NextResponse.json({ error: `Failed to generate image: ${errMsg}` }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to generate image. Please try again.' },
+      { status: 500 }
+    );
   }
 }

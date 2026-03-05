@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useLanguage } from '@/lib/i18n';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import {
@@ -42,7 +41,15 @@ function getAmenityIcon(amenity: string): React.ElementType {
 type ClaimStatus = 'active' | 'redeemed' | 'expired' | 'pending_deposit';
 type SortOption = 'newest' | 'oldest' | 'expiring_soon' | 'discount' | 'price_low' | 'price_high' | 'category';
 
-// sortLabels is initialized inside DashboardMyDealsContent to access t()
+const sortLabels: Record<SortOption, string> = {
+  newest: 'Date Added (Newest)',
+  oldest: 'Date Added (Oldest)',
+  expiring_soon: 'Expiring Soon',
+  discount: 'Biggest Discount',
+  price_low: 'Price: Low to High',
+  price_high: 'Price: High to Low',
+  category: 'Category',
+};
 
 export default function DashboardMyDealsPage() {
   return (
@@ -54,18 +61,7 @@ export default function DashboardMyDealsPage() {
 
 function DashboardMyDealsContent() {
   const { user } = useAuth();
-  const { t } = useLanguage();
   const searchParams = useSearchParams();
-
-  const sortLabels: Record<SortOption, string> = {
-    newest: t('customer.myDeals.sortNewest'),
-    oldest: t('customer.myDeals.sortOldest'),
-    expiring_soon: t('customer.myDeals.sortExpiringSoon'),
-    discount: t('customer.myDeals.sortDiscount'),
-    price_low: t('customer.myDeals.sortPriceLow'),
-    price_high: t('customer.myDeals.sortPriceHigh'),
-    category: t('customer.myDeals.sortCategory'),
-  };
   const [claims, setClaims] = useState<Claim[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -176,8 +172,8 @@ function DashboardMyDealsContent() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{t('customer.myDeals.title')}</h1>
-      <p className="text-gray-500 mb-6">{t('customer.myDeals.subtitle')}</p>
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">My Coupons</h1>
+      <p className="text-gray-500 mb-6">View your claimed deals, deposits, and redemption codes</p>
 
       {/* ═══ GAMIFIED SAVINGS HUB ═══ */}
       {!loading && claims.length > 0 && (
@@ -195,8 +191,8 @@ function DashboardMyDealsContent() {
         <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-bold text-green-700">{t('customer.myDeals.paymentSuccess')}</p>
-            <p className="text-xs text-green-600">{t('customer.myDeals.paymentSuccessDesc')}</p>
+            <p className="text-sm font-bold text-green-700">Payment Successful!</p>
+            <p className="text-xs text-green-600">Your remaining balance has been paid. Thank you!</p>
           </div>
           <button onClick={() => setPaidBanner(false)} className="p-1 hover:bg-green-100 rounded-lg transition-colors">
             <X className="w-4 h-4 text-green-500" />
@@ -226,7 +222,7 @@ function DashboardMyDealsContent() {
                 filter === f ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
-              {f === 'all' ? t('customer.myDeals.all') : f === 'active' ? t('customer.myDeals.active') : f === 'redeemed' ? t('customer.myDeals.redeemed') : t('customer.myDeals.expired')}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
@@ -239,7 +235,7 @@ function DashboardMyDealsContent() {
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
             <span className="hidden sm:inline text-xs font-medium">{sortLabels[sortBy]}</span>
-            <span className="sm:hidden text-xs font-medium">{t('customer.myDeals.sort')}</span>
+            <span className="sm:hidden text-xs font-medium">Sort</span>
           </button>
 
           {showSortMenu && (
@@ -272,10 +268,10 @@ function DashboardMyDealsContent() {
       ) : claims.length === 0 ? (
         <div className="card p-12 text-center">
           <QrCode className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-500">{t('customer.myDeals.noDealsYet')}</h3>
-          <p className="text-gray-400 mt-1">{t('customer.myDeals.noDealsDesc')}</p>
+          <h3 className="text-lg font-semibold text-gray-500">No deals yet</h3>
+          <p className="text-gray-400 mt-1">Browse deals and claim your first one!</p>
           <Link href="/deals" className="btn-primary inline-flex items-center gap-2 mt-4">
-            {t('customer.myDeals.browseDeals')} <ExternalLink className="w-4 h-4" />
+            Browse Deals <ExternalLink className="w-4 h-4" />
           </Link>
         </div>
       ) : (
@@ -293,12 +289,12 @@ function DashboardMyDealsContent() {
             const isBalancePending = status === 'redeemed' && hasRemainingBalance && !balancePaid;
 
             const statusStyles = {
-              active: { dot: 'bg-green-500', label: t('customer.myDeals.active'), text: 'text-green-700', bg: 'bg-green-50' },
+              active: { dot: 'bg-green-500', label: 'Active', text: 'text-green-700', bg: 'bg-green-50' },
               redeemed: isBalancePending
-                ? { dot: 'bg-amber-500', label: t('customer.myDeals.balanceDue'), text: 'text-amber-700', bg: 'bg-amber-50' }
-                : { dot: 'bg-blue-500', label: t('customer.myDeals.redeemed'), text: 'text-blue-700', bg: 'bg-blue-50' },
-              expired: { dot: 'bg-gray-400', label: t('customer.myDeals.expired'), text: 'text-gray-500', bg: 'bg-gray-100' },
-              pending_deposit: { dot: 'bg-yellow-500', label: t('customer.myDeals.pending'), text: 'text-yellow-700', bg: 'bg-yellow-50' },
+                ? { dot: 'bg-amber-500', label: 'Balance Due', text: 'text-amber-700', bg: 'bg-amber-50' }
+                : { dot: 'bg-blue-500', label: 'Redeemed', text: 'text-blue-700', bg: 'bg-blue-50' },
+              expired: { dot: 'bg-gray-400', label: 'Expired', text: 'text-gray-500', bg: 'bg-gray-100' },
+              pending_deposit: { dot: 'bg-yellow-500', label: 'Pending', text: 'text-yellow-700', bg: 'bg-yellow-50' },
             }[status];
 
             return (
@@ -364,17 +360,17 @@ function DashboardMyDealsContent() {
                   ) : status === 'redeemed' && isBalancePending ? (
                     <p className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      {t('customer.myDeals.payRemaining')}
+                      Pay remaining balance to complete
                     </p>
                   ) : status === 'redeemed' && claim.redeemed_at ? (
                     <p className="text-xs text-gray-400 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                      {t('customer.myDeals.used', { date: formatDate(claim.redeemed_at) })}
+                      Used {formatDate(claim.redeemed_at)}
                     </p>
                   ) : status === 'expired' ? (
                     <p className="text-xs text-gray-400 flex items-center gap-1.5">
                       <XCircle className="w-3.5 h-3.5 text-gray-400" />
-                      {t('customer.myDeals.expired2', { date: formatDate(claim.expires_at) })}
+                      Expired {formatDate(claim.expires_at)}
                     </p>
                   ) : null}
                 </div>
@@ -429,7 +425,6 @@ function SavingsHub({
   totalClaims: number;
   activeClaims: number;
 }) {
-  const { t } = useLanguage();
   // Milestones
   const milestones = [50, 100, 250, 500, 1000, 2500, 5000];
   const combinedSavings = totalSavings + pendingSavings;
@@ -448,19 +443,19 @@ function SavingsHub({
 
   // Achievements
   const achievements = [];
-  if (redeemedCount >= 1) achievements.push({ icon: '🎉', label: t('customer.myDeals.firstSave') });
-  if (redeemedCount >= 5) achievements.push({ icon: '⭐', label: t('customer.myDeals.fiveDeals') });
-  if (redeemedCount >= 10) achievements.push({ icon: '🔥', label: t('customer.myDeals.tenDeals') });
-  if (totalSavings >= 100) achievements.push({ icon: '💰', label: t('customer.myDeals.hundredClub') });
-  if (totalSavings >= 500) achievements.push({ icon: '🏆', label: t('customer.myDeals.fiveHundredSaver') });
-  if (totalSavings >= 1000) achievements.push({ icon: '👑', label: t('customer.myDeals.thousandLegend') });
+  if (redeemedCount >= 1) achievements.push({ icon: '🎉', label: 'First Save' });
+  if (redeemedCount >= 5) achievements.push({ icon: '⭐', label: '5 Deals' });
+  if (redeemedCount >= 10) achievements.push({ icon: '🔥', label: '10 Deals' });
+  if (totalSavings >= 100) achievements.push({ icon: '💰', label: '$100 Club' });
+  if (totalSavings >= 500) achievements.push({ icon: '🏆', label: '$500 Saver' });
+  if (totalSavings >= 1000) achievements.push({ icon: '👑', label: '$1K Legend' });
 
   // Motivational text
   const getMotivation = () => {
-    if (activeClaims >= 3) return t('customer.myDeals.onARoll');
-    if (redeemedCount === 0) return t('customer.myDeals.redeemFirstDeal');
-    if (pendingSavings > 0) return t('customer.myDeals.savingsWaiting', { amount: formatCurrency(pendingSavings) });
-    return t('customer.myDeals.browseToKeepSaving');
+    if (activeClaims >= 3) return 'You\'re on a roll! Keep saving!';
+    if (redeemedCount === 0) return 'Redeem your first deal to start saving!';
+    if (pendingSavings > 0) return `${formatCurrency(pendingSavings)} in savings waiting for you!`;
+    return 'Browse deals to keep the savings going!';
   };
 
   const toNextMilestone = currentMilestone - combinedSavings;
@@ -497,14 +492,14 @@ function SavingsHub({
                 <span className="text-white font-extrabold text-lg leading-none">
                   {combinedSavings >= 1000 ? `${(combinedSavings / 1000).toFixed(1)}k` : Math.round(combinedSavings)}
                 </span>
-                <span className="text-white/60 text-[9px] font-medium mt-0.5">{t('customer.myDeals.saved')}</span>
+                <span className="text-white/60 text-[9px] font-medium mt-0.5">SAVED</span>
               </div>
             </div>
 
             {/* Stats + motivation */}
             <div className="flex-1 text-center sm:text-left">
               <h2 className="text-white font-bold text-xl sm:text-2xl">
-                {formatCurrency(combinedSavings)} <span className="text-white/60 text-sm font-normal">{t('customer.myDeals.totalSavings')}</span>
+                {formatCurrency(combinedSavings)} <span className="text-white/60 text-sm font-normal">total savings</span>
               </h2>
 
               {/* Milestone progress bar */}
@@ -512,7 +507,7 @@ function SavingsHub({
                 <div className="flex items-center justify-between text-xs text-white/60 mb-1.5">
                   <span className="flex items-center gap-1">
                     <Target className="w-3 h-3" />
-                    {t('customer.myDeals.nextGoal', { amount: formatCurrency(currentMilestone) })}
+                    Next goal: {formatCurrency(currentMilestone)}
                   </span>
                   <span className="font-semibold text-white/80">{Math.round(milestoneProgress)}%</span>
                 </div>
@@ -524,7 +519,7 @@ function SavingsHub({
                 </div>
                 {toNextMilestone > 0 && (
                   <p className="text-[11px] text-white/50 mt-1.5">
-                    <span className="text-green-300 font-semibold">{formatCurrency(toNextMilestone)}</span> {t('customer.myDeals.moreToReach', { amount: '', goal: formatCurrency(currentMilestone) }).trim()}
+                    <span className="text-green-300 font-semibold">{formatCurrency(toNextMilestone)}</span> more to reach {formatCurrency(currentMilestone)}
                   </p>
                 )}
               </div>
@@ -545,21 +540,21 @@ function SavingsHub({
               <CheckCircle2 className="w-4 h-4" />
             </div>
             <p className="text-xl font-bold text-gray-900">{redeemedCount}</p>
-            <p className="text-[11px] text-gray-400 font-medium">{t('customer.myDeals.redeemed')}</p>
+            <p className="text-[11px] text-gray-400 font-medium">Redeemed</p>
           </div>
           <div className="p-4 text-center">
             <div className="flex items-center justify-center gap-1.5 text-primary-500 mb-1">
               <Flame className="w-4 h-4" />
             </div>
             <p className="text-xl font-bold text-gray-900">{activeClaims}</p>
-            <p className="text-[11px] text-gray-400 font-medium">{t('customer.myDeals.activeNow')}</p>
+            <p className="text-[11px] text-gray-400 font-medium">Active Now</p>
           </div>
           <div className="p-4 text-center">
             <div className="flex items-center justify-center gap-1.5 text-blue-500 mb-1">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <p className="text-xl font-bold text-gray-900">{totalClaims}</p>
-            <p className="text-[11px] text-gray-400 font-medium">{t('customer.myDeals.totalDeals')}</p>
+            <p className="text-[11px] text-gray-400 font-medium">Total Deals</p>
           </div>
         </div>
       </div>
@@ -609,7 +604,6 @@ function DetailModal({
   formatDate: (s: string) => string;
   formatDateTime: (s: string) => string;
 }) {
-  const { t } = useLanguage();
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'redeem' | 'vendor'>('details');
@@ -694,11 +688,11 @@ function DetailModal({
   const savings = deal.original_price - deal.deal_price;
 
   const tabs = [
-    { key: 'details' as const, label: t('customer.myDeals.details'), icon: <Tag className="w-3.5 h-3.5" /> },
+    { key: 'details' as const, label: 'Details', icon: <Tag className="w-3.5 h-3.5" /> },
     ...(status === 'active' && claim.redemption_code
-      ? [{ key: 'redeem' as const, label: t('customer.myDeals.redeem'), icon: <QrCode className="w-3.5 h-3.5" /> }]
+      ? [{ key: 'redeem' as const, label: 'Redeem', icon: <QrCode className="w-3.5 h-3.5" /> }]
       : []),
-    ...(vendor ? [{ key: 'vendor' as const, label: t('customer.myDeals.business'), icon: <Store className="w-3.5 h-3.5" /> }] : []),
+    ...(vendor ? [{ key: 'vendor' as const, label: 'Business', icon: <Store className="w-3.5 h-3.5" /> }] : []),
   ];
 
   return (
@@ -745,12 +739,9 @@ function DetailModal({
               status === 'expired' ? 'bg-gray-500/90 text-white' :
               'bg-yellow-500/90 text-white'
             }`}>
-              {isBalancePending ? t('customer.myDeals.balanceDue') :
-               status === 'pending_deposit' ? t('customer.myDeals.awaitingDeposit') :
-               status === 'active' ? t('customer.myDeals.active') :
-               status === 'redeemed' ? t('customer.myDeals.redeemed') :
-               status === 'expired' ? t('customer.myDeals.expired') :
-               String(status).charAt(0).toUpperCase() + String(status).slice(1)}
+              {isBalancePending ? 'Balance Due' :
+               status === 'pending_deposit' ? 'Awaiting Deposit' :
+               status.charAt(0).toUpperCase() + status.slice(1)}
             </span>
           </div>
 
@@ -767,7 +758,7 @@ function DetailModal({
           <div className="absolute bottom-3 right-3">
             <div className="bg-green-500 text-white font-bold text-xs sm:text-sm px-3 py-1.5 rounded-full shadow-lg shadow-green-500/30 flex items-center gap-1 backdrop-blur-sm">
               <Sparkles className="w-3.5 h-3.5" />
-              {t('customer.myDeals.save', { amount: fmtCurrency(savings) })}
+              Save {fmtCurrency(savings)}
             </div>
           </div>
         </div>
@@ -777,11 +768,11 @@ function DetailModal({
           <div className="flex items-center gap-2 mb-1.5">
             {isSponti ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
-                <SpontiIcon className="w-3 h-3" /> {t('customer.myDeals.spontiCoupon')}
+                <SpontiIcon className="w-3 h-3" /> Sponti Coupon
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-secondary-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                <Tag className="w-2.5 h-2.5" /> {t('customer.myDeals.steadyDeal')}
+                <Tag className="w-2.5 h-2.5" /> Steady Deal
               </span>
             )}
             <span className="text-green-600 text-[11px] font-bold bg-green-50 px-2 py-0.5 rounded-full">
@@ -811,7 +802,7 @@ function DetailModal({
           {hasDeposit && (
             <div className="ml-auto flex items-center gap-1.5 text-xs text-gray-500">
               <CreditCard className="w-3.5 h-3.5 text-primary-500" />
-              <span>{t('customer.myDeals.deposit', { amount: fmtCurrency(depositAmount) })}</span>
+              <span>Deposit: <b className="text-primary-600">{fmtCurrency(depositAmount)}</b></span>
               {claim.deposit_confirmed ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Clock className="w-3.5 h-3.5 text-yellow-500" />}
             </div>
           )}
@@ -862,7 +853,7 @@ function DetailModal({
               {deal.amenities && deal.amenities.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" /> {t('customer.myDeals.amenities')}
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary-500" /> Amenities
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     {deal.amenities.map((a: string, i: number) => {
@@ -882,7 +873,7 @@ function DetailModal({
               {deal.terms_and_conditions && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-primary-500" /> {t('customer.myDeals.termsAndConditions')}
+                    <Shield className="w-3.5 h-3.5 text-primary-500" /> Terms & Conditions
                   </h4>
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                     <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">{deal.terms_and_conditions}</p>
@@ -894,7 +885,7 @@ function DetailModal({
               {deal.fine_print && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                   <p className="text-xs text-amber-800 leading-relaxed">
-                    <span className="font-semibold">{t('customer.myDeals.finePrint')}</span>
+                    <span className="font-semibold">Fine Print: </span>
                     {deal.fine_print}
                   </p>
                 </div>
@@ -906,7 +897,7 @@ function DetailModal({
                 className="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-600 transition-colors"
               >
                 <ExternalLink className="w-4 h-4" />
-                {t('customer.myDeals.viewFullDealPage')}
+                View Full Deal Page
               </Link>
 
               {/* Time Remaining */}
@@ -914,10 +905,10 @@ function DetailModal({
                 <div className={`rounded-xl p-4 text-white deal-modal-shine ${isSponti ? 'bg-gradient-to-r from-primary-500 to-primary-600' : 'bg-gradient-to-r from-secondary-500 to-secondary-600'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-white" />
-                    <span className="text-sm font-semibold">{t('customer.myDeals.timeRemaining')}</span>
+                    <span className="text-sm font-semibold">Time remaining</span>
                   </div>
                   <CountdownTimer expiresAt={claim.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
-                  <p className="text-xs text-white/60 mt-2">{t('customer.myDeals.expiresDate', { date: fmtDateTime(claim.expires_at) })}</p>
+                  <p className="text-xs text-white/60 mt-2">Expires {fmtDateTime(claim.expires_at)}</p>
                 </div>
               )}
 
@@ -926,8 +917,8 @@ function DetailModal({
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-2">
                     <XCircle className="w-6 h-6 text-gray-400" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-500">{t('customer.myDeals.couponExpired')}</p>
-                  <p className="text-xs text-gray-400 mt-1">{t('customer.myDeals.expiredOn', { date: fmtDateTime(claim.expires_at) })}</p>
+                  <p className="text-sm font-semibold text-gray-500">This coupon has expired</p>
+                  <p className="text-xs text-gray-400 mt-1">Expired on {fmtDateTime(claim.expires_at)}</p>
                 </div>
               )}
 
@@ -936,12 +927,12 @@ function DetailModal({
                   <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
                     <AlertTriangle className="w-6 h-6 text-amber-500" />
                   </div>
-                  <p className="text-sm font-bold text-amber-700">{t('customer.myDeals.balanceDue')}</p>
+                  <p className="text-sm font-bold text-amber-700">Balance Due</p>
                   <p className="text-xs text-amber-600 mt-1">
-                    {t('customer.myDeals.payRemainingBalance')}
+                    Pay the remaining balance to complete this transaction
                   </p>
                   {claim.redeemed_at && (
-                    <p className="text-xs text-gray-400 mt-2">{t('customer.myDeals.redeemedOn', { date: fmtDateTime(claim.redeemed_at) })}</p>
+                    <p className="text-xs text-gray-400 mt-2">Redeemed on {fmtDateTime(claim.redeemed_at)}</p>
                   )}
                 </div>
               )}
@@ -951,13 +942,13 @@ function DetailModal({
                   <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-2">
                     <CheckCircle2 className="w-6 h-6 text-green-500" />
                   </div>
-                  <p className="text-sm font-bold text-green-700">{t('customer.myDeals.successfullyRedeemed')}</p>
+                  <p className="text-sm font-bold text-green-700">Successfully Redeemed!</p>
                   <p className="text-xs text-green-600 mt-1 flex items-center justify-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    {t('customer.myDeals.youSaved', { amount: fmtCurrency(savings) })}
+                    You saved {fmtCurrency(savings)} on this deal
                   </p>
                   {claim.redeemed_at && (
-                    <p className="text-xs text-gray-400 mt-2">{t('customer.myDeals.usedOn', { date: fmtDateTime(claim.redeemed_at) })}</p>
+                    <p className="text-xs text-gray-400 mt-2">Used on {fmtDateTime(claim.redeemed_at)}</p>
                   )}
                 </div>
               )}
@@ -967,7 +958,7 @@ function DetailModal({
                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl p-5">
                   <div className="text-center mb-3">
                     <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-1" />
-                    <p className="text-sm font-bold text-gray-900">{t('customer.myDeals.remainingBalance')}</p>
+                    <p className="text-sm font-bold text-gray-900">Remaining Balance</p>
                     <p className="text-2xl font-extrabold text-blue-600 mt-1">{fmtCurrency(remainingBalance)}</p>
                   </div>
                   <button
@@ -995,16 +986,16 @@ function DetailModal({
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-200/50 flex items-center justify-center gap-2"
                   >
                     {payingBalance ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> {t('customer.myDeals.processing')}</>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
                     ) : (
-                      <><CreditCard className="w-4 h-4" /> {t('customer.myDeals.payNowWithCard')}</>
+                      <><CreditCard className="w-4 h-4" /> Pay Now with Card</>
                     )}
                   </button>
                   {payError && (
                     <p className="text-xs text-red-600 mt-2 text-center">{payError}</p>
                   )}
                   <p className="text-[10px] text-gray-500 mt-2 text-center">
-                    {t('customer.myDeals.securePayment')}
+                    Secure payment via Stripe. 100% goes directly to the vendor.
                   </p>
                 </div>
               )}
@@ -1014,11 +1005,11 @@ function DetailModal({
                 <div className="bg-primary-50/60 border border-primary-100 rounded-xl p-4">
                   <h4 className="text-xs font-bold text-gray-900 mb-3 uppercase tracking-wider flex items-center gap-2">
                     <CreditCard className="w-3.5 h-3.5 text-primary-500" />
-                    {t('customer.myDeals.paymentBreakdown')}
+                    Payment Breakdown
                   </h4>
                   <div className="space-y-2.5 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500">{t('customer.myDeals.depositPaid')}</span>
+                      <span className="text-gray-500">Deposit paid</span>
                       <span className="font-semibold text-green-600 flex items-center gap-1">
                         {fmtCurrency(depositAmount)}
                         {claim.deposit_confirmed ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500" /> : <Clock className="w-3.5 h-3.5 text-yellow-500" />}
@@ -1026,19 +1017,19 @@ function DetailModal({
                     </div>
                     {claim.deposit_confirmed && remainingBalance > 0 && (
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-500">{t('customer.myDeals.balanceDueAtVendor')}</span>
+                        <span className="text-gray-500">Balance due at vendor</span>
                         <span className="font-semibold text-gray-900">{fmtCurrency(remainingBalance)}</span>
                       </div>
                     )}
                     <div className="flex justify-between items-center border-t border-primary-200/60 pt-2">
-                      <span className="font-bold text-gray-900">{t('customer.myDeals.total')}</span>
+                      <span className="font-bold text-gray-900">Total</span>
                       <span className="font-bold text-gray-900">{fmtCurrency(deal.deal_price)}</span>
                     </div>
                   </div>
                   {!claim.deposit_confirmed && (
                     <p className="text-xs text-yellow-700 mt-3 bg-yellow-50 rounded-lg px-3 py-2 flex items-center gap-1.5">
                       <AlertTriangle className="w-3.5 h-3.5 text-yellow-500 flex-shrink-0" />
-                      {t('customer.myDeals.depositNotConfirmed')}
+                      Deposit not yet confirmed. Your code will appear once confirmed.
                     </p>
                   )}
                 </div>
@@ -1046,28 +1037,28 @@ function DetailModal({
 
               {/* Timeline */}
               <div>
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t('customer.myDeals.timeline')}</h4>
+                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Timeline</h4>
                 <div className="relative pl-4 border-l-2 border-gray-100 space-y-3">
                   <div className="relative">
                     <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-primary-500 border-2 border-white" />
-                    <p className="text-xs text-gray-500">{t('customer.myDeals.claimedOn', { date: '' })} <span className="font-medium text-gray-700">{fmtDate(claim.created_at)}</span></p>
+                    <p className="text-xs text-gray-500">Claimed on <span className="font-medium text-gray-700">{fmtDate(claim.created_at)}</span></p>
                   </div>
                   {claim.deposit_confirmed_at && (
                     <div className="relative">
                       <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-green-500 border-2 border-white" />
-                      <p className="text-xs text-gray-500">{t('customer.myDeals.depositConfirmed', { date: '' })} <span className="font-medium text-gray-700">{fmtDate(claim.deposit_confirmed_at)}</span></p>
+                      <p className="text-xs text-gray-500">Deposit confirmed <span className="font-medium text-gray-700">{fmtDate(claim.deposit_confirmed_at)}</span></p>
                     </div>
                   )}
                   {claim.redeemed_at && (
                     <div className="relative">
                       <div className="absolute -left-[21px] w-3 h-3 rounded-full bg-blue-500 border-2 border-white" />
-                      <p className="text-xs text-gray-500">{t('customer.myDeals.redeemed2', { date: '' })} <span className="font-medium text-gray-700">{fmtDateTime(claim.redeemed_at)}</span></p>
+                      <p className="text-xs text-gray-500">Redeemed <span className="font-medium text-gray-700">{fmtDateTime(claim.redeemed_at)}</span></p>
                     </div>
                   )}
                   <div className="relative">
                     <div className={`absolute -left-[21px] w-3 h-3 rounded-full border-2 border-white ${status === 'expired' ? 'bg-red-400' : 'bg-gray-300'}`} />
                     <p className="text-xs text-gray-500">
-                      {status === 'expired' ? t('customer.myDeals.expired') : t('customer.myDeals.expires')} <span className="font-medium text-gray-700">{fmtDateTime(claim.expires_at)}</span>
+                      {status === 'expired' ? 'Expired' : 'Expires'} <span className="font-medium text-gray-700">{fmtDateTime(claim.expires_at)}</span>
                     </p>
                   </div>
                 </div>
@@ -1082,7 +1073,7 @@ function DetailModal({
               <div className="text-center">
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-500 mb-3">
                   <Zap className="w-3.5 h-3.5" />
-                  {t('customer.myDeals.tellVendorCode')}
+                  Tell the vendor this code
                 </div>
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2">
                   {claim.redemption_code.split('').map((digit, i) => (
@@ -1103,14 +1094,14 @@ function DetailModal({
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {codeCopied ? <><Check className="w-4 h-4" /> {t('customer.myDeals.copied')}</> : <><Copy className="w-4 h-4" /> {t('customer.myDeals.copyCode')}</>}
+                  {codeCopied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Code</>}
                 </button>
               </div>
 
               {/* Divider */}
               <div className="flex items-center gap-3">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{t('customer.myDeals.orScan')}</span>
+                <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">or scan</span>
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
               </div>
 
@@ -1129,7 +1120,7 @@ function DetailModal({
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-3">{t('customer.myDeals.showQRToVendor')}</p>
+                <p className="text-xs text-gray-400 mt-3">Show this QR code to the vendor to redeem your deal</p>
               </div>
             </div>
           )}
@@ -1152,7 +1143,7 @@ function DetailModal({
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 hover:bg-gray-100 rounded-xl text-sm font-medium text-gray-600 transition-colors"
                   >
                     <Send className="w-4 h-4" />
-                    {t('customer.myDeals.transfer')}
+                    Transfer
                   </button>
                   <button
                     onClick={() => setShowCancelConfirm(true)}
@@ -1167,9 +1158,9 @@ function DetailModal({
                 <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-4">
                   <h4 className="text-sm font-bold text-gray-900 mb-1.5 flex items-center gap-2">
                     <Send className="w-4 h-4 text-blue-500" />
-                    {t('customer.myDeals.transferCoupon')}
+                    Transfer Coupon
                   </h4>
-                  <p className="text-xs text-gray-500 mb-3">{t('customer.myDeals.recipientMustHaveAccount')}</p>
+                  <p className="text-xs text-gray-500 mb-3">Recipient must have a SpontiCoupon account.</p>
                   <div className="flex gap-2">
                     <input
                       type="email"
@@ -1202,16 +1193,16 @@ function DetailModal({
                   <div className="flex items-start gap-2 mb-3">
                     <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-bold text-red-700">{t('customer.myDeals.cancelThisCoupon')}</h4>
+                      <h4 className="text-sm font-bold text-red-700">Cancel this coupon?</h4>
                       <p className="text-xs text-red-500 mt-1">
-                        {t('customer.myDeals.actionPermanent')}{hasDeposit && t('customer.myDeals.depositNonRefundable')}
+                        This action is permanent.{hasDeposit && ' Your deposit is non-refundable.'}
                       </p>
                     </div>
                   </div>
                   {cancelError && <p className="text-xs text-red-600 mb-2">{cancelError}</p>}
                   <div className="flex gap-2">
                     <button onClick={() => { setShowCancelConfirm(false); setCancelError(''); }} className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                      {t('customer.myDeals.keep')}
+                      Keep
                     </button>
                     <button onClick={handleCancel} disabled={cancelling} className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
                       {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}

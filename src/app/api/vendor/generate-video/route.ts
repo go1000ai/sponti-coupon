@@ -75,11 +75,6 @@ export async function POST(request: NextRequest) {
     resolvedImageUrl = `${supabaseUrl}/storage/v1/object/public/${image_url.slice('/media/'.length)}`;
   }
 
-  // Normalize bare URLs (e.g., "Www.example.com" → "https://www.example.com")
-  if (resolvedImageUrl && !resolvedImageUrl.startsWith('http://') && !resolvedImageUrl.startsWith('https://') && !resolvedImageUrl.startsWith('/')) {
-    resolvedImageUrl = `https://${resolvedImageUrl}`;
-  }
-
   try {
     // Fetch the deal image with retry (Supabase storage can return transient 502s)
     let imageResponse: Response | null = null;
