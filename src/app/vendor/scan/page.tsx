@@ -42,7 +42,7 @@ interface PreviewData {
     };
     remaining_balance: number;
   };
-  // Customer info from GET (not available yet, will be shown after POST)
+  customer?: { name: string; email: string | null };
 }
 
 interface RedemptionResult {
@@ -512,6 +512,23 @@ export default function ScanPage() {
             <h2 className="text-xl font-bold text-gray-900">Confirm Redemption</h2>
             <p className="text-sm text-gray-500 mt-1">Review the details before redeeming</p>
           </div>
+
+          {/* Customer Info */}
+          {preview.customer && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-blue-600 font-bold text-sm">
+                  {preview.customer.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 truncate">{preview.customer.name}</p>
+                {preview.customer.email && (
+                  <p className="text-xs text-gray-500 truncate">{preview.customer.email}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Deal Info */}
           <div className="bg-gray-50 rounded-xl p-4 mb-3">

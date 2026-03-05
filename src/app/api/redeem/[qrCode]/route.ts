@@ -317,7 +317,7 @@ export async function GET(
 
   const { data: claim } = await supabase
     .from('claims')
-    .select('*, deal:deals(id, title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name))')
+    .select('*, deal:deals(id, title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name)), customer:customers(first_name, last_name, email)')
     .eq(column, is6Digit ? qrCode.trim() : qrCode)
     .single();
 
@@ -342,6 +342,10 @@ export async function GET(
       customer_id: claim.customer_id,
       deal: claim.deal,
       remaining_balance: remainingBalance,
+    },
+    customer: {
+      name: `${claim.customer?.first_name || ''} ${claim.customer?.last_name || ''}`.trim() || 'Unknown',
+      email: claim.customer?.email || null,
     },
   });
 }
