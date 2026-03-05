@@ -89,6 +89,9 @@ export default function ScanPage() {
   const [copied, setCopied] = useState(false);
   const [stripePaid, setStripePaid] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState<boolean | null>(null); // null = loading
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const scannerContainerId = 'qr-reader';
@@ -303,6 +306,39 @@ export default function ScanPage() {
     setStep('collected');
   };
 
+  // Cancel redemption — undo everything and restore the claim
+  const handleCancelRedemption = async () => {
+    if (!result?.redemption_id) return;
+    setCancelling(true);
+
+    try {
+      const response = await fetch('/api/vendor/cancel-redemption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ redemption_id: result.redemption_id }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setCancelMessage('Redemption cancelled. The customer\'s code has been restored.');
+        setShowCancelConfirm(false);
+        // Reset to input after a brief pause so the vendor sees the message
+        setTimeout(() => {
+          resetScanner();
+          setCancelMessage(null);
+        }, 2500);
+      } else {
+        setShowCancelConfirm(false);
+        setLinkError(data.error || 'Failed to cancel redemption');
+      }
+    } catch {
+      setShowCancelConfirm(false);
+      setLinkError('Network error. Please try again.');
+    }
+
+    setCancelling(false);
+  };
+
   const handleGeneratePaymentLink = async () => {
     if (!result) return;
     setGeneratingLink(true);
@@ -351,6 +387,8 @@ export default function ScanPage() {
     setSessionId(null);
     setLinkError(null);
     setStripePaid(false);
+    setShowCancelConfirm(false);
+    setCancelling(false);
     setStep('input');
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   };
@@ -820,7 +858,7 @@ export default function ScanPage() {
               {(result.remaining_balance || 0) > 0 && !stripePaid && (
                 <button
                   onClick={handleMarkCollected}
-                  disabled={collecting}
+                  disabled={collecting || cancelling}
                   className="w-full py-3 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition-colors"
                 >
                   {collecting ? (
@@ -833,6 +871,53 @@ export default function ScanPage() {
                     </span>
                   )}
                 </button>
+              )}
+
+              {/* Cancel Redemption — only when balance owed, no Stripe payment, no in-person collection */}
+              {(result.remaining_balance || 0) > 0 && !stripePaid && (
+                <>
+                  {cancelMessage ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                      <p className="text-sm font-medium text-amber-700">{cancelMessage}</p>
+                    </div>
+                  ) : !showCancelConfirm ? (
+                    <button
+                      onClick={() => setShowCancelConfirm(true)}
+                      disabled={collecting || cancelling}
+                      className="w-full py-2.5 border-2 border-red-200 hover:border-red-400 hover:bg-red-50 text-red-500 text-sm font-medium rounded-xl transition-colors"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <XCircle className="w-4 h-4" /> Cancel Redemption
+                      </span>
+                    </button>
+                  ) : (
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+                      <p className="text-sm text-red-700 font-medium text-center">
+                        Are you sure? This will undo the redemption and restore the customer&apos;s code.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleCancelRedemption}
+                          disabled={cancelling}
+                          className="flex-1 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-bold rounded-xl transition-colors"
+                        >
+                          {cancelling ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" /> Cancelling...
+                            </span>
+                          ) : 'Yes, Cancel'}
+                        </button>
+                        <button
+                          onClick={() => setShowCancelConfirm(false)}
+                          disabled={cancelling}
+                          className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-medium rounded-xl transition-colors"
+                        >
+                          No, Keep It
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
