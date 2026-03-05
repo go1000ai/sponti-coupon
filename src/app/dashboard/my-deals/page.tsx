@@ -287,10 +287,12 @@ export default function DashboardMyDealsPage() {
                   status === 'expired' ? 'opacity-60' : ''
                 }`}
               >
-                {/* Diagonal REDEEMED ribbon */}
+                {/* Big REDEEMED watermark stamp */}
                 {status === 'redeemed' && !isBalancePending && (
-                  <div className="absolute -right-8 top-5 rotate-45 bg-green-500 text-white text-[9px] font-extrabold tracking-wider px-8 py-0.5 shadow-md z-10">
-                    REDEEMED
+                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                    <div className="border-4 border-green-500/40 rounded-lg px-4 py-1 -rotate-12">
+                      <span className="text-green-500/40 text-3xl font-extrabold tracking-widest">REDEEMED</span>
+                    </div>
                   </div>
                 )}
                 {/* Row 1: Status + Deal type */}
@@ -725,10 +727,12 @@ function DetailModal({
             </span>
           </div>
 
-          {/* Diagonal REDEEMED ribbon on modal hero */}
+          {/* Big REDEEMED watermark stamp on modal hero */}
           {status === 'redeemed' && !isBalancePending && (
-            <div className="absolute -right-10 top-7 rotate-45 bg-green-500 text-white text-[11px] font-extrabold tracking-widest px-10 py-1 shadow-lg z-10">
-              REDEEMED
+            <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+              <div className="border-4 border-white/50 rounded-xl px-6 py-2 -rotate-12">
+                <span className="text-white/60 text-4xl font-extrabold tracking-widest drop-shadow-lg">REDEEMED</span>
+              </div>
             </div>
           )}
 
