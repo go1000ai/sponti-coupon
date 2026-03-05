@@ -30,7 +30,7 @@ export async function selectDealForPromotion(
     .not('deal_id', 'is', null);
 
   const socialExclude = (recentSocial || []).map(r => r.deal_id).filter(Boolean);
-  const allExclude = [...new Set([...excludeIds, ...socialExclude])];
+  const allExclude = Array.from(new Set([...excludeIds, ...socialExclude]));
 
   // Strategy based on run type
   let deal: DealPromotionTarget | null = null;
