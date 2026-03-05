@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
+import { useLanguage } from '@/lib/i18n';
 
 /* ─── Platform config ─── */
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -83,6 +84,7 @@ function timeAgo(dateStr: string): string {
 /* ─── Main Page ─── */
 export default function VendorSocialPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
 
   const [connections, setConnections] = useState<SocialConnectionItem[]>([]);
@@ -179,7 +181,7 @@ export default function VendorSocialPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <Share2 className="w-7 h-7 text-[#E8632B]" />
-        <h1 className="text-2xl font-bold text-gray-900">Social Auto-Post</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('vendor.social.title')}</h1>
       </div>
       <p className="text-gray-500 mb-8">
         Track your social media posts and manage connections. When you publish a deal, it gets automatically posted with AI-generated captions.

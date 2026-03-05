@@ -3,35 +3,37 @@
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { Search, Wallet, QrCode, ChevronRight, Tag } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
-
-const steps = [
-  {
-    icon: Search,
-    title: 'Discover Deals',
-    description: 'Browse by location or category. Find Sponti Deals and Steady Deals near you.',
-    gradient: 'from-primary-500 to-orange-600',
-  },
-  {
-    icon: Wallet,
-    title: 'Claim Your Deal',
-    description: 'Claim for free, pay a deposit, or pay in full. Payments go directly to the business.',
-    gradient: 'from-blue-500 to-blue-600',
-  },
-  {
-    icon: QrCode,
-    title: 'Redeem & Save',
-    description: 'Get a QR code and 6-digit backup code instantly. Show it at the business and enjoy.',
-    gradient: 'from-emerald-500 to-teal-600',
-  },
-];
+import { useLanguage } from '@/lib/i18n';
 
 export function HowItWorks() {
+  const { t } = useLanguage();
+
+  const steps = [
+    {
+      icon: Search,
+      title: t('home.howItWorks.step1Title'),
+      description: t('home.howItWorks.step1Desc'),
+      gradient: 'from-primary-500 to-orange-600',
+    },
+    {
+      icon: Wallet,
+      title: t('home.howItWorks.step2Title'),
+      description: t('home.howItWorks.step2Desc'),
+      gradient: 'from-blue-500 to-blue-600',
+    },
+    {
+      icon: QrCode,
+      title: t('home.howItWorks.step3Title'),
+      description: t('home.howItWorks.step3Desc'),
+      gradient: 'from-emerald-500 to-teal-600',
+    },
+  ];
   return (
     <section id="how-it-works" className="relative py-10 sm:py-12 bg-gray-50 scroll-mt-20 overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal animation="fade-up">
           <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
-            How It Works
+            {t('home.howItWorks.title')}
           </h2>
 
           {/* Deal type explainer */}
@@ -41,14 +43,14 @@ export function HowItWorks() {
                 <SpontiIcon className="w-3 h-3" />
                 Sponti
               </div>
-              <span className="text-gray-600 text-xs">Flash deals with a countdown — grab them before they expire</span>
+              <span className="text-gray-600 text-xs">{t('home.howItWorks.spontiDescShort')}</span>
             </div>
             <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 shadow-sm border border-secondary-100">
               <div className="flex items-center gap-1 bg-secondary-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shrink-0">
                 <Tag className="w-3 h-3" />
                 Steady
               </div>
-              <span className="text-gray-600 text-xs">Always-on deals you can claim anytime</span>
+              <span className="text-gray-600 text-xs">{t('home.howItWorks.steadyDescShort')}</span>
             </div>
           </div>
         </ScrollReveal>

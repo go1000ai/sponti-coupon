@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Paperclip, Send, X, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface Props {
   onSubmit: (message: string, files: File[]) => Promise<void>;
@@ -15,8 +16,10 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 export default function SupportReplyForm({
   onSubmit,
   disabled = false,
-  placeholder = 'Type your reply...',
+  placeholder,
 }: Props) {
+  const { t } = useLanguage();
+  const resolvedPlaceholder = placeholder || t('supportReplyForm.typeReply');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
@@ -49,15 +52,15 @@ export default function SupportReplyForm({
 
     for (const file of fileArray) {
       if (files.length + validFiles.length >= MAX_FILES) {
-        setError(`Maximum ${MAX_FILES} files allowed.`);
+        setError(t('supportReplyForm.maxFilesAllowed', { max: String(MAX_FILES) }));
         break;
       }
       if (file.size > MAX_FILE_SIZE) {
-        setError(`File "${file.name}" exceeds the 5MB size limit.`);
+        setError(t('supportReplyForm.fileTooLarge', { name: file.name }));
         continue;
       }
       if (!file.type.startsWith('image/')) {
-        setError(`File "${file.name}" is not an image.`);
+        setError(t('supportReplyForm.fileNotImage', { name: file.name }));
         continue;
       }
       validFiles.push(file);
@@ -95,7 +98,7 @@ export default function SupportReplyForm({
         textareaRef.current.style.height = 'auto';
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send reply.');
+      setError(err instanceof Error ? err.message : t('supportReplyForm.failedToSend'));
     } finally {
       setSubmitting(false);
     }
@@ -151,7 +154,7 @@ export default function SupportReplyForm({
           onClick={() => fileInputRef.current?.click()}
           disabled={isDisabled}
           className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          title="Attach image"
+          title={t('supportReplyForm.attachImage')}
         >
           <Paperclip className="w-5 h-5" />
         </button>
@@ -173,7 +176,7 @@ export default function SupportReplyForm({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={disabled ? 'This ticket is closed.' : placeholder}
+          placeholder={disabled ? t('supportReplyForm.ticketClosed') : resolvedPlaceholder}
           disabled={isDisabled}
           rows={1}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed max-h-40"
@@ -185,7 +188,7 @@ export default function SupportReplyForm({
           onClick={handleSubmit}
           disabled={isDisabled || (!message.trim() && files.length === 0)}
           className="p-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-          title="Send reply"
+          title={t('supportReplyForm.sendReply')}
         >
           {submitting ? (
             <Loader2 className="w-5 h-5 animate-spin" />
@@ -197,7 +200,7 @@ export default function SupportReplyForm({
 
       {!disabled && (
         <p className="text-xs text-gray-400 mt-1.5 ml-10">
-          Press Enter to send, Shift+Enter for new line
+          {t('supportReplyForm.pressEnter')}
         </p>
       )}
     </div>

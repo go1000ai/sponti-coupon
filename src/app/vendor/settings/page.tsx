@@ -252,12 +252,12 @@ export default function VendorSettingsPage() {
     // Check for success params in URL
     const params = new URLSearchParams(window.location.search);
     if (params.get('social_connected')) {
-      setMessage({ type: 'success', text: `${params.get('social_connected')} connected successfully!` });
+      setMessage({ type: 'success', text: t('vendor.settings.socialConnectedSuccess', { platform: params.get('social_connected') || '' }) });
       window.history.replaceState({}, '', window.location.pathname);
       fetchConnections();
     }
     if (params.get('social_error')) {
-      setMessage({ type: 'error', text: `Social connection failed: ${params.get('social_error')}` });
+      setMessage({ type: 'error', text: t('vendor.settings.socialConnectionFailed', { error: params.get('social_error') || '' }) });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [user]);
@@ -272,10 +272,10 @@ export default function VendorSettingsPage() {
       });
       if (res.ok) {
         setSocialConnections(prev => prev.filter(c => c.id !== connectionId));
-        setMessage({ type: 'success', text: 'Social account disconnected.' });
+        setMessage({ type: 'success', text: t('vendor.settings.socialDisconnected') });
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to disconnect account.' });
+      setMessage({ type: 'error', text: t('vendor.settings.disconnectFailed') });
     }
     setDisconnecting(null);
   };
@@ -345,7 +345,7 @@ export default function VendorSettingsPage() {
         .eq('id', user.id);
 
       setVendor(prev => prev ? { ...prev, [updateField]: publicUrl } : prev);
-      setMessage({ type: 'success', text: `${type === 'logo' ? 'Logo' : 'Cover photo'} updated!` });
+      setMessage({ type: 'success', text: type === 'logo' ? t('vendor.settings.logoUpdated') : t('vendor.settings.coverUpdated') });
     } catch (err) {
       const msg = err instanceof Error ? err.message : `Failed to upload ${type}`;
       setMessage({ type: 'error', text: msg });
@@ -360,7 +360,7 @@ export default function VendorSettingsPage() {
 
     // Validate required address fields
     if (!businessForm.address?.trim() || !businessForm.city?.trim() || !businessForm.state?.trim() || !businessForm.zip?.trim()) {
-      setMessage({ type: 'error', text: 'Business address is required (street address, city, state, and ZIP code).' });
+      setMessage({ type: 'error', text: t('vendor.settings.addressRequired') });
       return;
     }
 
@@ -409,7 +409,7 @@ export default function VendorSettingsPage() {
       .eq('id', user.id);
 
     if (error || authError) {
-      setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
+      setMessage({ type: 'error', text: t('vendor.settings.saveFailed') });
     } else {
       // Auto-geocode the address after saving
       try {
@@ -417,7 +417,7 @@ export default function VendorSettingsPage() {
       } catch {
         // Geocoding failure is non-blocking
       }
-      setMessage({ type: 'success', text: 'Settings saved successfully!' });
+      setMessage({ type: 'success', text: t('vendor.settings.settingsSaved') });
       setTimeout(() => setMessage(null), 4000);
     }
     setSaving(false);
@@ -449,7 +449,7 @@ export default function VendorSettingsPage() {
             <div>
               <p className="text-sm text-gray-500">{t('vendor.settings.currentPlanLabel')}</p>
               <p className="text-lg font-bold text-gray-900 capitalize">
-                {vendor.subscription_tier} Plan
+                {t('vendor.settings.planName', { tier: vendor.subscription_tier })}
               </p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -487,7 +487,7 @@ export default function VendorSettingsPage() {
             </div>
           </div>
           <span className="text-sm text-gray-500">
-            {vendor?.total_reviews || 0} review{(vendor?.total_reviews || 0) !== 1 ? 's' : ''}
+            {t('vendor.settings.reviewCount', { count: vendor?.total_reviews || 0, s: (vendor?.total_reviews || 0) !== 1 ? 's' : '' })}
           </span>
         </div>
       </div>
@@ -1240,7 +1240,7 @@ export default function VendorSettingsPage() {
             </div>
             <div className="flex items-center gap-2">
               {autoResponseForm.enabled && (
-                <span className="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-600 rounded-full">Active</span>
+                <span className="px-2 py-0.5 text-xs font-medium bg-green-50 text-green-600 rounded-full">{t('common.active')}</span>
               )}
               {expandedSection === 'auto_response' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
             </div>
@@ -1423,7 +1423,7 @@ export default function VendorSettingsPage() {
                   type="button"
                   onClick={() => {
                     localStorage.removeItem('sponti_tour_vendor_dashboard_done');
-                    setMessage({ type: 'success', text: 'Tour will start when you visit the dashboard!' });
+                    setMessage({ type: 'success', text: t('vendor.settings.tourWillStart') });
                     window.location.href = '/vendor/dashboard';
                   }}
                   className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
@@ -1443,7 +1443,7 @@ export default function VendorSettingsPage() {
                     keys.forEach(k => localStorage.removeItem(k));
                     localStorage.setItem('sponti_tour_auto_start', 'true');
                     setTourAutoStart(true);
-                    setMessage({ type: 'success', text: 'All tours have been reset. They will show again on your next visit.' });
+                    setMessage({ type: 'success', text: t('vendor.settings.allToursReset') });
                   }}
                   className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
                 >

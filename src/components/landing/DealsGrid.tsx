@@ -8,10 +8,12 @@ import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
 export function DealsGrid() {
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
   const { lat, lng } = useGeolocation();
@@ -63,20 +65,20 @@ export function DealsGrid() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-accent-500 to-blue-600 rounded-full px-5 py-2 mb-3 shadow-md">
                 <Tag className="w-4 h-4 text-white" />
-                <span className="text-sm font-bold text-white tracking-wide">STEADY DEALS</span>
+                <span className="text-sm font-bold text-white tracking-wide">{t('home.dealsGrid.badge')}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white">
-                Steady Deals Near You
+                {t('home.dealsGrid.title')}
               </h2>
               <p className="text-gray-300 mt-1 text-base sm:text-lg">
-                Long-running deals you can count on — always available
+                {t('home.dealsGrid.subtitle')}
               </p>
             </div>
             <Link
               href="/deals"
               className="text-white font-semibold inline-flex items-center gap-1 hover:text-white/80 transition-colors group"
             >
-              See All Steady Deals <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('home.dealsGrid.seeAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </ScrollReveal>
@@ -103,7 +105,7 @@ export function DealsGrid() {
               href="/deals"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base rounded-full border-2 border-white text-white font-semibold hover:bg-white hover:text-gray-900 transition-all duration-300 hover:scale-105"
             >
-              Browse All Deals <ArrowRight className="w-5 h-5" />
+              {t('home.dealsGrid.browseAll')} <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
         </ScrollReveal>

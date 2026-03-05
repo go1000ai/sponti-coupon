@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Wand2,
   ImageIcon,
@@ -78,6 +79,7 @@ const aiTools = [
 
 export default function AdminAIToolsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   if (authLoading) {
     return (
@@ -104,8 +106,8 @@ export default function AdminAIToolsPage() {
             <Wand2 className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Tools</h1>
-            <p className="text-sm text-gray-500">AI-powered features for the platform</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.aiTools.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.aiTools.subtitle")}</p>
           </div>
         </div>
       </div>

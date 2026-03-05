@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Key,
   Search,
@@ -24,6 +25,7 @@ interface ApiKeyRow {
 
 export default function AdminApiKeysPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -125,7 +127,7 @@ export default function AdminApiKeysPage() {
         <div className="flex items-center gap-3">
           <Key className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">API Keys</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.apiKeys.title")}</h1>
             <p className="text-sm text-gray-500">{totalKeys} total keys</p>
           </div>
         </div>
@@ -197,7 +199,7 @@ export default function AdminApiKeysPage() {
               ) : apiKeys.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-400">
-                    No API keys found.
+                    {t("admin.apiKeys.noKeys")} found.
                   </td>
                 </tr>
               ) : (

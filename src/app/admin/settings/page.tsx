@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Settings,
   Globe,
@@ -177,6 +178,7 @@ const DEFAULTS: Record<string, Record<string, string>> = {
 
 export default function AdminSettingsPage() {
   const { user, firstName, lastName, avatarUrl, setAvatarUrl } = useAuth();
+  const { t } = useLanguage();
 
   // Platform settings from API/DB
   const [settings, setSettings] = useState<Record<string, Record<string, string>>>(DEFAULTS);
@@ -362,8 +364,8 @@ export default function AdminSettingsPage() {
       <div className="flex items-center gap-3 mb-8">
         <Settings className="w-8 h-8 text-primary-500" />
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-sm text-gray-500">Manage your profile and platform configuration</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("admin.settings.title")}</h1>
+          <p className="text-sm text-gray-500">{t("admin.settings.subtitle")}</p>
         </div>
       </div>
 

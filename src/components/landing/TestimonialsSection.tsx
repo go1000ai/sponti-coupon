@@ -3,32 +3,31 @@
 import { useEffect, useRef } from 'react';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import { Star, MessageCircleHeart, Sparkles } from 'lucide-react';
-
-const testimonials = [
-  {
-    quote:
-      'I saved over $200 last month just from Sponti Coupons at restaurants near my office. The 24-hour deals create this fun urgency — I check the app every morning.',
-    name: 'Jessica Taylor',
-    role: 'Orlando, FL',
-    rating: 5,
-  },
-  {
-    quote:
-      'Found a 50% off spa day that was only available for 24 hours. The deposit was tiny and the experience was amazing. This app is my go-to for local deals.',
-    name: 'David Park',
-    role: 'Winter Park, FL',
-    rating: 5,
-  },
-  {
-    quote:
-      'Way better than other deal sites. The discounts are real, the QR code redemption is seamless, and I love discovering new local spots I never would have tried.',
-    name: 'Ashley Martinez',
-    role: 'Kissimmee, FL',
-    rating: 5,
-  },
-];
+import { useLanguage } from '@/lib/i18n';
 
 export function TestimonialsSection() {
+  const { t } = useLanguage();
+
+  const testimonials = [
+    {
+      quote: t('home.testimonials.quote1'),
+      name: 'Jessica Taylor',
+      role: 'Orlando, FL',
+      rating: 5,
+    },
+    {
+      quote: t('home.testimonials.quote2'),
+      name: 'David Park',
+      role: 'Winter Park, FL',
+      rating: 5,
+    },
+    {
+      quote: t('home.testimonials.quote3'),
+      name: 'Ashley Martinez',
+      role: 'Kissimmee, FL',
+      rating: 5,
+    },
+  ];
   const bgRef = useRef<HTMLDivElement>(null);
 
   // Subtle parallax gradient background
@@ -73,13 +72,13 @@ export function TestimonialsSection() {
           <div className="text-center mb-6 sm:mb-10">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-50 to-orange-50 rounded-full px-5 py-2 mb-4 shadow-sm">
               <Sparkles className="w-4 h-4 text-primary-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-primary-600">Real Stories</span>
+              <span className="text-sm font-semibold text-primary-600">{t('home.testimonials.badge')}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Loved by Savvy Shoppers
+              {t('home.testimonials.title')}
             </h2>
             <p className="text-gray-500 mt-3 text-lg">
-              See why thousands are saving with SpontiCoupon
+              {t('home.testimonials.subtitle')}
             </p>
           </div>
         </ScrollReveal>

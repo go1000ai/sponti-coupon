@@ -7,10 +7,12 @@ import { DealCarousel } from '@/components/ui/DealCarousel';
 import { CarouselDealCard, ViewAllCard } from '@/components/ui/CarouselDealCard';
 import { useGeolocation } from '@/lib/hooks/useGeolocation';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 type DealWithDistance = Deal & { distance?: number | null };
 
 export function TrendingDeals() {
+  const { t } = useLanguage();
   const [deals, setDeals] = useState<DealWithDistance[]>([]);
   const [loading, setLoading] = useState(true);
   const { lat, lng } = useGeolocation();
@@ -62,10 +64,10 @@ export function TrendingDeals() {
             <div>
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-50 to-blue-50 rounded-full px-5 py-2 mb-3 shadow-sm">
                 <TrendingUp className="w-4 h-4 text-sky-500" strokeWidth={1.8} />
-                <span className="text-sm font-semibold text-sky-600">Trending Now</span>
+                <span className="text-sm font-semibold text-sky-600">{t('home.trending.badge')}</span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Most Popular Deals
+                {t('home.trending.title')}
               </h2>
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminPagination from '@/components/admin/AdminPagination';
 import {
   Wallet,
@@ -45,6 +46,7 @@ const PAGE_SIZE = 15;
 
 export default function AdminPaymentMethodsPage() {
   const { user, role, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -144,7 +146,7 @@ export default function AdminPaymentMethodsPage() {
         <div className="flex items-center gap-3">
           <Wallet className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Payment Methods</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.paymentMethods.title")}</h1>
             <p className="text-sm text-gray-500">{methods.length} total payment methods</p>
           </div>
         </div>
@@ -219,11 +221,11 @@ export default function AdminPaymentMethodsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Method Type</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Primary</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Account</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Created Date</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.paymentMethods.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.paymentMethods.methodType")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.paymentMethods.primary")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.paymentMethods.account")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.paymentMethods.createdDate")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -240,7 +242,7 @@ export default function AdminPaymentMethodsPage() {
                 <tr>
                   <td colSpan={5} className="p-12 text-center">
                     <Wallet className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No payment methods found</p>
+                    <p className="text-gray-500 font-medium">{t("admin.paymentMethods.noMethods")} found</p>
                     <p className="text-sm text-gray-400 mt-1">
                       Adjust your filters or wait for vendors to add payment methods.
                     </p>

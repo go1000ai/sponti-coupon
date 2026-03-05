@@ -9,6 +9,7 @@ import {
   Building2, Phone, AlertCircle, CheckCircle2,
 } from 'lucide-react';
 import type { VendorLocation } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface LocationForm {
   name: string;
@@ -23,6 +24,7 @@ const emptyForm: LocationForm = { name: '', address: '', city: '', state: '', zi
 
 export default function LocationsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const [locations, setLocations] = useState<VendorLocation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +164,7 @@ export default function LocationsPage() {
         <div className="flex items-center gap-3">
           <MapPin className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Locations</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.locations.title')}</h1>
             <p className="text-gray-500 text-sm mt-1">Manage your business locations</p>
           </div>
         </div>

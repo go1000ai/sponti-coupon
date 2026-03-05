@@ -7,6 +7,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import { Navigation, Search } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
+import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import type { Deal } from '@/lib/types/database';
 
 // Fix leaflet default icon
@@ -34,7 +36,9 @@ const userIcon = new L.Icon({
   popupAnchor: [0, -10],
 });
 
-function DealPopupCard({ deal }: { deal: Deal }) {
+function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
+  const { t } = useLanguage();
+  const deal = useTranslatedDeal(rawDeal);
   const vendor = deal.vendor;
   const distance = (deal as Deal & { distance?: number }).distance;
 
@@ -54,7 +58,7 @@ function DealPopupCard({ deal }: { deal: Deal }) {
       <div className="flex items-start gap-2 mb-2">
         <DealTypeBadge type={deal.deal_type} size="sm" />
         <span className="text-xs font-bold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
-          {formatPercentage(deal.discount_percentage)} OFF
+          {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
         </span>
       </div>
       <Link
@@ -73,14 +77,14 @@ function DealPopupCard({ deal }: { deal: Deal }) {
       {distance != null && (
         <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
           <Navigation className="w-3 h-3" />
-          {distance.toFixed(1)} miles away
+          {t('dealsMap.milesAway', { distance: distance.toFixed(1) })}
         </div>
       )}
       <Link
         href={`/deals/${deal.id}`}
         className="mt-3 block text-center bg-gradient-to-r from-primary-500 to-orange-500 text-white text-xs font-semibold py-2 rounded-lg hover:from-primary-600 hover:to-orange-600 transition-all"
       >
-        View Deal
+        {t('dealsMap.viewDeal')}
       </Link>
     </div>
   );
@@ -125,6 +129,7 @@ interface DealsMapInnerProps {
 }
 
 export default function DealsMapInner({ deals, userLocation, onSearchArea }: DealsMapInnerProps) {
+  const { t } = useLanguage();
   const [mapMoved, setMapMoved] = useState(false);
   const [pendingSearch, setPendingSearch] = useState<{ center: { lat: number; lng: number }; radius: number } | null>(null);
 
@@ -162,20 +167,20 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
       <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs space-y-1.5">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary-500" />
-          <span className="text-gray-600">Sponti Coupons</span>
+          <span className="text-gray-600">{t('dealsMap.spontiCoupons')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-accent-500" />
-          <span className="text-gray-600">Steady Deals</span>
+          <span className="text-gray-600">{t('dealsMap.steadyDeals')}</span>
         </div>
         {userLocation && (
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow" />
-            <span className="text-gray-600">Your Location</span>
+            <span className="text-gray-600">{t('dealsMap.yourLocation')}</span>
           </div>
         )}
         <div className="border-t border-gray-100 pt-1 text-gray-400">
-          {geoDeals.length} deal{geoDeals.length !== 1 ? 's' : ''} on map
+          {t('dealsMap.dealsOnMap', { count: String(geoDeals.length), s: geoDeals.length !== 1 ? 's' : '' })}
         </div>
       </div>
 
@@ -187,7 +192,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
             className="flex items-center gap-2 bg-white shadow-lg border border-gray-200 rounded-full px-5 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 hover:shadow-xl transition-all"
           >
             <Search className="w-4 h-4 text-primary-500" />
-            Search this area
+            {t('dealsMap.searchThisArea')}
           </button>
         </div>
       )}
@@ -211,7 +216,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
           {userLocation && (
             <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
               <Popup>
-                <div className="text-center text-sm font-medium">You are here</div>
+                <div className="text-center text-sm font-medium">{t('dealsMap.youAreHere')}</div>
               </Popup>
             </Marker>
           )}
@@ -232,7 +237,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
 
       {deals.length > geoDeals.length && (
         <p className="text-xs text-gray-400 mt-2 text-center">
-          {deals.length - geoDeals.length} deal{deals.length - geoDeals.length !== 1 ? 's' : ''} not shown (no location data)
+          {t('dealsMap.dealsNotShown', { count: String(deals.length - geoDeals.length), s: deals.length - geoDeals.length !== 1 ? 's' : '' })}
         </p>
       )}
     </div>

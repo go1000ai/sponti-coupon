@@ -29,6 +29,7 @@ import {
   ShoppingBag,
   Share2,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface NavChild {
   label: string;
@@ -44,31 +45,34 @@ interface NavItem {
   dataTour?: string;
 }
 
-const navItems: NavItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/vendor/dashboard',
-    icon: <LayoutDashboard className="w-5 h-5" />,
-  },
-  { label: 'Scan / Redeem', href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
-  { label: 'Analytics', href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
-  { label: 'Ava Insights', href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> },
-  { label: 'My Deals', href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
-  { label: 'Website Import', href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
-  { label: 'Media Library', href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
-  { label: 'Reviews', href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" />, dataTour: 'vendor-nav-reviews' },
-  { label: 'Loyalty', href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" />, dataTour: 'vendor-nav-loyalty' },
-  { label: 'Customers', href: '/vendor/customers', icon: <ShoppingBag className="w-5 h-5" /> },
-  { label: 'Locations', href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
-  { label: 'Team', href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
-  { label: 'API', href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
-  { label: 'Social', href: '/vendor/social', icon: <Share2 className="w-5 h-5" />, dataTour: 'vendor-nav-social' },
-  { label: 'Branding', href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
-  { label: 'Subscription', href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
-  { label: 'Get Paid', href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" />, dataTour: 'vendor-nav-getpaid' },
-  { label: 'Support', href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
-  { label: 'Settings', href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
-];
+function useNavItems(): NavItem[] {
+  const { t } = useLanguage();
+  return [
+    {
+      label: t('vendor.sidebar.dashboard'),
+      href: '/vendor/dashboard',
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    { label: t('vendor.sidebar.scanRedeem'), href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.analytics'), href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.avaInsights'), href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> },
+    { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
+    { label: t('vendor.sidebar.websiteImport'), href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
+    { label: t('vendor.sidebar.mediaLibrary'), href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
+    { label: t('vendor.sidebar.reviews'), href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" />, dataTour: 'vendor-nav-reviews' },
+    { label: t('vendor.sidebar.loyalty'), href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" />, dataTour: 'vendor-nav-loyalty' },
+    { label: t('vendor.sidebar.customers'), href: '/vendor/customers', icon: <ShoppingBag className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.locations'), href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.team'), href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.api'), href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.social'), href: '/vendor/social', icon: <Share2 className="w-5 h-5" />, dataTour: 'vendor-nav-social' },
+    { label: t('vendor.sidebar.branding'), href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
+    { label: t('vendor.sidebar.subscription'), href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.getPaid'), href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" />, dataTour: 'vendor-nav-getpaid' },
+    { label: t('vendor.sidebar.support'), href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
+    { label: t('vendor.sidebar.settings'), href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
+  ];
+}
 
 interface VendorSidebarProps {
   onSignOut: () => void;
@@ -83,6 +87,8 @@ interface VendorSidebarProps {
 
 export default function VendorSidebar({ onSignOut, userName, personalName, userEmail, logoUrl, isAlsoCustomer, onSwitchToCustomer, onBecomeCustomer }: VendorSidebarProps) {
   const pathname = usePathname();
+  const { t } = useLanguage();
+  const navItems = useNavItems();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
@@ -141,7 +147,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             className="h-11 w-auto brightness-110 hover:opacity-80 transition-opacity"
           />
         </a>
-        <p className="text-[11px] text-gray-400 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Vendor Portal</p>
+        <p className="text-[11px] text-gray-400 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">{t('vendor.sidebar.vendorPortal')}</p>
       </div>
 
       {/* Role Switcher / Become a Customer */}
@@ -155,7 +161,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 hover:text-primary-200 transition-all duration-200 border border-primary-500/20"
           >
             <ArrowLeftRight className="w-4 h-4" />
-            <span>Switch to Customer</span>
+            <span>{t('vendor.sidebar.switchToCustomer')}</span>
           </button>
         ) : onBecomeCustomer ? (
           <button
@@ -166,7 +172,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-gray-700/15 text-gray-300 hover:bg-primary-500/15 hover:text-primary-300 transition-all duration-200 border border-secondary-400/20 hover:border-primary-500/20"
           >
             <ShoppingBag className="w-4 h-4" />
-            <span>Become a Customer</span>
+            <span>{t('vendor.sidebar.becomeCustomer')}</span>
           </button>
         ) : null}
       </div>
@@ -261,7 +267,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
           >
             <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
+            <span>{t('vendor.sidebar.signOut')}</span>
           </button>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -75,6 +76,7 @@ const PAGE_SIZE = 20;
 
 export default function AdminNotificationsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -321,7 +323,7 @@ export default function AdminNotificationsPage() {
         <div className="flex items-center gap-3">
           <Bell className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notification Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.notifications.title")}</h1>
             <p className="text-sm text-gray-500">{total} total notifications</p>
           </div>
         </div>
@@ -372,13 +374,13 @@ export default function AdminNotificationsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Customer</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Type</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Title</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Message</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.notifications.customer")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.notifications.type")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.notifications.notifTitle")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.notifications.message")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Channel</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Read</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Date</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.notifications.date")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Actions</th>
               </tr>
             </thead>
@@ -386,7 +388,7 @@ export default function AdminNotificationsPage() {
               {notifications.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
-                    No notifications found.
+                    {t("admin.notifications.noNotifications")} found.
                   </td>
                 </tr>
               ) : (

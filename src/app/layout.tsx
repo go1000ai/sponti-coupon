@@ -9,6 +9,7 @@ import { OliviaFloatingWidget } from "@/components/support/OliviaFloatingWidget"
 import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Providers } from "@/components/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -395,15 +396,17 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} ${bebasNeue.variable} ${instrumentSerif.variable} antialiased`}>
-        <Navbar />
-        <main className="min-h-screen">{children}</main>
-        <Footer />
-        <OliviaFloatingWidget />
-        <InactivityGuard />
-        <ServiceWorkerRegistration />
-        <CookieConsentBanner />
-        <Analytics />
-        <SpeedInsights />
+        <Providers>
+          <Navbar />
+          <main className="min-h-screen">{children}</main>
+          <Footer />
+          <OliviaFloatingWidget />
+          <InactivityGuard />
+          <ServiceWorkerRegistration />
+          <CookieConsentBanner />
+          <Analytics />
+          <SpeedInsights />
+        </Providers>
       </body>
     </html>
   );

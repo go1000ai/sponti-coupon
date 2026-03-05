@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import type { SupportTicketCategory } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface Props {
   isOpen: boolean;
@@ -10,17 +11,18 @@ interface Props {
   onSubmit: (data: { subject: string; category: string; message: string; files: File[] }) => Promise<void>;
 }
 
-const CATEGORIES: { value: SupportTicketCategory; label: string }[] = [
-  { value: 'billing', label: 'Billing' },
-  { value: 'technical', label: 'Technical' },
-  { value: 'account', label: 'Account' },
-  { value: 'general', label: 'General' },
+const CATEGORY_KEYS: { value: SupportTicketCategory; labelKey: string }[] = [
+  { value: 'billing', labelKey: 'supportTicketForm.categoryBilling' },
+  { value: 'technical', labelKey: 'supportTicketForm.categoryTechnical' },
+  { value: 'account', labelKey: 'supportTicketForm.categoryAccount' },
+  { value: 'general', labelKey: 'supportTicketForm.categoryGeneral' },
 ];
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Props) {
+  const { t } = useLanguage();
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [subject, setSubject] = useState('');
@@ -88,15 +90,15 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
 
     for (const file of fileArray) {
       if (files.length + validFiles.length >= MAX_FILES) {
-        setError(`Maximum ${MAX_FILES} files allowed.`);
+        setError(t('supportTicketForm.maxFilesAllowed', { max: String(MAX_FILES) }));
         break;
       }
       if (file.size > MAX_FILE_SIZE) {
-        setError(`File "${file.name}" exceeds the 5MB size limit.`);
+        setError(t('supportTicketForm.fileTooLarge', { name: file.name }));
         continue;
       }
       if (!file.type.startsWith('image/')) {
-        setError(`File "${file.name}" is not an image.`);
+        setError(t('supportTicketForm.fileNotImage', { name: file.name }));
         continue;
       }
       validFiles.push(file);
@@ -138,11 +140,11 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
     setError(null);
 
     if (!subject.trim()) {
-      setError('Subject is required.');
+      setError(t('supportTicketForm.subjectRequired'));
       return;
     }
     if (!message.trim()) {
-      setError('Message is required.');
+      setError(t('supportTicketForm.messageRequired'));
       return;
     }
 
@@ -152,7 +154,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
       resetForm();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create ticket. Please try again.');
+      setError(err instanceof Error ? err.message : t('supportTicketForm.failedToCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -171,7 +173,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">New Support Ticket</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('supportTicketForm.newSupportTicket')}</h2>
           <button
             onClick={handleClose}
             disabled={submitting}
@@ -192,14 +194,14 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
           {/* Subject */}
           <div>
             <label htmlFor="ticket-subject" className="block text-sm font-medium text-gray-900 mb-1">
-              Subject
+              {t('supportTicketForm.subject')}
             </label>
             <input
               id="ticket-subject"
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Brief description of your issue"
+              placeholder={t('supportTicketForm.subjectPlaceholder')}
               disabled={submitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400"
             />
@@ -208,7 +210,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
           {/* Category */}
           <div>
             <label htmlFor="ticket-category" className="block text-sm font-medium text-gray-900 mb-1">
-              Category
+              {t('supportTicketForm.category')}
             </label>
             <select
               id="ticket-category"
@@ -217,9 +219,9 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
               disabled={submitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 bg-white"
             >
-              {CATEGORIES.map((cat) => (
+              {CATEGORY_KEYS.map((cat) => (
                 <option key={cat.value} value={cat.value}>
-                  {cat.label}
+                  {t(cat.labelKey)}
                 </option>
               ))}
             </select>
@@ -228,13 +230,13 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
           {/* Message */}
           <div>
             <label htmlFor="ticket-message" className="block text-sm font-medium text-gray-900 mb-1">
-              Message
+              {t('supportTicketForm.message')}
             </label>
             <textarea
               id="ticket-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Describe your issue in detail..."
+              placeholder={t('supportTicketForm.messagePlaceholder')}
               rows={5}
               disabled={submitting}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-400 resize-none"
@@ -244,7 +246,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
           {/* File Upload */}
           <div>
             <label className="block text-sm font-medium text-gray-900 mb-1">
-              Attachments <span className="text-gray-400 font-normal">(optional, max {MAX_FILES} images)</span>
+              {t('supportTicketForm.attachments')} <span className="text-gray-400 font-normal">({t('supportTicketForm.attachmentsOptional', { max: String(MAX_FILES) })})</span>
             </label>
             <div
               onDragOver={handleDragOver}
@@ -259,9 +261,9 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
             >
               <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
               <p className="text-sm text-gray-500">
-                Drag and drop images here, or <span className="text-primary-500 font-medium">browse</span>
+                {t('supportTicketForm.dragAndDrop')} <span className="text-primary-500 font-medium">{t('supportTicketForm.browse')}</span>
               </p>
-              <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 5MB</p>
+              <p className="text-xs text-gray-400 mt-1">{t('supportTicketForm.fileFormats')}</p>
             </div>
             <input
               ref={fileInputRef}
@@ -313,7 +315,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
               disabled={submitting}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              Cancel
+              {t('supportTicketForm.cancel')}
             </button>
             <button
               type="submit"
@@ -321,7 +323,7 @@ export default function SupportNewTicketForm({ isOpen, onClose, onSubmit }: Prop
               className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {submitting ? 'Creating...' : 'Create Ticket'}
+              {submitting ? t('supportTicketForm.creating') : t('supportTicketForm.createTicket')}
             </button>
           </div>
         </form>

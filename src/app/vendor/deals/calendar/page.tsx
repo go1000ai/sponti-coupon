@@ -12,6 +12,7 @@ import {
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency } from '@/lib/utils';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -29,6 +30,7 @@ function getFirstDayOfMonth(year: number, month: number) {
 
 export default function DealsCalendarPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'deals' | 'drafts'>('deals');
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -147,12 +149,12 @@ export default function DealsCalendarPage() {
         <div className="flex items-center gap-4">
           <Calendar className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Deals</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage and visualize your deals</p>
+            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.deals.title')}</h1>
+            <p className="text-gray-500 text-sm mt-1">{t('vendor.calendar.subtitle')}</p>
           </div>
         </div>
         <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> New Deal
+          <Plus className="w-4 h-4" /> {t('vendor.deals.newDeal')}
         </Link>
       </div>
 
@@ -167,7 +169,7 @@ export default function DealsCalendarPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <CalendarDays className="w-4 h-4" /> My Deals
+            <CalendarDays className="w-4 h-4" /> {t('vendor.deals.title')}
           </button>
           <button
             onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
@@ -177,7 +179,7 @@ export default function DealsCalendarPage() {
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            <FileEdit className="w-4 h-4" /> Drafts
+            <FileEdit className="w-4 h-4" /> {t('vendor.calendar.drafts')}
             {drafts.length > 0 && (
               <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
                 {drafts.length}
@@ -194,13 +196,13 @@ export default function DealsCalendarPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
               title="List View"
             >
-              <List className="w-3.5 h-3.5" /> List
+              <List className="w-3.5 h-3.5" /> {t('vendor.deals.listView')}
             </Link>
             <button
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
-              title="Calendar View"
+              title={t('vendor.deals.calendarView')}
             >
-              <CalendarDays className="w-3.5 h-3.5" /> Calendar
+              <CalendarDays className="w-3.5 h-3.5" /> {t('vendor.deals.calendarView')}
             </button>
           </div>
         )}
@@ -212,15 +214,15 @@ export default function DealsCalendarPage() {
           {drafts.length === 0 ? (
             <div className="card p-12 text-center">
               <FileEdit className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No drafts yet</h3>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">{t('vendor.calendar.noDraftsYet')}</h3>
               <p className="text-sm text-gray-400 mb-6">
-                Start creating a deal and save it as a draft to continue later.
+                {t('vendor.calendar.noDraftsDesc')}
               </p>
               <Link
                 href="/vendor/deals/new"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#E8632B] text-white rounded-xl font-medium text-sm hover:bg-[#D55A25] transition-all"
               >
-                <Plus className="w-4 h-4" /> Create New Deal
+                <Plus className="w-4 h-4" /> {t('vendor.deals.createDeal')}
               </Link>
             </div>
           ) : (
@@ -247,7 +249,7 @@ export default function DealsCalendarPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <h3 className="font-bold text-gray-900 truncate">
-                          {draft.title || 'Untitled Draft'}
+                          {draft.title || t('vendor.calendar.untitledDraft')}
                         </h3>
                         {draft.description && (
                           <p className="text-sm text-gray-500 mt-1 line-clamp-2">{draft.description}</p>
@@ -329,7 +331,7 @@ export default function DealsCalendarPage() {
                 {MONTH_NAMES[currentMonth]} {currentYear}
               </h2>
               <button onClick={goToToday} className="text-xs text-primary-500 hover:text-primary-600 font-medium mt-0.5">
-                Today
+                {t('common.today')}
               </button>
             </div>
             <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -421,19 +423,19 @@ export default function DealsCalendarPage() {
           <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
-              <span>Active</span>
+              <span>{t('vendor.deals.status.active')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-              <span>Scheduled</span>
+              <span>{t('vendor.calendar.scheduled')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-              <span>Paused</span>
+              <span>{t('vendor.deals.status.paused')}</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
               <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />
-              <span>Expired</span>
+              <span>{t('vendor.deals.status.expired')}</span>
             </div>
           </div>
         </div>
@@ -452,9 +454,9 @@ export default function DealsCalendarPage() {
               {selectedDeals.length === 0 ? (
                 <div className="text-center py-8">
                   <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No deals on this day</p>
+                  <p className="text-sm text-gray-400">{t('vendor.calendar.noDealsOnDay')}</p>
                   <Link href="/vendor/deals/new" className="text-sm text-primary-500 hover:text-primary-600 font-medium mt-2 inline-block">
-                    + Create a deal
+                    + {t('vendor.dashboard.createADeal')}
                   </Link>
                 </div>
               ) : (

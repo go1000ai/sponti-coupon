@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -80,6 +81,7 @@ function getTierBadgeClass(tier: SubscriptionTier): string {
 
 export default function AdminSubscriptionsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [subscriptions, setSubscriptions] = useState<SubscriptionWithVendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -228,7 +230,7 @@ export default function AdminSubscriptionsPage() {
         <div className="flex items-center gap-3">
           <CreditCard className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Subscription Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.subscriptions.title")}</h1>
             <p className="text-sm text-gray-500">
               {subscriptions.length} total subscription{subscriptions.length !== 1 ? 's' : ''} &middot; {totalActive} active
             </p>
@@ -322,11 +324,11 @@ export default function AdminSubscriptionsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Tier</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Stripe ID</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Period Start</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.subscriptions.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.subscriptions.tier")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.subscriptions.status")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.subscriptions.stripeId")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.subscriptions.periodStart")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Period End</th>
                 <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
               </tr>
@@ -335,7 +337,7 @@ export default function AdminSubscriptionsPage() {
               {paginatedSubscriptions.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-400">
-                    No subscriptions found matching your filters.
+                    {t("admin.subscriptions.noSubscriptions")} matching your filters.
                   </td>
                 </tr>
               ) : (

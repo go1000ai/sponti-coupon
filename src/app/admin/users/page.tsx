@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -38,6 +39,7 @@ const PAGE_SIZE = 15;
 export default function AdminUsersPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -347,7 +349,7 @@ export default function AdminUsersPage() {
       return (
         <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-50 text-red-500 font-medium">
           <Ban className="w-3 h-3" />
-          Disabled
+          {t("admin.users.disabled")}
         </span>
       );
     }
@@ -376,8 +378,8 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Users &amp; Roles</h1>
-            <p className="text-sm text-gray-500">Manage user accounts and role assignments</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.users.usersAndRoles")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.users.subtitle")}</p>
           </div>
         </div>
         <button
@@ -432,7 +434,7 @@ export default function AdminUsersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by email or name..."
+              placeholder={t("admin.users.searchPlaceholder")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input-field pl-10"
@@ -443,7 +445,7 @@ export default function AdminUsersPage() {
             onChange={(e) => setRoleFilter(e.target.value)}
             className="input-field w-full sm:w-40"
           >
-            <option value="all">All Roles</option>
+            <option value="all">{t("admin.users.allRoles")}</option>
             <option value="vendor">Vendor</option>
             <option value="customer">Customer</option>
             <option value="admin">Admin</option>
@@ -457,20 +459,20 @@ export default function AdminUsersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Email</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">First Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Last Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Role</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Status</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Created At</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Actions</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.email")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.firstName")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.lastName")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.role")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.status")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.createdAt")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paginatedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-gray-400">
-                    No users found matching your filters.
+                    {t("admin.users.noUsersFound")}
                   </td>
                 </tr>
               ) : (
@@ -600,7 +602,7 @@ export default function AdminUsersPage() {
 
           {newRole === 'admin' && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
-              Granting admin access gives this user full platform management privileges. Proceed with caution.
+              {t("admin.users.adminWarning")}
             </div>
           )}
 
@@ -674,7 +676,7 @@ export default function AdminUsersPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("admin.users.email")}</label>
             <input
               type="email"
               value={addForm.email}
@@ -685,18 +687,18 @@ export default function AdminUsersPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("admin.users.password")}</label>
             <input
               type="password"
               value={addForm.password}
               onChange={(e) => setAddForm({ ...addForm, password: e.target.value })}
               className="input-field"
-              placeholder="Min. 6 characters"
+              placeholder={t("admin.users.passwordPlaceholder")}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t("admin.users.role")}</label>
             <select
               value={addForm.role}
               onChange={(e) => setAddForm({ ...addForm, role: e.target.value as UserRole })}
@@ -710,7 +712,7 @@ export default function AdminUsersPage() {
 
           {addForm.role === 'admin' && (
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-700">
-              This user will have full admin access to the platform.
+              {t("admin.users.fullAdminWarning")}
             </div>
           )}
 
@@ -739,13 +741,13 @@ export default function AdminUsersPage() {
 
           {addForm.role === 'vendor' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t("admin.users.businessName")}</label>
               <input
                 type="text"
                 value={addForm.business_name}
                 onChange={(e) => setAddForm({ ...addForm, business_name: e.target.value })}
                 className="input-field"
-                placeholder="Business name (required for vendors)"
+                placeholder={t("admin.users.businessNamePlaceholder")}
               />
             </div>
           )}

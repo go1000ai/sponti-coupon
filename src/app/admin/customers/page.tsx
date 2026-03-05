@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
@@ -41,6 +42,7 @@ const PAGE_SIZE = 20;
 
 export default function AdminCustomersPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [customers, setCustomers] = useState<CustomerWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,7 +242,7 @@ export default function AdminCustomersPage() {
         <div className="flex items-center gap-3">
           <Users className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Customer Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.customers.title")}</h1>
             <p className="text-sm text-gray-500">{customers.length} total customers</p>
           </div>
         </div>
@@ -304,21 +306,21 @@ export default function AdminCustomersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100 text-left">
-                <th className="p-4 font-semibold text-sm text-gray-500">Name</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Email</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Location</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Claims</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Redeemed</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.firstName")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.email")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.customers.location")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">{t("admin.vendors.claims")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">{t("admin.customers.redeemed")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-right">Total Saved</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Joined</th>
-                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Actions</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.users.joined")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">{t("admin.users.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {paginatedCustomers.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="p-8 text-center text-gray-400">
-                    No customers found matching your search.
+                    {t("admin.customers.noCustomers")} matching your search.
                   </td>
                 </tr>
               ) : (

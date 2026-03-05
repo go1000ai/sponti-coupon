@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import {
@@ -347,6 +348,7 @@ const PLATFORM_LABELS: Record<string, string> = {
 
 export default function AdminOverviewPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [data, setData] = useState<OverviewData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<DateRange>('30d');
@@ -537,7 +539,7 @@ export default function AdminOverviewPage() {
   // Stat cards configuration
   const statCards = [
     {
-      label: 'Monthly Recurring Revenue',
+      label: t('admin.dashboard.mrr'),
       value: data?.mrr || 0,
       prefix: '$',
       icon: <DollarSign className="w-5 h-5" />,
@@ -550,7 +552,7 @@ export default function AdminOverviewPage() {
       gradientId: 'mrrGrad',
     },
     {
-      label: 'Total Vendors',
+      label: t('admin.dashboard.totalVendors'),
       value: data?.totalVendors || 0,
       icon: <Store className="w-5 h-5" />,
       iconBg: 'bg-blue-100 text-blue-600',
@@ -560,7 +562,7 @@ export default function AdminOverviewPage() {
       gradientId: 'vendorsGrad',
     },
     {
-      label: 'Total Customers',
+      label: t('admin.dashboard.totalCustomers'),
       value: data?.totalCustomers || 0,
       icon: <Users className="w-5 h-5" />,
       iconBg: 'bg-blue-100 text-blue-600',
@@ -570,7 +572,7 @@ export default function AdminOverviewPage() {
       gradientId: 'customersGrad',
     },
     {
-      label: 'Active Deals',
+      label: t('admin.dashboard.activeDeals'),
       value: data?.activeDeals || 0,
       icon: <Tag className="w-5 h-5" />,
       iconBg: 'bg-primary-100 text-primary-600',
@@ -583,15 +585,15 @@ export default function AdminOverviewPage() {
 
   const healthItems = [
     {
-      label: 'Expired Deals Needing Cleanup',
-      subtitle: 'Active deals past expiration date',
+      label: t('admin.dashboard.expiredDealsCleanup'),
+      subtitle: t('admin.dashboard.expiredDealsSubtitle'),
       value: data?.systemHealth.expiredUncleared || 0,
       max: 20,
       icon: <Clock className="w-5 h-5" />,
     },
     {
-      label: 'Pending Deposits',
-      subtitle: 'Unconfirmed claim deposits',
+      label: t('admin.dashboard.pendingDeposits'),
+      subtitle: t('admin.dashboard.pendingDepositsSubtitle'),
       value: data?.systemHealth.pendingDeposits || 0,
       max: 30,
       icon: <DollarSign className="w-5 h-5" />,
@@ -611,7 +613,7 @@ export default function AdminOverviewPage() {
           }`}
         >
           <LayoutDashboard className="w-4 h-4" />
-          Overview
+          {t('admin.dashboard.overview')}
         </button>
         <button
           onClick={() => setDashTab('social')}
@@ -622,7 +624,7 @@ export default function AdminOverviewPage() {
           }`}
         >
           <Share2 className="w-4 h-4" />
-          Social Media
+          {t('admin.dashboard.socialMedia')}
         </button>
       </div>
 
@@ -633,29 +635,29 @@ export default function AdminOverviewPage() {
             <div className="flex items-center gap-3">
               <Share2 className="w-7 h-7 text-[#E8632B]" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Social Media</h1>
-                <p className="text-sm text-gray-500">Manage brand accounts and monitor auto-posting</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('admin.social.title')}</h1>
+                <p className="text-sm text-gray-500">{t('admin.social.manageDescription')}</p>
               </div>
             </div>
             <button onClick={fetchSocialData} className="btn-secondary flex items-center gap-2 text-sm">
-              <RefreshCw className="w-4 h-4" /> Refresh
+              <RefreshCw className="w-4 h-4" /> {t('admin.social.refresh')}
             </button>
           </div>
 
           {/* Social Sub-Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
-            {(['brand', 'vendors', 'posts'] as const).map(t => (
+            {(['brand', 'vendors', 'posts'] as const).map(tab => (
               <button
-                key={t}
-                onClick={() => setSocialSubTab(t)}
+                key={tab}
+                onClick={() => setSocialSubTab(tab)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  socialSubTab === t
+                  socialSubTab === tab
                     ? 'border-[#E8632B] text-[#E8632B]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {t === 'brand' ? 'Brand Accounts' : t === 'vendors' ? 'Vendor Connections' : 'Post History'}
-                {t === 'posts' && socialPosts.filter(p => p.status === 'failed').length > 0 && (
+                {tab === 'brand' ? t('admin.social.brandAccounts') : tab === 'vendors' ? t('admin.social.vendorConnections') : t('admin.social.postHistory')}
+                {tab === 'posts' && socialPosts.filter(p => p.status === 'failed').length > 0 && (
                   <span className="ml-1.5 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
                     {socialPosts.filter(p => p.status === 'failed').length}
                   </span>
@@ -674,7 +676,7 @@ export default function AdminOverviewPage() {
               {socialSubTab === 'brand' && (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-500 mb-4">
-                    Connect SpontiCoupon&apos;s official social accounts. All new vendor deals will also be posted here.
+                    {t('admin.social.brandDescription')}
                   </p>
                   {(['facebook', 'instagram', 'twitter', 'tiktok'] as const).map(platform => {
                     const conn = brandConnections.find(c => c.platform === platform);
@@ -687,13 +689,13 @@ export default function AdminOverviewPage() {
                             {conn ? (
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <CheckCircle className="w-3.5 h-3.5 text-green-500" />
-                                <span className="text-xs text-green-600">{conn.account_name || conn.account_username || 'Connected'}</span>
+                                <span className="text-xs text-green-600">{conn.account_name || conn.account_username || t('admin.social.connected')}</span>
                                 {conn.last_error && (
-                                  <span className="text-xs text-red-500 ml-2">Last error: {conn.last_error}</span>
+                                  <span className="text-xs text-red-500 ml-2">{t('admin.social.lastError')}: {conn.last_error}</span>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-xs text-gray-500">Not connected</p>
+                              <p className="text-xs text-gray-500">{t('admin.social.notConnected')}</p>
                             )}
                           </div>
                         </div>
@@ -704,14 +706,14 @@ export default function AdminOverviewPage() {
                             className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
                           >
                             {disconnecting === conn.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                            Disconnect
+                            {t('admin.social.disconnect')}
                           </button>
                         ) : (
                           <a
                             href={`/api/social/connect/${platform}/authorize?brand=true`}
                             className="btn-primary text-sm px-4 py-1.5"
                           >
-                            Connect
+                            {t('admin.social.connect')}
                           </a>
                         )}
                       </div>
@@ -726,18 +728,18 @@ export default function AdminOverviewPage() {
                   {vendorConnections.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <Share2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      <p>No vendors have connected their social accounts yet.</p>
+                      <p>{t('admin.social.noVendorConnections')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Vendor</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Account</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Last Post</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.vendor')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.platform')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.account')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.users.status')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.lastPost')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -756,18 +758,18 @@ export default function AdminOverviewPage() {
                               <td className="py-3 px-4">
                                 {conn.is_active ? (
                                   <span className="inline-flex items-center gap-1 text-green-600">
-                                    <CheckCircle className="w-3.5 h-3.5" /> Active
+                                    <CheckCircle className="w-3.5 h-3.5" /> {t('common.active')}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 text-gray-400">
-                                    <XCircle className="w-3.5 h-3.5" /> Inactive
+                                    <XCircle className="w-3.5 h-3.5" /> {t('common.inactive')}
                                   </span>
                                 )}
                               </td>
                               <td className="py-3 px-4 text-gray-500 text-xs">
                                 {conn.last_posted_at
                                   ? new Date(conn.last_posted_at).toLocaleDateString()
-                                  : 'Never'}
+                                  : t('admin.social.never')}
                               </td>
                             </tr>
                           ))}
@@ -784,20 +786,20 @@ export default function AdminOverviewPage() {
                   {socialPosts.length === 0 ? (
                     <div className="text-center py-12 text-gray-500">
                       <Share2 className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      <p>No social posts yet. Posts will appear here when deals are auto-posted.</p>
+                      <p>{t('admin.social.noPosts')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-gray-200">
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Type</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Link</th>
-                            <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.platform')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.type')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.users.status')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.caption')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.date')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.link')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.users.actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -821,17 +823,17 @@ export default function AdminOverviewPage() {
                               <td className="py-3 px-4">
                                 {post.status === 'posted' && (
                                   <span className="inline-flex items-center gap-1 text-green-600">
-                                    <CheckCircle className="w-3.5 h-3.5" /> Posted
+                                    <CheckCircle className="w-3.5 h-3.5" /> {t('admin.social.posted')}
                                   </span>
                                 )}
                                 {post.status === 'failed' && (
                                   <span className="inline-flex items-center gap-1 text-red-600" title={post.error_message || ''}>
-                                    <XCircle className="w-3.5 h-3.5" /> Failed
+                                    <XCircle className="w-3.5 h-3.5" /> {t('admin.social.failed')}
                                   </span>
                                 )}
                                 {post.status === 'pending' && (
                                   <span className="inline-flex items-center gap-1 text-yellow-600">
-                                    <Loader2 className="w-3.5 h-3.5" /> Pending
+                                    <Loader2 className="w-3.5 h-3.5" /> {t('admin.social.pending')}
                                   </span>
                                 )}
                               </td>
@@ -849,7 +851,7 @@ export default function AdminOverviewPage() {
                                     rel="noopener noreferrer"
                                     className="text-[#E8632B] hover:underline inline-flex items-center gap-1"
                                   >
-                                    <ExternalLink className="w-3.5 h-3.5" /> View
+                                    <ExternalLink className="w-3.5 h-3.5" /> {t('admin.social.viewPost')}
                                   </a>
                                 ) : post.error_message ? (
                                   <span className="text-xs text-red-500 max-w-xs truncate block" title={post.error_message}>
@@ -869,10 +871,10 @@ export default function AdminOverviewPage() {
                                     ) : (
                                       <RotateCcw className="w-3.5 h-3.5" />
                                     )}
-                                    Retry
+                                    {t('admin.social.retry')}
                                   </button>
                                 ) : post.status === 'failed' && (post.retry_count || 0) >= 3 ? (
-                                  <span className="text-xs text-gray-400">Max retries</span>
+                                  <span className="text-xs text-gray-400">{t('admin.social.maxRetries')}</span>
                                 ) : null}
                               </td>
                             </tr>
@@ -898,16 +900,16 @@ export default function AdminOverviewPage() {
             <LayoutDashboard className="w-6 h-6 text-primary-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-            <p className="text-sm text-gray-500">Platform performance at a glance</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('admin.dashboard.title')}</h1>
+            <p className="text-sm text-gray-500">{t('admin.dashboard.subtitle')}</p>
           </div>
         </div>
         <div className="flex bg-gray-100 rounded-xl p-1">
           {([
-            { key: 'today', label: 'Today' },
-            { key: '7d', label: '7 Days' },
-            { key: '30d', label: '30 Days' },
-            { key: 'all', label: 'All Time' },
+            { key: 'today', label: t('admin.dashboard.dateRange.today') },
+            { key: '7d', label: t('admin.dashboard.dateRange.sevenDays') },
+            { key: '30d', label: t('admin.dashboard.dateRange.thirtyDays') },
+            { key: 'all', label: t('admin.dashboard.dateRange.all') },
           ] as { key: DateRange; label: string }[]).map(({ key, label }) => (
             <button
               key={key}
@@ -966,8 +968,8 @@ export default function AdminOverviewPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         {[
           {
-            label: 'Vendor Signups',
-            subtitle: 'Week-over-Week',
+            label: t('admin.dashboard.vendorGrowth'),
+            subtitle: t('admin.dashboard.weekOverWeek'),
             thisWeek: data?.growthMetrics.vendorsThisWeek || 0,
             lastWeek: data?.growthMetrics.vendorsLastWeek || 0,
             growth: vendorGrowth,
@@ -976,8 +978,8 @@ export default function AdminOverviewPage() {
             gradId: 'vendorGrowthGrad',
           },
           {
-            label: 'Customer Signups',
-            subtitle: 'Week-over-Week',
+            label: t('admin.dashboard.customerGrowth'),
+            subtitle: t('admin.dashboard.weekOverWeek'),
             thisWeek: data?.growthMetrics.customersThisWeek || 0,
             lastWeek: data?.growthMetrics.customersLastWeek || 0,
             growth: customerGrowth,
@@ -1010,11 +1012,11 @@ export default function AdminOverviewPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   <AnimatedValue value={metric.thisWeek} />
                 </p>
-                <p className="text-xs text-gray-400">This week</p>
+                <p className="text-xs text-gray-400">{t('admin.dashboard.thisWeek')}</p>
               </div>
               <div>
                 <p className="text-lg text-gray-400">{metric.lastWeek}</p>
-                <p className="text-xs text-gray-400">Last week</p>
+                <p className="text-xs text-gray-400">{t('admin.dashboard.lastWeek')}</p>
               </div>
             </div>
             <div className="-mx-5 -mb-5">
@@ -1038,26 +1040,26 @@ export default function AdminOverviewPage() {
         >
           <h2 className="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary-500" />
-            Today&apos;s Activity
+            {t('admin.dashboard.todayActivity')}
           </h2>
           <div className="flex items-center justify-around">
             {[
               {
-                label: 'Claims',
+                label: t('admin.dashboard.claims'),
                 value: data?.todayActivity.claims || 0,
                 goal: DAILY_GOALS.claims,
                 color: '#3b82f6',
                 icon: <QrCode className="w-4 h-4 text-blue-500" />,
               },
               {
-                label: 'Signups',
+                label: t('admin.dashboard.signups'),
                 value: data?.todayActivity.signups || 0,
                 goal: DAILY_GOALS.signups,
                 color: '#a855f7',
                 icon: <UserPlus className="w-4 h-4 text-blue-500" />,
               },
               {
-                label: 'Deals',
+                label: t('common.deals'),
                 value: data?.todayActivity.dealsCreated || 0,
                 goal: DAILY_GOALS.deals,
                 color: '#E8632B',
@@ -1087,7 +1089,7 @@ export default function AdminOverviewPage() {
           className="card p-6 lg:col-span-2 animate-card-pop"
           style={{ animationDelay: '700ms', animationFillMode: 'both' }}
         >
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Active Subscriptions by Tier</h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">{t('admin.dashboard.tierBreakdown')}</h2>
           <div className="flex items-center gap-8">
             <div className="flex-shrink-0">
               <ResponsiveContainer width={180} height={180}>
@@ -1146,14 +1148,14 @@ export default function AdminOverviewPage() {
         >
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <Zap className="w-5 h-5 text-primary-500" />
-            Quick Actions
+            {t('admin.dashboard.quickActions')}
           </h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { href: '/admin/deals', icon: <Plus className="w-5 h-5 text-primary-600" />, iconBg: 'bg-primary-100 group-hover:bg-primary-200', label: 'Create Deal', sub: 'New deal listing' },
-              { href: '/admin/featured', icon: <Star className="w-5 h-5 text-amber-600" />, iconBg: 'bg-amber-100 group-hover:bg-amber-200', label: 'Manage Featured', sub: 'Featured deals' },
-              { href: '/admin/claims?status=pending', icon: <ClipboardList className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: 'Pending Claims', sub: 'Review claims' },
-              { href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: 'Manage Categories', sub: 'Deal categories' },
+              { href: '/admin/deals', icon: <Plus className="w-5 h-5 text-primary-600" />, iconBg: 'bg-primary-100 group-hover:bg-primary-200', label: t('admin.dashboard.createDeal'), sub: t('admin.dashboard.newDealListing') },
+              { href: '/admin/featured', icon: <Star className="w-5 h-5 text-amber-600" />, iconBg: 'bg-amber-100 group-hover:bg-amber-200', label: t('admin.dashboard.manageFeatured'), sub: t('admin.dashboard.featuredDeals') },
+              { href: '/admin/claims?status=pending', icon: <ClipboardList className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: t('admin.dashboard.pendingClaims'), sub: t('admin.dashboard.reviewClaims') },
+              { href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5 text-blue-600" />, iconBg: 'bg-blue-100 group-hover:bg-blue-200', label: t('admin.dashboard.manageCategories'), sub: t('admin.dashboard.dealCategories') },
             ].map((action) => (
               <Link
                 key={action.href}
@@ -1180,7 +1182,7 @@ export default function AdminOverviewPage() {
         >
           <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-primary-500" />
-            System Health
+            {t('admin.dashboard.systemHealth')}
           </h2>
           <div className="space-y-5">
             {healthItems.map((item) => {
@@ -1189,7 +1191,7 @@ export default function AdminOverviewPage() {
               const textColor = severity === 'good' ? 'text-green-600' : severity === 'warning' ? 'text-amber-600' : 'text-red-600';
               const bgColor = severity === 'good' ? 'bg-green-50' : severity === 'warning' ? 'bg-amber-50' : 'bg-red-50';
               const iconColor = severity === 'good' ? 'text-green-500' : severity === 'warning' ? 'text-amber-500' : 'text-red-500';
-              const statusLabel = severity === 'good' ? 'All clear' : severity === 'warning' ? 'Needs attention' : 'Critical';
+              const statusLabel = severity === 'good' ? t('admin.dashboard.allClear') : severity === 'warning' ? t('admin.dashboard.needsAttention') : t('admin.dashboard.critical');
               const barPercent = Math.min((item.value / item.max) * 100, 100);
 
               return (
@@ -1229,10 +1231,10 @@ export default function AdminOverviewPage() {
       >
         <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
           <TrendingUp className="w-5 h-5 text-primary-500" />
-          Recent Activity
+          {t('admin.dashboard.recentActivity')}
         </h2>
         {(data?.recentActivity || []).length === 0 ? (
-          <p className="text-gray-400 text-center py-8">No recent activity to show.</p>
+          <p className="text-gray-400 text-center py-8">{t('admin.dashboard.noRecentActivity')}</p>
         ) : (
           <div className="space-y-2">
             {(data?.recentActivity || []).map((item, index) => {

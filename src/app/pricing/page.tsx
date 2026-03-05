@@ -175,9 +175,9 @@ export default function PricingPage() {
         window.location.href = data.url;
         return;
       }
-      setCheckoutError(data.error || 'Unable to start checkout. Please try again or contact support.');
+      setCheckoutError(data.error || t('pricing.checkoutErrorFallback'));
     } catch {
-      setCheckoutError('Unable to connect to our payment system. Please try again in a moment.');
+      setCheckoutError(t('pricing.checkoutNetworkError'));
     }
     setLoadingPlan(null);
   };
@@ -580,7 +580,7 @@ export default function PricingPage() {
                     <ENTERPRISE.icon className="w-7 h-7 text-amber-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">Enterprise</h3>
+                    <h3 className="text-xl font-bold text-white">{t('pricing.enterprise.name')}</h3>
                     <p className="text-white text-sm mt-0.5 opacity-90">
                       {t('pricing.enterpriseTagline')}
                     </p>
@@ -640,14 +640,14 @@ export default function PricingPage() {
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
                       <th className="text-left py-4 px-6 font-semibold text-gray-600 w-[32%]">{t('pricing.features')}</th>
-                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">Starter</th>
-                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">Pro</th>
+                      <th className="text-center py-4 px-6 font-semibold text-accent-600 w-[17%]">{t('pricing.starter.name')}</th>
+                      <th className="text-center py-4 px-6 font-semibold text-primary-600 w-[17%]">{t('pricing.pro.name')}</th>
                       <th className="text-center py-4 px-6 font-semibold text-gray-900 bg-secondary-50/40 w-[17%]">
-                        Business
+                        {t('pricing.business.name')}
                         <span className="block text-[10px] text-secondary-400 font-normal">{t('pricing.bestValue')}</span>
                       </th>
                       <th className="text-center py-4 px-6 font-semibold text-amber-600 bg-amber-50/40 w-[17%]">
-                        Enterprise
+                        {t('pricing.enterprise.name')}
                         <span className="block text-[10px] text-amber-500 font-normal">{t('pricing.custom')}</span>
                       </th>
                     </tr>

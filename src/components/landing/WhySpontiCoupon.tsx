@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/i18n';
 
 function AnimatedBar({ targetWidth, color, delay = 0 }: { targetWidth: number; color: string; delay?: number }) {
   const { ref, isVisible } = useScrollAnimation();
@@ -64,6 +65,8 @@ function CountUpNumber({ target, prefix = '', suffix = '' }: { target: number; p
 }
 
 export function WhySpontiCoupon() {
+  const { t } = useLanguage();
+
   return (
     <section className="py-12 sm:py-20 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,13 +75,13 @@ export function WhySpontiCoupon() {
           <div className="text-center mb-12 sm:mb-16">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-full px-5 py-2 mb-3 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-500" strokeWidth={1.8} />
-              <span className="text-sm font-semibold text-emerald-600">Why Choose Us</span>
+              <span className="text-sm font-semibold text-emerald-600">{t('home.whySponti.badge')}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
-              Not Your Typical Deal Platform
+              {t('home.whySponti.title')}
             </h2>
             <p className="text-gray-500 mt-3 text-base sm:text-lg max-w-2xl mx-auto">
-              Traditional platforms take massive commissions from local businesses. We built something better.
+              {t('home.whySponti.subtitle')}
             </p>
           </div>
         </ScrollReveal>
@@ -89,19 +92,19 @@ export function WhySpontiCoupon() {
           <ScrollReveal animation="slide-right">
             <div className="card p-6 sm:p-8 border-red-100 bg-red-50/30 relative">
               <div className="absolute top-4 right-4 bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full">
-                Traditional
+                {t('home.whySponti.traditional')}
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-gray-700 mb-6">
-                Commission-Based Platforms
+                {t('home.whySponti.commissionBased')}
               </h3>
               <div className="space-y-4">
                 {[
-                  '15-50% commission per sale',
-                  'Platform holds your money',
-                  'Generic voucher system',
-                  'No customer support phone line',
-                  'Hidden fees and restrictions',
-                  'Merchants locked into contracts',
+                  t('home.whySponti.tradItem1'),
+                  t('home.whySponti.tradItem2'),
+                  t('home.whySponti.tradItem3'),
+                  t('home.whySponti.tradItem4'),
+                  t('home.whySponti.tradItem5'),
+                  t('home.whySponti.tradItem6'),
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <XCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
@@ -123,12 +126,12 @@ export function WhySpontiCoupon() {
               </h3>
               <div className="space-y-4">
                 {[
-                  '$0 commission — ever',
-                  'Direct deposits to your bank',
-                  'QR code instant redemption',
-                  'Live support for merchants',
-                  'Transparent flat monthly pricing',
-                  'Cancel anytime, no contracts',
+                  t('home.whySponti.spontiItem1'),
+                  t('home.whySponti.spontiItem2'),
+                  t('home.whySponti.spontiItem3'),
+                  t('home.whySponti.spontiItem4'),
+                  t('home.whySponti.spontiItem5'),
+                  t('home.whySponti.spontiItem6'),
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
@@ -148,47 +151,47 @@ export function WhySpontiCoupon() {
 
             <div className="relative z-10">
               <h3 className="text-lg sm:text-xl font-bold mb-2">
-                See the Difference in Real Numbers
+                {t('home.whySponti.savingsTitle')}
               </h3>
               <p className="text-white text-sm mb-8 opacity-80">
-                Imagine selling $10,000 in deals this month:
+                {t('home.whySponti.savingsScenario')}
               </p>
 
               <div className="space-y-6">
                 {/* Traditional */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-white opacity-90">Commission-based platform (50%)</span>
-                    <span className="text-sm text-red-400 font-semibold">You keep $5,000</span>
+                    <span className="text-sm text-white opacity-90">{t('home.whySponti.commissionBar')}</span>
+                    <span className="text-sm text-red-400 font-semibold">{t('home.whySponti.youKeep5k')}</span>
                   </div>
                   <AnimatedBar targetWidth={50} color="bg-red-500/80" delay={200} />
-                  <p className="text-xs text-red-400 mt-1 opacity-80">Platform takes $5,000</p>
+                  <p className="text-xs text-red-400 mt-1 opacity-80">{t('home.whySponti.platformTakes')}</p>
                 </div>
 
                 {/* SpontiCoupon */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-white opacity-90">SpontiCoupon Business ($199/mo)</span>
-                    <span className="text-sm text-green-400 font-semibold">You keep $9,801</span>
+                    <span className="text-sm text-white opacity-90">{t('home.whySponti.spontiBar')}</span>
+                    <span className="text-sm text-green-400 font-semibold">{t('home.whySponti.youKeep9801')}</span>
                   </div>
                   <AnimatedBar targetWidth={98} color="bg-gradient-to-r from-green-500 to-emerald-400" delay={600} />
-                  <p className="text-xs text-green-400 mt-1 opacity-80">Flat fee: just $199</p>
+                  <p className="text-xs text-green-400 mt-1 opacity-80">{t('home.whySponti.flatFee')}</p>
                 </div>
               </div>
 
               <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <p className="text-white text-sm opacity-80">You take home more every month</p>
+                  <p className="text-white text-sm opacity-80">{t('home.whySponti.takeHomeMore')}</p>
                   <p className="text-3xl sm:text-4xl font-bold text-primary-500">
                     $<CountUpNumber target={4801} />
                   </p>
-                  <p className="text-white text-xs mt-1 opacity-70">Annual subscription pays for itself in less than one month</p>
+                  <p className="text-white text-xs mt-1 opacity-70">{t('home.whySponti.paysForItself')}</p>
                 </div>
                 <Link
                   href="/auth/signup?type=vendor"
                   className="btn-primary inline-flex items-center gap-2 hover:scale-105 transition-transform"
                 >
-                  Start Free Trial <ArrowRight className="w-4 h-4" />
+                  {t('home.whySponti.startFreeTrial')} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
@@ -200,38 +203,38 @@ export function WhySpontiCoupon() {
           {[
             {
               icon: Banknote,
-              title: 'Zero Commissions',
-              description: 'Keep 100% of your revenue. We charge a flat monthly subscription, not a cut of your sales.',
+              title: t('home.whySponti.feat1Title'),
+              description: t('home.whySponti.feat1Desc'),
               gradient: 'from-green-500 to-emerald-600',
             },
             {
               icon: Clock,
-              title: '24-Hour Sponti Deals',
-              description: 'Create urgency with time-limited Sponti Coupons that drive immediate foot traffic.',
+              title: t('home.whySponti.feat2Title'),
+              description: t('home.whySponti.feat2Desc'),
               gradient: 'from-primary-500 to-orange-600',
             },
             {
               icon: QrCode,
-              title: 'Instant QR Redemption',
-              description: 'No vouchers to print. Customers show a QR code, you scan it. Done in seconds.',
+              title: t('home.whySponti.feat3Title'),
+              description: t('home.whySponti.feat3Desc'),
               gradient: 'from-blue-500 to-blue-600',
             },
             {
               icon: Smartphone,
-              title: 'Mobile-First Design',
-              description: 'Beautiful experience on any device. PWA support means customers can install it like an app.',
+              title: t('home.whySponti.feat4Title'),
+              description: t('home.whySponti.feat4Desc'),
               gradient: 'from-sky-500 to-blue-600',
             },
             {
               icon: HeartHandshake,
-              title: 'Merchant Partnership',
-              description: 'We succeed when you succeed. Dedicated support, analytics dashboard, and growth tools.',
+              title: t('home.whySponti.feat5Title'),
+              description: t('home.whySponti.feat5Desc'),
               gradient: 'from-rose-500 to-pink-600',
             },
             {
               icon: ShieldCheck,
-              title: 'Verified Businesses',
-              description: 'Every merchant is verified. Customers trust our platform because we vet every business.',
+              title: t('home.whySponti.feat6Title'),
+              description: t('home.whySponti.feat6Desc'),
               gradient: 'from-teal-500 to-cyan-600',
             },
           ].map((feature, i) => (

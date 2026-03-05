@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import {
   Heart,
   Search,
@@ -80,6 +81,7 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 
 export default function AdminRecommendationsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -190,8 +192,8 @@ export default function AdminRecommendationsPage() {
         <div className="flex items-center gap-3">
           <Heart className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Recommendations</h1>
-            <p className="text-sm text-gray-500">Deals currently being recommended to customers, ranked by engagement</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.recommendations.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.recommendations.subtitle")}</p>
           </div>
         </div>
         <button
@@ -251,9 +253,9 @@ export default function AdminRecommendationsPage() {
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center w-14">#</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Deal</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Vendor</th>
-                <th className="p-4 font-semibold text-sm text-gray-500">Category</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.recommendations.deal")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.recommendations.vendor")}</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">{t("admin.recommendations.category")}</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Type</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Discount</th>
                 <th className="p-4 font-semibold text-sm text-gray-500 text-center">Claims</th>

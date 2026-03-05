@@ -8,8 +8,10 @@ import { Zap, Mail, Lock, Building2, Phone, MapPin, CreditCard, Check } from 'lu
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
+import { useLanguage } from '@/lib/i18n';
 
 export default function VendorSignupPage() {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('starter');
   const [form, setForm] = useState({
@@ -38,7 +40,7 @@ export default function VendorSignupPage() {
     setError('');
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.signup.errors.passwordsMismatch'));
       return;
     }
 
@@ -103,8 +105,8 @@ export default function VendorSignupPage() {
               <Zap className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">List Your Business</h1>
-          <p className="text-gray-500 mt-2">Start posting flash deals and growing your customer base</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('auth.vendorSignup.title')}</h1>
+          <p className="text-gray-500 mt-2">{t('auth.vendorSignup.subtitle')}</p>
         </div>
 
         {/* Progress Steps */}
@@ -115,7 +117,7 @@ export default function VendorSignupPage() {
                 {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
               <span className={`text-sm font-medium ${step >= s ? 'text-gray-900' : 'text-gray-400'}`}>
-                {s === 1 ? 'Choose Plan' : s === 2 ? 'Business Info' : 'Payment Setup'}
+                {s === 1 ? t('auth.vendorSignup.choosePlan') : s === 2 ? t('auth.vendorSignup.businessInfo') : t('auth.vendorSignup.paymentSetup')}
               </span>
               {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-primary-500' : 'bg-gray-200'}`} />}
             </div>
@@ -183,56 +185,56 @@ export default function VendorSignupPage() {
           <div className="max-w-lg mx-auto">
             <div className="card p-8 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessName')} *</label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder="Your Business Name" required />
+                  <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.businessName')} required />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Business Email *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.vendorSignup.businessEmail')} *</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="business@example.com" required />
+                  <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.emailPlaceholder')} required />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.phone')}</label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder="(555) 123-4567" />
+                  <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.phonePlaceholder')} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.vendorSignup.address')}</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main Street" />
+                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.addressPlaceholder')} />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input name="city" value={form.city} onChange={handleChange} className="input-field" placeholder="Miami" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.city')}</label>
+                  <input name="city" value={form.city} onChange={handleChange} className="input-field" placeholder={t('auth.signup.cityPlaceholder')} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                  <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder="FL" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.state')}</label>
+                  <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder={t('auth.signup.statePlaceholder')} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
-                  <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder="33101" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.zip')}</label>
+                  <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder={t('auth.signup.zipPlaceholder')} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.vendorSignup.category')}</label>
                 <select name="category" value={form.category} onChange={handleChange} className="input-field">
-                  <option value="">Select a category</option>
+                  <option value="">{t('auth.signup.selectCategory')}</option>
                   <option value="restaurants">Restaurants</option>
                   <option value="beauty-spa">Beauty & Spa</option>
                   <option value="health-fitness">Health & Fitness</option>
@@ -252,18 +254,18 @@ export default function VendorSignupPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.password')} *</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="At least 6 characters" required />
+                  <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.passwordHint')} required />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.confirmPassword')} *</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="Confirm password" required />
+                  <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.confirmPasswordPlaceholder')} required />
                 </div>
               </div>
 
@@ -272,11 +274,11 @@ export default function VendorSignupPage() {
                 <button
                   onClick={() => {
                     if (!form.businessName || !form.email || !form.password || !form.confirmPassword) {
-                      setError('Please fill in all required fields');
+                      setError(t('auth.signup.errors.fillRequired'));
                       return;
                     }
                     if (form.password !== form.confirmPassword) {
-                      setError('Passwords do not match');
+                      setError(t('auth.signup.errors.passwordsMismatch'));
                       return;
                     }
                     setError('');
@@ -300,16 +302,16 @@ export default function VendorSignupPage() {
             <form onSubmit={handleSignup} className="card p-8 space-y-4">
               <div className="bg-primary-50 p-4 rounded-lg">
                 <h3 className="font-semibold text-primary-600 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" /> Payment Link Setup
+                  <CreditCard className="w-5 h-5" /> {t('auth.vendorSignup.paymentLinkSetup')}
                 </h3>
                 <p className="text-sm text-primary-700 mt-1">
-                  Connect your Stripe or Square payment link so customers can pay deposits directly to you. Sponti Coupon never touches customer money.
+                  {t('auth.vendorSignup.paymentLinkDesc')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Stripe Payment Link URL
+                  {t('auth.vendorSignup.stripeLinkLabel')}
                 </label>
                 <input
                   name="stripePaymentLink"
@@ -319,7 +321,7 @@ export default function VendorSignupPage() {
                   placeholder="https://buy.stripe.com/your-link"
                 />
                 <p className="text-xs text-gray-400 mt-1">
-                  You can set this up later in your dashboard settings
+                  {t('auth.vendorSignup.setupLater')}
                 </p>
               </div>
 
@@ -339,7 +341,7 @@ export default function VendorSignupPage() {
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setStep(2)} className="btn-outline flex-1">Back</button>
                 <button type="submit" disabled={loading} className="btn-primary flex-1">
-                  {loading ? 'Creating Account...' : 'Complete Signup'}
+                  {loading ? t('auth.signup.creatingAccount') : t('auth.vendorSignup.completeSignup')}
                 </button>
               </div>
             </form>
@@ -347,8 +349,8 @@ export default function VendorSignupPage() {
         )}
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary-500 font-semibold hover:underline">Sign In</Link>
+          {t('auth.signup.alreadyHaveAccount')}{' '}
+          <Link href="/auth/login" className="text-primary-500 font-semibold hover:underline">{t('auth.signup.signIn')}</Link>
         </p>
       </div>
     </div>

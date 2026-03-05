@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Lock, Eye, EyeOff, CheckCircle2, Loader2 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/i18n';
 
 export default function ResetPasswordPage() {
   return (
@@ -16,6 +17,7 @@ export default function ResetPasswordPage() {
 }
 
 function ResetPasswordForm() {
+  const { t } = useLanguage();
   useSearchParams(); // Ensures client-side hydration with search params
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -70,10 +72,10 @@ function ResetPasswordForm() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">
-            {success ? 'Password Updated!' : 'Set New Password'}
+            {success ? t('auth.resetPassword.passwordUpdated') : t('auth.resetPassword.title')}
           </h1>
           <p className="text-gray-500 mt-2">
-            {success ? 'You can now sign in with your new password' : 'Choose a strong password for your account'}
+            {success ? t('auth.resetPassword.canSignIn') : t('auth.resetPassword.subtitle')}
           </p>
         </div>
 
@@ -82,12 +84,12 @@ function ResetPasswordForm() {
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">All Set!</h2>
+            <h2 className="text-xl font-semibold text-gray-900">{t('auth.resetPassword.allSet')}</h2>
             <p className="text-gray-500 text-sm">
-              Your password has been successfully updated. You can now sign in with your new password.
+              {t('auth.resetPassword.successMessage')}
             </p>
             <Link href="/auth/login" className="btn-primary inline-block mt-2">
-              Sign In
+              {t('auth.login.signIn')}
             </Link>
           </div>
         ) : (
@@ -99,7 +101,7 @@ function ResetPasswordForm() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.resetPassword.newPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
@@ -107,7 +109,7 @@ function ResetPasswordForm() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   className="input-field pl-10 pr-10"
-                  placeholder="Enter new password"
+                  placeholder={t('auth.resetPassword.newPasswordPlaceholder')}
                   minLength={6}
                   required
                   autoFocus
@@ -123,7 +125,7 @@ function ResetPasswordForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.confirmPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                 <input
@@ -131,7 +133,7 @@ function ResetPasswordForm() {
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                   className="input-field pl-10"
-                  placeholder="Confirm new password"
+                  placeholder={t('auth.resetPassword.confirmPasswordPlaceholder')}
                   minLength={6}
                   required
                 />
@@ -140,9 +142,9 @@ function ResetPasswordForm() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2">
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Updating...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('auth.resetPassword.updating')}</>
               ) : (
-                'Update Password'
+                t('auth.resetPassword.updatePassword')
               )}
             </button>
           </form>

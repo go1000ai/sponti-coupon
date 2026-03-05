@@ -11,6 +11,7 @@ import {
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { UpgradePrompt, GatedSection } from '@/components/vendor/UpgradePrompt';
+import { useLanguage } from '@/lib/i18n';
 
 interface Recommendation {
   title: string;
@@ -46,6 +47,7 @@ interface InsightsData {
 }
 
 export default function VendorInsightsPage() {
+  const { t } = useLanguage();
   const [data, setData] = useState<InsightsData | null>(null);
   const [loading, setLoading] = useState(true);
   const { canAccess, loading: tierLoading } = useVendorTier();
@@ -62,7 +64,7 @@ export default function VendorInsightsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mx-auto" />
-          <p className="text-gray-500 mt-4">Analyzing your deal performance...</p>
+          <p className="text-gray-500 mt-4">{t('vendor.insights.analyzing')}</p>
         </div>
       </div>
     );
@@ -72,8 +74,8 @@ export default function VendorInsightsPage() {
     return (
       <div className="max-w-4xl mx-auto text-center py-20">
         <AlertTriangle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-gray-900">Unable to load insights</h2>
-        <p className="text-gray-500 mt-2">Please try again later.</p>
+        <h2 className="text-xl font-bold text-gray-900">{t('vendor.insights.unableToLoad')}</h2>
+        <p className="text-gray-500 mt-2">{t('vendor.insights.tryAgainLater')}</p>
       </div>
     );
   }

@@ -12,6 +12,7 @@ import {
   Image as ImageIcon, ChevronUp, Upload, LinkIcon, FolderOpen,
   AlertCircle, Zap, CheckCircle2, Copy, ChevronDown, Clock, Trash2, X,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface ExtractedInfo {
   business_name?: string;
@@ -74,6 +75,7 @@ function saveHistoryEntry(entry: Omit<ImportHistoryEntry, 'timestamp'>) {
 
 export default function ImportFromWebsitePage() {
   useAuth();
+  const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
 

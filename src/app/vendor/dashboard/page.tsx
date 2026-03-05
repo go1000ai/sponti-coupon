@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import type { Deal, Vendor, SubscriptionTier } from '@/lib/types/database';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 interface Analytics {
   total_deals: number;
@@ -56,6 +57,7 @@ export default function VendorDashboardPage() {
 
 function VendorDashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [vendor, setVendor] = useState<Vendor | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -219,11 +221,11 @@ function VendorDashboard() {
   const spontiDeals = deals.filter(d => d.deal_type === 'sponti_coupon' && d.status === 'active');
 
   const statItems = [
-    { label: 'Active Deals', value: analytics?.active_deals || 0, icon: <Tag className="w-5 h-5" />, color: 'from-primary-500 to-orange-500', trend: activeDeals.length > 0 ? `${activeDeals.length} live` : undefined },
-    { label: 'Total Claims', value: analytics?.total_claims || 0, icon: <Users className="w-5 h-5" />, color: 'from-accent-500 to-blue-600' },
-    { label: 'Redemptions', value: analytics?.total_redemptions || 0, icon: <QrCode className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
-    { label: 'Revenue (Month)', value: revenue?.total_revenue || 0, icon: <DollarSign className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', isCurrency: true, trend: revenue?.total_transactions ? `${revenue.total_transactions} txns` : undefined },
-    { label: 'Commission Saved', value: revenue?.commission_savings || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-blue-500 to-sky-600', isCurrency: true },
+    { label: t('vendor.dashboard.activeDeals'), value: analytics?.active_deals || 0, icon: <Tag className="w-5 h-5" />, color: 'from-primary-500 to-orange-500', trend: activeDeals.length > 0 ? t('vendor.dashboard.live', { count: activeDeals.length }) : undefined },
+    { label: t('vendor.dashboard.totalClaims'), value: analytics?.total_claims || 0, icon: <Users className="w-5 h-5" />, color: 'from-accent-500 to-blue-600' },
+    { label: t('vendor.dashboard.redemptions'), value: analytics?.total_redemptions || 0, icon: <QrCode className="w-5 h-5" />, color: 'from-green-500 to-emerald-600' },
+    { label: t('vendor.dashboard.revenueMonth'), value: revenue?.total_revenue || 0, icon: <DollarSign className="w-5 h-5" />, color: 'from-emerald-500 to-green-600', isCurrency: true, trend: revenue?.total_transactions ? t('vendor.dashboard.txns', { count: revenue.total_transactions }) : undefined },
+    { label: t('vendor.dashboard.commissionSaved'), value: revenue?.commission_savings || 0, icon: <TrendingUp className="w-5 h-5" />, color: 'from-blue-500 to-sky-600', isCurrency: true },
   ];
 
   return (
@@ -248,10 +250,10 @@ function VendorDashboard() {
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
           <Link href="/vendor/deals/new" data-tour="vendor-create" className="btn-primary flex-1 sm:flex-initial flex items-center justify-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl hover:shadow-primary-300 transition-all hover:scale-[1.02]">
-            <Plus className="w-4 h-4" /> Create Deal
+            <Plus className="w-4 h-4" /> {t('vendor.dashboard.createDeal')}
           </Link>
           <Link href="/vendor/scan" data-tour="vendor-scan-qr" className="btn-secondary flex-1 sm:flex-initial flex items-center justify-center gap-2 shadow-lg shadow-secondary-200 hover:shadow-xl transition-all hover:scale-[1.02]">
-            <QrCode className="w-4 h-4" /> Scan QR
+            <QrCode className="w-4 h-4" /> {t('vendor.dashboard.scanQR')}
           </Link>
         </div>
       </div>
@@ -295,15 +297,15 @@ function VendorDashboard() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary-500" />
-                Deals This Month
+                {t('vendor.dashboard.dealsThisMonth')}
               </h3>
-              <span className="text-xs text-gray-400 capitalize">{tierConfig.name} Plan</span>
+              <span className="text-xs text-gray-400 capitalize">{t('vendor.dashboard.plan', { name: tierConfig.name })}</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Total */}
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500">Total</span>
+                  <span className="text-gray-500">{t('vendor.dashboard.total')}</span>
                   <span className="font-medium text-gray-900">
                     {monthlyDeals.total}{isUnlimited ? '' : ` / ${totalLimit}`}
                   </span>
@@ -348,8 +350,8 @@ function VendorDashboard() {
             </div>
             {!isUnlimited && totalPct >= 80 && (
               <p className="text-xs text-yellow-600 mt-2">
-                Running low on deals this month.{' '}
-                <Link href="/vendor/subscription" className="text-primary-500 hover:underline font-medium">Upgrade</Link> for more.
+                {t('vendor.dashboard.runningLow')}{' '}
+                <Link href="/vendor/subscription" className="text-primary-500 hover:underline font-medium">{t('vendor.dashboard.upgrade')}</Link> {t('vendor.dashboard.forMore')}
               </p>
             )}
           </div>
@@ -364,9 +366,9 @@ function VendorDashboard() {
             <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1.5">
               <Hash className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900">Quick Redeem</h2>
+            <h2 className="text-lg font-bold text-gray-900">{t('vendor.dashboard.quickRedeem')}</h2>
           </div>
-          <p className="text-sm text-gray-500 mb-4">Enter the customer&apos;s 6-digit code</p>
+          <p className="text-sm text-gray-500 mb-4">{t('vendor.dashboard.enterCustomerCode')}</p>
 
           {!redeemResult ? (
             <>
@@ -389,11 +391,11 @@ function VendorDashboard() {
               </div>
               {redeeming && (
                 <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Redeeming...
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.dashboard.redeeming')}
                 </div>
               )}
               <Link href="/vendor/scan" className="text-xs text-primary-500 hover:underline flex items-center justify-center gap-1 mt-3">
-                <QrCode className="w-3 h-3" /> Or scan QR code
+                <QrCode className="w-3 h-3" /> {t('vendor.dashboard.orScanQR')}
               </Link>
             </>
           ) : redeemResult.success ? (
@@ -404,24 +406,24 @@ function VendorDashboard() {
                   <CheckCircle2 className="w-7 h-7 text-white" />
                 </div>
               </div>
-              <p className="font-semibold text-green-600 mb-1">Redeemed!</p>
+              <p className="font-semibold text-green-600 mb-1">{t('vendor.dashboard.redeemed')}</p>
               {redeemResult.deal && <p className="text-sm text-gray-600 mb-1">{redeemResult.deal.title}</p>}
               {redeemResult.customer && <p className="text-xs text-gray-500 mb-1">{redeemResult.customer.name}</p>}
               {redeemResult.remaining_balance !== undefined && redeemResult.remaining_balance > 0 && (
                 <div className="bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200 rounded-lg p-2.5 mt-2">
-                  <p className="text-sm font-medium text-yellow-700">Collect: {formatCurrency(redeemResult.remaining_balance)}</p>
+                  <p className="text-sm font-medium text-yellow-700">{t('vendor.dashboard.collect', { amount: formatCurrency(redeemResult.remaining_balance) })}</p>
                 </div>
               )}
-              <button onClick={resetRedeem} className="text-sm text-primary-500 hover:underline mt-3">Redeem another</button>
+              <button onClick={resetRedeem} className="text-sm text-primary-500 hover:underline mt-3">{t('vendor.dashboard.redeemAnother')}</button>
             </div>
           ) : (
             <div className="text-center animate-scale-up">
               <div className="w-14 h-14 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
                 <XCircle className="w-7 h-7 text-white" />
               </div>
-              <p className="font-semibold text-red-500 mb-1">Failed</p>
+              <p className="font-semibold text-red-500 mb-1">{t('vendor.dashboard.failed')}</p>
               <p className="text-sm text-gray-500 mb-2">{redeemResult.error}</p>
-              <button onClick={resetRedeem} className="text-sm text-primary-500 hover:underline">Try again</button>
+              <button onClick={resetRedeem} className="text-sm text-primary-500 hover:underline">{t('vendor.dashboard.tryAgain')}</button>
             </div>
           )}
         </div>
@@ -433,10 +435,10 @@ function VendorDashboard() {
               <div className="bg-gradient-to-br from-accent-500 to-blue-600 rounded-lg p-1.5">
                 <BarChart3 className="w-4 h-4 text-white" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Claims by Deal</h2>
+              <h2 className="text-lg font-bold text-gray-900">{t('vendor.dashboard.claimsByDeal')}</h2>
             </div>
             <Link href="/vendor/analytics" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
-              Full Analytics <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {t('vendor.dashboard.fullAnalytics')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
           {recentClaims.length > 0 ? (
@@ -457,7 +459,7 @@ function VendorDashboard() {
             <div className="h-[180px] flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <Tag className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                <p>Create deals to see claim trends</p>
+                <p>{t('vendor.dashboard.createDealsToSeeTrends')}</p>
               </div>
             </div>
           )}
@@ -471,8 +473,8 @@ function VendorDashboard() {
             <BarChart3 className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Analytics</h3>
-            <p className="text-xs text-gray-500">Charts &amp; performance data</p>
+            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">{t('vendor.dashboard.analytics')}</h3>
+            <p className="text-xs text-gray-500">{t('vendor.dashboard.chartsAndPerformance')}</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
@@ -483,8 +485,8 @@ function VendorDashboard() {
             <img src="/ava.png" alt="Ava" className="w-full h-full object-cover" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Ava&apos;s Insights</h3>
-            <p className="text-xs text-gray-500">Smart recommendations</p>
+            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">{t('vendor.dashboard.avasInsights')}</h3>
+            <p className="text-xs text-gray-500">{t('vendor.dashboard.smartRecommendations')}</p>
           </div>
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
@@ -495,9 +497,9 @@ function VendorDashboard() {
               <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-lg p-1">
                 <Zap className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-primary-600">{spontiDeals.length} Active Sponti Deal{spontiDeals.length > 1 ? 's' : ''}</span>
+              <span className="font-bold text-primary-600">{t('vendor.dashboard.activeSpontiDeals', { count: spontiDeals.length, s: spontiDeals.length > 1 ? 's' : '' })}</span>
             </div>
-            <p className="text-sm text-gray-600">{spontiDeals.reduce((s, d) => s + d.claims_count, 0)} total claims on Sponti Coupons</p>
+            <p className="text-sm text-gray-600">{t('vendor.dashboard.totalClaimsOnSponti', { count: spontiDeals.reduce((s, d) => s + d.claims_count, 0) })}</p>
           </div>
         ) : (
           <Link href="/vendor/deals/new" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group border-dashed border-2 border-gray-200 hover:border-primary-300 animate-fade-up" style={{ animationDelay: '860ms' }}>
@@ -505,8 +507,8 @@ function VendorDashboard() {
               <Plus className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Create a Deal</h3>
-              <p className="text-xs text-gray-500">Start attracting customers</p>
+              <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">{t('vendor.dashboard.createADeal')}</h3>
+              <p className="text-xs text-gray-500">{t('vendor.dashboard.startAttractingCustomers')}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </Link>
@@ -521,9 +523,9 @@ function VendorDashboard() {
       {/* Recent Deals */}
       <div data-tour="vendor-deals" className="card animate-fade-up" style={{ animationDelay: '1000ms' }}>
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900">Recent Deals</h2>
+          <h2 className="text-xl font-bold text-gray-900">{t('vendor.dashboard.recentDeals')}</h2>
           <Link href="/vendor/deals" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
-            View All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            {t('vendor.dashboard.viewAll')} <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
@@ -535,10 +537,10 @@ function VendorDashboard() {
                 <Tag className="w-6 h-6 text-gray-300" />
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-500">No deals yet</h3>
-            <p className="text-gray-400 mt-1">Create your first deal to start attracting customers</p>
+            <h3 className="text-lg font-semibold text-gray-500">{t('vendor.dashboard.noDealsYet')}</h3>
+            <p className="text-gray-400 mt-1">{t('vendor.dashboard.createFirstDeal')}</p>
             <Link href="/vendor/deals/new" className="btn-primary inline-flex items-center gap-2 mt-4 shadow-lg shadow-primary-200">
-              <Plus className="w-4 h-4" /> Create Your First Deal
+              <Plus className="w-4 h-4" /> {t('vendor.dashboard.createYourFirstDeal')}
             </Link>
           </div>
         ) : (
@@ -568,7 +570,7 @@ function VendorDashboard() {
                       {deal.deal_type === 'sponti_coupon' && (
                         <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gradient-to-r from-primary-50 to-orange-50 text-primary-600 border border-primary-100">Sponti</span>
                       )}
-                      <span className="text-xs text-gray-400">{formatPercentage(deal.discount_percentage)} off</span>
+                      <span className="text-xs text-gray-400">{formatPercentage(deal.discount_percentage)} {t('vendor.dashboard.off')}</span>
                     </div>
                   </div>
                 </div>
@@ -586,7 +588,7 @@ function VendorDashboard() {
                   </div>
                   <div className="text-right text-sm">
                     <p className="font-medium text-gray-900">{deal.claims_count}</p>
-                    <p className="text-xs text-gray-400">claims</p>
+                    <p className="text-xs text-gray-400">{t('vendor.dashboard.claims')}</p>
                   </div>
                 </div>
               </div>

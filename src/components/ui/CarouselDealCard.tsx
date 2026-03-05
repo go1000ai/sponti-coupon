@@ -7,6 +7,8 @@ import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
+import { useLanguage } from '@/lib/i18n';
+import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import type { Deal } from '@/lib/types/database';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
@@ -23,7 +25,7 @@ interface CarouselDealCardProps {
 }
 
 export function CarouselDealCard({
-  deal,
+  deal: rawDeal,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   variant = 'default',
   showCountdown = false,
@@ -31,6 +33,8 @@ export function CarouselDealCard({
   heightClass = 'h-[320px] sm:h-[340px] lg:h-[360px]',
   isOwnDeal,
 }: CarouselDealCardProps) {
+  const { t } = useLanguage();
+  const deal = useTranslatedDeal(rawDeal);
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
   const imageUrl = getDealImage(deal.image_url, deal.vendor?.category);
@@ -71,7 +75,7 @@ export function CarouselDealCard({
           <DealTypeBadge type={deal.deal_type} size="sm" />
           {deal.is_featured && (
             <span className="inline-flex items-center gap-0.5 bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-              <Star className="w-2.5 h-2.5" /> Featured
+              <Star className="w-2.5 h-2.5" /> {t('badges.featured')}
             </span>
           )}
           {deal.distance != null && (
@@ -84,7 +88,7 @@ export function CarouselDealCard({
         <div className="flex items-center gap-1.5">
           {isOwnDeal && (
             <span className="inline-flex items-center gap-0.5 bg-secondary-500/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md">
-              <Store className="w-2.5 h-2.5" /> Your Deal
+              <Store className="w-2.5 h-2.5" /> {t('dealDetail.yourDeal')}
             </span>
           )}
           {rank && (
@@ -93,7 +97,7 @@ export function CarouselDealCard({
             </span>
           )}
           <span className="bg-white text-primary-500 font-bold text-xs px-2.5 py-1 rounded-full shadow-md">
-            {formatPercentage(deal.discount_percentage)} OFF
+            {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
           </span>
         </div>
       </div>
@@ -126,7 +130,7 @@ export function CarouselDealCard({
           </span>
         </div>
         <span className="inline-block bg-green-500/20 text-green-400 text-[11px] font-semibold px-2 py-0.5 rounded-full">
-          Save {formatCurrency(savings)}
+          {t('dealDetail.youSaveAmount', { amount: formatCurrency(savings) })}
         </span>
 
         {/* Claims progress */}
@@ -138,7 +142,7 @@ export function CarouselDealCard({
                 style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
               />
             </div>
-            <p className="text-[10px] text-white/50 mt-0.5">{deal.max_claims - deal.claims_count} left</p>
+            <p className="text-[10px] text-white/50 mt-0.5">{t('dealDetail.left', { count: String(deal.max_claims - deal.claims_count) })}</p>
           </div>
         )}
       </div>
@@ -161,6 +165,7 @@ interface ViewAllCardProps {
 }
 
 export function ViewAllCard({ href, variant = 'light' }: ViewAllCardProps) {
+  const { t } = useLanguage();
   return (
     <div className={`snap-start shrink-0 ${CARD_WIDTH} h-[320px] sm:h-[340px] lg:h-[360px]`}>
       <Link
@@ -186,7 +191,7 @@ export function ViewAllCard({ href, variant = 'light' }: ViewAllCardProps) {
                 : 'text-gray-400 group-hover:text-primary-500'
             }`}
           >
-            View All Deals
+            {t('badges.viewAllDeals')}
           </span>
         </div>
       </Link>

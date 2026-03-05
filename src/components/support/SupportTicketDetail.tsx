@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Bot,
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 import type {
   SupportTicket,
   SupportMessage,
@@ -28,18 +29,18 @@ interface Props {
   onTicketDeleted?: () => void;
 }
 
-const statusOptions: { value: SupportTicketStatus; label: string }[] = [
-  { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'resolved', label: 'Resolved' },
-  { value: 'closed', label: 'Closed' },
+const statusOptionKeys: { value: SupportTicketStatus; labelKey: string }[] = [
+  { value: 'open', labelKey: 'supportTicketDetail.statusOpen' },
+  { value: 'in_progress', labelKey: 'supportTicketDetail.statusInProgress' },
+  { value: 'resolved', labelKey: 'supportTicketDetail.statusResolved' },
+  { value: 'closed', labelKey: 'supportTicketDetail.statusClosed' },
 ];
 
-const priorityOptions: { value: SupportTicketPriority; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'high', label: 'High' },
-  { value: 'urgent', label: 'Urgent' },
+const priorityOptionKeys: { value: SupportTicketPriority; labelKey: string }[] = [
+  { value: 'low', labelKey: 'supportTicketDetail.priorityLow' },
+  { value: 'medium', labelKey: 'supportTicketDetail.priorityMedium' },
+  { value: 'high', labelKey: 'supportTicketDetail.priorityHigh' },
+  { value: 'urgent', labelKey: 'supportTicketDetail.priorityUrgent' },
 ];
 
 const statusBadge: Record<SupportTicketStatus, string> = {
@@ -80,6 +81,7 @@ export default function SupportTicketDetail({
   onBack,
   onTicketDeleted,
 }: Props) {
+  const { t } = useLanguage();
   const [ticket, setTicket] = useState<SupportTicket | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -224,7 +226,7 @@ export default function SupportTicketDetail({
         <div className="flex items-center justify-center flex-1">
           <div className="text-center">
             <Loader2 className="w-8 h-8 text-primary-500 animate-spin mx-auto mb-3" />
-            <p className="text-sm text-gray-500">Loading ticket...</p>
+            <p className="text-sm text-gray-500">{t('supportTicketDetail.loadingTicket')}</p>
           </div>
         </div>
       </div>
@@ -245,7 +247,7 @@ export default function SupportTicketDetail({
               onClick={() => fetchTicket(true)}
               className="px-4 py-2 text-sm font-medium text-white bg-primary-500 rounded-lg hover:bg-primary-600 transition-colors"
             >
-              Retry
+              {t('supportTicketDetail.retry')}
             </button>
           </div>
         </div>
@@ -282,7 +284,7 @@ export default function SupportTicketDetail({
               <button
                 onClick={() => fetchTicket(false)}
                 className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                title="Refresh"
+                title={t('supportTicketDetail.refresh')}
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
@@ -290,7 +292,7 @@ export default function SupportTicketDetail({
                 <button
                   onClick={() => setDeleteConfirm(true)}
                   className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                  title="Delete ticket"
+                  title={t('supportTicketDetail.deleteTicket')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -308,10 +310,10 @@ export default function SupportTicketDetail({
           {/* Badges row */}
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge[ticket.status]}`}>
-              {statusOptions.find((s) => s.value === ticket.status)?.label || ticket.status}
+              {t(statusOptionKeys.find((s) => s.value === ticket.status)?.labelKey || '') || ticket.status}
             </span>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priorityBadge[ticket.priority]}`}>
-              {priorityOptions.find((p) => p.value === ticket.priority)?.label || ticket.priority}
+              {t(priorityOptionKeys.find((p) => p.value === ticket.priority)?.labelKey || '') || ticket.priority}
             </span>
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${categoryBadge[ticket.category]}`}>
               {ticket.category}
@@ -319,11 +321,11 @@ export default function SupportTicketDetail({
             {ticket.ai_enabled && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
                 <Bot className="w-3 h-3" />
-                AI Enabled
+                {t('supportTicketDetail.aiEnabled')}
               </span>
             )}
             <span className="text-xs text-gray-400 ml-auto">
-              Created {formatDate(ticket.created_at)}
+              {t('supportTicketDetail.created', { date: formatDate(ticket.created_at) })}
             </span>
           </div>
 
@@ -332,16 +334,16 @@ export default function SupportTicketDetail({
             <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-100">
               {/* Status */}
               <div className="flex items-center gap-1.5">
-                <label className="text-xs font-medium text-gray-500">Status:</label>
+                <label className="text-xs font-medium text-gray-500">{t('supportTicketDetail.status')}</label>
                 <select
                   value={ticket.status}
                   onChange={(e) => updateTicketField('status', e.target.value)}
                   disabled={updating}
                   className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white disabled:opacity-50"
                 >
-                  {statusOptions.map((opt) => (
+                  {statusOptionKeys.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -349,16 +351,16 @@ export default function SupportTicketDetail({
 
               {/* Priority */}
               <div className="flex items-center gap-1.5">
-                <label className="text-xs font-medium text-gray-500">Priority:</label>
+                <label className="text-xs font-medium text-gray-500">{t('supportTicketDetail.priority')}</label>
                 <select
                   value={ticket.priority}
                   onChange={(e) => updateTicketField('priority', e.target.value)}
                   disabled={updating}
                   className="text-xs border border-gray-300 rounded-md px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary-500 bg-white disabled:opacity-50"
                 >
-                  {priorityOptions.map((opt) => (
+                  {priorityOptionKeys.map((opt) => (
                     <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </option>
                   ))}
                 </select>
@@ -366,7 +368,7 @@ export default function SupportTicketDetail({
 
               {/* AI Toggle */}
               <div className="flex items-center gap-1.5">
-                <label className="text-xs font-medium text-gray-500">AI Replies:</label>
+                <label className="text-xs font-medium text-gray-500">{t('supportTicketDetail.aiReplies')}</label>
                 <button
                   onClick={() => updateTicketField('ai_enabled', !ticket.ai_enabled)}
                   disabled={updating}
@@ -401,7 +403,7 @@ export default function SupportTicketDetail({
         <SupportReplyForm
           onSubmit={handleReply}
           disabled={isClosed}
-          placeholder={isClosed ? 'This ticket is closed.' : 'Type your reply...'}
+          placeholder={isClosed ? t('supportReplyForm.ticketClosed') : t('supportReplyForm.typeReply')}
         />
       </div>
 
@@ -410,9 +412,9 @@ export default function SupportTicketDetail({
         isOpen={deleteConfirm}
         onConfirm={handleDeleteTicket}
         onCancel={() => setDeleteConfirm(false)}
-        title="Delete Ticket"
-        message={`Are you sure you want to delete ticket "${ticket.subject}"? This will permanently remove the ticket and all its messages. This action cannot be undone.`}
-        confirmLabel="Delete Ticket"
+        title={t('supportTicketDetail.deleteTicketTitle')}
+        message={t('supportTicketDetail.deleteTicketMessage', { subject: ticket.subject })}
+        confirmLabel={t('supportTicketDetail.deleteTicketConfirm')}
         variant="danger"
         loading={deleteLoading}
       />

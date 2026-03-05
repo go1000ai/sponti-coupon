@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import type {
   UserRole,
@@ -227,6 +228,7 @@ export default function AdminUserDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user: authUser, role: authRole, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const userId = params.id as string;
 
   // Data state
@@ -590,7 +592,7 @@ export default function AdminUserDetailPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-            Back to Users
+            {t('admin.users.backToUsers')}
           </Link>
           <div className="hidden sm:block w-px h-6 bg-gray-200" />
           <h1 className="text-xl font-bold text-gray-900 truncate max-w-md">
@@ -605,7 +607,7 @@ export default function AdminUserDetailPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
+            {t('admin.settings.saveChanges')}
           </button>
           <button
             onClick={() => setShowDeleteConfirm(true)}

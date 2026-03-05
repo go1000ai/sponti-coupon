@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { formatCurrency } from '@/lib/utils';
 import {
   DollarSign,
@@ -52,6 +53,7 @@ interface RevenueData {
 
 export default function AdminRevenuePage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [data, setData] = useState<RevenueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<DateRange>('30d');
@@ -99,8 +101,8 @@ export default function AdminRevenuePage() {
         <div className="flex items-center gap-3">
           <DollarSign className="w-8 h-8 text-primary-500" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Revenue Dashboard</h1>
-            <p className="text-sm text-gray-500">Subscription and deposit revenue overview</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t("admin.revenue.title")}</h1>
+            <p className="text-sm text-gray-500">{t("admin.revenue.subtitle")}</p>
           </div>
         </div>
         <div className="flex bg-gray-100 rounded-lg p-1">
@@ -304,8 +306,8 @@ export default function AdminRevenuePage() {
               <thead>
                 <tr className="border-b border-gray-100 text-left">
                   <th className="p-3 font-semibold text-sm text-gray-500">#</th>
-                  <th className="p-3 font-semibold text-sm text-gray-500">Business</th>
-                  <th className="p-3 font-semibold text-sm text-gray-500">Tier</th>
+                  <th className="p-3 font-semibold text-sm text-gray-500">{t("admin.revenue.business")}</th>
+                  <th className="p-3 font-semibold text-sm text-gray-500">{t("admin.revenue.tier")}</th>
                   <th className="p-3 font-semibold text-sm text-gray-500 text-center">Total Claims</th>
                   <th className="p-3 font-semibold text-sm text-gray-500 text-right">Tier Revenue</th>
                 </tr>

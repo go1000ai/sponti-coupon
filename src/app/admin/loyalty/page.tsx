@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import AdminModal from '@/components/admin/AdminModal';
 import AdminConfirmDialog from '@/components/admin/AdminConfirmDialog';
 import AdminPagination from '@/components/admin/AdminPagination';
@@ -187,6 +188,7 @@ function SkeletonLoyalty() {
 
 export default function AdminLoyaltyPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [programs, setPrograms] = useState<LoyaltyProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -461,10 +463,10 @@ export default function AdminLoyaltyPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Loyalty Programs
+            {t("admin.loyalty.title")}
           </h1>
           <p className="text-sm text-gray-500">
-            Manage all vendor loyalty programs
+            {t("admin.loyalty.subtitle")}
           </p>
         </div>
       </div>
@@ -723,7 +725,7 @@ export default function AdminLoyaltyPage() {
                     colSpan={8}
                     className="p-8 text-center text-gray-400"
                   >
-                    No loyalty programs found.
+                    {t("admin.loyalty.noPrograms")}.
                   </td>
                 </tr>
               ) : (

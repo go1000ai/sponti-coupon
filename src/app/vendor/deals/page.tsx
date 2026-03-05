@@ -11,9 +11,11 @@ import { useRouter } from 'next/navigation';
 import { Plus, Tag, Pause, Play, Trash2, TrendingUp, Lock, CalendarDays, List, Globe, MapPin } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
+import { useLanguage } from '@/lib/i18n';
 
 export default function VendorDealsPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { dealsPerMonth } = useVendorTier();
   const router = useRouter();
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -81,25 +83,25 @@ export default function VendorDealsPage() {
     <div className="max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Deals</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{t('vendor.deals.title')}</h1>
           <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
             <button
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
               title="List View"
             >
-              <List className="w-3.5 h-3.5" /> List
+              <List className="w-3.5 h-3.5" /> {t('vendor.deals.listView')}
             </button>
             <Link
               href="/vendor/deals/calendar"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
               title="Calendar View"
             >
-              <CalendarDays className="w-3.5 h-3.5" /> Calendar
+              <CalendarDays className="w-3.5 h-3.5" /> {t('vendor.deals.calendarView')}
             </Link>
           </div>
         </div>
         <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> New Deal
+          <Plus className="w-4 h-4" /> {t('vendor.deals.newDeal')}
         </Link>
       </div>
 
@@ -110,13 +112,13 @@ export default function VendorDealsPage() {
           <div>
             <p className="text-sm font-medium text-gray-900">
               {dealsPerMonth === -1
-                ? 'Unlimited deals this month'
-                : `${dealsThisMonth} of ${dealsPerMonth} deals used this month`}
+                ? t('vendor.deals.unlimitedDeals')
+                : t('vendor.deals.dealsUsed', { used: dealsThisMonth, total: dealsPerMonth })}
             </p>
             {dealsPerMonth !== -1 && dealsThisMonth >= dealsPerMonth && (
               <p className="text-xs text-red-500 mt-0.5">
-                You&apos;ve reached your limit.{' '}
-                <Link href="/vendor/subscription" className="underline font-medium">Upgrade</Link> for more deals.
+                {t('vendor.deals.reachedLimit')}{' '}
+                <Link href="/vendor/subscription" className="underline font-medium">{t('vendor.deals.upgrade')}</Link> {t('vendor.deals.forMoreDeals')}
               </p>
             )}
           </div>
@@ -145,7 +147,7 @@ export default function VendorDealsPage() {
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {t(`vendor.deals.filter.${f}`)}
           </button>
         ))}
       </div>
@@ -157,9 +159,9 @@ export default function VendorDealsPage() {
       ) : deals.length === 0 ? (
         <div className="card p-12 text-center">
           <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-500">No deals found</h3>
+          <h3 className="text-lg font-semibold text-gray-500">{t('vendor.deals.noDealsFound')}</h3>
           <p className="text-gray-400 mt-1">
-            {filter === 'all' ? 'Create your first deal' : `No ${filter} deals`}
+            {filter === 'all' ? t('vendor.deals.createFirst') : t('vendor.deals.noFilteredDeals', { status: t(`vendor.deals.filter.${filter}`) })}
           </p>
         </div>
       ) : (
@@ -184,7 +186,7 @@ export default function VendorDealsPage() {
                       <Tag className="w-4 h-4 text-gray-500" />
                     )}
                     <span className={`text-xs font-semibold ${isSponti ? 'text-white' : 'text-gray-600'}`}>
-                      {isSponti ? 'Sponti Coupon' : 'Steady Deal'}
+                      {isSponti ? t('vendor.deals.spontiCoupon') : t('vendor.deals.steadyDeal')}
                     </span>
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -194,7 +196,7 @@ export default function VendorDealsPage() {
                     deal.status === 'paused' ? (isSponti ? 'bg-white/20 text-white' : 'bg-yellow-100 text-yellow-700') :
                     'bg-gray-200 text-gray-500'
                   }`}>
-                    {deal.status === 'draft' ? 'Draft' : deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}
+                    {t(`vendor.deals.status.${deal.status}`) || deal.status}
                   </span>
                 </div>
 
@@ -206,16 +208,16 @@ export default function VendorDealsPage() {
                   <div className="flex items-center gap-1.5 mt-2">
                     {deal.website_url ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-600 flex items-center gap-1">
-                        <Globe className="w-2.5 h-2.5" /> Online
+                        <Globe className="w-2.5 h-2.5" /> {t('vendor.deals.online')}
                       </span>
                     ) : deal.location_ids && deal.location_ids.length > 0 ? (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-emerald-50 text-emerald-600 flex items-center gap-1">
-                        <MapPin className="w-2.5 h-2.5" /> {deal.location_ids.length} location{deal.location_ids.length !== 1 ? 's' : ''}
+                        <MapPin className="w-2.5 h-2.5" /> {t('vendor.deals.locations', { count: deal.location_ids.length })}
                       </span>
                     ) : null}
                     {deal.claims_count > 0 && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500 flex items-center gap-1">
-                        <Lock className="w-2.5 h-2.5" /> Has claims
+                        <Lock className="w-2.5 h-2.5" /> {t('vendor.deals.hasClaims')}
                       </span>
                     )}
                   </div>
@@ -235,7 +237,7 @@ export default function VendorDealsPage() {
                         <span className="text-primary-500 font-bold text-xl">{formatCurrency(deal.deal_price)}</span>
                       </div>
                       <span className="bg-green-50 text-green-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                        {formatPercentage(deal.discount_percentage)} off
+                        {formatPercentage(deal.discount_percentage)} {t('vendor.deals.off')}
                       </span>
                     </div>
                   </div>
@@ -243,7 +245,7 @@ export default function VendorDealsPage() {
                   {/* Footer row: claims + actions */}
                   <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
                     <span className="text-sm text-gray-500">
-                      <span className="font-bold text-gray-900">{deal.claims_count}</span> claims
+                      <span className="font-bold text-gray-900">{deal.claims_count}</span> {t('vendor.deals.stats.claims')}
                     </span>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                       {deal.status === 'active' && (

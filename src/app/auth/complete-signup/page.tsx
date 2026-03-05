@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Building2, CheckCircle, Loader2, AlertCircle, Gift } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import { useLanguage } from '@/lib/i18n';
 
 export default function CompleteSignupPage() {
   return (
@@ -21,6 +22,7 @@ export default function CompleteSignupPage() {
 }
 
 function CompleteSignupForm() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
   const router = useRouter();
@@ -141,7 +143,7 @@ function CompleteSignupForm() {
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="text-center">
           <Loader2 className="w-10 h-10 text-primary-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-500 font-medium">Verifying your payment...</p>
+          <p className="text-gray-500 font-medium">{t('auth.completeSignup.verifyingPayment')}</p>
         </div>
       </div>
     );
@@ -155,13 +157,13 @@ function CompleteSignupForm() {
           <div className="inline-flex bg-red-100 rounded-full p-4 mb-6">
             <AlertCircle className="w-12 h-12 text-red-500" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Something Went Wrong</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">{t('auth.completeSignup.somethingWentWrong')}</h1>
           <p className="text-gray-500 mb-6">{fetchError}</p>
           <Link
             href="/pricing"
             className="btn-primary inline-flex items-center gap-2 px-8 py-3"
           >
-            Back to Pricing
+            {t('auth.completeSignup.backToPricing')}
           </Link>
         </div>
       </div>
@@ -182,9 +184,9 @@ function CompleteSignupForm() {
               <SpontiIcon className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Complete Your Account</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{t('auth.completeSignup.title')}</h1>
           <p className="text-gray-500 mt-2">
-            Payment confirmed! Set up your password to get started.
+            {t('auth.completeSignup.subtitle')}
           </p>
         </div>
 
@@ -196,7 +198,7 @@ function CompleteSignupForm() {
             </div>
             <div>
               <p className="text-sm font-bold text-gray-900">
-                {planName} Plan — Payment Confirmed
+                {t('auth.signup.planBadge', { plan: planName })} — {t('auth.completeSignup.paymentConfirmed')}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
                 {sessionData.email}
@@ -214,10 +216,10 @@ function CompleteSignupForm() {
               </div>
               <div>
                 <p className="text-sm font-bold text-gray-900">
-                  Founders Rate Applied
+                  {t('auth.completeSignup.foundersApplied')}
                 </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  2 Months Free + 20% Off Forever
+                  {t('auth.completeSignup.foundersDesc')}
                 </p>
               </div>
             </div>
@@ -235,7 +237,7 @@ function CompleteSignupForm() {
           {/* Business Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Business Name *
+              {t('auth.signup.businessName')} *
             </label>
             <div className="relative">
               <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
@@ -244,7 +246,7 @@ function CompleteSignupForm() {
                 value={form.businessName}
                 onChange={handleChange}
                 className="input-field pl-10"
-                placeholder="Your Business Name"
+                placeholder={t('auth.signup.businessName')}
                 required
               />
             </div>
@@ -253,7 +255,7 @@ function CompleteSignupForm() {
           {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password *
+              {t('auth.signup.password')} *
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
@@ -263,7 +265,7 @@ function CompleteSignupForm() {
                 value={form.password}
                 onChange={handleChange}
                 className="input-field pl-10"
-                placeholder="At least 6 characters"
+                placeholder={t('auth.signup.passwordHint')}
                 required
               />
             </div>
@@ -272,7 +274,7 @@ function CompleteSignupForm() {
           {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password *
+              {t('auth.signup.confirmPassword')} *
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
@@ -282,7 +284,7 @@ function CompleteSignupForm() {
                 value={form.confirmPassword}
                 onChange={handleChange}
                 className="input-field pl-10"
-                placeholder="Confirm your password"
+                placeholder={t('auth.signup.confirmPasswordPlaceholder')}
                 required
               />
             </div>
@@ -292,25 +294,25 @@ function CompleteSignupForm() {
             {loading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Creating Account...
+                {t('auth.signup.creatingAccount')}
               </span>
             ) : (
-              'Create My Account'
+              t('auth.completeSignup.createMyAccount')
             )}
           </button>
 
           <p className="text-xs text-gray-400 text-center">
-            Your subscription is already active. This just sets up your login credentials.
+            {t('auth.completeSignup.subscriptionActive')}
           </p>
         </form>
 
         <p className="text-center text-gray-500 text-sm mt-6">
-          Already have an account?{' '}
+          {t('auth.signup.alreadyHaveAccount')}{' '}
           <Link
             href="/auth/login"
             className="text-primary-500 font-semibold hover:underline"
           >
-            Sign In
+            {t('auth.signup.signIn')}
           </Link>
         </p>
       </div>

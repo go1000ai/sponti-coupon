@@ -7,18 +7,20 @@ import {
   MessageSquare, Send, Loader2, Check, HelpCircle,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
-
-const INQUIRY_TYPES = [
-  { value: 'general', label: 'General Inquiry' },
-  { value: 'support', label: 'Support' },
-  { value: 'enterprise', label: 'Enterprise Plan' },
-  { value: 'partnership', label: 'Partnership' },
-  { value: 'other', label: 'Other' },
-];
+import { useLanguage } from '@/lib/i18n';
 
 function ContactForm() {
   const searchParams = useSearchParams();
   const planParam = searchParams.get('plan');
+  const { t } = useLanguage();
+
+  const INQUIRY_TYPES = [
+    { value: 'general', label: t('contact.inquiryTypes.general') },
+    { value: 'support', label: t('contact.inquiryTypes.support') },
+    { value: 'enterprise', label: t('contact.inquiryTypes.enterprise') },
+    { value: 'partnership', label: t('contact.inquiryTypes.partnership') },
+    { value: 'other', label: t('contact.inquiryTypes.other') },
+  ];
 
   const [form, setForm] = useState({
     name: '',
@@ -61,10 +63,10 @@ function ContactForm() {
           <Check className="w-8 h-8 text-green-500" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Message Sent!
+          {t('contact.sentTitle')}
         </h2>
         <p className="text-gray-600 mb-6 max-w-md mx-auto">
-          Thank you for reaching out. Our team will get back to you within 24 hours.
+          {t('contact.sentDesc')}
         </p>
         <button
           onClick={() => {
@@ -73,7 +75,7 @@ function ContactForm() {
           }}
           className="text-primary-500 font-semibold hover:text-primary-600 transition-colors"
         >
-          Send another message
+          {t('contact.sendAnother')}
         </button>
       </div>
     );
@@ -86,11 +88,11 @@ function ContactForm() {
           <Send className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-xl font-bold text-gray-900">
-          Send Us a Message
+          {t('contact.sendUsMessage')}
         </h2>
       </div>
       <p className="text-sm text-gray-500 mb-6">
-        Fill out the form and we&apos;ll get back to you within 24 hours.
+        {t('contact.formDesc')}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -98,7 +100,7 @@ function ContactForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Full Name <span className="text-red-400">*</span>
+              {t('contact.fullName')} <span className="text-red-400">*</span>
             </label>
             <input
               id="name"
@@ -112,7 +114,7 @@ function ContactForm() {
           </div>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Email <span className="text-red-400">*</span>
+              {t('contact.email')} <span className="text-red-400">*</span>
             </label>
             <input
               id="email"
@@ -130,7 +132,7 @@ function ContactForm() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Phone
+              {t('contact.phone')}
             </label>
             <input
               id="phone"
@@ -143,7 +145,7 @@ function ContactForm() {
           </div>
           <div>
             <label htmlFor="business" className="block text-sm font-medium text-gray-700 mb-1.5">
-              Business Name
+              {t('contact.businessName')}
             </label>
             <input
               id="business"
@@ -159,7 +161,7 @@ function ContactForm() {
         {/* Inquiry Type */}
         <div>
           <label htmlFor="inquiry" className="block text-sm font-medium text-gray-700 mb-1.5">
-            What can we help you with? <span className="text-red-400">*</span>
+            {t('contact.inquiryType')} <span className="text-red-400">*</span>
           </label>
           <select
             id="inquiry"
@@ -168,8 +170,8 @@ function ContactForm() {
             onChange={(e) => setForm(f => ({ ...f, inquiryType: e.target.value }))}
             className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all text-sm bg-white"
           >
-            {INQUIRY_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
+            {INQUIRY_TYPES.map(it => (
+              <option key={it.value} value={it.value}>{it.label}</option>
             ))}
           </select>
         </div>
@@ -177,7 +179,7 @@ function ContactForm() {
         {/* Message */}
         <div>
           <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1.5">
-            Message <span className="text-red-400">*</span>
+            {t('contact.message')} <span className="text-red-400">*</span>
           </label>
           <textarea
             id="message"
@@ -186,7 +188,7 @@ function ContactForm() {
             value={form.message}
             onChange={(e) => setForm(f => ({ ...f, message: e.target.value }))}
             className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all text-sm resize-none"
-            placeholder="Tell us how we can help..."
+            placeholder={t('contact.messagePlaceholder')}
           />
         </div>
 
@@ -199,18 +201,18 @@ function ContactForm() {
           {submitting ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              Sending...
+              {t('contact.sending')}
             </>
           ) : (
             <>
               <Send className="w-4 h-4" />
-              Send Message
+              {t('contact.send')}
             </>
           )}
         </button>
 
         <p className="text-[11px] text-gray-400 text-center">
-          We&apos;ll respond within 24 hours. No spam, ever.
+          {t('contact.responseNote')}
         </p>
       </form>
     </div>
@@ -218,6 +220,8 @@ function ContactForm() {
 }
 
 export default function ContactPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -227,8 +231,8 @@ export default function ContactPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-orange-400 mb-6 shadow-lg shadow-primary-500/30">
             <MessageSquare className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3">Contact Us</h1>
-          <p className="text-gray-300">We&apos;re here to help. Reach out and we&apos;ll get back to you as soon as possible.</p>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-3">{t('contact.title')}</h1>
+          <p className="text-gray-300">{t('contact.heroDesc')}</p>
         </div>
       </section>
 
@@ -237,7 +241,7 @@ export default function ContactPage() {
         <div className="max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-5 gap-10 lg:gap-12">
 
-            {/* ── Left: Contact Form ── */}
+            {/* -- Left: Contact Form -- */}
             <div className="lg:col-span-3">
               <Suspense fallback={
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 animate-pulse">
@@ -254,7 +258,7 @@ export default function ContactPage() {
               </Suspense>
             </div>
 
-            {/* ── Right: Sidebar ── */}
+            {/* -- Right: Sidebar -- */}
             <div className="lg:col-span-2 space-y-6">
               {/* FAQ Link */}
               <div className="bg-gradient-to-br from-gray-50 to-accent-50/30 rounded-2xl p-6 border border-gray-100">
@@ -262,13 +266,13 @@ export default function ContactPage() {
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-100 to-blue-100 flex items-center justify-center shrink-0">
                     <HelpCircle className="w-5 h-5 text-accent-600" />
                   </div>
-                  <h3 className="font-bold text-gray-900">Quick Answers</h3>
+                  <h3 className="font-bold text-gray-900">{t('contact.quickAnswers')}</h3>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
-                  Check our FAQ for answers to the most common questions about pricing, features, and getting started.
+                  {t('contact.quickAnswersDesc')}
                 </p>
                 <Link href="/faq" className="bg-gradient-to-r from-primary-500 to-orange-500 text-white px-5 py-2.5 rounded-xl font-bold inline-flex items-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl transition-all hover:scale-[1.02] text-sm">
-                  Visit FAQ
+                  {t('contact.visitFaq')}
                 </Link>
               </div>
 
@@ -277,9 +281,9 @@ export default function ContactPage() {
                 <SpontiIcon className="w-10 h-10 mx-auto mb-3" />
                 <p className="text-white font-bold mb-1">SpontiCoupon</p>
                 <p className="text-gray-300 text-xs leading-relaxed">
-                  Zero commission. Instant payouts.
+                  {t('contact.zeroCommission')}
                   <br />
-                  Built for local businesses.
+                  {t('contact.builtForLocal')}
                 </p>
               </div>
             </div>
