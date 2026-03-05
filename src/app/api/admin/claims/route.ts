@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20', 10)));
     const search = searchParams.get('search')?.trim().toLowerCase() || '';
+    const customerSearch = searchParams.get('customer')?.trim().toLowerCase() || '';
     const status = searchParams.get('status') || 'all';
 
     // Fetch all claims with joined customer, deal, vendor data
@@ -170,7 +171,7 @@ export async function GET(request: NextRequest) {
       filtered = filtered.filter((c) => c.status === status);
     }
 
-    // Apply search filter (customer name, deal title, vendor name, deal ref, redemption code, email)
+    // Apply search filter (deal ref, deal title, vendor name, redemption code)
     if (search) {
       filtered = filtered.filter(
         (c) =>
@@ -180,6 +181,15 @@ export async function GET(request: NextRequest) {
           c.deal_id.slice(0, 8).toLowerCase().includes(search.replace('#', '')) ||
           (c.customer_email && c.customer_email.toLowerCase().includes(search)) ||
           (c.redemption_code && c.redemption_code.toLowerCase().includes(search))
+      );
+    }
+
+    // Apply customer name/email filter
+    if (customerSearch) {
+      filtered = filtered.filter(
+        (c) =>
+          c.customer_name.toLowerCase().includes(customerSearch) ||
+          (c.customer_email && c.customer_email.toLowerCase().includes(customerSearch))
       );
     }
 

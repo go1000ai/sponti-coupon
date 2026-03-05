@@ -21,6 +21,7 @@ import {
   KeyRound,
   X,
   Save,
+  User,
 } from 'lucide-react';
 
 type ClaimStatus = 'active' | 'redeemed' | 'expired' | 'pending';
@@ -58,6 +59,7 @@ export default function AdminClaimsPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [customerQuery, setCustomerQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   // Action loading state
@@ -112,6 +114,7 @@ export default function AdminClaimsPage() {
         pageSize: PAGE_SIZE.toString(),
       });
       if (searchQuery) params.set('search', searchQuery);
+      if (customerQuery) params.set('customer', customerQuery);
       if (statusFilter !== 'all') params.set('status', statusFilter);
 
       const res = await fetch(`/api/admin/claims?${params.toString()}`);
@@ -125,7 +128,7 @@ export default function AdminClaimsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchQuery, statusFilter, showToast]);
+  }, [page, searchQuery, customerQuery, statusFilter, showToast]);
 
   const fetchStatusCounts = useCallback(async () => {
     try {
@@ -165,7 +168,7 @@ export default function AdminClaimsPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, customerQuery, statusFilter]);
 
   // ==================== Action Handlers ====================
 
@@ -479,9 +482,19 @@ export default function AdminClaimsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by customer, deal, vendor, Deal Ref, or code..."
+              placeholder="Search by Deal Ref, deal, vendor, or code..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-field pl-10"
+            />
+          </div>
+          <div className="relative flex-1">
+            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Filter by customer name or email..."
+              value={customerQuery}
+              onChange={(e) => setCustomerQuery(e.target.value)}
               className="input-field pl-10"
             />
           </div>
