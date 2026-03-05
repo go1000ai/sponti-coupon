@@ -39,7 +39,7 @@ export default function AccessibilityPage() {
             <li>All interactive elements (buttons, links, forms) are keyboard navigable.</li>
             <li>Color contrast ratios meet or exceed WCAG 2.1 AA minimums (4.5:1 for normal text, 3:1 for large text).</li>
             <li>Form inputs have associated <code>&lt;label&gt;</code> elements and descriptive error messages.</li>
-            <li>Images include descriptive <code>alt</code> text. Decorative images use empty <code>alt=""</code>.</li>
+            <li>Images include descriptive <code>alt</code> text. Decorative images use empty <code>alt=&quot;&quot;</code>.</li>
             <li>Focus indicators are visible for keyboard users.</li>
             <li>ARIA roles and labels used where native HTML semantics are insufficient.</li>
           </ul>
