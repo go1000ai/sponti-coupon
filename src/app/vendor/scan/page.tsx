@@ -493,33 +493,9 @@ export default function ScanPage() {
                   <div className="bg-amber-50 border border-amber-200 text-amber-700 text-sm rounded-xl px-4 py-3">
                     <p className="font-medium mb-1">Camera unavailable</p>
                     <p className="text-xs">{cameraError}</p>
+                    <p className="text-xs mt-2 font-medium">Use the <strong>6-Digit Code</strong> tab instead.</p>
                   </div>
                 )}
-
-                {/* Fallback: manual URL/UUID input */}
-                <div className="border-t border-gray-100 pt-4">
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
-                    Or paste QR code URL / UUID manually
-                  </label>
-                  <input
-                    value={codeInput}
-                    onChange={e => setCodeInput(e.target.value)}
-                    className="input-field"
-                    placeholder="https://sponticoupon.com/redeem/..."
-                    onKeyDown={e => e.key === 'Enter' && handleVerify()}
-                  />
-                  <button
-                    onClick={() => handleVerify()}
-                    disabled={scanning || !codeInput.trim()}
-                    className="btn-primary w-full mt-2"
-                  >
-                    {scanning ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
-                      </span>
-                    ) : 'Verify Code'}
-                  </button>
-                </div>
               </div>
             )}
           </div>
