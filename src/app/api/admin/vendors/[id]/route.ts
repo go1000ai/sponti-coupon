@@ -118,26 +118,42 @@ export async function PUT(
       const state = (updates.state || existing.state) as string;
       const zip = (updates.zip || existing.zip) as string;
       if (addr && city && state && zip) {
+        const geoHeaders = { 'User-Agent': 'SpontiCoupon/1.0' };
+        const geoBase = 'https://nominatim.openstreetmap.org/search';
+
+        // Strategy 1: Structured search (best for fuzzy/misspelled addresses)
         try {
-          // Try full address first, then city+state+zip fallback
-          const queries = [
+          const params = new URLSearchParams({
+            street: addr, city, state, postalcode: zip, country: 'US', format: 'json', limit: '1',
+          });
+          const geoRes = await fetch(`${geoBase}?${params}`, { headers: geoHeaders });
+          const geoData = await geoRes.json();
+          if (geoData?.length > 0) {
+            updates.lat = parseFloat(geoData[0].lat);
+            updates.lng = parseFloat(geoData[0].lon);
+          }
+        } catch { /* continue */ }
+
+        // Strategy 2 & 3: Free-form full address, then city fallback
+        if (!updates.lat) {
+          const fallbacks = [
             `${addr}, ${city}, ${state} ${zip}, USA`,
             `${city}, ${state} ${zip}, USA`,
           ];
-          for (const q of queries) {
-            const geoRes = await fetch(
-              `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`,
-              { headers: { 'User-Agent': 'SpontiCoupon/1.0' } }
-            );
-            const geoData = await geoRes.json();
-            if (geoData?.length > 0) {
-              updates.lat = parseFloat(geoData[0].lat);
-              updates.lng = parseFloat(geoData[0].lon);
-              break;
-            }
+          for (const q of fallbacks) {
+            try {
+              const geoRes = await fetch(
+                `${geoBase}?q=${encodeURIComponent(q)}&format=json&limit=1`,
+                { headers: geoHeaders }
+              );
+              const geoData = await geoRes.json();
+              if (geoData?.length > 0) {
+                updates.lat = parseFloat(geoData[0].lat);
+                updates.lng = parseFloat(geoData[0].lon);
+                break;
+              }
+            } catch { /* continue */ }
           }
-        } catch (geoErr) {
-          console.error('[PUT /api/admin/vendors] Geocode error:', geoErr);
         }
       }
     }
