@@ -752,164 +752,159 @@ export default function AdminDealDetailPage() {
         {/* ==================== LEFT COLUMN ==================== */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* 1. Hero Image Card */}
+          {/* 1. Deal Images Card */}
           <div
             className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.1s_forwards]"
           >
-            <div className="relative">
-              {formData.image_url ? (
+            {(() => {
+              const allImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
+              return (
                 <>
-                  <img
-                    src={formData.image_url as string}
-                    alt={formData.title as string}
-                    className="w-full h-64 object-cover"
-                  />
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowImagePicker(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B]/80 backdrop-blur-sm rounded-lg hover:bg-[#E8632B] transition-colors"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" /> Browse Library
-                    </button>
-                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
-                      <Upload className="w-3.5 h-3.5" />
-                      {uploadingImage ? 'Uploading...' : 'Change Image'}
+                  {/* Header */}
+                  <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-primary-500" />
+                      <span className="text-sm font-semibold text-gray-700">Deal Images</span>
+                      <span className="text-xs text-gray-400">({allImages.length}/11)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowImagePicker(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B] rounded-lg hover:bg-[#D55A25] transition-colors"
+                      >
+                        <ImageIcon className="w-3 h-3" /> Browse Library
+                      </button>
+                      <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        {uploadingImage || uploadingGallery ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</>
+                        ) : (
+                          <><Upload className="w-3 h-3" /> Upload</>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          className="hidden"
+                          disabled={uploadingImage || uploadingGallery}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (!formData.image_url) handleImageUpload(file);
+                              else handleGalleryImageUpload(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Image grid */}
+                  {allImages.length > 0 ? (
+                    <div className="px-4 pb-3">
+                      <div className="flex gap-2 flex-wrap">
+                        {allImages.map((url, i) => (
+                          <div key={i} className="relative group">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={url}
+                              alt={i === 0 ? 'Main image' : `Image ${i + 1}`}
+                              className={`w-24 h-24 rounded-lg object-cover border-2 transition-colors ${
+                                i === 0 ? 'border-primary-400 ring-2 ring-primary-200' : 'border-gray-100 group-hover:border-primary-300'
+                              }`}
+                            />
+                            {i === 0 && (
+                              <span className="absolute bottom-0 left-0 right-0 bg-primary-500/90 text-white text-[9px] text-center py-0.5 rounded-b-md font-medium">
+                                Main
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (i === 0) {
+                                  // Remove main image — promote next gallery image if available
+                                  const gallery = (formData.image_urls as string[]) || [];
+                                  if (gallery.length > 0) {
+                                    updateField('image_url', gallery[0]);
+                                    updateField('image_urls', gallery.slice(1));
+                                  } else {
+                                    updateField('image_url', '');
+                                  }
+                                } else {
+                                  removeGalleryImage(i - 1);
+                                }
+                              }}
+                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                        {/* Add more */}
+                        {allImages.length < 11 && (
+                          <label className="cursor-pointer">
+                            <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors">
+                              {uploadingGallery ? (
+                                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                              ) : (
+                                <>
+                                  <Plus className="w-5 h-5 text-gray-400" />
+                                  <span className="text-[10px] text-gray-400">Add</span>
+                                </>
+                              )}
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              className="hidden"
+                              disabled={uploadingGallery}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  if (!formData.image_url) handleImageUpload(file);
+                                  else handleGalleryImageUpload(file);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="px-4 pb-3">
+                      <div className="h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200">
+                        <ImageIcon className="w-8 h-8 text-gray-300" />
+                        <span className="text-gray-400 text-sm">No images yet</span>
+                        <span className="text-gray-300 text-xs">Upload, browse the library, or let Ava generate one</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ava AI Image Generation */}
+                  <div className="px-4 pb-4">
+                    <div className="flex items-center gap-2">
                       <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="hidden"
-                        disabled={uploadingImage}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(file);
-                        }}
+                        value={customImagePrompt}
+                        onChange={e => setCustomImagePrompt(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
+                        className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
+                        placeholder="Describe image for Ava AI (optional)..."
                       />
-                    </label>
-                    <button
-                      onClick={() => updateField('image_url', '')}
-                      className="p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={handleAiImageGenerate}
+                        disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                      >
+                        {aiImageLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                        Ava
+                      </button>
+                    </div>
                   </div>
                 </>
-              ) : (
-                <div className="h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-3">
-                  <div className="flex items-center gap-3">
-                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors">
-                      {uploadingImage ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
-                      ) : (
-                        <><Upload className="w-3.5 h-3.5" /> Upload Image</>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="hidden"
-                        disabled={uploadingImage}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(file);
-                        }}
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowImagePicker(true)}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-[#E8632B] rounded-lg hover:bg-[#D55A25] transition-colors"
-                    >
-                      <ImageIcon className="w-3.5 h-3.5" /> Browse Library
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleAiImageGenerate}
-                      disabled={aiImageLoading}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
-                    >
-                      {aiImageLoading ? (
-                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
-                      ) : (
-                        <><Wand2 className="w-3.5 h-3.5" /> AI Generate</>
-                      )}
-                    </button>
-                  </div>
-                  <span className="text-gray-400 text-xs">No image set</span>
-                </div>
-              )}
-            </div>
-
-            {/* AI Image Generation (when image exists — generate a new one) */}
-            <div className="p-3 border-t border-gray-100 bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <input
-                  value={customImagePrompt}
-                  onChange={e => setCustomImagePrompt(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
-                  className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
-                  placeholder="Describe image for Ava AI (optional)..."
-                />
-                <button
-                  type="button"
-                  onClick={handleAiImageGenerate}
-                  disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                >
-                  {aiImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                  Ava
-                </button>
-              </div>
-            </div>
-
-            {/* Gallery images */}
-            <div className="p-4 border-t border-gray-100">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Gallery Images</span>
-                <span className="text-xs text-gray-400">({(formData.image_urls as string[]).length})</span>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {(formData.image_urls as string[]).map((url, i) => (
-                  <div key={i} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Gallery ${i + 1}`}
-                      className="w-20 h-20 rounded-lg object-cover border-2 border-gray-100 group-hover:border-primary-400 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeGalleryImage(i)}
-                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {/* Upload button */}
-                <label className="cursor-pointer">
-                  <div className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors">
-                    {uploadingGallery ? (
-                      <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                    ) : (
-                      <>
-                        <Plus className="w-5 h-5 text-gray-400" />
-                        <span className="text-[10px] text-gray-400">Add</span>
-                      </>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    disabled={uploadingGallery}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleGalleryImageUpload(file);
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-              </div>
-            </div>
+              );
+            })()}
           </div>
 
           {/* ImagePickerModal — vendor's media library */}
