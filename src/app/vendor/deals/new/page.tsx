@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useLanguage } from '@/lib/i18n';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
 import { formatCurrency, formatPercentage, calculateDiscount } from '@/lib/utils';
@@ -242,6 +243,7 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
 
 export default function NewDealPage() {
   const { user, role } = useAuth();
+  const { locale } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -445,7 +447,7 @@ export default function NewDealPage() {
           const res = await fetch('/api/vendor/ai-deal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(withVendorId({ deal_type: dealType, prompt: hint })),
+            body: JSON.stringify(withVendorId({ deal_type: dealType, prompt: hint, locale })),
           });
           const data = await res.json();
           if (res.ok && data.suggestion) {
@@ -568,6 +570,7 @@ export default function NewDealPage() {
         body: JSON.stringify(withVendorId({
           deal_type: dealType,
           prompt: aiPrompt || undefined,
+          locale,
         })),
       });
       const data = await res.json();

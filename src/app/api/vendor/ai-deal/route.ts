@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { deal_type, prompt, category_override } = body;
+  const { deal_type, prompt, category_override, locale } = body;
 
   // Admin can act on behalf of a vendor
   const targetVendorId = isAdmin && body.vendor_id ? body.vendor_id : user.id;
@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
   const category = category_override || vendor?.category || 'restaurant';
   const location = vendor?.city && vendor?.state ? `${vendor.city}, ${vendor.state}` : '';
   const isSponti = deal_type === 'sponti_coupon';
+  const langMap: Record<string, string> = { es: 'Spanish', fr: 'French', pt: 'Portuguese' };
+  const outputLanguage = locale && langMap[locale] ? langMap[locale] : null;
 
   // Fetch active Steady Deals to inform AI pricing for Sponti deals
   let steadyDealContext = '';
@@ -123,7 +125,7 @@ For fine_print: MUST include ALL of these that apply:
 - If the deal has a deposit and is a Steady deal: "If not redeemed before expiration, deposit converts to a credit with the business. Credit never expires."
 - If appointment-based (salons, spas, medical, etc.): "This deal requires an appointment. The deal is honored as long as the appointment is scheduled before the deal expires."
 - If walk-in: "No appointment necessary. Walk-ins welcome."
-For requires_appointment: Set to true for businesses that typically require appointments (spas, salons, medical offices, dental, photography studios, etc.). Set to false for walk-in businesses (restaurants, retail, entertainment, etc.).`;
+For requires_appointment: Set to true for businesses that typically require appointments (spas, salons, medical offices, dental, photography studios, etc.). Set to false for walk-in businesses (restaurants, retail, entertainment, etc.).${outputLanguage ? `\n\nLANGUAGE: Write ALL text content (title, description, how_it_works, highlights, amenities, fine_print, terms_and_conditions) in ${outputLanguage}. The JSON keys must remain in English, but all string VALUES must be in ${outputLanguage}.` : ''}`;
 
       const userPrompt = `Business: ${businessName}
 Category: ${category}

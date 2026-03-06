@@ -2016,6 +2016,10 @@ const es: Translations = {
       notFound: 'Oferta no encontrada',
       returnToList: 'Volver a la lista de ofertas',
       deleteDeal: 'Eliminar Oferta',
+      avaEnhance: 'Mejorar con Ava IA',
+      avaWorking: 'Ava está trabajando...',
+      avaDescription: 'Ava generará/mejorará el título, descripción, puntos destacados, letra pequeña y términos.',
+      avaFullCreator: 'Usar el Creador de Ofertas completo con Ava',
     },
     leads: {
       title: 'Clientes Potenciales',

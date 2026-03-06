@@ -218,7 +218,7 @@ export default function AdminDealDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user, role, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const dealId = params.id as string;
 
   // Data state
@@ -570,6 +570,7 @@ export default function AdminDealDetailPage() {
         body: JSON.stringify({
           vendor_id: deal.vendor_id,
           deal_type: formData.deal_type,
+          locale,
           prompt: `Improve this existing deal: "${formData.title}". Description: "${formData.description}". Category: ${deal.category_id || 'general'}. Original price: $${formData.original_price}, Deal price: $${formData.deal_price}.`,
         }),
       });
@@ -1057,13 +1058,13 @@ export default function AdminDealDetailPage() {
               className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
             >
               {avaLoading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Ava is working...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t('admin.deals.avaWorking')}</>
               ) : (
-                <><Sparkles className="w-4 h-4" /> Enhance with Ava AI</>
+                <><Sparkles className="w-4 h-4" /> {t('admin.deals.avaEnhance')}</>
               )}
             </button>
             <p className="mt-1 text-xs text-gray-400">
-              Ava will generate/improve the title, description, highlights, fine print, and terms.
+              {t('admin.deals.avaDescription')}
             </p>
           </div>
 

@@ -2039,6 +2039,10 @@ const en: Translations = {
       notFound: 'Deal not found',
       returnToList: 'Return to deals list',
       deleteDeal: 'Delete Deal',
+      avaEnhance: 'Enhance with Ava AI',
+      avaWorking: 'Ava is working...',
+      avaDescription: 'Ava will generate/improve the title, description, highlights, fine print, and terms.',
+      avaFullCreator: 'Use Full Deal Creator with Ava instead',
     },
     leads: {
       title: 'Vendor Leads',

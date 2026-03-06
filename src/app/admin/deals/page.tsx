@@ -1156,7 +1156,7 @@ export default function AdminDealsPage() {
                 className="mt-2 inline-flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
                 <Sparkles className="w-4 h-4" />
-                Use Full Deal Creator with Ava instead
+                {t('admin.deals.avaFullCreator')}
               </a>
             )}
           </div>

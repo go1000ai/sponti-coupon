@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Loader2, Sparkles, RotateCcw, Volume2, AlertCircle } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 interface VoiceDealResult {
   title: string;
@@ -26,6 +27,7 @@ interface VoiceDealCreatorProps {
 }
 
 export default function VoiceDealCreator({ onDealParsed, vendorId }: VoiceDealCreatorProps) {
+  const { locale } = useLanguage();
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -116,6 +118,7 @@ export default function VoiceDealCreator({ onDealParsed, vendorId }: VoiceDealCr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transcript: text,
+          locale,
           ...(vendorId && { vendor_id: vendorId }),
         }),
       });

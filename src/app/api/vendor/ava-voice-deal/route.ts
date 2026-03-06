@@ -34,8 +34,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { transcript, vendor_id: bodyVendorId } = body;
+  const { transcript, vendor_id: bodyVendorId, locale } = body;
   const vendorId = (isAdmin && bodyVendorId) ? bodyVendorId : user.id;
+  const langMap: Record<string, string> = { es: 'Spanish', fr: 'French', pt: 'Portuguese' };
+  const outputLanguage = locale && langMap[locale] ? langMap[locale] : null;
 
   if (!transcript || typeof transcript !== 'string' || transcript.trim().length < 5) {
     return NextResponse.json({ error: 'Voice transcript is too short. Please describe your deal.' }, { status: 400 });
@@ -97,7 +99,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
   "terms_and_conditions": "string",
   "search_tags": ["string"],
   "image_prompt": "string (a prompt to generate a deal image — describe the product/service visually)"
-}`;
+}${outputLanguage ? `\n\nIMPORTANT: Write ALL text content (title, description, highlights, fine_print, terms_and_conditions) in ${outputLanguage}. JSON keys stay in English, but all string VALUES must be in ${outputLanguage}. The image_prompt and search_tags should remain in English for optimal search and image generation.` : ''}`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
