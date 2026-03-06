@@ -37,6 +37,7 @@ import {
   Video,
   Plus,
   Wand2,
+  Info,
 } from 'lucide-react';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
@@ -250,6 +251,7 @@ export default function AdminDealDetailPage() {
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoElapsed, setVideoElapsed] = useState(0);
   const [videoPrompt, setVideoPrompt] = useState('');
+  const [videoSourceImage, setVideoSourceImage] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
@@ -473,7 +475,7 @@ export default function AdminDealDetailPage() {
   // ---------- AI Video Generation ----------
   const handleAiVideoGenerate = async () => {
     if (!deal) return;
-    const sourceImage = formData.image_url as string;
+    const sourceImage = videoSourceImage || (formData.image_url as string);
     if (!sourceImage) { setError('Add a deal image first so Ava can turn it into a video.'); return; }
     setAiVideoLoading(true);
     setVideoProgress(0);
@@ -1057,85 +1059,152 @@ export default function AdminDealDetailPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Videos</label>
                   <div className="space-y-2">
+                    {/* Existing videos with preview */}
                     {(formData.video_urls as string[]).map((url, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg group">
-                        <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                        <span className="text-sm text-gray-600 truncate flex-1" title={url}>
-                          {url.split('/').pop() || url}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeVideo(i)}
-                          className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                      <div key={i} className="bg-gray-50 rounded-lg overflow-hidden group">
+                        <video
+                          src={url}
+                          controls
+                          preload="metadata"
+                          className="w-full max-h-48 rounded-t-lg bg-black"
+                        />
+                        <div className="flex items-center gap-2 p-2">
+                          <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-xs text-gray-500 truncate flex-1" title={url}>
+                            {url.split('/').pop() || url}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeVideo(i)}
+                            className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
-                    <div className="flex items-center gap-2">
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
-                        {uploadingVideo ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Uploading video...</>
-                        ) : (
-                          <><Upload className="w-4 h-4" /> Upload Video</>
-                        )}
-                        <input
-                          type="file"
-                          accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                          className="hidden"
-                          disabled={uploadingVideo}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleVideoUpload(file);
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleAiVideoGenerate}
-                        disabled={aiVideoLoading || !(formData.image_url as string)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 border border-dashed border-emerald-200 hover:border-emerald-400 rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {aiVideoLoading ? (
-                          <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                        ) : (
-                          <><Video className="w-4 h-4" /> Ava Video</>
-                        )}
-                      </button>
-                    </div>
 
-                    {/* Video prompt input */}
-                    <div>
-                      <input
-                        value={videoPrompt}
-                        onChange={e => setVideoPrompt(e.target.value)}
-                        className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
-                        placeholder="Describe video style (optional)..."
-                      />
-                    </div>
-
-                    {/* Video generation progress */}
-                    {aiVideoLoading && (
-                      <div className="space-y-1.5">
-                        <div className="w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
-                          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
-                        </div>
-                        <div className="flex justify-between items-center text-[10px] text-emerald-600">
-                          <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
-                          <span className="animate-pulse">
-                            {videoElapsed < 60 ? 'Est. 1-3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                      <p>MP4, WebM, MOV, or AVI. Max 100MB.</p>
-                      {!(formData.image_url as string) && (
-                        <span className="text-amber-500">Add a deal image to enable AI video</span>
+                    {/* Upload button */}
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
+                      {uploadingVideo ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Uploading video...</>
+                      ) : (
+                        <><Upload className="w-4 h-4" /> Upload Video</>
                       )}
-                    </div>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                        className="hidden"
+                        disabled={uploadingVideo}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleVideoUpload(file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+
+                    {/* Ava Video Studio */}
+                    {(() => {
+                      const allDealImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
+                      return (
+                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Video className="w-5 h-5 text-emerald-600" />
+                            <div>
+                              <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
+                              <p className="text-xs text-emerald-500">Pick an image &rarr; Ava turns it into a cinematic promo video</p>
+                            </div>
+                          </div>
+
+                          {allDealImages.length === 0 ? (
+                            <p className="text-xs text-amber-600 flex items-center gap-1">
+                              <Info className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
+                            </p>
+                          ) : (
+                            <>
+                              {/* Source image picker */}
+                              <div>
+                                <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1.5">Choose source image</p>
+                                <div className="flex gap-2 overflow-x-auto pb-1">
+                                  {allDealImages.map((img, i) => {
+                                    const isSelected = (videoSourceImage || (formData.image_url as string)) === img;
+                                    return (
+                                      <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
+                                        className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
+                                        {isSelected && (
+                                          <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                                            <CheckCircle className="w-6 h-6 text-emerald-600 drop-shadow" />
+                                          </div>
+                                        )}
+                                        {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">Main</span>}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Video prompt */}
+                              <div>
+                                <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1">Describe your video (optional)</p>
+                                <textarea value={videoPrompt} onChange={e => setVideoPrompt(e.target.value)}
+                                  className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400 outline-none"
+                                  rows={2} placeholder="e.g., Slow zoom into the product with warm lighting, then pan to show the details..." />
+                              </div>
+
+                              {/* Generate button + guidelines tooltip */}
+                              <div className="flex items-center gap-2">
+                                <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
+                                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
+                                  {aiVideoLoading ? (
+                                    <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating the video...</>
+                                  ) : (
+                                    <><Video className="w-4 h-4" /> Generate Video</>
+                                  )}
+                                </button>
+                                <div className="relative group">
+                                  <button type="button" className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" aria-label="Video guidelines">
+                                    <Info className="w-5 h-5" />
+                                  </button>
+                                  <div className="absolute bottom-full right-0 mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                    <p className="font-semibold mb-1.5">Video Generation Tips</p>
+                                    <p className="text-gray-300 mb-2">Google&apos;s AI has content guidelines. For best results:</p>
+                                    <ul className="space-y-1 text-gray-300">
+                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Use product/service photos without people</li>
+                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Clean images without text or logos</li>
+                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Simple, descriptive video prompts</li>
+                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No photos with children</li>
+                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No copyrighted or branded content</li>
+                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No violent or explicit imagery</li>
+                                    </ul>
+                                    <p className="text-gray-400 mt-2 text-[10px]">If an image is blocked, Ava will auto-retry with a generic video.</p>
+                                    <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Progress bar */}
+                              {aiVideoLoading && (
+                                <div className="space-y-2">
+                                  <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">
+                                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
+                                  </div>
+                                  <div className="flex justify-between items-center text-xs text-emerald-600">
+                                    <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
+                                    <span className="animate-pulse">{videoElapsed < 60 ? 'Est. 1-3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}</span>
+                                  </div>
+                                  <p className="text-[10px] text-emerald-500 text-center">You can keep editing while Ava works.</p>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
                   </div>
                 </div>
 
