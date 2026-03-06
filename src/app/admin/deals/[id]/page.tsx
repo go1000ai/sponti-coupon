@@ -799,9 +799,59 @@ export default function AdminDealDetailPage() {
                     </div>
                   </div>
 
-                  {/* Image grid */}
+                  {/* Hero preview of main image */}
+                  {formData.image_url && (
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={formData.image_url as string}
+                        alt={formData.title as string}
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowImagePicker(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B]/80 backdrop-blur-sm rounded-lg hover:bg-[#E8632B] transition-colors"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" /> Browse Library
+                        </button>
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploadingImage ? 'Uploading...' : 'Change Image'}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            disabled={uploadingImage}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleImageUpload(file);
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const gallery = (formData.image_urls as string[]) || [];
+                            if (gallery.length > 0) {
+                              updateField('image_url', gallery[0]);
+                              updateField('image_urls', gallery.slice(1));
+                            } else {
+                              updateField('image_url', '');
+                            }
+                          }}
+                          className="p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Image grid (all images as thumbnails) */}
                   {allImages.length > 0 ? (
-                    <div className="px-4 pb-3">
+                    <div className="px-4 pb-3 pt-3">
                       <div className="flex gap-2 flex-wrap">
                         {allImages.map((url, i) => (
                           <div key={i} className="relative group">
