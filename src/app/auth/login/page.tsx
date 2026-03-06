@@ -57,7 +57,7 @@ function LoginForm() {
       } else if (data.role === 'admin') {
         window.location.href = '/admin';
       } else if (data.role === 'customer') {
-        window.location.href = '/dashboard';
+        window.location.href = redirect !== '/' ? redirect : '/dashboard';
       } else {
         window.location.href = redirect;
       }
