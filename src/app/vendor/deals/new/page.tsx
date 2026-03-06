@@ -11,7 +11,7 @@ import {
   Tag, AlertCircle, ArrowLeft, Info, Image as ImageIcon,
   Sparkles, Upload, X, Loader2, CheckCircle2, Link as LinkIcon,
   Calendar, Clock, Lock, MapPin, Globe, ChevronDown, Wand2, Video, Save,
-  FileEdit, Trash2, Plus, Download, Ticket,
+  FileEdit, Trash2, Plus, Download, Ticket, ShieldCheck,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
@@ -241,7 +241,7 @@ function VariantForm({ initial, onSave, onCancel, isEditing }: {
 }
 
 export default function NewDealPage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -250,6 +250,20 @@ export default function NewDealPage() {
   const fromWebsite = searchParams.get('from_website') === 'true';
   const suggestedType = searchParams.get('deal_type') as 'regular' | 'sponti_coupon' | null;
   const suggestedDiscount = searchParams.get('discount');
+
+  // Admin mode: admin can create deals on behalf of a vendor
+  const adminForVendor = searchParams.get('vendor_id');
+  const isAdmin = role === 'admin' && !!adminForVendor;
+  // The effective vendor ID — admin uses the vendor_id param, vendor uses their own user.id
+  const vendorId = isAdmin ? adminForVendor! : user?.id || '';
+  const [adminVendorName, setAdminVendorName] = useState('');
+  // Admin bypasses all tier gates
+  const canAccessFeature = (feature: Parameters<typeof canAccess>[0]) => isAdmin || canAccess(feature);
+  // Helper: add vendor_id to API request bodies when admin is acting on behalf
+  const withVendorId = useCallback((obj: Record<string, unknown>) => {
+    if (isAdmin) return { ...obj, vendor_id: vendorId };
+    return obj;
+  }, [isAdmin, vendorId]);
   const [dealType, setDealType] = useState<'regular' | 'sponti_coupon'>(suggestedType || 'regular');
   const [regularDeal, setRegularDeal] = useState<Deal | null>(null);
   const [loading, setLoading] = useState(false);
@@ -335,7 +349,7 @@ export default function NewDealPage() {
     supabase
       .from('deals')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', vendorId)
       .eq('deal_type', 'regular')
       .eq('status', 'active')
       .gte('expires_at', new Date().toISOString())
@@ -348,7 +362,7 @@ export default function NewDealPage() {
     supabase
       .from('vendor_locations')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', vendorId)
       .order('name')
       .then(({ data }) => {
         if (data && data.length > 0) {
@@ -360,11 +374,14 @@ export default function NewDealPage() {
     supabase
       .from('vendors')
       .select('category, business_name')
-      .eq('id', user.id)
+      .eq('id', vendorId)
       .single()
       .then(({ data }) => {
         if (data?.category) setVendorCategory(data.category);
-        if (data?.business_name) setVendorName(data.business_name);
+        if (data?.business_name) {
+          setVendorName(data.business_name);
+          if (isAdmin) setAdminVendorName(data.business_name);
+        }
       });
 
     // Fetch drafts
@@ -428,7 +445,7 @@ export default function NewDealPage() {
           const res = await fetch('/api/vendor/ai-deal', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deal_type: dealType, prompt: hint }),
+            body: JSON.stringify(withVendorId({ deal_type: dealType, prompt: hint })),
           });
           const data = await res.json();
           if (res.ok && data.suggestion) {
@@ -463,7 +480,7 @@ export default function NewDealPage() {
           const res = await fetch('/api/vendor/generate-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: generatedTitle, description: generatedDescription }),
+            body: JSON.stringify(withVendorId({ title: generatedTitle, description: generatedDescription })),
           });
           const data = await res.json();
           if (res.ok && data.url) {
@@ -480,11 +497,11 @@ export default function NewDealPage() {
           const res = await fetch('/api/vendor/generate-tags', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+            body: JSON.stringify(withVendorId({
               title: generatedTitle,
               description: generatedDescription,
               deal_type: dealType,
-            }),
+            })),
           });
           const data = await res.json();
           if (res.ok && data.tags) {
@@ -548,10 +565,10 @@ export default function NewDealPage() {
       const res = await fetch('/api/vendor/ai-deal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           deal_type: dealType,
           prompt: aiPrompt || undefined,
-        }),
+        })),
       });
       const data = await res.json();
 
@@ -655,11 +672,11 @@ export default function NewDealPage() {
       const res = await fetch('/api/vendor/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           title: form.title || customImagePrompt,
           description: form.description,
           custom_prompt: customImagePrompt || undefined,
-        }),
+        })),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -708,12 +725,12 @@ export default function NewDealPage() {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           image_url: sourceImage,
           title: form.title,
           description: form.description,
           video_prompt: videoPrompt || undefined,
-        }),
+        })),
       });
       const startData = await startRes.json();
       if (!startRes.ok) {
@@ -747,7 +764,7 @@ export default function NewDealPage() {
         const pollRes = await fetch('/api/vendor/generate-video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ operation_name: operationName }),
+          body: JSON.stringify(withVendorId({ operation_name: operationName })),
         });
         const pollData = await pollRes.json();
 
@@ -789,13 +806,13 @@ export default function NewDealPage() {
       const res = await fetch('/api/vendor/generate-tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           title: form.title,
           description: form.description,
           deal_type: dealType,
           original_price: form.original_price ? parseFloat(form.original_price) : null,
           deal_price: form.deal_price ? parseFloat(form.deal_price) : null,
-        }),
+        })),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -843,11 +860,11 @@ export default function NewDealPage() {
         const res = await fetch('/api/vendor/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: JSON.stringify(withVendorId({
             title: deal.title,
             description: deal.description,
             custom_prompt: deal.image_prompt,
-          }),
+          })),
         });
         const data = await res.json();
         if (res.ok && data.url) {
@@ -900,7 +917,7 @@ export default function NewDealPage() {
       const response = await fetch('/api/deals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           deal_type: dealType,
           title: form.title,
           description: form.description,
@@ -925,7 +942,7 @@ export default function NewDealPage() {
           search_tags: searchTags,
           variants: dealType === 'regular' && hasVariants ? variants : [],
           redemption_hours: dealType === 'sponti_coupon' ? parseInt(form.redemption_hours) || 24 : null,
-        }),
+        })),
       });
 
       const data = await response.json();
@@ -946,7 +963,7 @@ export default function NewDealPage() {
           const codesRes = await fetch('/api/vendor/promo-codes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(codesBody),
+            body: JSON.stringify(withVendorId(codesBody)),
           });
           if (codesRes.ok) {
             setPromoCodesGenerated(true);
@@ -959,7 +976,7 @@ export default function NewDealPage() {
 
       setDraftToast(false);
       setSuccessToast(true);
-      setTimeout(() => router.push('/vendor/deals'), 2000);
+      setTimeout(() => router.push(isAdmin ? '/admin/deals' : '/vendor/deals'), 2000);
     } catch {
       setError('Failed to create deal. Please try again.');
     }
@@ -974,7 +991,7 @@ export default function NewDealPage() {
     const { data } = await supabase
       .from('deals')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', vendorId)
       .eq('status', 'draft')
       .order('created_at', { ascending: false });
     setDrafts(data || []);
@@ -996,7 +1013,7 @@ export default function NewDealPage() {
       const response = await fetch('/api/deals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: JSON.stringify(withVendorId({
           status: 'draft',
           deal_type: dealType,
           title: form.title || undefined,
@@ -1016,7 +1033,7 @@ export default function NewDealPage() {
           amenities: amenities.length > 0 ? amenities : undefined,
           search_tags: searchTags.length > 0 ? searchTags : undefined,
           variants: dealType === 'regular' && hasVariants && variants.length > 0 ? variants : undefined,
-        }),
+        })),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -1065,8 +1082,18 @@ export default function NewDealPage() {
         </div>
       )}
 
-      <Link href="/vendor/deals" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
-        <ArrowLeft className="w-4 h-4" /> Back to Deals
+      {/* Admin banner */}
+      {isAdmin && (
+        <div className="mb-4 flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+          <ShieldCheck className="w-5 h-5 shrink-0" />
+          <span>
+            <strong>Admin Mode</strong> — Creating deal for <strong>{adminVendorName || vendorId}</strong>
+          </span>
+        </div>
+      )}
+
+      <Link href={isAdmin ? '/admin/deals' : '/vendor/deals'} className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6">
+        <ArrowLeft className="w-4 h-4" /> {isAdmin ? 'Back to Admin Deals' : 'Back to Deals'}
       </Link>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Deals</h1>
@@ -1301,7 +1328,7 @@ export default function NewDealPage() {
       )}
 
       {/* ── Ava — Deal Content Generator ──────────────────────── */}
-      <GatedSection loading={tierLoading} locked={!canAccess('ai_deal_assistant')} requiredTier="business" featureName="Ava — AI Deal Strategist" description="Let Ava create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
+      <GatedSection loading={!isAdmin && tierLoading} locked={!isAdmin && !canAccess('ai_deal_assistant')} requiredTier="business" featureName="Ava — AI Deal Strategist" description="Let Ava create compelling deal titles, descriptions, and pricing. Upgrade to Business.">
       <div className="card p-6 mb-6 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full overflow-hidden shadow-md shadow-emerald-500/20 flex-shrink-0">
@@ -1490,7 +1517,7 @@ export default function NewDealPage() {
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${imageMode === 'url' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                   <LinkIcon className="w-3.5 h-3.5" /> Paste URL
                 </button>
-                {canAccess('ai_deal_assistant') && (
+                {canAccessFeature('ai_deal_assistant') && (
                   <button type="button" onClick={() => setImageMode('ai')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${imageMode === 'ai' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm' : 'text-emerald-600 hover:text-emerald-700'}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1640,7 +1667,7 @@ export default function NewDealPage() {
           <p className="text-xs text-gray-400 mt-1.5">Add video links to show off your product or service</p>
 
           {/* Ava Video Generation */}
-          {canAccess('ai_deal_assistant') && (
+          {canAccessFeature('ai_deal_assistant') && (
             <div className="mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 shadow-sm shadow-emerald-500/20">
@@ -1765,7 +1792,7 @@ export default function NewDealPage() {
                         const res = await fetch('/api/vendor/ai-assist', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
+                          body: JSON.stringify(withVendorId({
                             type: 'suggest_variants',
                             context: {
                               title: form.title,
@@ -1773,7 +1800,7 @@ export default function NewDealPage() {
                               original_price: form.original_price,
                               deal_price: form.deal_price,
                             },
-                          }),
+                          })),
                         });
                         const data = await res.json();
                         if (data.text) {
@@ -2057,7 +2084,7 @@ export default function NewDealPage() {
         </div>
 
         {/* ── Ava — AI Deal Strategist ──────────────────────── */}
-        {canAccess('ai_deal_assistant') && (
+        {canAccessFeature('ai_deal_assistant') && (
           <DealAdvisor
             dealType={dealType}
             currentPricing={{
@@ -2192,7 +2219,7 @@ export default function NewDealPage() {
               <Clock className="w-4 h-4 inline mr-1.5" />
               Start Immediately
             </button>
-            {canAccess('custom_scheduling') ? (
+            {canAccessFeature('custom_scheduling') ? (
               <button
                 type="button"
                 onClick={() => setScheduleMode('scheduled')}

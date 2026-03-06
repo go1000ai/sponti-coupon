@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { rankDeals } from '@/lib/ranking/deal-ranker';
@@ -8,6 +9,15 @@ import { slugify } from '@/lib/utils';
 import { notifyNewDeal } from '@/lib/email/admin-notification';
 
 export const runtime = 'edge';
+
+/** Get a service role client for admin operations (bypasses RLS) */
+function getServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 // GET /api/deals - Browse deals with filters (public endpoint, uses anon client with RLS)
 export async function GET(request: NextRequest) {
@@ -148,7 +158,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ deals: rankedDeals, total: rankedDeals.length });
 }
 
-// POST /api/deals - Create a new deal (vendor only)
+// POST /api/deals - Create a new deal (vendor or admin on behalf of vendor)
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -157,88 +167,109 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify vendor role
+  // Verify vendor or admin role
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'vendor') {
+  const isAdmin = profile?.role === 'admin';
+  if (profile?.role !== 'vendor' && !isAdmin) {
     return NextResponse.json({ error: 'Only vendors can create deals' }, { status: 403 });
   }
 
+  const body = await request.json();
+
+  // Admin can create deals on behalf of a vendor
+  let vendorId = user.id;
+  let db = supabase; // default: user's session client (with RLS)
+  if (isAdmin && body.vendor_id) {
+    vendorId = body.vendor_id;
+    // Admin needs service role client to bypass RLS for another vendor
+    db = getServiceClient() as typeof supabase;
+  }
+
   // Check subscription status and location
-  const { data: vendor } = await supabase
+  const { data: vendor } = await db
     .from('vendors')
     .select('subscription_tier, subscription_status, lat, lng, business_name, business_type')
-    .eq('id', user.id)
+    .eq('id', vendorId)
     .single();
 
-  if (!vendor?.subscription_tier || vendor.subscription_status !== 'active') {
-    return NextResponse.json({ error: 'Active subscription required to create deals' }, { status: 403 });
+  if (!vendor) {
+    return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
   }
 
-  // Online vendors don't need lat/lng — their deals show nationwide
-  if (vendor.business_type !== 'online' && !vendor.lat && !vendor.lng) {
-    return NextResponse.json({
-      error: 'Please add your business address in Settings before creating deals. Your address is needed so customers can find your deals nearby.',
-    }, { status: 400 });
+  // Admin skips subscription and location checks
+  if (!isAdmin) {
+    if (!vendor?.subscription_tier || vendor.subscription_status !== 'active') {
+      return NextResponse.json({ error: 'Active subscription required to create deals' }, { status: 403 });
+    }
+
+    // Online vendors don't need lat/lng — their deals show nationwide
+    if (vendor?.business_type !== 'online' && !vendor?.lat && !vendor?.lng) {
+      return NextResponse.json({
+        error: 'Please add your business address in Settings before creating deals. Your address is needed so customers can find your deals nearby.',
+      }, { status: 400 });
+    }
   }
 
-  // Check deal limits for the month
-  const tierConfig = SUBSCRIPTION_TIERS[vendor.subscription_tier as SubscriptionTier];
+  // Check deal limits for the month (admin skips)
+  const tierConfig = vendor?.subscription_tier
+    ? SUBSCRIPTION_TIERS[vendor.subscription_tier as SubscriptionTier]
+    : SUBSCRIPTION_TIERS.enterprise;
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
   const monthStart = startOfMonth.toISOString();
 
-  const body = await request.json();
+  if (!isAdmin) {
+    // Check total deal limit
+    if (tierConfig.deals_per_month !== -1) {
+      const { count: totalCount } = await db
+        .from('deals')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+        .gte('created_at', monthStart);
 
-  // Check total deal limit
-  if (tierConfig.deals_per_month !== -1) {
-    const { count: totalCount } = await supabase
-      .from('deals')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', user.id)
-      .gte('created_at', monthStart);
-
-    if ((totalCount || 0) >= tierConfig.deals_per_month) {
-      return NextResponse.json({
-        error: `You've reached your ${tierConfig.deals_per_month} total deal limit for this month. Upgrade your plan for more deals.`,
-      }, { status: 403 });
+      if ((totalCount || 0) >= tierConfig.deals_per_month) {
+        return NextResponse.json({
+          error: `You've reached your ${tierConfig.deals_per_month} total deal limit for this month. Upgrade your plan for more deals.`,
+        }, { status: 403 });
+      }
     }
-  }
 
-  // Check per-type deal limits (Sponti vs Regular)
-  const incomingType = body.deal_type;
-  if (incomingType === 'sponti_coupon' && tierConfig.sponti_deals_per_month !== -1) {
-    const { count: spontiCount } = await supabase
-      .from('deals')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', user.id)
-      .eq('deal_type', 'sponti_coupon')
-      .gte('created_at', monthStart);
+    // Check per-type deal limits (Sponti vs Regular)
+    const incomingType = body.deal_type;
+    if (incomingType === 'sponti_coupon' && tierConfig.sponti_deals_per_month !== -1) {
+      const { count: spontiCount } = await db
+        .from('deals')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+        .eq('deal_type', 'sponti_coupon')
+        .gte('created_at', monthStart);
 
-    if ((spontiCount || 0) >= tierConfig.sponti_deals_per_month) {
-      return NextResponse.json({
-        error: `You've reached your ${tierConfig.sponti_deals_per_month} Sponti deal limit for this month. Upgrade your plan for more Sponti deals.`,
-      }, { status: 403 });
+      if ((spontiCount || 0) >= tierConfig.sponti_deals_per_month) {
+        return NextResponse.json({
+          error: `You've reached your ${tierConfig.sponti_deals_per_month} Sponti deal limit for this month. Upgrade your plan for more Sponti deals.`,
+        }, { status: 403 });
+      }
     }
-  }
 
-  if (incomingType === 'regular' && tierConfig.regular_deals_per_month !== -1) {
-    const { count: regularCount } = await supabase
-      .from('deals')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', user.id)
-      .eq('deal_type', 'regular')
-      .gte('created_at', monthStart);
+    if (incomingType === 'regular' && tierConfig.regular_deals_per_month !== -1) {
+      const { count: regularCount } = await db
+        .from('deals')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+        .eq('deal_type', 'regular')
+        .gte('created_at', monthStart);
 
-    if ((regularCount || 0) >= tierConfig.regular_deals_per_month) {
-      return NextResponse.json({
-        error: `You've reached your ${tierConfig.regular_deals_per_month} Steady deal limit for this month. Upgrade your plan for more Steady deals.`,
-      }, { status: 403 });
+      if ((regularCount || 0) >= tierConfig.regular_deals_per_month) {
+        return NextResponse.json({
+          error: `You've reached your ${tierConfig.regular_deals_per_month} Steady deal limit for this month. Upgrade your plan for more Steady deals.`,
+        }, { status: 403 });
+      }
     }
   }
   const {
@@ -260,10 +291,10 @@ export async function POST(request: NextRequest) {
       ? ((original_price - deal_price) / original_price) * 100
       : 0;
     const now = new Date().toISOString();
-    const { data: draft, error: draftErr } = await supabase
+    const { data: draft, error: draftErr } = await db
       .from('deals')
       .insert({
-        vendor_id: user.id,
+        vendor_id: vendorId,
         deal_type: deal_type || 'regular',
         title: title || 'Untitled Draft',
         description: description || null,
@@ -299,14 +330,14 @@ export async function POST(request: NextRequest) {
     // Generate SEO slug
     if (draft) {
       const slug = slugify((vendor.business_name || '') + ' ' + (title || 'deal')) + '-' + draft.id.slice(0, 8);
-      await supabase.from('deals').update({ slug }).eq('id', draft.id);
+      await db.from('deals').update({ slug }).eq('id', draft.id);
       draft.slug = slug;
     }
     return NextResponse.json({ deal: draft });
   }
 
-  // Check if vendor is trying to schedule a future deal without the custom_scheduling feature
-  if (new Date(starts_at) > new Date() && !tierConfig.custom_scheduling) {
+  // Check if vendor is trying to schedule a future deal without the custom_scheduling feature (admin skips)
+  if (!isAdmin && new Date(starts_at) > new Date() && !tierConfig.custom_scheduling) {
     return NextResponse.json({
       error: 'Scheduling deals for the future requires a Pro plan or higher. Upgrade at /vendor/subscription.',
     }, { status: 403 });
@@ -318,10 +349,10 @@ export async function POST(request: NextRequest) {
   // Validate Sponti Coupon rules
   if (deal_type === 'sponti_coupon') {
     // Must have active regular deal
-    const { data: regularDeal } = await supabase
+    const { data: regularDeal } = await db
       .from('deals')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', vendorId)
       .eq('deal_type', 'regular')
       .eq('status', 'active')
       .gte('expires_at', new Date().toISOString())
@@ -367,10 +398,10 @@ export async function POST(request: NextRequest) {
     const dealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
 
     // Create the deal with benchmark reference
-    const { data: deal, error: createError } = await supabase
+    const { data: deal, error: createError } = await db
       .from('deals')
       .insert({
-        vendor_id: user.id,
+        vendor_id: vendorId,
         deal_type,
         title,
         description,
@@ -409,7 +440,7 @@ export async function POST(request: NextRequest) {
     // Generate SEO slug
     if (deal) {
       const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
-      await supabase.from('deals').update({ slug }).eq('id', deal.id);
+      await db.from('deals').update({ slug }).eq('id', deal.id);
       deal.slug = slug;
     }
 
@@ -422,7 +453,7 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'x-social-post-secret': process.env.SOCIAL_POST_INTERNAL_SECRET || '',
         },
-        body: JSON.stringify({ deal_id: deal.id, vendor_id: user.id }),
+        body: JSON.stringify({ deal_id: deal.id, vendor_id: vendorId }),
       }).catch(() => {}); // Social posting should never block deal creation
     }
 
@@ -455,10 +486,10 @@ export async function POST(request: NextRequest) {
   // Determine if the deal is scheduled for the future
   const regularDealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
 
-  const { data: deal, error: createError } = await supabase
+  const { data: deal, error: createError } = await db
     .from('deals')
     .insert({
-      vendor_id: user.id,
+      vendor_id: vendorId,
       deal_type,
       title,
       description,
@@ -495,7 +526,7 @@ export async function POST(request: NextRequest) {
   // Generate SEO slug
   if (deal) {
     const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
-    await supabase.from('deals').update({ slug }).eq('id', deal.id);
+    await db.from('deals').update({ slug }).eq('id', deal.id);
     deal.slug = slug;
   }
 
@@ -508,7 +539,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'x-social-post-secret': process.env.SOCIAL_POST_INTERNAL_SECRET || '',
       },
-      body: JSON.stringify({ deal_id: deal.id, vendor_id: user.id }),
+      body: JSON.stringify({ deal_id: deal.id, vendor_id: vendorId }),
     }).catch(() => {}); // Social posting should never block deal creation
   }
 
