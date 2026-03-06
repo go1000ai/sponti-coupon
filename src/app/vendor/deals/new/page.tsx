@@ -21,6 +21,7 @@ import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import { PromoCodeTutorial } from '@/components/vendor/PromoCodeTutorial';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
+import VoiceDealCreator from '@/components/vendor/VoiceDealCreator';
 
 // Category-specific suggested features/perks
 const CATEGORY_FEATURES: Record<string, string[]> = {
@@ -808,6 +809,55 @@ export default function NewDealPage() {
     setGeneratingTags(false);
   };
 
+  // ── Voice Deal Creator callback ──────────────────────────
+  const handleVoiceDeal = useCallback(async (deal: {
+    title: string; description: string; deal_type: 'regular' | 'sponti_coupon';
+    original_price: number; deal_price: number; deposit_amount: number;
+    max_claims: number; duration_hours: number; duration_days: number;
+    highlights: string[]; fine_print: string; terms_and_conditions: string;
+    search_tags: string[]; image_prompt: string;
+  }) => {
+    // Fill form fields
+    setDealType(deal.deal_type);
+    setForm(prev => ({
+      ...prev,
+      title: deal.title,
+      description: deal.description,
+      original_price: deal.original_price > 0 ? deal.original_price.toString() : prev.original_price,
+      deal_price: deal.deal_price > 0 ? deal.deal_price.toString() : prev.deal_price,
+      deposit_amount: deal.deposit_amount > 0 ? deal.deposit_amount.toString() : '',
+      max_claims: deal.max_claims > 0 ? deal.max_claims.toString() : prev.max_claims,
+      duration_hours: deal.duration_hours.toString(),
+      duration_days: deal.duration_days.toString(),
+      fine_print: deal.fine_print || prev.fine_print,
+      terms_and_conditions: deal.terms_and_conditions || prev.terms_and_conditions,
+    }));
+    if (deal.highlights.length > 0) setHighlights(deal.highlights);
+    if (deal.search_tags.length > 0) setSearchTags(deal.search_tags);
+
+    // Auto-generate image with AI prompt
+    if (deal.image_prompt && !form.image_url) {
+      setAiImageLoading(true);
+      setCustomImagePrompt(deal.image_prompt);
+      try {
+        const res = await fetch('/api/vendor/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: deal.title,
+            description: deal.description,
+            custom_prompt: deal.image_prompt,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          addImageToGallery(data.url);
+        }
+      } catch { /* silent — user can generate manually */ }
+      setAiImageLoading(false);
+    }
+  }, [form.image_url, addImageToGallery]);
+
   // ── Submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1178,6 +1228,11 @@ export default function NewDealPage() {
           </div>
         </div>
       )}
+
+      {/* Voice Deal Creator */}
+      <div className="mb-6">
+        <VoiceDealCreator onDealParsed={handleVoiceDeal} />
+      </div>
 
       {/* Deal Type Selector */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
