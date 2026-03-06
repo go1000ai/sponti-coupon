@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 interface NavItem {
   label: string;
@@ -220,6 +221,7 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
             </div>
           </div>
         )}
+        <LanguageToggle className="w-full justify-center mb-2 bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
         <button
           onClick={onSignOut}
           className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"

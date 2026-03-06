@@ -84,7 +84,7 @@ export function PreferencePicker() {
       className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0"
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
     >
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up-fade">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up-fade max-h-[90vh] overflow-y-auto">
         {step === 'pick' ? (
           <>
             {/* Header */}
@@ -148,7 +148,7 @@ export function PreferencePicker() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 sm:px-6 pt-5 pb-6">
+            <div className="px-5 sm:px-6 pt-5 pb-8">
               {selected.length > 0 && (
                 <p className="text-center text-xs text-gray-400 mb-3">
                   {selected.length === 1

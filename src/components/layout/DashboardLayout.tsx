@@ -20,6 +20,7 @@ import {
   Headphones,
   ArrowLeftRight,
 } from 'lucide-react';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -142,6 +143,10 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <p className="text-sm font-medium text-white truncate">{userName}</p>
             <p className="text-[11px] text-gray-400 truncate">{userEmail}</p>
           </div>
+        </div>
+        {/* Language Toggle */}
+        <div className="px-4 pt-2">
+          <LanguageToggle className="w-full justify-center bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
         </div>
         {/* Sign Out button */}
         <div className="px-4 pb-4 pt-1">

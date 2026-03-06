@@ -30,6 +30,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 interface NavChild {
   label: string;
@@ -259,6 +260,10 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             <p className="text-[11px] text-gray-400 truncate">{personalName}</p>
             <p className="text-[10px] text-gray-500 truncate">{userEmail}</p>
           </div>
+        </div>
+        {/* Language Toggle */}
+        <div className="px-4 pt-2">
+          <LanguageToggle className="w-full justify-center bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
         </div>
         {/* Sign Out button */}
         <div className="px-4 pb-4 pt-1">
