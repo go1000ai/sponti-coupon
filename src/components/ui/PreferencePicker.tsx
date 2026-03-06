@@ -88,50 +88,46 @@ export function PreferencePicker() {
         {step === 'pick' ? (
           <>
             {/* Header */}
-            <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-6 pb-8">
-              {/* Decorative circles */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-
+            <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-5 pb-7">
               <button
                 onClick={dismiss}
-                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
+                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/10 hover:bg-white/25 transition-all duration-200 backdrop-blur-sm"
               >
                 <X className="w-4 h-4 text-white" />
               </button>
 
               <div className="relative">
-                <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 mb-4">
+                <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-3 py-1 mb-2">
                   <SpontiIcon className="w-3.5 h-3.5" />
                   <span className="text-white/90 text-[11px] font-semibold tracking-wide uppercase">{t('preferencePicker.personalize')}</span>
                 </div>
-                <h3 className="text-2xl font-extrabold text-white leading-tight">
+                <h3 className="text-xl font-extrabold text-white leading-tight">
                   {t('preferencePicker.whatInterests')}
                 </h3>
-                <p className="text-white/70 text-sm mt-1.5">
+                <p className="text-white/70 text-sm mt-1">
                   {t('preferencePicker.tapFavorites')}
                 </p>
               </div>
             </div>
 
             {/* Category Grid — overlaps header */}
-            <div className="px-5 sm:px-6 -mt-5">
-              <div className="grid grid-cols-2 gap-2.5">
+            <div className="px-4 sm:px-5 -mt-4">
+              <div className="grid grid-cols-2 gap-2">
                 {CATEGORIES.map((cat, i) => {
                   const isSelected = selected.includes(cat.slug);
                   return (
                     <button
                       key={cat.slug}
                       onClick={() => toggleCategory(cat.slug)}
-                      className={`group relative flex items-center gap-3 p-3 rounded-2xl border-2 transition-all duration-200 text-left ${
+                      className={`group relative flex items-center gap-2.5 p-2.5 rounded-xl border-2 transition-all duration-200 text-left ${
                         isSelected
                           ? `${cat.bg} border-transparent ring-2 ${cat.ring} shadow-md scale-[1.02]`
                           : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'
                       }`}
                       style={{ animationDelay: `${i * 30}ms` }}
                     >
-                      <div className={`relative bg-gradient-to-br ${cat.gradient} rounded-xl p-2 shrink-0 shadow-sm transition-transform duration-200 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}>
-                        <cat.icon className="w-4 h-4 text-white" />
+                      <div className={`relative bg-gradient-to-br ${cat.gradient} rounded-lg p-1.5 shrink-0 shadow-sm transition-transform duration-200 ${isSelected ? 'scale-110' : 'group-hover:scale-105'}`}>
+                        <cat.icon className="w-3.5 h-3.5 text-white" />
                         {isSelected && (
                           <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
                             <Check className="w-2.5 h-2.5 text-green-500" strokeWidth={3} />
@@ -148,7 +144,7 @@ export function PreferencePicker() {
             </div>
 
             {/* Footer */}
-            <div className="px-5 sm:px-6 pt-5 pb-8">
+            <div className="px-4 sm:px-5 pt-4 pb-6">
               {selected.length > 0 && (
                 <p className="text-center text-xs text-gray-400 mb-3">
                   {selected.length === 1
