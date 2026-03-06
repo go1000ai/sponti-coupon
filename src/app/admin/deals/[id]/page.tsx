@@ -1054,7 +1054,7 @@ export default function AdminDealDetailPage() {
               type="button"
               onClick={handleAvaEnhance}
               disabled={avaLoading}
-              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
             >
               {avaLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Ava is working...</>
