@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { ArrowRight, Check, RefreshCw, Image as ImageIcon, Share2, BarChart2, PenLine, Tag } from 'lucide-react';
+import { ArrowRight, Check, RefreshCw, Image as ImageIcon, Share2, BarChart2, PenLine, Tag, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 
 const COMMISSION_PRESETS = [10, 20, 30, 40, 50];
@@ -33,6 +32,30 @@ export function ROICalculator() {
   const [avgDealValue, setAvgDealValue]   = useState(50);
   const [claimsPerDeal, setClaimsPerDeal] = useState(20);
   const [showResults, setShowResults]     = useState(false);
+  const [loadingTier, setLoadingTier]     = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleCheckout = async (tier: string) => {
+    setLoadingTier(tier);
+    setCheckoutError(null);
+    try {
+      const res = await fetch('/api/stripe/create-guest-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tier, interval: 'month' }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) {
+        setCheckoutError(data.error || 'Failed to start checkout');
+        setLoadingTier(null);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setCheckoutError('Something went wrong. Please try again.');
+      setLoadingTier(null);
+    }
+  };
 
   const effectivePct = (() => {
     const n = parseFloat(customPct);
@@ -217,6 +240,12 @@ export function ROICalculator() {
             </p>
           </div>
 
+          {checkoutError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm text-center">
+              {checkoutError}
+            </div>
+          )}
+
           {/* Start here -- entry plan */}
           {tier.name !== BUSINESS.name && (
             <div className="bg-white rounded-2xl border border-gray-200 p-5">
@@ -234,9 +263,17 @@ export function ROICalculator() {
                   </li>
                 ))}
               </ul>
-              <Link href={`/auth/signup?type=vendor&plan=${tier.name.toLowerCase()}`} className="w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-400 text-orange-500 hover:bg-orange-50 rounded-xl font-bold transition-colors text-sm">
-                {t('roiCalc.startWith', { name: tier.name })} <ArrowRight className="w-4 h-4" />
-              </Link>
+              <button
+                onClick={() => handleCheckout(tier.name.toLowerCase())}
+                disabled={loadingTier !== null}
+                className={`w-full flex items-center justify-center gap-2 py-3 border-2 border-orange-400 text-orange-500 hover:bg-orange-50 rounded-xl font-bold transition-colors text-sm ${loadingTier !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                {loadingTier === tier.name.toLowerCase() ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                ) : (
+                  <>{t('roiCalc.startWith', { name: tier.name })} <ArrowRight className="w-4 h-4" /></>
+                )}
+              </button>
             </div>
           )}
 
@@ -292,12 +329,17 @@ export function ROICalculator() {
                 ))}
               </ul>
 
-              <Link
-                href="/auth/signup?type=vendor&plan=business"
-                className="w-full flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors"
+              <button
+                onClick={() => handleCheckout('business')}
+                disabled={loadingTier !== null}
+                className={`w-full flex items-center justify-center gap-2 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-lg transition-colors ${loadingTier !== null ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
-                {t('roiCalc.getBusinessKeepMore')} <ArrowRight className="w-4 h-4" />
-              </Link>
+                {loadingTier === 'business' ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
+                ) : (
+                  <>{t('roiCalc.getBusinessKeepMore')} <ArrowRight className="w-4 h-4" /></>
+                )}
+              </button>
             </div>
           </div>
 
