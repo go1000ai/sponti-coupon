@@ -48,6 +48,7 @@ export async function GET(request: Request) {
           const state = searchParams.get('state') || meta.state || null;
           const zip = searchParams.get('zip') || meta.zip || null;
           const category = searchParams.get('category') || meta.category || null;
+          const businessType = searchParams.get('businessType') || meta.business_type || 'physical';
 
           const vendorTz = meta.timezone || 'America/New_York';
           await adminClient.from('vendors').insert({
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
             state,
             zip,
             category,
+            business_type: businessType,
             timezone: vendorTz,
             subscription_tier: 'starter',
             subscription_status: 'incomplete',

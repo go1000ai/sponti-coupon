@@ -121,6 +121,8 @@ export async function GET(request: NextRequest) {
 
     filteredDeals = filteredDeals
       .filter(deal => {
+        // Online vendors — always show their deals (nationwide)
+        if (deal.vendor?.business_type === 'online') return true;
         // Exclude deals without vendor coordinates when location filtering is active
         if (!deal.vendor?.lat || !deal.vendor?.lng) return false;
         const distance = getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng);
@@ -128,7 +130,9 @@ export async function GET(request: NextRequest) {
       })
       .map(deal => ({
         ...deal,
-        distance: getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng),
+        distance: (deal.vendor?.business_type === 'online' || !deal.vendor?.lat || !deal.vendor?.lng)
+          ? null
+          : getDistance(userLat, userLng, deal.vendor.lat, deal.vendor.lng),
       }));
   }
 
@@ -167,7 +171,7 @@ export async function POST(request: NextRequest) {
   // Check subscription status and location
   const { data: vendor } = await supabase
     .from('vendors')
-    .select('subscription_tier, subscription_status, lat, lng, business_name')
+    .select('subscription_tier, subscription_status, lat, lng, business_name, business_type')
     .eq('id', user.id)
     .single();
 
@@ -175,7 +179,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Active subscription required to create deals' }, { status: 403 });
   }
 
-  if (!vendor.lat || !vendor.lng) {
+  // Online vendors don't need lat/lng — their deals show nationwide
+  if (vendor.business_type !== 'online' && !vendor.lat && !vendor.lng) {
     return NextResponse.json({
       error: 'Please add your business address in Settings before creating deals. Your address is needed so customers can find your deals nearby.',
     }, { status: 400 });

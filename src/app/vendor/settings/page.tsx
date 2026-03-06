@@ -98,6 +98,7 @@ export default function VendorSettingsPage() {
     category: '',
     description: '',
     website: '',
+    business_type: 'physical' as 'physical' | 'online' | 'both',
   });
 
   // Social media form
@@ -183,6 +184,7 @@ export default function VendorSettingsPage() {
           category: data.category || '',
           description: data.description || '',
           website: data.website || '',
+          business_type: data.business_type || 'physical',
         });
         // Check if the saved category is a custom one
         const presetCategories = [
@@ -351,8 +353,8 @@ export default function VendorSettingsPage() {
     e.preventDefault();
     if (!user) return;
 
-    // Validate required address fields
-    if (!businessForm.address?.trim() || !businessForm.city?.trim() || !businessForm.state?.trim() || !businessForm.zip?.trim()) {
+    // Validate required address fields (skip for online-only vendors)
+    if (businessForm.business_type !== 'online' && (!businessForm.address?.trim() || !businessForm.city?.trim() || !businessForm.state?.trim() || !businessForm.zip?.trim())) {
       setMessage({ type: 'error', text: t('vendor.settings.addressRequired') });
       return;
     }
@@ -392,6 +394,7 @@ export default function VendorSettingsPage() {
         category: businessForm.category || null,
         description: businessForm.description || null,
         website: businessForm.website || null,
+        business_type: businessForm.business_type,
         social_links: cleanedSocial,
         business_hours: hoursForm,
         notification_preferences: {
@@ -404,17 +407,19 @@ export default function VendorSettingsPage() {
     if (error || authError) {
       setMessage({ type: 'error', text: t('vendor.settings.saveFailed') });
     } else {
-      // Auto-geocode the address after saving
-      try {
-        const geoRes = await fetch('/api/vendor/geocode', { method: 'POST' });
-        const geoData = await geoRes.json();
-        if (geoData.estimated) {
-          setLocationEstimated(true);
-        } else if (geoRes.ok) {
-          setLocationEstimated(false);
+      // Auto-geocode the address after saving (skip for online-only vendors)
+      if (businessForm.business_type !== 'online') {
+        try {
+          const geoRes = await fetch('/api/vendor/geocode', { method: 'POST' });
+          const geoData = await geoRes.json();
+          if (geoData.estimated) {
+            setLocationEstimated(true);
+          } else if (geoRes.ok) {
+            setLocationEstimated(false);
+          }
+        } catch {
+          // Geocoding failure is non-blocking
         }
-      } catch {
-        // Geocoding failure is non-blocking
       }
       setMessage({ type: 'success', text: t('vendor.settings.settingsSaved') });
       setTimeout(() => setMessage(null), 4000);
@@ -753,49 +758,71 @@ export default function VendorSettingsPage() {
                 />
               </div>
 
-              {locationEstimated && (
-                <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 flex items-start gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">Your map location is estimated</p>
-                    <p className="text-xs text-yellow-700 mt-1">
-                      We couldn&apos;t verify your exact street address, so your location is based on your zip code.
-                      Please double-check your address below (watch for misspellings) and save again.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  <MapPin className="w-4 h-4 inline mr-1" /> {t('vendor.settings.address')} <span className="text-red-500">*</span>
-                </label>
+              {/* Online Business toggle */}
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-primary-300 cursor-pointer transition-colors">
                 <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={businessForm.address}
-                  onChange={handleBusinessChange}
-                  className="input-field"
-                  placeholder="123 Main St"
-                  required
+                  type="checkbox"
+                  checked={businessForm.business_type === 'online'}
+                  onChange={e => setBusinessForm(prev => ({
+                    ...prev,
+                    business_type: e.target.checked ? 'online' : 'physical',
+                    ...(e.target.checked ? { address: '', city: '', state: '', zip: '' } : {}),
+                  }))}
+                  className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                 />
-              </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-800">Online Business</span>
+                  <p className="text-xs text-gray-500">I sell online only — no physical storefront. My deals will be shown nationwide.</p>
+                </div>
+              </label>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.city')} <span className="text-red-500">*</span></label>
-                  <input id="city" name="city" type="text" value={businessForm.city} onChange={handleBusinessChange} className="input-field" required />
-                </div>
-                <div>
-                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.state')} <span className="text-red-500">*</span></label>
-                  <input id="state" name="state" type="text" value={businessForm.state} onChange={handleBusinessChange} className="input-field" placeholder="FL" required />
-                </div>
-                <div>
-                  <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.zipCode')} <span className="text-red-500">*</span></label>
-                  <input id="zip" name="zip" type="text" value={businessForm.zip} onChange={handleBusinessChange} className="input-field" placeholder="33101" required />
-                </div>
-              </div>
+              {businessForm.business_type !== 'online' && (
+                <>
+                  {locationEstimated && (
+                    <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-3 flex items-start gap-2">
+                      <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800">Your map location is estimated</p>
+                        <p className="text-xs text-yellow-700 mt-1">
+                          We couldn&apos;t verify your exact street address, so your location is based on your zip code.
+                          Please double-check your address below (watch for misspellings) and save again.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      <MapPin className="w-4 h-4 inline mr-1" /> {t('vendor.settings.address')} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      id="address"
+                      name="address"
+                      type="text"
+                      value={businessForm.address}
+                      onChange={handleBusinessChange}
+                      className="input-field"
+                      placeholder="123 Main St"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.city')} <span className="text-red-500">*</span></label>
+                      <input id="city" name="city" type="text" value={businessForm.city} onChange={handleBusinessChange} className="input-field" required />
+                    </div>
+                    <div>
+                      <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.state')} <span className="text-red-500">*</span></label>
+                      <input id="state" name="state" type="text" value={businessForm.state} onChange={handleBusinessChange} className="input-field" placeholder="FL" required />
+                    </div>
+                    <div>
+                      <label htmlFor="zip" className="block text-sm font-medium text-gray-700 mb-1">{t('vendor.settings.zipCode')} <span className="text-red-500">*</span></label>
+                      <input id="zip" name="zip" type="text" value={businessForm.zip} onChange={handleBusinessChange} className="input-field" placeholder="33101" required />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

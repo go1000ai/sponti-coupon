@@ -46,28 +46,32 @@ export async function POST(request: NextRequest) {
     });
 
     if (accountType === 'vendor') {
-      // Validate required address fields for vendors
-      if (!profileData.address || !profileData.city || !profileData.state || !profileData.zip) {
+      const isOnline = profileData.businessType === 'online';
+
+      // Validate required address fields for physical vendors
+      if (!isOnline && (!profileData.address || !profileData.city || !profileData.state || !profileData.zip)) {
         return NextResponse.json({ error: 'Business address is required (address, city, state, ZIP)' }, { status: 400 });
       }
 
-      // Auto-geocode the vendor address
+      // Auto-geocode the vendor address (skip for online-only vendors)
       let lat: number | null = null;
       let lng: number | null = null;
-      try {
-        const query = encodeURIComponent(`${profileData.address}, ${profileData.city}, ${profileData.state} ${profileData.zip}, USA`);
-        const geoRes = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
-          { headers: { 'User-Agent': 'SpontiCoupon/1.0' }, signal: AbortSignal.timeout(5000) }
-        );
-        if (!geoRes.ok) throw new Error('Geocoding request failed');
-        const geoData = await geoRes.json();
-        if (geoData && geoData.length > 0) {
-          lat = parseFloat(geoData[0].lat);
-          lng = parseFloat(geoData[0].lon);
+      if (!isOnline && profileData.address && profileData.city) {
+        try {
+          const query = encodeURIComponent(`${profileData.address}, ${profileData.city}, ${profileData.state} ${profileData.zip}, USA`);
+          const geoRes = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+            { headers: { 'User-Agent': 'SpontiCoupon/1.0' }, signal: AbortSignal.timeout(5000) }
+          );
+          if (!geoRes.ok) throw new Error('Geocoding request failed');
+          const geoData = await geoRes.json();
+          if (geoData && geoData.length > 0) {
+            lat = parseFloat(geoData[0].lat);
+            lng = parseFloat(geoData[0].lon);
+          }
+        } catch {
+          // Geocoding failed — vendor can update later from settings
         }
-      } catch {
-        // Geocoding failed — vendor can update later from settings
       }
 
       await adminClient.from('vendors').insert({
@@ -75,13 +79,14 @@ export async function POST(request: NextRequest) {
         business_name: profileData.businessName || 'My Business',
         email: user.email || '',
         phone: profileData.phone || null,
-        address: profileData.address,
-        city: profileData.city,
-        state: profileData.state,
-        zip: profileData.zip,
+        address: profileData.address || null,
+        city: profileData.city || null,
+        state: profileData.state || null,
+        zip: profileData.zip || null,
         lat,
         lng,
         category: profileData.category || null,
+        business_type: isOnline ? 'online' : 'physical',
         subscription_tier: 'starter',
         subscription_status: 'incomplete',
       });

@@ -50,6 +50,7 @@ function SignupForm() {
     businessName: '',
     address: '',
     category: '',
+    isOnlineBusiness: false,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -88,7 +89,7 @@ function SignupForm() {
       setError(t('auth.signup.errors.businessNameRequired'));
       return;
     }
-    if (accountType === 'vendor' && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
+    if (accountType === 'vendor' && !form.isOnlineBusiness && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
       setError(t('auth.signup.errors.addressRequired'));
       return;
     }
@@ -118,6 +119,7 @@ function SignupForm() {
       callbackParams.set('state', form.state);
       callbackParams.set('zip', form.zip);
       callbackParams.set('category', form.category);
+      if (form.isOnlineBusiness) callbackParams.set('businessType', 'online');
     } else {
       callbackParams.set('firstName', form.firstName);
       callbackParams.set('lastName', form.lastName);
@@ -441,16 +443,31 @@ function SignupForm() {
             </div>
           </div>
 
-          {/* Vendor-only: Address + Category */}
+          {/* Vendor-only: Online Business checkbox + Address + Category */}
           {accountType === 'vendor' && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessAddress')} <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                  <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.addressPlaceholder')} required />
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:border-primary-300 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={form.isOnlineBusiness}
+                  onChange={e => setForm(prev => ({ ...prev, isOnlineBusiness: e.target.checked, ...e.target.checked ? { address: '', city: '', state: '', zip: '' } : {} }))}
+                  className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-800">Online Business</span>
+                  <p className="text-xs text-gray-500">I sell online only — no physical storefront. My deals will be shown nationwide.</p>
                 </div>
-              </div>
+              </label>
+
+              {!form.isOnlineBusiness && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessAddress')} <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
+                    <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.addressPlaceholder')} required />
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.businessCategory')}</label>
                 <select name="category" value={form.category} onChange={handleChange} className="input-field">
@@ -470,23 +487,26 @@ function SignupForm() {
             </>
           )}
 
+          {/* Hide city/state/zip for online-only vendors */}
+          {!(accountType === 'vendor' && form.isOnlineBusiness) && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.city')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.city')} {accountType === 'vendor' && !form.isOnlineBusiness && <span className="text-red-500">*</span>}</label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.cityPlaceholder')} required={accountType === 'vendor'} />
+                <input name="city" value={form.city} onChange={handleChange} className="input-field pl-10" placeholder={t('auth.signup.cityPlaceholder')} required={accountType === 'vendor' && !form.isOnlineBusiness} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.state')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
-              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder={t('auth.signup.statePlaceholder')} required={accountType === 'vendor'} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.state')} {accountType === 'vendor' && !form.isOnlineBusiness && <span className="text-red-500">*</span>}</label>
+              <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder={t('auth.signup.statePlaceholder')} required={accountType === 'vendor' && !form.isOnlineBusiness} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.zip')} {accountType === 'vendor' && <span className="text-red-500">*</span>}</label>
-              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder={t('auth.signup.zipPlaceholder')} required={accountType === 'vendor'} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.zip')} {accountType === 'vendor' && !form.isOnlineBusiness && <span className="text-red-500">*</span>}</label>
+              <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder={t('auth.signup.zipPlaceholder')} required={accountType === 'vendor' && !form.isOnlineBusiness} />
             </div>
           </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{t('auth.signup.password')}</label>
