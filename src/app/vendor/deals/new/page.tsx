@@ -11,13 +11,14 @@ import {
   Tag, AlertCircle, ArrowLeft, Info, Image as ImageIcon,
   Sparkles, Upload, X, Loader2, CheckCircle2, Link as LinkIcon,
   Calendar, Clock, Lock, MapPin, Globe, ChevronDown, Wand2, Video, Save,
-  FileEdit, Trash2, Plus,
+  FileEdit, Trash2, Plus, Download, Ticket,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
 import type { Deal, DealVariant, VendorLocation } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
+import { PromoCodeTutorial } from '@/components/vendor/PromoCodeTutorial';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import DealAdvisor from '@/components/vendor/DealAdvisor';
 
@@ -301,6 +302,12 @@ export default function NewDealPage() {
   const [variants, setVariants] = useState<DealVariant[]>([]);
   const [editingVariant, setEditingVariant] = useState<DealVariant | null>(null);
   const [aiVariantsLoading, setAiVariantsLoading] = useState(false);
+  // Promo code state (for online/website deals)
+  const [promoCodeMode, setPromoCodeMode] = useState<'generate' | 'upload'>('generate');
+  const [promoCodeCount, setPromoCodeCount] = useState(25);
+  const [uploadedCodes, setUploadedCodes] = useState('');
+  const [promoCodesGenerated, setPromoCodesGenerated] = useState(false);
+  const [generatedDealId, setGeneratedDealId] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -879,9 +886,30 @@ export default function NewDealPage() {
         return;
       }
 
+      // Generate or upload promo codes for online/website deals
+      if (locationMode === 'website' && data.deal?.id) {
+        try {
+          const codesBody = promoCodeMode === 'generate'
+            ? { deal_id: data.deal.id, action: 'generate', count: promoCodeCount }
+            : { deal_id: data.deal.id, action: 'upload', codes: uploadedCodes.split('\n').map((c: string) => c.trim()).filter(Boolean) };
+
+          const codesRes = await fetch('/api/vendor/promo-codes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(codesBody),
+          });
+          if (codesRes.ok) {
+            setPromoCodesGenerated(true);
+            setGeneratedDealId(data.deal.id);
+          }
+        } catch {
+          // Non-blocking — vendor can generate codes later from edit page
+        }
+      }
+
       setDraftToast(false);
       setSuccessToast(true);
-      setTimeout(() => router.push('/vendor/deals'), 1500);
+      setTimeout(() => router.push('/vendor/deals'), 2000);
     } catch {
       setError('Failed to create deal. Please try again.');
     }
@@ -970,9 +998,20 @@ export default function NewDealPage() {
 
       {/* Deal Created Toast */}
       {successToast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-green-600/25 animate-in slide-in-from-top">
-          <CheckCircle2 className="w-5 h-5" />
-          <span className="font-medium text-sm">Deal created!</span>
+        <div className="fixed top-6 right-6 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg shadow-green-600/25 animate-in slide-in-from-top">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5" />
+            <span className="font-medium text-sm">Deal created!</span>
+          </div>
+          {promoCodesGenerated && generatedDealId && (
+            <button
+              type="button"
+              onClick={() => window.location.href = `/api/vendor/promo-codes/download?deal_id=${generatedDealId}`}
+              className="mt-2 flex items-center gap-1.5 text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" /> Download Promo Codes CSV
+            </button>
+          )}
         </div>
       )}
 
@@ -2215,21 +2254,81 @@ export default function NewDealPage() {
 
           {/* Website / Online Store URL */}
           {locationMode === 'website' && (
-            <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Website or Product Link</label>
-              <div className="relative">
-                <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  className="input-field pl-10"
-                  placeholder="https://www.yourstore.com/product"
-                />
+            <div className="mt-3 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Website or Product Link</label>
+                <div className="relative">
+                  <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="url"
+                    value={websiteUrl}
+                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                    className="input-field pl-10"
+                    placeholder="https://www.yourstore.com/product"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Link to your website or directly to the product page where customers can redeem this deal.
+                </p>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Link to your website or directly to the product page where customers can redeem this deal.
-              </p>
+
+              {/* Promo Codes Section */}
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Ticket className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-sm font-semibold text-emerald-800">Promo Codes</h4>
+                </div>
+                <p className="text-xs text-emerald-700">
+                  Each customer who claims this deal will receive a unique promo code to use at checkout on your website.
+                </p>
+
+                {/* Toggle: Generate vs Upload */}
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setPromoCodeMode('generate')}
+                    className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${promoCodeMode === 'generate' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'}`}>
+                    SpontiCoupon Generates
+                  </button>
+                  <button type="button" onClick={() => setPromoCodeMode('upload')}
+                    className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${promoCodeMode === 'upload' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'}`}>
+                    I Have My Own Codes
+                  </button>
+                </div>
+
+                {promoCodeMode === 'generate' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-emerald-700 mb-1">Number of Codes</label>
+                    <select value={promoCodeCount} onChange={e => setPromoCodeCount(Number(e.target.value))}
+                      className="input-field text-sm">
+                      <option value={10}>10 codes</option>
+                      <option value={25}>25 codes</option>
+                      <option value={50}>50 codes</option>
+                      <option value={100}>100 codes</option>
+                      <option value={200}>200 codes</option>
+                      <option value={500}>500 codes</option>
+                    </select>
+                    <p className="text-xs text-emerald-600 mt-1">
+                      We&apos;ll generate {promoCodeCount} unique codes (e.g., SPONTI-A7X3K9). After creating the deal, download the CSV and import it into your Shopify/WooCommerce store.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-emerald-700 mb-1">Paste Your Codes (one per line)</label>
+                    <textarea
+                      value={uploadedCodes}
+                      onChange={e => setUploadedCodes(e.target.value)}
+                      className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400"
+                      rows={5}
+                      placeholder={"SUMMER25OFF\nSAVE10NOW\nDEAL2026XY\n..."}
+                    />
+                    <p className="text-xs text-emerald-600 mt-1">
+                      {uploadedCodes.split('\n').filter(c => c.trim()).length} code{uploadedCodes.split('\n').filter(c => c.trim()).length !== 1 ? 's' : ''} entered. Make sure these codes are already set up on your website as discount codes.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Tutorial: How to import codes */}
+              {promoCodeMode === 'generate' && <PromoCodeTutorial />}
             </div>
           )}
 

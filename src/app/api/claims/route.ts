@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { generateUniqueRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
 import { rateLimit } from '@/lib/rate-limit';
+import { assignPromoCode, getAvailableCodeCount } from '@/lib/promo-codes';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -97,10 +98,23 @@ export async function POST(request: NextRequest) {
     claimExpiresAt = new Date(Date.now() + redemptionWindowDays * 24 * 60 * 60 * 1000).toISOString();
   }
 
-  // ── No deposit required — instant QR + redemption code ──
+  // ── Check if this is an online deal with promo codes ──
+  const isOnlineDeal = !!deal.website_url;
+  let hasPromoCodes = false;
+  if (isOnlineDeal) {
+    const available = await getAvailableCodeCount(serviceClient, deal_id);
+    if (available > 0) {
+      hasPromoCodes = true;
+    } else {
+      // Online deal but no codes left
+      return NextResponse.json({ error: 'All promo codes for this deal have been claimed' }, { status: 400 });
+    }
+  }
+
+  // ── No deposit required — instant QR + redemption code (or promo code for online) ──
   if (!deal.deposit_amount || deal.deposit_amount <= 0) {
-    const qrCode = uuidv4();
-    const redemptionCode = await generateUniqueRedemptionCode(supabase);
+    const qrCode = isOnlineDeal ? null : uuidv4();
+    const redemptionCode = isOnlineDeal ? null : await generateUniqueRedemptionCode(supabase);
     const { data: claim, error: claimError } = await supabase
       .from('claims')
       .insert({
@@ -110,7 +124,7 @@ export async function POST(request: NextRequest) {
         deposit_confirmed: true,
         deposit_confirmed_at: new Date().toISOString(),
         qr_code: qrCode,
-        qr_code_url: `${APP_URL}/redeem/${qrCode}`,
+        qr_code_url: qrCode ? `${APP_URL}/redeem/${qrCode}` : null,
         redemption_code: redemptionCode,
         expires_at: claimExpiresAt,
         payment_tier: null,
@@ -123,11 +137,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: claimError.message }, { status: 500 });
     }
 
+    // Assign promo code for online deals
+    let promoCode: string | null = null;
+    if (hasPromoCodes && claim) {
+      promoCode = await assignPromoCode(serviceClient, deal_id, claim.id);
+      if (!promoCode) {
+        // Rollback: delete the claim if no code available (race condition)
+        await supabase.from('claims').delete().eq('id', claim.id);
+        return NextResponse.json({ error: 'All promo codes for this deal have been claimed' }, { status: 400 });
+      }
+    }
+
     await supabase.rpc('increment_claims_count', { deal_id_param: deal_id });
 
     return NextResponse.json({
-      claim,
+      claim: { ...claim, promo_code: promoCode },
       qr_code: qrCode,
+      promo_code: promoCode,
       redirect_url: null,
       payment_tier: null,
     });

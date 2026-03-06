@@ -181,6 +181,7 @@ export interface Claim {
   qr_code: string | null;
   qr_code_url: string | null;
   redemption_code: string | null;
+  promo_code: string | null;
   redeemed: boolean;
   redeemed_at: string | null;
   review_request_sent_at: string | null;

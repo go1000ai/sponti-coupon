@@ -13,7 +13,7 @@ import {
   Copy, Check, ExternalLink, Store, CreditCard,
   X, MapPin, Tag, Shield, Phone, Globe, Mail, Send, Trash2, Loader2, AlertTriangle,
   Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target,
-  Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,
+  Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music, Ticket,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { LoyaltyCards } from '@/components/customer/LoyaltyCards';
@@ -394,8 +394,9 @@ function DashboardMyDealsContent() {
           status={getStatus(selectedClaim)}
           codeCopied={codeCopied}
           onCopy={() => {
-            if (selectedClaim.redemption_code) {
-              navigator.clipboard.writeText(selectedClaim.redemption_code);
+            const code = selectedClaim.promo_code || selectedClaim.redemption_code;
+            if (code) {
+              navigator.clipboard.writeText(code);
               setCodeCopied(true);
               setTimeout(() => setCodeCopied(false), 2000);
             }
@@ -643,7 +644,7 @@ function DetailModal({
 
   // Auto-open redeem tab if active
   useEffect(() => {
-    if (status === 'active' && claim.redemption_code) setActiveTab('redeem');
+    if (status === 'active' && (claim.redemption_code || claim.promo_code)) setActiveTab('redeem');
   }, [status, claim.redemption_code]);
 
   const handleCancel = async () => {
@@ -1076,61 +1077,109 @@ function DetailModal({
           )}
 
           {/* ── REDEEM TAB ── */}
-          {activeTab === 'redeem' && status === 'active' && claim.redemption_code && (
+          {activeTab === 'redeem' && status === 'active' && (claim.promo_code || claim.redemption_code) && (
             <div className="space-y-5">
-              {/* 6-Digit Code */}
-              <div className="text-center">
-                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-500 mb-3">
-                  <Zap className="w-3.5 h-3.5" />
-                  {t('customer.myDeals.tellVendorCode')}
-                </div>
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                  {claim.redemption_code.split('').map((digit, i) => (
-                    <span
-                      key={i}
-                      className="code-digit w-11 h-14 bg-gradient-to-b from-white to-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-center text-2xl font-extrabold text-gray-900 shadow-sm"
-                      style={{ animationDelay: `${i * 0.08}s` }}
+              {/* ── ONLINE DEAL: Promo Code + Shop Now ── */}
+              {claim.promo_code && claim.deal?.website_url ? (
+                <div className="space-y-5">
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 mb-3">
+                      <Ticket className="w-3.5 h-3.5" />
+                      Your Promo Code
+                    </div>
+                    <div className="flex items-center justify-center gap-1 sm:gap-1.5">
+                      {claim.promo_code.split('').map((char, i) => (
+                        <span
+                          key={i}
+                          className={`code-digit ${char === '-' ? 'w-4' : 'w-9 h-12 sm:w-11 sm:h-14'} bg-gradient-to-b from-white to-gray-50 border-2 border-emerald-200 rounded-xl flex items-center justify-center text-lg sm:text-2xl font-extrabold text-gray-900 shadow-sm`}
+                          style={{ animationDelay: `${i * 0.05}s` }}
+                        >
+                          {char}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={onCopy}
+                      className={`mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        codeCopied ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
                     >
-                      {digit}
-                    </span>
-                  ))}
-                </div>
-                <button
-                  onClick={onCopy}
-                  className={`mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    codeCopied
-                      ? 'bg-green-50 text-green-600'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {codeCopied ? <><Check className="w-4 h-4" /> {t('customer.myDeals.copied')}</> : <><Copy className="w-4 h-4" /> {t('customer.myDeals.copyCode')}</>}
-                </button>
-              </div>
+                      {codeCopied ? <><Check className="w-4 h-4" /> Copied!</> : <><Copy className="w-4 h-4" /> Copy Code</>}
+                    </button>
+                  </div>
 
-              {/* Divider */}
-              <div className="flex items-center gap-3">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-                <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{t('customer.myDeals.orScan')}</span>
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-              </div>
+                  <p className="text-center text-xs text-gray-500">
+                    Use this code at checkout on the vendor&apos;s website to get your deal price.
+                  </p>
 
-              {/* QR Code */}
-              <div className="text-center">
-                <div className="qr-reveal inline-block bg-white border-2 border-gray-200 rounded-2xl p-5 shadow-sm">
-                  {qrLoading ? (
-                    <div className="w-40 h-40 flex items-center justify-center">
-                      <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
-                    </div>
-                  ) : qrDataUrl ? (
-                    <img src={qrDataUrl} alt="QR Code" className="w-40 h-40" />
-                  ) : (
-                    <div className="w-40 h-40 bg-gray-50 flex items-center justify-center rounded-xl">
-                      <QrCode className="w-20 h-20 text-gray-300" />
-                    </div>
-                  )}
+                  <a
+                    href={claim.deal.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white rounded-xl font-bold text-base shadow-lg shadow-primary-500/25 transition-all"
+                  >
+                    <Globe className="w-5 h-5" />
+                    Shop Now
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
                 </div>
-                <p className="text-xs text-gray-400 mt-3">{t('customer.myDeals.showQRToVendor')}</p>
-              </div>
+              ) : claim.redemption_code ? (
+                /* ── PHYSICAL DEAL: 6-Digit Code + QR ── */
+                <>
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-500 mb-3">
+                      <Zap className="w-3.5 h-3.5" />
+                      {t('customer.myDeals.tellVendorCode')}
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+                      {claim.redemption_code.split('').map((digit, i) => (
+                        <span
+                          key={i}
+                          className="code-digit w-11 h-14 bg-gradient-to-b from-white to-gray-50 border-2 border-gray-200 rounded-xl flex items-center justify-center text-2xl font-extrabold text-gray-900 shadow-sm"
+                          style={{ animationDelay: `${i * 0.08}s` }}
+                        >
+                          {digit}
+                        </span>
+                      ))}
+                    </div>
+                    <button
+                      onClick={onCopy}
+                      className={`mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        codeCopied
+                          ? 'bg-green-50 text-green-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {codeCopied ? <><Check className="w-4 h-4" /> {t('customer.myDeals.copied')}</> : <><Copy className="w-4 h-4" /> {t('customer.myDeals.copyCode')}</>}
+                    </button>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                    <span className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">{t('customer.myDeals.orScan')}</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="text-center">
+                    <div className="qr-reveal inline-block bg-white border-2 border-gray-200 rounded-2xl p-5 shadow-sm">
+                      {qrLoading ? (
+                        <div className="w-40 h-40 flex items-center justify-center">
+                          <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+                        </div>
+                      ) : qrDataUrl ? (
+                        <img src={qrDataUrl} alt="QR Code" className="w-40 h-40" />
+                      ) : (
+                        <div className="w-40 h-40 bg-gray-50 flex items-center justify-center rounded-xl">
+                          <QrCode className="w-20 h-20 text-gray-300" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-3">{t('customer.myDeals.showQRToVendor')}</p>
+                  </div>
+                </>
+              ) : null}
             </div>
           )}
 
