@@ -36,7 +36,10 @@ import {
   Clock,
   Video,
   Plus,
+  Wand2,
 } from 'lucide-react';
+import ImagePickerModal from '@/components/vendor/ImagePickerModal';
+import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 
 // ---------- Types ----------
 
@@ -239,6 +242,18 @@ export default function AdminDealDetailPage() {
   const [copiedId, setCopiedId] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
 
+  // Media library & AI state
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [aiImageLoading, setAiImageLoading] = useState(false);
+  const [customImagePrompt, setCustomImagePrompt] = useState('');
+  const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [videoElapsed, setVideoElapsed] = useState(0);
+  const [videoPrompt, setVideoPrompt] = useState('');
+  const [searchTags, setSearchTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [generatingTags, setGeneratingTags] = useState(false);
+
   // ---------- Build form data from deal ----------
   const buildFormData = useCallback((d: Deal) => {
     return {
@@ -264,6 +279,7 @@ export default function AdminDealDetailPage() {
       fine_print: d.fine_print || '',
       terms_and_conditions: d.terms_and_conditions || '',
       video_urls: d.video_urls || [],
+      search_tags: d.search_tags || [],
     };
   }, []);
 
@@ -289,6 +305,7 @@ export default function AdminDealDetailPage() {
         const fd = buildFormData(foundDeal);
         setFormData(fd);
         setOriginalData(fd);
+        setSearchTags(foundDeal.search_tags || []);
 
         if (catRes.ok) {
           const catData = await catRes.json();
@@ -413,11 +430,139 @@ export default function AdminDealDetailPage() {
     updateField('video_urls', currentUrls);
   };
 
+  // ---------- Video progress animation ----------
+  useEffect(() => {
+    if (!aiVideoLoading) { setVideoProgress(0); setVideoElapsed(0); return; }
+    const interval = setInterval(() => {
+      setVideoElapsed(prev => prev + 1);
+      setVideoProgress(prev => {
+        if (prev >= 90) return 90;
+        if (prev < 30) return prev + 2;
+        if (prev < 60) return prev + 1;
+        return prev + 0.3;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [aiVideoLoading]);
+
+  // ---------- AI Image Generation ----------
+  const handleAiImageGenerate = async () => {
+    if (!deal) return;
+    if (!formData.title && !customImagePrompt) { setError('Enter a deal title or describe the image you want.'); return; }
+    setAiImageLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/vendor/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title || customImagePrompt,
+          description: formData.description,
+          custom_prompt: customImagePrompt || undefined,
+          vendor_id: deal.vendor_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Failed to generate image'); setAiImageLoading(false); return; }
+      updateField('image_url', data.url);
+      setToast('AI image generated');
+    } catch { setError('Failed to generate image.'); }
+    setAiImageLoading(false);
+  };
+
+  // ---------- AI Video Generation ----------
+  const handleAiVideoGenerate = async () => {
+    if (!deal) return;
+    const sourceImage = formData.image_url as string;
+    if (!sourceImage) { setError('Add a deal image first so Ava can turn it into a video.'); return; }
+    setAiVideoLoading(true);
+    setVideoProgress(0);
+    setVideoElapsed(0);
+    setError('');
+    try {
+      const startRes = await fetch('/api/vendor/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: sourceImage,
+          title: formData.title,
+          description: formData.description,
+          video_prompt: videoPrompt || undefined,
+          vendor_id: deal.vendor_id,
+        }),
+      });
+      const startData = await startRes.json();
+      if (!startRes.ok) { setError(startData.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
+      if (startData.status === 'done' && startData.url) {
+        const currentUrls = (formData.video_urls as string[]) || [];
+        updateField('video_urls', [...currentUrls, startData.url]);
+        setAiVideoLoading(false);
+        setToast('AI video generated');
+        return;
+      }
+
+      let operationName = startData.operation_name;
+      if (!operationName) { setError('Failed to start video generation'); setAiVideoLoading(false); return; }
+
+      const maxPollTime = 5 * 60 * 1000;
+      const pollInterval = 10_000;
+      const pollStart = Date.now();
+      while (Date.now() - pollStart < maxPollTime) {
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        const pollRes = await fetch('/api/vendor/generate-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operation_name: operationName, vendor_id: deal.vendor_id }),
+        });
+        const pollData = await pollRes.json();
+        if (!pollRes.ok) { setError(pollData.error || 'Video generation failed'); setAiVideoLoading(false); return; }
+        if (pollData.retried && pollData.operation_name) { operationName = pollData.operation_name; continue; }
+        if (pollData.status === 'done' && pollData.url) {
+          const currentUrls = (formData.video_urls as string[]) || [];
+          updateField('video_urls', [...currentUrls, pollData.url]);
+          setAiVideoLoading(false);
+          setToast('AI video generated');
+          return;
+        }
+      }
+      setError('Video generation timed out.');
+    } catch { setError('Failed to generate video.'); }
+    setAiVideoLoading(false);
+  };
+
+  // ---------- AI Tag Generation ----------
+  const generateSearchTags = async () => {
+    if (!deal) return;
+    if (!(formData.title as string)?.trim()) { setError('Enter a deal title first.'); return; }
+    setGeneratingTags(true);
+    try {
+      const res = await fetch('/api/vendor/generate-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          deal_type: deal.deal_type || 'regular',
+          original_price: formData.original_price ? Number(formData.original_price) : null,
+          deal_price: formData.deal_price ? Number(formData.deal_price) : null,
+          vendor_id: deal.vendor_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Failed to generate tags');
+      else setSearchTags(data.tags || []);
+    } catch { setError('Failed to generate tags.'); }
+    setGeneratingTags(false);
+  };
+
   // ---------- Save ----------
   const handleSave = async () => {
     if (!deal || !hasChanges) return;
     setSaving(true);
     try {
+      // Sync search_tags into formData before diffing
+      formData.search_tags = searchTags;
+
       // Build only changed fields
       const changedFields: Record<string, unknown> = {};
       for (const key of Object.keys(formData)) {
@@ -618,6 +763,13 @@ export default function AdminDealDetailPage() {
                     className="w-full h-64 object-cover"
                   />
                   <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowImagePicker(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B]/80 backdrop-blur-sm rounded-lg hover:bg-[#E8632B] transition-colors"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" /> Browse Library
+                    </button>
                     <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
                       <Upload className="w-3.5 h-3.5" />
                       {uploadingImage ? 'Uploading...' : 'Change Image'}
@@ -641,31 +793,70 @@ export default function AdminDealDetailPage() {
                   </div>
                 </>
               ) : (
-                <label className="cursor-pointer block">
-                  <div className="h-64 bg-gradient-to-br from-primary-500 to-secondary-500 flex flex-col items-center justify-center gap-3 group">
-                    <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <div className="h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-center gap-3">
+                  <div className="flex items-center gap-3">
+                    <label className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors">
                       {uploadingImage ? (
-                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...</>
                       ) : (
-                        <ImageIcon className="w-8 h-8 text-white" />
+                        <><Upload className="w-3.5 h-3.5" /> Upload Image</>
                       )}
-                    </div>
-                    <span className="text-white/90 text-sm font-medium">
-                      {uploadingImage ? 'Uploading...' : 'Upload Deal Image'}
-                    </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(file);
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowImagePicker(true)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-[#E8632B] rounded-lg hover:bg-[#D55A25] transition-colors"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" /> Browse Library
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAiImageGenerate}
+                      disabled={aiImageLoading}
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-colors"
+                    >
+                      {aiImageLoading ? (
+                        <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating...</>
+                      ) : (
+                        <><Wand2 className="w-3.5 h-3.5" /> AI Generate</>
+                      )}
+                    </button>
                   </div>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    disabled={uploadingImage}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file);
-                    }}
-                  />
-                </label>
+                  <span className="text-gray-400 text-xs">No image set</span>
+                </div>
               )}
+            </div>
+
+            {/* AI Image Generation (when image exists — generate a new one) */}
+            <div className="p-3 border-t border-gray-100 bg-gray-50/50">
+              <div className="flex items-center gap-2">
+                <input
+                  value={customImagePrompt}
+                  onChange={e => setCustomImagePrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
+                  className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
+                  placeholder="Describe image for Ava AI (optional)..."
+                />
+                <button
+                  type="button"
+                  onClick={handleAiImageGenerate}
+                  disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                >
+                  {aiImageLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                  Ava
+                </button>
+              </div>
             </div>
 
             {/* Gallery images */}
@@ -718,6 +909,32 @@ export default function AdminDealDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ImagePickerModal — vendor's media library */}
+          {deal && (
+            <ImagePickerModal
+              open={showImagePicker}
+              onClose={() => setShowImagePicker(false)}
+              initialImages={[
+                ...(formData.image_url ? [formData.image_url as string] : []),
+                ...((formData.image_urls as string[]) || []),
+              ]}
+              initialMainImage={formData.image_url as string}
+              maxImages={11}
+              vendorId={deal.vendor_id}
+              onConfirm={(images: SelectedImage[]) => {
+                if (images.length === 0) {
+                  updateField('image_url', '');
+                  updateField('image_urls', []);
+                } else {
+                  const mainImg = images.find(img => img.isMain)?.url || images[0].url;
+                  updateField('image_url', mainImg);
+                  updateField('image_urls', images.filter(img => img.url !== mainImg).map(img => img.url));
+                }
+                setShowImagePicker(false);
+              }}
+            />
+          )}
 
           {/* 2. Title & Description Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.2s_forwards]">
@@ -855,31 +1072,129 @@ export default function AdminDealDetailPage() {
                         </button>
                       </div>
                     ))}
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
-                      {uploadingVideo ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Uploading video...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          Upload Video
-                        </>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
+                        {uploadingVideo ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Uploading video...</>
+                        ) : (
+                          <><Upload className="w-4 h-4" /> Upload Video</>
+                        )}
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                          className="hidden"
+                          disabled={uploadingVideo}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleVideoUpload(file);
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleAiVideoGenerate}
+                        disabled={aiVideoLoading || !(formData.image_url as string)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-emerald-600 hover:text-emerald-700 border border-dashed border-emerald-200 hover:border-emerald-400 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {aiVideoLoading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+                        ) : (
+                          <><Video className="w-4 h-4" /> Ava Video</>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Video prompt input */}
+                    <div>
                       <input
-                        type="file"
-                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                        className="hidden"
-                        disabled={uploadingVideo}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleVideoUpload(file);
-                          e.target.value = '';
-                        }}
+                        value={videoPrompt}
+                        onChange={e => setVideoPrompt(e.target.value)}
+                        className="w-full px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
+                        placeholder="Describe video style (optional)..."
                       />
-                    </label>
-                    <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
+                    </div>
+
+                    {/* Video generation progress */}
+                    {aiVideoLoading && (
+                      <div className="space-y-1.5">
+                        <div className="w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
+                          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-emerald-600">
+                          <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
+                          <span className="animate-pulse">
+                            {videoElapsed < 60 ? 'Est. 1-3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                      <p>MP4, WebM, MOV, or AVI. Max 100MB.</p>
+                      {!(formData.image_url as string) && (
+                        <span className="text-amber-500">Add a deal image to enable AI video</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Search Tags */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-medium text-gray-700">Search Tags</label>
+                    <button
+                      type="button"
+                      onClick={generateSearchTags}
+                      disabled={generatingTags || !(formData.title as string)?.trim()}
+                      className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white text-[10px] font-medium rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                    >
+                      {generatingTags ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      ) : (
+                        <img src="/ava.png" alt="" className="w-3 h-3 rounded-full" />
+                      )}
+                      Ava Tags
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {searchTags.map((tag, i) => (
+                      <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
+                        {tag}
+                        <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}>
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      value={newTag}
+                      onChange={e => setNewTag(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                      placeholder="Custom tag..."
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                            setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                            setNewTag('');
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                          setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                          setNewTag('');
+                        }
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium"
+                    >
+                      Add
+                    </button>
                   </div>
                 </div>
               </div>

@@ -19,31 +19,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify vendor role
-  const { data: profile } = await supabase
+  const serviceClient = await createServiceRoleClient();
+
+  // Verify vendor or admin role
+  const { data: profile } = await serviceClient
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'vendor') {
+  const isAdmin = profile?.role === 'admin';
+  if (profile?.role !== 'vendor' && !isAdmin) {
     return NextResponse.json({ error: 'Only vendors can generate images' }, { status: 403 });
   }
 
+  // Admin can pass vendor_id in body to act on behalf of a vendor
+  const body = await request.json();
+  const vendorId = (isAdmin && body.vendor_id) ? body.vendor_id : user.id;
+
   // Get vendor info for context
-  const { data: vendor } = await supabase
+  const { data: vendor } = await serviceClient
     .from('vendors')
     .select('business_name, category, subscription_tier')
-    .eq('id', user.id)
+    .eq('id', vendorId)
     .single();
 
-  // Check tier access (same gate as AI deal assistant — Business+)
-  const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-  if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
-    return NextResponse.json(
-      { error: 'AI Image Generation requires a Business plan or higher. Upgrade at /vendor/subscription.' },
-      { status: 403 }
-    );
+  // Check tier access — skip for admin
+  if (!isAdmin) {
+    const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
+    if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
+      return NextResponse.json(
+        { error: 'AI Image Generation requires a Business plan or higher. Upgrade at /vendor/subscription.' },
+        { status: 403 }
+      );
+    }
   }
 
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -51,7 +60,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Image generation service not configured' }, { status: 500 });
   }
 
-  const body = await request.json();
   const { title, description, category, custom_prompt } = body;
 
   if (!title && !custom_prompt) {
@@ -108,9 +116,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload to Supabase Storage
-    const serviceClient = await createServiceRoleClient();
     const ext = mimeType === 'image/jpeg' ? 'jpg' : 'png';
-    const filename = `${user.id}/${Date.now()}-ai-generated.${ext}`;
+    const filename = `${vendorId}/${Date.now()}-ai-generated.${ext}`;
 
     // Ensure bucket exists
     const { data: buckets } = await serviceClient.storage.listBuckets();
@@ -143,7 +150,7 @@ export async function POST(request: NextRequest) {
 
     // Auto-record in vendor media library
     await serviceClient.from('vendor_media').insert({
-      vendor_id: user.id,
+      vendor_id: vendorId,
       type: 'image',
       url: brandedUrl,
       storage_path: filename,

@@ -21,28 +21,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  const serviceClient = await createServiceRoleClient();
+
+  const { data: profile } = await serviceClient
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'vendor') {
+  const isAdmin = profile?.role === 'admin';
+  if (profile?.role !== 'vendor' && !isAdmin) {
     return NextResponse.json({ error: 'Only vendors can generate videos' }, { status: 403 });
   }
 
-  const { data: vendor } = await supabase
+  const body = await request.json();
+  const vendorId = (isAdmin && body.vendor_id) ? body.vendor_id : user.id;
+
+  const { data: vendor } = await serviceClient
     .from('vendors')
     .select('business_name, category, subscription_tier')
-    .eq('id', user.id)
+    .eq('id', vendorId)
     .single();
 
-  const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-  if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
-    return NextResponse.json(
-      { error: 'AI Video Generation requires a Business plan or higher.' },
-      { status: 403 }
-    );
+  if (!isAdmin) {
+    const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
+    if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
+      return NextResponse.json(
+        { error: 'AI Video Generation requires a Business plan or higher.' },
+        { status: 403 }
+      );
+    }
   }
 
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -50,11 +58,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Video generation service not configured' }, { status: 500 });
   }
 
-  const body = await request.json();
-
   // ─── Phase 2: Poll an existing operation ─────────────────────
   if (body.operation_name) {
-    return handlePoll(body.operation_name, user.id, geminiKey);
+    return handlePoll(body.operation_name, vendorId, geminiKey);
   }
 
   // ─── Phase 1: Start a new generation ─────────────────────────
@@ -122,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
     console.log('[VideoGen] Model pre-flight OK');
 
-    console.log('[VideoGen] Starting Veo generation for vendor:', user.id, 'image size:', imageBuffer.length, 'bytes, mime:', imageMimeType);
+    console.log('[VideoGen] Starting Veo generation for vendor:', vendorId, 'image size:', imageBuffer.length, 'bytes, mime:', imageMimeType);
     const operation = await ai.models.generateVideos({
       model: 'veo-3.1-generate-preview',
       prompt,
@@ -155,7 +161,7 @@ export async function POST(request: NextRequest) {
 
     // If the operation is already done (unlikely but possible), handle it immediately
     if (operation.done) {
-      return await finishOperation(operation, user.id, geminiKey);
+      return await finishOperation(operation, vendorId, geminiKey);
     }
 
     // Return the operation name so the client can poll

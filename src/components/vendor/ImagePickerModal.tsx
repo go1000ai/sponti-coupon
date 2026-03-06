@@ -23,6 +23,8 @@ interface ImagePickerModalProps {
   initialMainImage?: string;
   /** Max total images allowed (default 11 = 1 main + 10 additional). */
   maxImages?: number;
+  /** Optional vendor ID — admin can load a different vendor's media library. */
+  vendorId?: string;
 }
 
 export default function ImagePickerModal({
@@ -32,6 +34,7 @@ export default function ImagePickerModal({
   initialImages = [],
   initialMainImage,
   maxImages = 11,
+  vendorId,
 }: ImagePickerModalProps) {
   const { t } = useLanguage();
   const [media, setMedia] = useState<VendorMedia[]>([]);
@@ -57,12 +60,13 @@ export default function ImagePickerModal({
     setLoading(true);
     try {
       const params = new URLSearchParams({ limit: '50', type: 'image' });
+      if (vendorId) params.set('vendor_id', vendorId);
       const res = await fetch(`/api/vendor/media?${params}`);
       const data = await res.json();
       if (res.ok) setMedia(data.media);
     } catch { /* silent */ }
     setLoading(false);
-  }, []);
+  }, [vendorId]);
 
   useEffect(() => {
     if (open) {

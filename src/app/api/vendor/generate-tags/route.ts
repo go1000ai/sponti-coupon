@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { GoogleGenAI } from '@google/genai';
 import { rateLimit } from '@/lib/rate-limit';
 
@@ -16,14 +16,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify vendor role
-  const { data: profile } = await supabase
+  const serviceClient = await createServiceRoleClient();
+
+  const { data: profile } = await serviceClient
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'vendor') {
+  const isAdmin = profile?.role === 'admin';
+  if (profile?.role !== 'vendor' && !isAdmin) {
     return NextResponse.json({ error: 'Only vendors can generate tags' }, { status: 403 });
   }
 
@@ -33,13 +35,14 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { title, description, deal_type, original_price, deal_price } = body;
+  const { title, description, deal_type, original_price, deal_price, vendor_id: bodyVendorId } = body;
+  const vendorId = (isAdmin && bodyVendorId) ? bodyVendorId : user.id;
 
   // Get vendor info for context
-  const { data: vendor } = await supabase
+  const { data: vendor } = await serviceClient
     .from('vendors')
     .select('business_name, category, description, city, state')
-    .eq('id', user.id)
+    .eq('id', vendorId)
     .single();
 
   if (!title) {
