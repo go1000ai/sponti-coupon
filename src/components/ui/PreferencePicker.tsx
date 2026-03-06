@@ -81,14 +81,14 @@ export function PreferencePicker() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:pb-0"
+      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:py-8"
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
     >
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up-fade max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up-fade max-h-[85vh] overflow-y-auto">
         {step === 'pick' ? (
           <>
             {/* Header */}
-            <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-8 pb-10">
+            <div className="relative bg-gradient-to-br from-secondary-500 via-secondary-400 to-primary-500 px-6 pt-6 pb-8">
               {/* Decorative circles */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
