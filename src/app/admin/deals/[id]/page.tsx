@@ -38,6 +38,7 @@ import {
   Plus,
   Wand2,
   Info,
+  Sparkles,
 } from 'lucide-react';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
@@ -255,6 +256,7 @@ export default function AdminDealDetailPage() {
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
+  const [avaLoading, setAvaLoading] = useState(false);
 
   // ---------- Build form data from deal ----------
   const buildFormData = useCallback((d: Deal) => {
@@ -555,6 +557,45 @@ export default function AdminDealDetailPage() {
       else setSearchTags(data.tags || []);
     } catch { setError('Failed to generate tags.'); }
     setGeneratingTags(false);
+  };
+
+  // ---------- Ava AI Enhance ----------
+  const handleAvaEnhance = async () => {
+    if (!deal) return;
+    setAvaLoading(true);
+    try {
+      const res = await fetch('/api/vendor/ai-deal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor_id: deal.vendor_id,
+          deal_type: formData.deal_type,
+          prompt: `Improve this existing deal: "${formData.title}". Description: "${formData.description}". Category: ${deal.category_id || 'general'}. Original price: $${formData.original_price}, Deal price: $${formData.deal_price}.`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setToast(data.error || 'Ava could not enhance this deal');
+      } else {
+        const s = data.suggestion;
+        setFormData(prev => ({
+          ...prev,
+          ...(s.title && { title: s.title }),
+          ...(s.description && { description: s.description }),
+          ...(s.how_it_works && { how_it_works: s.how_it_works }),
+          ...(s.highlights?.length && { highlights: s.highlights }),
+          ...(s.fine_print && { fine_print: s.fine_print }),
+          ...(s.terms_and_conditions && { terms_and_conditions: s.terms_and_conditions }),
+          ...(s.original_price && { original_price: s.original_price }),
+          ...(s.deal_price && { deal_price: s.deal_price }),
+        }));
+        setHasChanges(true);
+        setToast('Ava enhanced the deal! Review the changes below.');
+      }
+    } catch {
+      setToast('Failed to connect to Ava.');
+    }
+    setAvaLoading(false);
   };
 
   // ---------- Save ----------
@@ -1007,6 +1048,23 @@ export default function AdminDealDetailPage() {
               className="w-full mt-3 px-3 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
               placeholder="Describe this deal..."
             />
+
+            {/* Ava AI Enhance */}
+            <button
+              type="button"
+              onClick={handleAvaEnhance}
+              disabled={avaLoading}
+              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
+            >
+              {avaLoading ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Ava is working...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Enhance with Ava AI</>
+              )}
+            </button>
+            <p className="mt-1 text-xs text-gray-400">
+              Ava will generate/improve the title, description, highlights, fine print, and terms.
+            </p>
           </div>
 
           {/* 3. Deal Details Card (Collapsible) */}

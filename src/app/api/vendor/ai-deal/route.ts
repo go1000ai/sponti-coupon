@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
@@ -18,35 +18,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify vendor role
+  // Verify vendor or admin role
   const { data: profile } = await supabase
     .from('user_profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'vendor') {
+  const isAdmin = profile?.role === 'admin';
+  if (profile?.role !== 'vendor' && !isAdmin) {
     return NextResponse.json({ error: 'Only vendors can use AI deal assist' }, { status: 403 });
-  }
-
-  // Get vendor info for context
-  const { data: vendor } = await supabase
-    .from('vendors')
-    .select('business_name, category, city, state, subscription_tier')
-    .eq('id', user.id)
-    .single();
-
-  // Check tier access for AI deal assistant
-  const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-  if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
-    return NextResponse.json(
-      { error: 'AI Deal Assistant requires a Business plan or higher. Upgrade at /vendor/subscription.' },
-      { status: 403 }
-    );
   }
 
   const body = await request.json();
   const { deal_type, prompt, category_override } = body;
+
+  // Admin can act on behalf of a vendor
+  const targetVendorId = isAdmin && body.vendor_id ? body.vendor_id : user.id;
+  const db = isAdmin ? await createServiceRoleClient() : supabase;
+
+  // Get vendor info for context
+  const { data: vendor } = await db
+    .from('vendors')
+    .select('business_name, category, city, state, subscription_tier')
+    .eq('id', targetVendorId)
+    .single();
+
+  // Check tier access for AI deal assistant (admin skips)
+  if (!isAdmin) {
+    const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
+    if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
+      return NextResponse.json(
+        { error: 'AI Deal Assistant requires a Business plan or higher. Upgrade at /vendor/subscription.' },
+        { status: 403 }
+      );
+    }
+  }
 
   const businessName = vendor?.business_name || 'My Business';
   const category = category_override || vendor?.category || 'restaurant';
@@ -56,10 +63,10 @@ export async function POST(request: NextRequest) {
   // Fetch active Steady Deals to inform AI pricing for Sponti deals
   let steadyDealContext = '';
   if (isSponti) {
-    const { data: steadyDeals } = await supabase
+    const { data: steadyDeals } = await db
       .from('deals')
       .select('title, original_price, deal_price, discount_percentage')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', targetVendorId)
       .eq('deal_type', 'regular')
       .eq('status', 'active')
       .gte('expires_at', new Date().toISOString())
