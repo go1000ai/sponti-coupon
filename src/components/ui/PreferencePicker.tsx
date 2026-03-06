@@ -81,7 +81,7 @@ export function PreferencePicker() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-end sm:items-center justify-center z-50 px-4 pb-4 sm:py-8"
+      className="fixed inset-0 bg-black/50 backdrop-blur-md flex items-end justify-center z-50 px-4 pb-6 sm:pb-10"
       onClick={(e) => { if (e.target === e.currentTarget) dismiss(); }}
     >
       <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-slide-up-fade max-h-[85vh] overflow-y-auto">
