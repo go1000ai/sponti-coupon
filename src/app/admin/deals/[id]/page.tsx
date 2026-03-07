@@ -309,7 +309,7 @@ export default function AdminDealDetailPage() {
         setDeal(foundDeal);
         const fd = buildFormData(foundDeal);
         setFormData(fd);
-        setOriginalData(fd);
+        setOriginalData({ ...fd });
         setSearchTags(foundDeal.search_tags || []);
         setOriginalTags(foundDeal.search_tags || []);
 
@@ -644,7 +644,7 @@ export default function AdminDealDetailPage() {
       setDeal(updatedDeal);
       const fd = buildFormData(updatedDeal);
       setFormData(fd);
-      setOriginalData(fd);
+      setOriginalData({ ...fd });
       setSearchTags(updatedDeal.search_tags || []);
       setOriginalTags(updatedDeal.search_tags || []);
       setToast('Deal updated successfully');

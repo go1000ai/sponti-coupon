@@ -74,6 +74,8 @@ export async function PUT(
     'website_url',
     'video_urls',
     'search_tags',
+    'discount_percentage',
+    'timezone',
   ];
 
   const updateData: Record<string, unknown> = {};
