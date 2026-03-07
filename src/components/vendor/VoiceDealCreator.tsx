@@ -43,7 +43,7 @@ export default function VoiceDealCreator({ onDealParsed, vendorId }: VoiceDealCr
     }
   }, []);
 
-  const startListening = useCallback(() => {
+  const startListening = useCallback(async () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setSupported(false);
@@ -53,6 +53,17 @@ export default function VoiceDealCreator({ onDealParsed, vendorId }: VoiceDealCr
     setError('');
     setTranscript('');
     setInterimTranscript('');
+
+    // Request microphone access first — this forces Chrome to re-prompt
+    // and clears any cached "not-allowed" state from a previous denial
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Stop the stream immediately — we only needed the permission grant
+      stream.getTracks().forEach(t => t.stop());
+    } catch {
+      setError('Microphone access denied. Please allow microphone access in your browser settings.');
+      return;
+    }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
