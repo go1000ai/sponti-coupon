@@ -302,6 +302,7 @@ export default function NewDealPage() {
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
   const [vendorCategory, setVendorCategory] = useState<string | null>(null);
+  const [vendorWebsite, setVendorWebsite] = useState('');
   const [requiresAppointment, setRequiresAppointment] = useState(false);
   const [vendorName, setVendorName] = useState('');
   const [highlights, setHighlights] = useState<string[]>([]);
@@ -375,7 +376,7 @@ export default function NewDealPage() {
     // Fetch vendor category and name for suggested features & fine print
     supabase
       .from('vendors')
-      .select('category, business_name')
+      .select('category, business_name, website')
       .eq('id', vendorId)
       .single()
       .then(({ data }) => {
@@ -384,6 +385,7 @@ export default function NewDealPage() {
           setVendorName(data.business_name);
           if (isAdmin) setAdminVendorName(data.business_name);
         }
+        if (data?.website) setVendorWebsite(data.website);
       });
 
     // Fetch drafts
@@ -2286,6 +2288,7 @@ export default function NewDealPage() {
                 const mode = e.target.value as typeof locationMode;
                 setLocationMode(mode);
                 if (mode !== 'specific') setSelectedLocationIds([]);
+                if (mode === 'website' && !websiteUrl && vendorWebsite) setWebsiteUrl(vendorWebsite);
                 if (mode !== 'website') setWebsiteUrl('');
               }}
               className="input-field appearance-none pr-10"
@@ -2353,6 +2356,12 @@ export default function NewDealPage() {
                     placeholder="www.yourstore.com/product"
                   />
                 </div>
+                {vendorWebsite && websiteUrl !== vendorWebsite && (
+                  <button type="button" onClick={() => setWebsiteUrl(vendorWebsite)}
+                    className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                    <Globe className="w-3 h-3" /> Use profile website: {vendorWebsite}
+                  </button>
+                )}
                 <p className="text-xs text-gray-400 mt-1">
                   Link to your website or directly to the product page where customers can redeem this deal.
                 </p>

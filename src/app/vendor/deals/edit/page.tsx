@@ -141,6 +141,7 @@ function EditDealPageInner() {
   const [amenities, setAmenities] = useState<string[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
   const [vendorCategory, setVendorCategory] = useState<string | null>(null);
+  const [vendorWebsite, setVendorWebsite] = useState('');
   const [requiresAppointment, setRequiresAppointment] = useState(false);
   const [vendorName, setVendorName] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
@@ -238,12 +239,13 @@ function EditDealPageInner() {
     // Fetch vendor category and name for suggested features & fine print
     supabase
       .from('vendors')
-      .select('category, business_name')
+      .select('category, business_name, website')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.category) setVendorCategory(data.category);
         if (data?.business_name) setVendorName(data.business_name);
+        if (data?.website) setVendorWebsite(data.website);
       });
 
     fetchDeal();
@@ -1010,6 +1012,7 @@ function EditDealPageInner() {
                 const mode = e.target.value as typeof locationMode;
                 setLocationMode(mode);
                 if (mode !== 'specific') setSelectedLocationIds([]);
+                if (mode === 'website' && !websiteUrl && vendorWebsite) setWebsiteUrl(vendorWebsite);
                 if (mode !== 'website') setWebsiteUrl('');
               }} className="input-field appearance-none pr-10 text-sm">
                 {locations.length > 0 && <option value="all">All Locations</option>}
@@ -1038,11 +1041,19 @@ function EditDealPageInner() {
               </div>
             )}
             {locationMode === 'website' && (
-              <div className="relative">
-                <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="text" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
-                  onBlur={() => { if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) setWebsiteUrl('https://' + websiteUrl); }}
-                  className="input-field pl-10 text-sm" placeholder="www.yoursite.com/product" />
+              <div>
+                <div className="relative">
+                  <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input type="text" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
+                    onBlur={() => { if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) setWebsiteUrl('https://' + websiteUrl); }}
+                    className="input-field pl-10 text-sm" placeholder="www.yoursite.com/product" />
+                </div>
+                {vendorWebsite && websiteUrl !== vendorWebsite && (
+                  <button type="button" onClick={() => setWebsiteUrl(vendorWebsite)}
+                    className="mt-1.5 inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors">
+                    <Globe className="w-3 h-3" /> Use profile website: {vendorWebsite}
+                  </button>
+                )}
               </div>
             )}
           </BentoCard>
