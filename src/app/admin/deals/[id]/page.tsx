@@ -900,7 +900,7 @@ export default function AdminDealDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* ==================== LEFT: BENTO CARDS ==================== */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-min">
 
           {/* 1. Content */}
           <BentoCard
@@ -1032,7 +1032,8 @@ export default function AdminDealDetailPage() {
             )}
           </BentoCard>
 
-          {/* 3. Media */}
+          {/* 3. Media (full width) */}
+          <div className="md:col-span-2">
           <BentoCard
             icon={<ImageIcon className="w-5 h-5" />}
             title="Media"
@@ -1386,6 +1387,7 @@ export default function AdminDealDetailPage() {
             })()}
             <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
           </BentoCard>
+          </div>
 
           {/* 4. Details */}
           <BentoCard
