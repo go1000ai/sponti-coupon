@@ -2345,11 +2345,12 @@ export default function NewDealPage() {
                 <div className="relative">
                   <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="url"
+                    type="text"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
+                    onBlur={() => { if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) setWebsiteUrl('https://' + websiteUrl); }}
                     className="input-field pl-10"
-                    placeholder="https://www.yourstore.com/product"
+                    placeholder="www.yourstore.com/product"
                   />
                 </div>
                 <p className="text-xs text-gray-400 mt-1">

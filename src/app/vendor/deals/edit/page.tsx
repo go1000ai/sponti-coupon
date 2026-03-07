@@ -1040,7 +1040,9 @@ function EditDealPageInner() {
             {locationMode === 'website' && (
               <div className="relative">
                 <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} className="input-field pl-10 text-sm" placeholder="https://yoursite.com/product" />
+                <input type="text" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)}
+                  onBlur={() => { if (websiteUrl && !websiteUrl.match(/^https?:\/\//)) setWebsiteUrl('https://' + websiteUrl); }}
+                  className="input-field pl-10 text-sm" placeholder="www.yoursite.com/product" />
               </div>
             )}
           </BentoCard>
