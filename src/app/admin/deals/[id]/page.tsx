@@ -15,7 +15,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from 'recharts';
-import type { Deal, DealStatus } from '@/lib/types/database';
+import type { Deal, DealStatus, VendorLocation } from '@/lib/types/database';
 import {
   ArrowLeft,
   Save,
@@ -43,6 +43,7 @@ import {
   MapPin,
   Calendar,
   ClipboardList,
+  Globe,
 } from 'lucide-react';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
@@ -331,6 +332,11 @@ export default function AdminDealDetailPage() {
   const [generatingTags, setGeneratingTags] = useState(false);
   const [avaLoading, setAvaLoading] = useState(false);
 
+  // Location state
+  const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
+  const [vendorLocations, setVendorLocations] = useState<VendorLocation[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+
   // ---------- Build form data from deal ----------
   const buildFormData = useCallback((d: Deal) => {
     return {
@@ -383,6 +389,29 @@ export default function AdminDealDetailPage() {
         setOriginalData({ ...fd });
         setSearchTags(foundDeal.search_tags || []);
         setOriginalTags(foundDeal.search_tags || []);
+
+        // Initialize location mode from deal data
+        if (foundDeal.website_url) {
+          setLocationMode('website');
+        } else if (foundDeal.location_ids === null) {
+          setLocationMode('all');
+        } else if (foundDeal.location_ids && foundDeal.location_ids.length > 0) {
+          setLocationMode('specific');
+          setSelectedLocationIds(foundDeal.location_ids);
+        } else {
+          setLocationMode('none');
+        }
+
+        // Fetch vendor's locations for the location picker
+        try {
+          const locRes = await fetch(`/api/admin/vendors/${foundDeal.vendor_id}/locations`);
+          if (locRes.ok) {
+            const locData = await locRes.json();
+            setVendorLocations(locData.locations || []);
+          }
+        } catch {
+          // Vendor locations endpoint may not exist — silently skip
+        }
 
         if (catRes.ok) {
           const catData = await catRes.json();
@@ -695,6 +724,13 @@ export default function AdminDealDetailPage() {
         }
       }
 
+      // Always include location fields based on locationMode
+      let locationIds: string[] | null = null;
+      if (locationMode === 'specific' && selectedLocationIds.length > 0) locationIds = selectedLocationIds;
+      else if (locationMode === 'none' || locationMode === 'website') locationIds = [];
+      changedFields.location_ids = locationIds;
+      changedFields.website_url = locationMode === 'website' && (formData.website_url as string) ? formData.website_url : null;
+
       const res = await fetch(`/api/admin/deals/${deal.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -804,7 +840,7 @@ export default function AdminDealDetailPage() {
   const pricingSummary = `${formatCurrency(formData.deal_price as number)} (was ${formatCurrency(formData.original_price as number)})`;
   const mediaSummary = `${allImages.length} image${allImages.length !== 1 ? 's' : ''}, ${((formData.video_urls as string[]) || []).length} video${((formData.video_urls as string[]) || []).length !== 1 ? 's' : ''}`;
   const detailsSummary = `${((formData.highlights as string[]) || []).filter(Boolean).length} highlights, ${((formData.amenities as string[]) || []).filter(Boolean).length} amenities`;
-  const locationSummary = (formData.website_url as string) || 'No website URL';
+  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online / Website' : 'Mobile / No fixed location';
   const schedulingSummary = (formData.starts_at as string) ? `${new Date(formData.starts_at as string).toLocaleDateString()} - ${new Date(formData.expires_at as string).toLocaleDateString()}` : 'Not scheduled';
   const termsSummary = [(formData.how_it_works as string) ? 'How It Works' : '', (formData.fine_print as string) ? 'Fine Print' : '', (formData.terms_and_conditions as string) ? 'T&C' : ''].filter(Boolean).join(', ') || 'None set';
 
@@ -1485,16 +1521,73 @@ export default function AdminDealDetailPage() {
             onToggle={() => toggleSection('location')}
           >
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Website URL</label>
-              <input
-                type="url"
-                name="website_url"
-                value={formData.website_url as string}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                placeholder="https://..."
-              />
+              <label className="block text-xs font-medium text-gray-500 mb-1">Location Mode</label>
+              <div className="relative">
+                <select
+                  value={locationMode}
+                  onChange={(e) => {
+                    const mode = e.target.value as typeof locationMode;
+                    setLocationMode(mode);
+                    if (mode !== 'specific') setSelectedLocationIds([]);
+                    if (mode !== 'website') updateField('website_url', '');
+                    setHasChanges(true);
+                  }}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white pr-10"
+                >
+                  {vendorLocations.length > 0 && <option value="all">All Locations</option>}
+                  {vendorLocations.length > 0 && <option value="specific">Specific Locations</option>}
+                  <option value="website">Online / Website</option>
+                  <option value="none">Mobile / No Fixed Location</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
+
+            {locationMode === 'specific' && vendorLocations.length > 0 && (
+              <div className="space-y-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                {vendorLocations.map(loc => {
+                  const isSelected = selectedLocationIds.includes(loc.id);
+                  return (
+                    <label key={loc.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-sm ${isSelected ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-50 border border-transparent'}`}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {
+                          setSelectedLocationIds(prev => isSelected ? prev.filter(id => id !== loc.id) : [...prev, loc.id]);
+                          setHasChanges(true);
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-gray-900 truncate">{loc.name}</p>
+                        <p className="text-[10px] text-gray-400 truncate">{loc.address}, {loc.city}</p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {locationMode === 'website' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Website URL</label>
+                <div className="relative">
+                  <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    name="website_url"
+                    value={formData.website_url as string}
+                    onChange={handleInputChange}
+                    onBlur={() => {
+                      const url = formData.website_url as string;
+                      if (url && !url.match(/^https?:\/\//)) updateField('website_url', 'https://' + url);
+                    }}
+                    className="w-full pl-10 px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                    placeholder="www.yoursite.com/product"
+                  />
+                </div>
+              </div>
+            )}
           </BentoCard>
 
           {/* 6. Scheduling */}
