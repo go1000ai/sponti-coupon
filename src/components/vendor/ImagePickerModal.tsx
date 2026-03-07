@@ -71,8 +71,8 @@ export default function ImagePickerModal({
   useEffect(() => {
     if (open) {
       fetchMedia();
-      // Initialize from props
-      const init = [...initialImages];
+      // Initialize from props — deduplicate URLs
+      const init = [...new Set(initialImages)];
       if (initialMainImage && !init.includes(initialMainImage)) {
         init.unshift(initialMainImage);
       }
@@ -218,7 +218,10 @@ export default function ImagePickerModal({
 
   if (!open) return null;
 
-  const libraryImages = media.filter(m => m.type === 'image');
+  // Deduplicate library by URL — keep first occurrence of each URL
+  const libraryImages = media.filter(m => m.type === 'image').filter((item, idx, arr) =>
+    arr.findIndex(i => i.url === item.url) === idx
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
