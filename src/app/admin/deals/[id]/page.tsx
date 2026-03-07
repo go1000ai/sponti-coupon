@@ -816,7 +816,7 @@ export default function AdminDealDetailPage() {
 
           {/* 1. Deal Images Card */}
           <div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.1s_forwards]"
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.1s_forwards]"
           >
             {(() => {
               const allImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
@@ -833,7 +833,7 @@ export default function AdminDealDetailPage() {
 
                   {/* Hero preview of main image */}
                   {formData.image_url && (
-                    <div className="relative">
+                    <div className="relative overflow-hidden">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={formData.image_url as string}
