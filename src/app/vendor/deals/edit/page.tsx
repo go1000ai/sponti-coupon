@@ -166,6 +166,14 @@ function EditDealPageInner() {
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
+  const [generatingAmenities, setGeneratingAmenities] = useState(false);
+  const [suggestedAmenities, setSuggestedAmenities] = useState<string[]>([]);
+  const [suggestedHighlights, setSuggestedHighlights] = useState<string[]>([]);
+
+  // Ava terms assistant state
+  const [avaTermsPrompt, setAvaTermsPrompt] = useState('');
+  const [avaTermsField, setAvaTermsField] = useState<'how_it_works' | 'terms_and_conditions' | 'fine_print'>('how_it_works');
+  const [avaTermsLoading, setAvaTermsLoading] = useState(false);
 
   // Location state
   const [locations, setLocations] = useState<VendorLocation[]>([]);
@@ -459,6 +467,56 @@ function EditDealPageInner() {
       setError('Video generation timed out. Please try again.');
     } catch { setError('Failed to generate video.'); }
     setAiVideoLoading(false);
+  };
+
+  const generateAmenitySuggestions = async () => {
+    if (!form.title.trim()) { setError('Enter a deal title first.'); return; }
+    setGeneratingAmenities(true);
+    setSuggestedAmenities([]);
+    setSuggestedHighlights([]);
+    try {
+      const res = await fetch('/api/vendor/generate-amenities', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          category: vendorCategory,
+          existing_amenities: amenities,
+          existing_highlights: highlights,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Failed to generate suggestions');
+      else {
+        setSuggestedAmenities(data.amenities || []);
+        setSuggestedHighlights(data.highlights || []);
+      }
+    } catch { setError('Failed to generate suggestions.'); }
+    setGeneratingAmenities(false);
+  };
+
+  const handleAvaTerms = async () => {
+    if (!avaTermsPrompt.trim()) { setError('Tell Ava what you need.'); return; }
+    setAvaTermsLoading(true);
+    try {
+      const res = await fetch('/api/vendor/generate-terms', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          instruction: avaTermsPrompt,
+          field: avaTermsField,
+          current_value: form[avaTermsField] || '',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Ava could not generate text');
+      else {
+        setForm(prev => ({ ...prev, [data.field]: data.text }));
+        setAvaTermsPrompt('');
+      }
+    } catch { setError('Failed to generate text.'); }
+    setAvaTermsLoading(false);
   };
 
   const generateSearchTags = async () => {
@@ -982,9 +1040,37 @@ function EditDealPageInner() {
           <BentoCard icon={<Star className="w-5 h-5" />} title="Details" summary={detailsSummary} color="blue"
             open={!!openSections.details} onToggle={() => toggleSection('details')}>
 
+            {/* Ava AI Suggest Button */}
+            <button
+              type="button"
+              onClick={generateAmenitySuggestions}
+              disabled={generatingAmenities || !form.title.trim()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50 shadow-sm"
+            >
+              {generatingAmenities ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is thinking...</>
+              ) : (
+                <><Sparkles className="w-3.5 h-3.5" /> Ava: Suggest Highlights & Amenities</>
+              )}
+            </button>
+
             {/* Highlights */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Highlights</label>
+              {/* AI suggested highlights */}
+              {suggestedHighlights.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] text-emerald-600 mb-1 font-medium">Ava&apos;s suggestions — tap to add</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedHighlights.filter(s => !highlights.includes(s)).map(h => (
+                      <button key={h} type="button" onClick={() => { setHighlights(prev => [...prev, h]); setSuggestedHighlights(prev => prev.filter(x => x !== h)); }}
+                        className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                        <Plus className="w-2.5 h-2.5" /> {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {highlights.map((h, i) => (
                   <span key={i} className="inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs px-2.5 py-1 rounded-full border border-green-200">
@@ -1013,7 +1099,21 @@ function EditDealPageInner() {
                   ))}
                 </div>
               )}
-              {/* Suggested features */}
+              {/* AI suggested amenities */}
+              {suggestedAmenities.filter(s => !amenities.includes(s)).length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] text-emerald-600 mb-1 font-medium">Ava&apos;s suggestions — tap to add</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedAmenities.filter(s => !amenities.includes(s)).map(feature => (
+                      <button key={feature} type="button" onClick={() => { setAmenities(prev => [...prev, feature]); setSuggestedAmenities(prev => prev.filter(x => x !== feature)); }}
+                        className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                        <Plus className="w-2.5 h-2.5" /> {feature}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* Category-based suggested features */}
               {(() => {
                 const suggestions = vendorCategory ? (CATEGORY_FEATURES[vendorCategory] || UNIVERSAL_FEATURES) : UNIVERSAL_FEATURES;
                 const unselected = suggestions.filter(s => !amenities.includes(s));
@@ -1269,6 +1369,31 @@ function EditDealPageInner() {
           {/* Terms & Legal */}
           <BentoCard icon={<ClipboardList className="w-5 h-5" />} title="Terms & Legal" summary={termsSummary} color="gray"
             open={!!openSections.terms} onToggle={() => toggleSection('terms')}>
+            {/* Ava Terms Assistant */}
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                Ask Ava to write or edit a section
+              </div>
+              <div className="flex gap-2">
+                <select value={avaTermsField} onChange={e => setAvaTermsField(e.target.value as 'how_it_works' | 'terms_and_conditions' | 'fine_print')}
+                  className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+                  <option value="how_it_works">How It Works</option>
+                  <option value="terms_and_conditions">Terms & Conditions</option>
+                  <option value="fine_print">Fine Print</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <input type="text" value={avaTermsPrompt} onChange={e => setAvaTermsPrompt(e.target.value)}
+                  placeholder='e.g. "add a no-refund policy" or "write steps for a spa visit"'
+                  className="flex-1 text-xs border border-gray-300 rounded-lg px-2.5 py-1.5"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAvaTerms(); } }} />
+                <button type="button" onClick={handleAvaTerms} disabled={avaTermsLoading || !avaTermsPrompt.trim()}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-1 whitespace-nowrap">
+                  {avaTermsLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Writing...</> : <><Sparkles className="w-3 h-3" /> Ask Ava</>}
+                </button>
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">How It Works</label>
               <textarea name="how_it_works" value={form.how_it_works} onChange={handleChange} className="input-field min-h-[60px] text-sm"

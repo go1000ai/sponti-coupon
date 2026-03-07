@@ -331,11 +331,23 @@ export default function AdminDealDetailPage() {
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
   const [avaLoading, setAvaLoading] = useState(false);
+  const [generatingAmenities, setGeneratingAmenities] = useState(false);
+  const [suggestedAmenities, setSuggestedAmenities] = useState<string[]>([]);
+  const [suggestedHighlights, setSuggestedHighlights] = useState<string[]>([]);
+
+  // Ava terms assistant state
+  const [avaTermsPrompt, setAvaTermsPrompt] = useState('');
+  const [avaTermsField, setAvaTermsField] = useState<'how_it_works' | 'terms_and_conditions' | 'fine_print'>('how_it_works');
+  const [avaTermsLoading, setAvaTermsLoading] = useState(false);
 
   // Location state
   const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
   const [vendorLocations, setVendorLocations] = useState<VendorLocation[]>([]);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+  const [showAddLocation, setShowAddLocation] = useState(false);
+  const [addingLocation, setAddingLocation] = useState(false);
+  const [deletingLocationId, setDeletingLocationId] = useState<string | null>(null);
+  const [newLocation, setNewLocation] = useState({ name: '', address: '', city: '', state: '', zip: '' });
 
   // ---------- Build form data from deal ----------
   const buildFormData = useCallback((d: Deal) => {
@@ -659,6 +671,63 @@ export default function AdminDealDetailPage() {
       else setSearchTags(data.tags || []);
     } catch { setError('Failed to generate tags.'); }
     setGeneratingTags(false);
+  };
+
+  // ---------- AI Amenity/Highlight Suggestions ----------
+  const generateAmenitySuggestions = async () => {
+    if (!deal) return;
+    if (!(formData.title as string)?.trim()) { setError('Enter a deal title first.'); return; }
+    setGeneratingAmenities(true);
+    setSuggestedAmenities([]);
+    setSuggestedHighlights([]);
+    try {
+      const res = await fetch('/api/vendor/generate-amenities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          category: deal.category_id,
+          existing_amenities: formData.amenities,
+          existing_highlights: formData.highlights,
+          vendor_id: deal.vendor_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Failed to generate suggestions');
+      else {
+        setSuggestedAmenities(data.amenities || []);
+        setSuggestedHighlights(data.highlights || []);
+      }
+    } catch { setError('Failed to generate suggestions.'); }
+    setGeneratingAmenities(false);
+  };
+
+  const handleAvaTerms = async () => {
+    if (!deal) return;
+    if (!avaTermsPrompt.trim()) { setError('Tell Ava what you need.'); return; }
+    setAvaTermsLoading(true);
+    try {
+      const res = await fetch('/api/vendor/generate-terms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          description: formData.description,
+          instruction: avaTermsPrompt,
+          field: avaTermsField,
+          current_value: formData[avaTermsField] || '',
+          vendor_id: deal.vendor_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Ava could not generate text');
+      else {
+        setFormData(prev => ({ ...prev, [data.field]: data.text }));
+        setAvaTermsPrompt('');
+      }
+    } catch { setError('Failed to generate text.'); }
+    setAvaTermsLoading(false);
   };
 
   // ---------- Ava AI Enhance ----------
@@ -1434,8 +1503,36 @@ export default function AdminDealDetailPage() {
             open={!!openSections.details}
             onToggle={() => toggleSection('details')}
           >
+            {/* Ava AI Suggest Button */}
+            <button
+              type="button"
+              onClick={generateAmenitySuggestions}
+              disabled={generatingAmenities || !(formData.title as string)?.trim()}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50 shadow-sm"
+            >
+              {generatingAmenities ? (
+                <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Ava is thinking...</>
+              ) : (
+                <><Sparkles className="w-3.5 h-3.5" /> Ava: Suggest Highlights & Amenities</>
+              )}
+            </button>
+
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Highlights</label>
+              {/* AI suggested highlights */}
+              {suggestedHighlights.filter(s => !(formData.highlights as string[]).includes(s)).length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] text-emerald-600 mb-1 font-medium">Ava&apos;s suggestions — tap to add</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedHighlights.filter(s => !(formData.highlights as string[]).includes(s)).map(h => (
+                      <button key={h} type="button" onClick={() => { updateField('highlights', [...(formData.highlights as string[]), h]); setSuggestedHighlights(prev => prev.filter(x => x !== h)); }}
+                        className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                        <Plus className="w-2.5 h-2.5" /> {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <ArrayEditor
                 items={formData.highlights as string[]}
                 onChange={(items) => updateField('highlights', items)}
@@ -1444,6 +1541,20 @@ export default function AdminDealDetailPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Features / Amenities</label>
+              {/* AI suggested amenities */}
+              {suggestedAmenities.filter(s => !(formData.amenities as string[]).includes(s)).length > 0 && (
+                <div className="mb-2">
+                  <p className="text-[10px] text-emerald-600 mb-1 font-medium">Ava&apos;s suggestions — tap to add</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestedAmenities.filter(s => !(formData.amenities as string[]).includes(s)).map(feature => (
+                      <button key={feature} type="button" onClick={() => { updateField('amenities', [...(formData.amenities as string[]), feature]); setSuggestedAmenities(prev => prev.filter(x => x !== feature)); }}
+                        className="inline-flex items-center gap-0.5 px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs rounded-full border border-emerald-200 hover:bg-emerald-100 transition-colors">
+                        <Plus className="w-2.5 h-2.5" /> {feature}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <ArrayEditor
                 items={formData.amenities as string[]}
                 onChange={(items) => updateField('amenities', items)}
@@ -1534,8 +1645,8 @@ export default function AdminDealDetailPage() {
                   }}
                   className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white pr-10"
                 >
-                  {vendorLocations.length > 0 && <option value="all">All Locations</option>}
-                  {vendorLocations.length > 0 && <option value="specific">Specific Locations</option>}
+                  <option value="all">All Locations</option>
+                  <option value="specific">Specific Locations</option>
                   <option value="website">Online / Website</option>
                   <option value="none">Mobile / No Fixed Location</option>
                 </select>
@@ -1543,28 +1654,143 @@ export default function AdminDealDetailPage() {
               </div>
             </div>
 
-            {locationMode === 'specific' && vendorLocations.length > 0 && (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-2">
-                {vendorLocations.map(loc => {
-                  const isSelected = selectedLocationIds.includes(loc.id);
-                  return (
-                    <label key={loc.id} className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors text-sm ${isSelected ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-50 border border-transparent'}`}>
+            {(locationMode === 'all' || locationMode === 'specific') && (
+              <div className="space-y-2">
+                {vendorLocations.length > 0 ? (
+                  <div className="space-y-1.5 max-h-52 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                    {vendorLocations.map(loc => {
+                      const isSelected = locationMode === 'all' || selectedLocationIds.includes(loc.id);
+                      return (
+                        <div key={loc.id} className={`flex items-center gap-2 p-2 rounded-lg transition-colors text-sm ${isSelected ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-50 border border-transparent'}`}>
+                          {locationMode === 'specific' && (
+                            <input
+                              type="checkbox"
+                              checked={selectedLocationIds.includes(loc.id)}
+                              onChange={() => {
+                                setSelectedLocationIds(prev => selectedLocationIds.includes(loc.id) ? prev.filter(id => id !== loc.id) : [...prev, loc.id]);
+                                setHasChanges(true);
+                              }}
+                              className="w-3.5 h-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                            />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-gray-900 truncate">{loc.name}</p>
+                            <p className="text-[10px] text-gray-400 truncate">{loc.address}, {loc.city}, {loc.state} {loc.zip}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!deal || !confirm(`Delete "${loc.name}"?`)) return;
+                              setDeletingLocationId(loc.id);
+                              try {
+                                const res = await fetch(`/api/admin/vendors/${deal.vendor_id}/locations?location_id=${loc.id}`, { method: 'DELETE' });
+                                if (res.ok) {
+                                  setVendorLocations(prev => prev.filter(l => l.id !== loc.id));
+                                  setSelectedLocationIds(prev => prev.filter(id => id !== loc.id));
+                                  setToast('Location deleted');
+                                } else {
+                                  setToast('Failed to delete location');
+                                }
+                              } catch { setToast('Failed to delete location'); }
+                              setDeletingLocationId(null);
+                            }}
+                            disabled={deletingLocationId === loc.id}
+                            className="p-1 text-red-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                          >
+                            {deletingLocationId === loc.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">This vendor has no locations yet.</p>
+                )}
+
+                {/* Add new location */}
+                {!showAddLocation ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddLocation(true)}
+                    className="text-primary-500 text-xs font-medium hover:text-primary-600 transition-colors flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Location
+                  </button>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+                    <p className="text-xs font-medium text-gray-700">New Location</p>
+                    <input
+                      value={newLocation.name}
+                      onChange={e => setNewLocation(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
+                      placeholder="Location name (e.g. Downtown Store)"
+                    />
+                    <input
+                      value={newLocation.address}
+                      onChange={e => setNewLocation(prev => ({ ...prev, address: e.target.value }))}
+                      className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
+                      placeholder="Street address"
+                    />
+                    <div className="grid grid-cols-3 gap-2">
                       <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {
-                          setSelectedLocationIds(prev => isSelected ? prev.filter(id => id !== loc.id) : [...prev, loc.id]);
-                          setHasChanges(true);
-                        }}
-                        className="w-3.5 h-3.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
+                        value={newLocation.city}
+                        onChange={e => setNewLocation(prev => ({ ...prev, city: e.target.value }))}
+                        className="px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
+                        placeholder="City"
                       />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-medium text-gray-900 truncate">{loc.name}</p>
-                        <p className="text-[10px] text-gray-400 truncate">{loc.address}, {loc.city}</p>
-                      </div>
-                    </label>
-                  );
-                })}
+                      <input
+                        value={newLocation.state}
+                        onChange={e => setNewLocation(prev => ({ ...prev, state: e.target.value }))}
+                        className="px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
+                        placeholder="State"
+                      />
+                      <input
+                        value={newLocation.zip}
+                        onChange={e => setNewLocation(prev => ({ ...prev, zip: e.target.value }))}
+                        className="px-3 py-2 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-primary-400 focus:border-primary-400"
+                        placeholder="ZIP"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={addingLocation || !newLocation.name || !newLocation.address || !newLocation.city || !newLocation.state || !newLocation.zip}
+                        onClick={async () => {
+                          if (!deal) return;
+                          setAddingLocation(true);
+                          try {
+                            const res = await fetch(`/api/admin/vendors/${deal.vendor_id}/locations`, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify(newLocation),
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.location) {
+                              setVendorLocations(prev => [...prev, data.location]);
+                              setNewLocation({ name: '', address: '', city: '', state: '', zip: '' });
+                              setShowAddLocation(false);
+                              setToast('Location added');
+                            } else {
+                              setToast(data.error || 'Failed to add location');
+                            }
+                          } catch { setToast('Failed to add location'); }
+                          setAddingLocation(false);
+                        }}
+                        className="px-3 py-1.5 bg-primary-500 text-white text-xs font-medium rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-all flex items-center gap-1"
+                      >
+                        {addingLocation ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowAddLocation(false); setNewLocation({ name: '', address: '', city: '', state: '', zip: '' }); }}
+                        className="px-3 py-1.5 text-gray-500 text-xs font-medium hover:text-gray-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1652,6 +1878,31 @@ export default function AdminDealDetailPage() {
             open={!!openSections.terms}
             onToggle={() => toggleSection('terms')}
           >
+            {/* Ava Terms Assistant */}
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-3 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                Ask Ava to write or edit a section
+              </div>
+              <div className="flex gap-2">
+                <select value={avaTermsField} onChange={e => setAvaTermsField(e.target.value as 'how_it_works' | 'terms_and_conditions' | 'fine_print')}
+                  className="text-xs border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+                  <option value="how_it_works">How It Works</option>
+                  <option value="terms_and_conditions">Terms & Conditions</option>
+                  <option value="fine_print">Fine Print</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <input type="text" value={avaTermsPrompt} onChange={e => setAvaTermsPrompt(e.target.value)}
+                  placeholder='e.g. "add a no-refund policy" or "write steps for a spa visit"'
+                  className="flex-1 text-xs border border-gray-300 rounded-lg px-2.5 py-1.5"
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAvaTerms(); } }} />
+                <button type="button" onClick={handleAvaTerms} disabled={avaTermsLoading || !avaTermsPrompt.trim()}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold hover:bg-emerald-600 disabled:opacity-50 flex items-center gap-1 whitespace-nowrap">
+                  {avaTermsLoading ? <><Loader2 className="w-3 h-3 animate-spin" /> Writing...</> : <><Sparkles className="w-3 h-3" /> Ask Ava</>}
+                </button>
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">How It Works</label>
               <textarea

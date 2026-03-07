@@ -148,6 +148,7 @@ SpontiCoupon uses Stripe **only for vendor subscription billing** — not for cu
 - **Steady (secondary) = Blue `#29ABE2`** — steady deals, `.btn-secondary`, `text-secondary-*`
 - **NO purple/violet/indigo anywhere** — these colors are banned
 - Dark backgrounds use `bg-gray-900`, NOT `bg-secondary-*` (secondary is reserved for Steady deal branding)
+- **Ava AI = Emerald/Green** — All Ava AI assistant UI (buttons, borders, backgrounds, icons) uses `emerald-*` / `green-*` classes. Never use orange/primary or other brand colors for Ava elements.
 - Fonts: Inter (body), Bebas Neue (`--font-bebas`, headings), Instrument Serif (`--font-instrument`)
 
 ## AI Features
