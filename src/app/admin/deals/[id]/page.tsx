@@ -612,7 +612,9 @@ export default function AdminDealDetailPage() {
 
       // Build only changed fields
       const changedFields: Record<string, unknown> = {};
+      const skipFields = ['category_id']; // Not a real DB column
       for (const key of Object.keys(formData)) {
+        if (skipFields.includes(key)) continue;
         if (JSON.stringify(formData[key]) !== JSON.stringify(originalData[key])) {
           let val = formData[key];
           // Convert date fields to ISO
@@ -620,7 +622,7 @@ export default function AdminDealDetailPage() {
             val = new Date(val).toISOString();
           }
           // Convert empty strings to null for nullable fields
-          if (val === '' && ['deposit_amount', 'max_claims', 'category_id', 'description', 'how_it_works', 'fine_print', 'terms_and_conditions', 'website_url', 'image_url'].includes(key)) {
+          if (val === '' && ['deposit_amount', 'max_claims', 'description', 'how_it_works', 'fine_print', 'terms_and_conditions', 'website_url', 'image_url'].includes(key)) {
             val = null;
           }
           changedFields[key] = val;
