@@ -643,6 +643,8 @@ export default function AdminDealDetailPage() {
       const fd = buildFormData(updatedDeal);
       setFormData(fd);
       setOriginalData(fd);
+      setSearchTags(updatedDeal.search_tags || []);
+      setOriginalTags(updatedDeal.search_tags || []);
       setToast('Deal updated successfully');
     } catch (err: unknown) {
       setToast(err instanceof Error ? err.message : 'Failed to save');
