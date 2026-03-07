@@ -2299,7 +2299,7 @@ export default function NewDealPage() {
               {locations.length > 0 && <option value="all">All Locations</option>}
               {locations.length > 0 && <option value="specific">Specific Locations</option>}
               <option value="website">Online / Website</option>
-              <option value="none">No Location (General)</option>
+              <option value="none">Mobile / No Fixed Location</option>
             </select>
             <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>

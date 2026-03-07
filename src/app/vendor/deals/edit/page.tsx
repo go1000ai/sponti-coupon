@@ -11,6 +11,7 @@ import {
   ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown, Info,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
   Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause, Calendar, Clock,
+  Ticket, Download,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -18,6 +19,7 @@ import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
 import type { Deal, VendorLocation } from '@/lib/types/database';
 import { Plus } from 'lucide-react';
+import { PromoCodeTutorial } from '@/components/vendor/PromoCodeTutorial';
 
 // Category-specific suggested features/perks
 const CATEGORY_FEATURES: Record<string, string[]> = {
@@ -71,6 +73,7 @@ function BentoCard({
     blue: { bg: 'bg-white', iconBg: 'bg-blue-50 text-blue-600', border: 'border-blue-200', ring: 'ring-blue-300' },
     green: { bg: 'bg-white', iconBg: 'bg-green-50 text-green-600', border: 'border-green-200', ring: 'ring-green-300' },
     amber: { bg: 'bg-white', iconBg: 'bg-amber-50 text-amber-600', border: 'border-amber-200', ring: 'ring-amber-300' },
+    emerald: { bg: 'bg-white', iconBg: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-200', ring: 'ring-emerald-300' },
   };
   const c = colorMap[color] || colorMap.gray;
 
@@ -153,6 +156,15 @@ function EditDealPageInner() {
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
   const [websiteUrl, setWebsiteUrl] = useState('');
+
+  // Promo code state (online deals)
+  const [promoCodeMode, setPromoCodeMode] = useState<'generate' | 'upload'>('generate');
+  const [promoCodeCount, setPromoCodeCount] = useState(25);
+  const [uploadedCodes, setUploadedCodes] = useState('');
+  const [promoStats, setPromoStats] = useState<{ total: number; available: number; claimed: number } | null>(null);
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoSaving, setPromoSaving] = useState(false);
+  const [promoSuccess, setPromoSuccess] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -250,6 +262,50 @@ function EditDealPageInner() {
 
     fetchDeal();
   }, [dealId, user]);
+
+  // Fetch promo code stats for online deals
+  const fetchPromoStats = useCallback(async () => {
+    if (!dealId) return;
+    setPromoLoading(true);
+    try {
+      const res = await fetch(`/api/vendor/promo-codes?deal_id=${dealId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPromoStats({ total: data.total, available: data.available, claimed: data.claimed });
+      }
+    } catch { /* ignore */ }
+    setPromoLoading(false);
+  }, [dealId]);
+
+  useEffect(() => {
+    if (deal?.website_url) fetchPromoStats();
+  }, [deal, fetchPromoStats]);
+
+  const handleAddPromoCodes = async () => {
+    if (!dealId) return;
+    setPromoSaving(true);
+    setPromoSuccess('');
+    try {
+      const body = promoCodeMode === 'generate'
+        ? { deal_id: dealId, action: 'generate', count: promoCodeCount }
+        : { deal_id: dealId, action: 'upload', codes: uploadedCodes.split('\n').map(c => c.trim()).filter(Boolean) };
+      const res = await fetch('/api/vendor/promo-codes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPromoSuccess(`Added ${data.inserted} codes! Total: ${data.total}`);
+        setUploadedCodes('');
+        fetchPromoStats();
+      } else {
+        const err = await res.json();
+        setError(err.error || 'Failed to add promo codes');
+      }
+    } catch { setError('Failed to add promo codes'); }
+    setPromoSaving(false);
+  };
 
   const discount = form.original_price && form.deal_price
     ? calculateDiscount(parseFloat(form.original_price), parseFloat(form.deal_price))
@@ -507,7 +563,10 @@ function EditDealPageInner() {
   const mediaCount = (form.image_url ? 1 : 0) + additionalImages.length;
   const mediaSummary = `${mediaCount} image${mediaCount !== 1 ? 's' : ''}${videoUrls.length > 0 ? `, ${videoUrls.length} video${videoUrls.length > 1 ? 's' : ''}` : ''}`;
   const detailsSummary = `${highlights.length} highlights, ${amenities.length} features, ${searchTags.length} tags`;
-  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online' : 'No location';
+  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online' : 'Mobile / No fixed location';
+  const promoSummary = promoStats && promoStats.total > 0
+    ? `${promoStats.available} available, ${promoStats.claimed} claimed`
+    : 'No codes yet';
   const termsSummary = [form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 0
     ? `${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length} section${[form.terms_and_conditions, form.how_it_works, form.fine_print].filter(Boolean).length > 1 ? 's' : ''} filled`
     : 'Add terms, how it works, fine print';
@@ -1018,7 +1077,7 @@ function EditDealPageInner() {
                 {locations.length > 0 && <option value="all">All Locations</option>}
                 {locations.length > 0 && <option value="specific">Specific Locations</option>}
                 <option value="website">Online / Website</option>
-                <option value="none">No Location (General)</option>
+                <option value="none">Mobile / No Fixed Location</option>
               </select>
               <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
@@ -1092,6 +1151,112 @@ function EditDealPageInner() {
               <p className="text-[10px] text-gray-500">Steady deals can last up to 30 days</p>
             )}
           </BentoCard>
+
+          {/* Promo Codes — only for online deals */}
+          {locationMode === 'website' && (
+            <BentoCard icon={<Ticket className="w-5 h-5" />} title="Promo Codes" summary={promoSummary} color="emerald"
+              open={!!openSections.promo} onToggle={() => toggleSection('promo')}>
+              {/* Current stats */}
+              {promoLoading ? (
+                <div className="flex items-center gap-2 text-xs text-emerald-600">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading codes...
+                </div>
+              ) : promoStats && promoStats.total > 0 ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-200">
+                    <p className="text-base font-bold text-emerald-700">{promoStats.total}</p>
+                    <p className="text-[10px] text-emerald-600">Total</p>
+                  </div>
+                  <div className="bg-emerald-50 rounded-lg p-2 text-center border border-emerald-200">
+                    <p className="text-base font-bold text-emerald-700">{promoStats.available}</p>
+                    <p className="text-[10px] text-emerald-600">Available</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2 text-center border border-gray-200">
+                    <p className="text-base font-bold text-gray-500">{promoStats.claimed}</p>
+                    <p className="text-[10px] text-gray-500">Claimed</p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+                  No promo codes yet. Add codes below so customers can claim this online deal.
+                </p>
+              )}
+
+              {/* Download existing codes */}
+              {promoStats && promoStats.total > 0 && (
+                <a href={`/api/vendor/promo-codes/download?deal_id=${dealId}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 underline underline-offset-2">
+                  <Download className="w-3.5 h-3.5" /> Download CSV ({promoStats.total} codes)
+                </a>
+              )}
+
+              {/* Add more codes */}
+              <div className="border-t border-gray-200 pt-3 space-y-3">
+                <h4 className="text-xs font-semibold text-gray-800">
+                  {promoStats && promoStats.total > 0 ? 'Add More Codes' : 'Add Promo Codes'}
+                </h4>
+                <p className="text-xs text-gray-600">
+                  Each customer who claims this deal receives a unique promo code to use at checkout on your website.
+                </p>
+
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setPromoCodeMode('generate')}
+                    className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${promoCodeMode === 'generate' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'}`}>
+                    Auto-Generate
+                  </button>
+                  <button type="button" onClick={() => setPromoCodeMode('upload')}
+                    className={`flex-1 text-xs font-medium px-3 py-2 rounded-lg border transition-all ${promoCodeMode === 'upload' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-200 hover:border-emerald-300'}`}>
+                    My Own Codes
+                  </button>
+                </div>
+
+                {promoCodeMode === 'generate' ? (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Number of Codes</label>
+                    <select value={promoCodeCount} onChange={e => setPromoCodeCount(Number(e.target.value))}
+                      className="input-field text-sm">
+                      <option value={10}>10 codes</option>
+                      <option value={25}>25 codes</option>
+                      <option value={50}>50 codes</option>
+                      <option value={100}>100 codes</option>
+                      <option value={200}>200 codes</option>
+                      <option value={500}>500 codes</option>
+                    </select>
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      We&apos;ll generate {promoCodeCount} unique codes (e.g., SPONTI-A7X3K9). Download CSV to import into your store.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Paste Codes (one per line)</label>
+                    <textarea
+                      value={uploadedCodes}
+                      onChange={e => setUploadedCodes(e.target.value)}
+                      className="w-full text-sm border border-gray-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-gray-400"
+                      rows={4}
+                      placeholder={"SUMMER25OFF\nSAVE10NOW\nDEAL2026XY"}
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {uploadedCodes.split('\n').filter(c => c.trim()).length} code{uploadedCodes.split('\n').filter(c => c.trim()).length !== 1 ? 's' : ''} entered.
+                    </p>
+                  </div>
+                )}
+
+                <button type="button" onClick={handleAddPromoCodes} disabled={promoSaving}
+                  className="w-full py-2 rounded-lg font-semibold text-sm text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                  {promoSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</> : <><Ticket className="w-4 h-4" /> Add Codes</>}
+                </button>
+
+                {promoSuccess && (
+                  <p className="text-xs text-emerald-700 bg-emerald-100 border border-emerald-200 rounded-lg p-2 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {promoSuccess}
+                  </p>
+                )}
+
+                {promoCodeMode === 'generate' && <PromoCodeTutorial />}
+              </div>
+            </BentoCard>
+          )}
 
           {/* Terms & Legal */}
           <BentoCard icon={<ClipboardList className="w-5 h-5" />} title="Terms & Legal" summary={termsSummary} color="gray"
