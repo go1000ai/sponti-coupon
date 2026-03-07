@@ -248,6 +248,19 @@ export default function AdminDealDetailPage() {
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [customImagePrompt, setCustomImagePrompt] = useState('');
+  const [showAddImageMenu, setShowAddImageMenu] = useState(false);
+  const [showAiImageInput, setShowAiImageInput] = useState(false);
+
+  // Close the add-image dropdown when clicking outside
+  useEffect(() => {
+    if (!showAddImageMenu) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-add-image-menu]')) setShowAddImageMenu(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showAddImageMenu]);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoElapsed, setVideoElapsed] = useState(0);
@@ -816,36 +829,6 @@ export default function AdminDealDetailPage() {
                       <span className="text-sm font-semibold text-gray-700">Deal Images</span>
                       <span className="text-xs text-gray-400">({allImages.length}/11)</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowImagePicker(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B] rounded-lg hover:bg-[#D55A25] transition-colors"
-                      >
-                        <ImageIcon className="w-3 h-3" /> Browse Library
-                      </button>
-                      <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        {uploadingImage || uploadingGallery ? (
-                          <><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</>
-                        ) : (
-                          <><Upload className="w-3 h-3" /> Upload</>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
-                          className="hidden"
-                          disabled={uploadingImage || uploadingGallery}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              if (!formData.image_url) handleImageUpload(file);
-                              else handleGalleryImageUpload(file);
-                            }
-                            e.target.value = '';
-                          }}
-                        />
-                      </label>
-                    </div>
                   </div>
 
                   {/* Hero preview of main image */}
@@ -857,50 +840,27 @@ export default function AdminDealDetailPage() {
                         alt={formData.title as string}
                         className="w-full h-64 object-cover"
                       />
-                      <div className="absolute top-3 right-3 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowImagePicker(true)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#E8632B]/80 backdrop-blur-sm rounded-lg hover:bg-[#E8632B] transition-colors"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5" /> Browse Library
-                        </button>
-                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-black/70 transition-colors">
-                          <Upload className="w-3.5 h-3.5" />
-                          {uploadingImage ? 'Uploading...' : 'Change Image'}
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/gif"
-                            className="hidden"
-                            disabled={uploadingImage}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleImageUpload(file);
-                            }}
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const gallery = (formData.image_urls as string[]) || [];
-                            if (gallery.length > 0) {
-                              updateField('image_url', gallery[0]);
-                              updateField('image_urls', gallery.slice(1));
-                            } else {
-                              updateField('image_url', '');
-                            }
-                          }}
-                          className="p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const gallery = (formData.image_urls as string[]) || [];
+                          if (gallery.length > 0) {
+                            updateField('image_url', gallery[0]);
+                            updateField('image_urls', gallery.slice(1));
+                          } else {
+                            updateField('image_url', '');
+                          }
+                        }}
+                        className="absolute top-3 right-3 p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
 
-                  {/* Image grid (all images as thumbnails) */}
-                  {allImages.length > 0 ? (
-                    <div className="px-4 pb-3 pt-3">
+                  {/* Image grid (all images as thumbnails) + Add button */}
+                  <div className="px-4 pb-3 pt-3">
+                    {allImages.length > 0 ? (
                       <div className="flex gap-2 flex-wrap">
                         {allImages.map((url, i) => (
                           <div key={i} className="relative group">
@@ -921,7 +881,6 @@ export default function AdminDealDetailPage() {
                               type="button"
                               onClick={() => {
                                 if (i === 0) {
-                                  // Remove main image — promote next gallery image if available
                                   const gallery = (formData.image_urls as string[]) || [];
                                   if (gallery.length > 0) {
                                     updateField('image_url', gallery[0]);
@@ -939,11 +898,15 @@ export default function AdminDealDetailPage() {
                             </button>
                           </div>
                         ))}
-                        {/* Add more */}
+                        {/* Add more — dropdown menu */}
                         {allImages.length < 11 && (
-                          <label className="cursor-pointer">
-                            <div className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors">
-                              {uploadingGallery ? (
+                          <div className="relative" data-add-image-menu>
+                            <button
+                              type="button"
+                              onClick={() => setShowAddImageMenu(p => !p)}
+                              className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors"
+                            >
+                              {(uploadingImage || uploadingGallery || aiImageLoading) ? (
                                 <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
                               ) : (
                                 <>
@@ -951,56 +914,135 @@ export default function AdminDealDetailPage() {
                                   <span className="text-[10px] text-gray-400">Add</span>
                                 </>
                               )}
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png,image/webp,image/gif"
-                              className="hidden"
-                              disabled={uploadingGallery}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  if (!formData.image_url) handleImageUpload(file);
-                                  else handleGalleryImageUpload(file);
-                                }
-                                e.target.value = '';
-                              }}
-                            />
-                          </label>
+                            </button>
+                            {showAddImageMenu && (
+                              <div className="absolute top-full left-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                                <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                                  <Upload className="w-3.5 h-3.5 text-gray-500" />
+                                  Upload from Device
+                                  <input
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp,image/gif"
+                                    className="hidden"
+                                    disabled={uploadingImage || uploadingGallery}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        if (!formData.image_url) handleImageUpload(file);
+                                        else handleGalleryImageUpload(file);
+                                      }
+                                      e.target.value = '';
+                                      setShowAddImageMenu(false);
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => { setShowImagePicker(true); setShowAddImageMenu(false); }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
+                                  Browse Library
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => { setShowAiImageInput(true); setShowAddImageMenu(false); }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                >
+                                  <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
+                                  Generate with AI
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="px-4 pb-3">
-                      <div className="h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200">
-                        <ImageIcon className="w-8 h-8 text-gray-300" />
-                        <span className="text-gray-400 text-sm">No images yet</span>
-                        <span className="text-gray-300 text-xs">Upload, browse the library, or let Ava generate one</span>
+                    ) : (
+                      <div
+                        data-add-image-menu
+                        onClick={() => setShowAddImageMenu(p => !p)}
+                        className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200 cursor-pointer hover:border-primary-300 transition-colors"
+                      >
+                        {(uploadingImage || aiImageLoading) ? (
+                          <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+                        ) : (
+                          <>
+                            <Plus className="w-8 h-8 text-gray-300" />
+                            <span className="text-gray-400 text-sm">Add an image</span>
+                            <span className="text-gray-300 text-xs">Upload, library, or AI</span>
+                          </>
+                        )}
+                        {showAddImageMenu && (
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                            <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                              <Upload className="w-3.5 h-3.5 text-gray-500" />
+                              Upload from Device
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                className="hidden"
+                                disabled={uploadingImage}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file);
+                                  e.target.value = '';
+                                  setShowAddImageMenu(false);
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setShowImagePicker(true); setShowAddImageMenu(false); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
+                              Browse Library
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setShowAiImageInput(true); setShowAddImageMenu(false); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
+                              Generate with AI
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ava AI Image Generation — shown when triggered from Add menu */}
+                  {showAiImageInput && (
+                    <div className="px-4 pb-4">
+                      <div className="flex items-center gap-2">
+                        <input
+                          value={customImagePrompt}
+                          onChange={e => setCustomImagePrompt(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
+                          className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
+                          placeholder="Describe the image you want (or leave blank for auto)..."
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAiImageGenerate}
+                          disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                        >
+                          {aiImageLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                          Generate
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowAiImageInput(false)}
+                          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                   )}
-
-                  {/* Ava AI Image Generation */}
-                  <div className="px-4 pb-4">
-                    <div className="flex items-center gap-2">
-                      <input
-                        value={customImagePrompt}
-                        onChange={e => setCustomImagePrompt(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
-                        className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
-                        placeholder="Describe image for Ava AI (optional)..."
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAiImageGenerate}
-                        disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                      >
-                        {aiImageLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                        Ava
-                      </button>
-                    </div>
-                  </div>
                 </>
               );
             })()}
