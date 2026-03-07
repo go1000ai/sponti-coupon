@@ -15,24 +15,31 @@ export async function GET(request: NextRequest) {
   const stateParam = request.nextUrl.searchParams.get('state');
   const error = request.nextUrl.searchParams.get('error');
 
-  if (error || !code || !stateParam) {
-    const errorReason = request.nextUrl.searchParams.get('error_reason') || 'access_denied';
-    return NextResponse.redirect(new URL(`/vendor/settings?social_error=${errorReason}`, appUrl));
+  // Decode state early to determine correct redirect path
+  let state: { userId: string; isBrand: boolean } = { userId: '', isBrand: false };
+  if (stateParam) {
+    try {
+      state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
+    } catch { /* handled below */ }
   }
 
-  // Decode state
-  let state: { userId: string; isBrand: boolean };
-  try {
-    state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
-  } catch {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=invalid_state', appUrl));
+  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const sep = state.isBrand ? '&' : '?';
+
+  if (error || !code || !stateParam) {
+    const errorReason = request.nextUrl.searchParams.get('error_reason') || 'access_denied';
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=${errorReason}`, appUrl));
+  }
+
+  if (!state.userId) {
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=invalid_state`, appUrl));
   }
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
 
   if (!appId || !appSecret) {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=not_configured', appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=not_configured`, appUrl));
   }
 
   const callbackUrl = `${appUrl}/api/social/connect/facebook/callback`;
@@ -46,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok || tokenData.error) {
       console.error('[FB OAuth] Token exchange failed:', tokenData);
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=token_exchange_failed', appUrl));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=token_exchange_failed`, appUrl));
     }
 
     // Step 2: Exchange for long-lived user token (60 days)
@@ -62,22 +69,30 @@ export async function GET(request: NextRequest) {
     );
     const pagesData = await pagesRes.json();
 
+    console.log('[FB OAuth] Pages response:', JSON.stringify({
+      hasData: !!pagesData.data,
+      count: pagesData.data?.length || 0,
+      pages: pagesData.data?.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })) || [],
+      error: pagesData.error || null,
+    }));
+
     if (!pagesData.data || pagesData.data.length === 0) {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=no_pages', appUrl));
+      console.error('[FB OAuth] No pages. Full response:', JSON.stringify(pagesData));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=no_pages`, appUrl));
     }
 
     // Use the first page (most vendors have one page)
-    // TODO: If vendor has multiple pages, let them choose
     const page = pagesData.data[0];
-    const pageToken = page.access_token; // Page tokens from long-lived user tokens never expire
+    const pageToken = page.access_token;
     const pageId = page.id;
     const pageName = page.name;
     const pageAvatar = page.picture?.data?.url || null;
 
+    console.log('[FB OAuth] Connected page:', pageName, 'ID:', pageId, 'isBrand:', state.isBrand);
+
     // Step 4: Store in social_connections
     const supabase = await createServiceRoleClient();
 
-    // Upsert — replace existing connection for this vendor/platform
     const { error: upsertError } = await supabase
       .from('social_connections')
       .upsert({
@@ -85,7 +100,7 @@ export async function GET(request: NextRequest) {
         is_brand_account: state.isBrand,
         platform: 'facebook',
         access_token: encrypt(pageToken),
-        refresh_token: null, // Page tokens don't expire
+        refresh_token: null,
         token_expires_at: null,
         platform_user_id: null,
         platform_page_id: pageId,
@@ -102,13 +117,12 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error('[FB OAuth] Upsert error:', upsertError);
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=db_error', appUrl));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=db_error`, appUrl));
     }
 
-    const redirectPath = state.isBrand ? '/admin/social' : '/vendor/settings';
-    return NextResponse.redirect(new URL(`${redirectPath}?social_connected=facebook`, appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_connected=facebook`, appUrl));
   } catch (err) {
     console.error('[FB OAuth] Error:', err);
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=unknown', appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=unknown`, appUrl));
   }
 }

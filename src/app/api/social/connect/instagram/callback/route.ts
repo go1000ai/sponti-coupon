@@ -15,22 +15,30 @@ export async function GET(request: NextRequest) {
   const stateParam = request.nextUrl.searchParams.get('state');
   const error = request.nextUrl.searchParams.get('error');
 
-  if (error || !code || !stateParam) {
-    const errorReason = request.nextUrl.searchParams.get('error_reason') || 'access_denied';
-    return NextResponse.redirect(new URL(`/vendor/settings?social_error=${errorReason}`, appUrl));
+  // Decode state early to determine correct redirect path
+  let state: { userId: string; isBrand: boolean } = { userId: '', isBrand: false };
+  if (stateParam) {
+    try {
+      state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
+    } catch { /* handled below */ }
   }
 
-  let state: { userId: string; isBrand: boolean };
-  try {
-    state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
-  } catch {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=invalid_state', appUrl));
+  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const sep = state.isBrand ? '&' : '?';
+
+  if (error || !code || !stateParam) {
+    const errorReason = request.nextUrl.searchParams.get('error_reason') || 'access_denied';
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=${errorReason}`, appUrl));
+  }
+
+  if (!state.userId) {
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=invalid_state`, appUrl));
   }
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
   if (!appId || !appSecret) {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=not_configured', appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=not_configured`, appUrl));
   }
 
   const callbackUrl = `${appUrl}/api/social/connect/instagram/callback`;
@@ -42,7 +50,8 @@ export async function GET(request: NextRequest) {
     );
     const tokenData = await tokenRes.json();
     if (!tokenRes.ok || tokenData.error) {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=token_exchange_failed', appUrl));
+      console.error('[IG OAuth] Token exchange failed:', tokenData);
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=token_exchange_failed`, appUrl));
     }
 
     // Step 2: Get long-lived token
@@ -58,8 +67,17 @@ export async function GET(request: NextRequest) {
     );
     const pagesData = await pagesRes.json();
 
+    console.log('[IG OAuth] Pages response:', JSON.stringify({
+      hasData: !!pagesData.data,
+      count: pagesData.data?.length || 0,
+      pages: pagesData.data?.map((p: { id: string; name: string; instagram_business_account?: { id: string } }) => ({
+        id: p.id, name: p.name, hasIG: !!p.instagram_business_account
+      })) || [],
+      error: pagesData.error || null,
+    }));
+
     if (!pagesData.data || pagesData.data.length === 0) {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=no_pages', appUrl));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=no_pages`, appUrl));
     }
 
     // Find the first page with a linked Instagram Business Account
@@ -68,7 +86,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!pageWithIG || !pageWithIG.instagram_business_account) {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=no_instagram_business', appUrl));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=no_instagram_business`, appUrl));
     }
 
     const igAccountId = pageWithIG.instagram_business_account.id;
@@ -80,6 +98,8 @@ export async function GET(request: NextRequest) {
     );
     const igData = await igRes.json();
 
+    console.log('[IG OAuth] Connected IG account:', igData.username, 'ID:', igAccountId, 'isBrand:', state.isBrand);
+
     // Step 5: Store in social_connections
     const supabase = await createServiceRoleClient();
 
@@ -89,11 +109,11 @@ export async function GET(request: NextRequest) {
         vendor_id: state.isBrand ? null : state.userId,
         is_brand_account: state.isBrand,
         platform: 'instagram',
-        access_token: encrypt(pageToken), // Use Page token for IG API calls
+        access_token: encrypt(pageToken),
         refresh_token: null,
-        token_expires_at: null, // Page tokens don't expire
+        token_expires_at: null,
         platform_user_id: igAccountId,
-        platform_page_id: igAccountId, // IG Business Account ID is used as the "page" for API calls
+        platform_page_id: igAccountId,
         account_name: igData.name || pageWithIG.name,
         account_username: igData.username || null,
         account_avatar_url: igData.profile_picture_url || null,
@@ -107,13 +127,12 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error('[IG OAuth] Upsert error:', upsertError);
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=db_error', appUrl));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=db_error`, appUrl));
     }
 
-    const redirectPath = state.isBrand ? '/admin/social' : '/vendor/settings';
-    return NextResponse.redirect(new URL(`${redirectPath}?social_connected=instagram`, appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_connected=instagram`, appUrl));
   } catch (err) {
     console.error('[IG OAuth] Error:', err);
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=unknown', appUrl));
+    return NextResponse.redirect(new URL(`${basePath}${sep}social_error=unknown`, appUrl));
   }
 }
