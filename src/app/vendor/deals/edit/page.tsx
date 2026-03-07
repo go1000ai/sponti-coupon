@@ -1242,6 +1242,10 @@ function EditDealPageInner() {
                   </div>
                 )}
 
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-800 leading-relaxed">
+                  <strong>Disclaimer:</strong> SpontiCoupon distributes one unique code per customer but does not control your website&apos;s checkout. You are responsible for ensuring each code is configured as single-use on your e-commerce platform (Shopify, WooCommerce, etc.). SpontiCoupon is not liable for codes that are reused, shared, or misconfigured.
+                </div>
+
                 <button type="button" onClick={handleAddPromoCodes} disabled={promoSaving}
                   className="w-full py-2 rounded-lg font-semibold text-sm text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
                   {promoSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Adding...</> : <><Ticket className="w-4 h-4" /> Add Codes</>}

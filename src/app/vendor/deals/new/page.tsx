@@ -2425,6 +2425,10 @@ export default function NewDealPage() {
                 )}
               </div>
 
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-800 leading-relaxed">
+                <strong>Disclaimer:</strong> SpontiCoupon distributes one unique code per customer but does not control your website&apos;s checkout. You are responsible for ensuring each code is configured as single-use on your e-commerce platform (Shopify, WooCommerce, etc.). SpontiCoupon is not liable for codes that are reused, shared, or misconfigured.
+              </div>
+
               {/* Tutorial: How to import codes */}
               {promoCodeMode === 'generate' && <PromoCodeTutorial />}
             </div>
