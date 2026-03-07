@@ -537,23 +537,7 @@ function EditDealPageInner() {
     );
   }
 
-  const isLocked = deal.claims_count > 0;
-  if (isLocked) {
-    return (
-      <div className="max-w-3xl mx-auto">
-        <Link href="/vendor/deals/calendar" className="inline-flex items-center gap-1 text-gray-500 hover:text-primary-500 mb-6"><ArrowLeft className="w-4 h-4" /> Back to Deals</Link>
-        <div className="card p-8 text-center">
-          <Lock className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-          <h2 className="text-xl font-bold text-gray-900">Deal Locked</h2>
-          <p className="text-gray-500 mt-2 max-w-md mx-auto">This deal has <strong>{deal.claims_count} claim{deal.claims_count > 1 ? 's' : ''}</strong> and can no longer be edited.</p>
-          <div className="flex gap-3 justify-center mt-6">
-            <Link href="/vendor/deals/calendar" className="btn-outline">Back to Deals</Link>
-            <Link href="/vendor/deals/new" className="btn-primary">Create New Deal</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hasClaims = deal.claims_count > 0;
 
   // Summaries for bento cards
   const contentSummary = form.title || 'Add title and description';
@@ -663,19 +647,25 @@ function EditDealPageInner() {
           {/* Pricing */}
           <BentoCard icon={<DollarSign className="w-5 h-5" />} title="Pricing" summary={pricingSummary} color="green"
             open={!!openSections.pricing} onToggle={() => toggleSection('pricing')}>
+            {hasClaims && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-800 flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                Prices are locked because {deal.claims_count} customer{deal.claims_count > 1 ? 's have' : ' has'} already claimed this deal.
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Original Price *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
-                  <input name="original_price" type="number" step="0.01" min="0" value={form.original_price} onChange={handleChange} className="input-field pl-7 text-sm" required />
+                  <input name="original_price" type="number" step="0.01" min="0" value={form.original_price} onChange={handleChange} className={`input-field pl-7 text-sm ${hasClaims ? 'bg-gray-100 cursor-not-allowed' : ''}`} required disabled={hasClaims} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Deal Price *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
-                  <input name="deal_price" type="number" step="0.01" min="0" value={form.deal_price} onChange={handleChange} className="input-field pl-7 text-sm" required />
+                  <input name="deal_price" type="number" step="0.01" min="0" value={form.deal_price} onChange={handleChange} className={`input-field pl-7 text-sm ${hasClaims ? 'bg-gray-100 cursor-not-allowed' : ''}`} required disabled={hasClaims} />
                 </div>
               </div>
             </div>
@@ -692,9 +682,9 @@ function EditDealPageInner() {
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-gray-400 text-sm">$</span>
                 <input name="deposit_amount" type="number" step="0.01" min={deal.deal_type === 'sponti_coupon' ? '1' : '0'}
-                  value={form.deposit_amount} onChange={handleChange} className="input-field pl-7 text-sm"
+                  value={form.deposit_amount} onChange={handleChange} className={`input-field pl-7 text-sm ${hasClaims ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder={deal.deal_type === 'sponti_coupon' ? '10.00' : '0.00'}
-                  required={deal.deal_type === 'sponti_coupon'} />
+                  required={deal.deal_type === 'sponti_coupon'} disabled={hasClaims} />
               </div>
             </div>
             <div>
@@ -1305,7 +1295,12 @@ function EditDealPageInner() {
 
         {/* Info note */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-600 mb-6">
-          <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) cannot be changed. Claims: {deal.claims_count}
+          <strong className="text-blue-700">Note:</strong> Deal type ({deal.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}) cannot be changed.
+          {hasClaims ? (
+            <span> This deal has <strong>{deal.claims_count} claim{deal.claims_count > 1 ? 's' : ''}</strong>. You can still edit the title, description, images, media, details, scheduling, terms, and promo codes — but <strong>pricing (original price, deal price, and deposit) is locked</strong> to protect customers who already claimed.</span>
+          ) : (
+            <span> Claims: {deal.claims_count}</span>
+          )}
         </div>
 
         {/* Save + Publish/Pause buttons */}
