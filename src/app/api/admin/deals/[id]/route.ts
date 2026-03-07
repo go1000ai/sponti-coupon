@@ -69,11 +69,11 @@ export async function PUT(
     'how_it_works',
     'image_url',
     'image_urls',
-    'category_id',
     'benchmark_deal_id',
     'location_ids',
     'website_url',
     'video_urls',
+    'search_tags',
   ];
 
   const updateData: Record<string, unknown> = {};
