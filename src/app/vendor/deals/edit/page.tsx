@@ -103,7 +103,7 @@ function BentoCard({
 }
 
 function EditDealPageInner() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { canAccess } = useVendorTier();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -537,7 +537,8 @@ function EditDealPageInner() {
     );
   }
 
-  const hasClaims = deal.claims_count > 0;
+  const isAdmin = role === 'admin';
+  const hasClaims = deal.claims_count > 0 && !isAdmin;
 
   // Summaries for bento cards
   const contentSummary = form.title || 'Add title and description';
