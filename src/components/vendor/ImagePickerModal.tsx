@@ -72,7 +72,7 @@ export default function ImagePickerModal({
     if (open) {
       fetchMedia();
       // Initialize from props — deduplicate URLs
-      const init = [...new Set(initialImages)];
+      const init = Array.from(new Set(initialImages));
       if (initialMainImage && !init.includes(initialMainImage)) {
         init.unshift(initialMainImage);
       }
