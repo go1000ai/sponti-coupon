@@ -96,6 +96,7 @@ const config: Config = {
         "float-slow": "floatSlow 6s ease-in-out infinite",
         "float-slower": "floatSlow 8s ease-in-out infinite 2s",
         "pulse-soft": "pulseSoft 4s ease-in-out infinite",
+        "fade-in-up": "fadeInUp 0.4s ease-out forwards",
       },
       keyframes: {
         fadeUp: {
@@ -176,6 +177,10 @@ const config: Config = {
         pulseSoft: {
           '0%, 100%': { opacity: '0.3', transform: 'scale(1)' },
           '50%': { opacity: '0.6', transform: 'scale(1.05)' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(8px) scale(0.95)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
       },
     },

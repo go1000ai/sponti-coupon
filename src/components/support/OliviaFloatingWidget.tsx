@@ -17,6 +17,7 @@ export function OliviaFloatingWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [chatKey, setChatKey] = useState(0);
+  const [showTeaser, setShowTeaser] = useState(false);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -24,6 +25,30 @@ export function OliviaFloatingWidget() {
       setHasInteracted(sessionStorage.getItem('olivia-interacted') === 'true');
     }
   }, []);
+
+  // Show teaser bubble on home page, first visit only
+  useEffect(() => {
+    if (typeof window === 'undefined' || pathname !== '/') return;
+    if (localStorage.getItem('olivia-teaser-seen')) return;
+
+    const showTimer = setTimeout(() => setShowTeaser(true), 3000);
+    return () => clearTimeout(showTimer);
+  }, [pathname]);
+
+  // Auto-dismiss teaser after 8 seconds
+  useEffect(() => {
+    if (!showTeaser) return;
+    const dismissTimer = setTimeout(() => {
+      setShowTeaser(false);
+      localStorage.setItem('olivia-teaser-seen', 'true');
+    }, 8000);
+    return () => clearTimeout(dismissTimer);
+  }, [showTeaser]);
+
+  const dismissTeaser = () => {
+    setShowTeaser(false);
+    localStorage.setItem('olivia-teaser-seen', 'true');
+  };
 
   // Escape key closes the panel
   const handleEscape = useCallback((e: KeyboardEvent) => {
@@ -48,6 +73,7 @@ export function OliviaFloatingWidget() {
 
   const handleOpen = () => {
     setIsOpen(true);
+    dismissTeaser();
     if (!hasInteracted) {
       setHasInteracted(true);
       sessionStorage.setItem('olivia-interacted', 'true');
@@ -68,11 +94,37 @@ export function OliviaFloatingWidget() {
           {!hasInteracted && (
             <span className="absolute inset-0 rounded-full animate-ping bg-secondary-400 opacity-20 pointer-events-none" />
           )}
-          {/* Tooltip */}
-          <span className="absolute right-[calc(100%+8px)] top-1/2 -translate-y-1/2 bg-white text-secondary-600 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
-            {t('chatbot.chatWith', { name: 'Olivia' })}
-          </span>
+          {/* Tooltip (hidden when teaser is visible) */}
+          {!showTeaser && (
+            <span className="absolute right-[calc(100%+8px)] top-1/2 -translate-y-1/2 bg-white text-secondary-600 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden sm:block">
+              {t('chatbot.chatWith', { name: 'Olivia' })}
+            </span>
+          )}
         </button>
+      )}
+
+      {/* Teaser speech bubble */}
+      {!isOpen && showTeaser && (
+        <div
+          className="fixed bottom-[5.5rem] sm:bottom-[4.5rem] right-20 sm:right-[5.5rem] z-[55] animate-fade-in-up"
+        >
+          <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 max-w-[220px]">
+            <button
+              onClick={dismissTeaser}
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center text-gray-500 text-[10px] font-bold transition-colors"
+              aria-label="Dismiss"
+            >
+              &times;
+            </button>
+            <button onClick={handleOpen} className="text-left">
+              <p className="text-sm text-gray-800 font-medium leading-snug">
+                Hi! I&apos;m <span className="text-secondary-500 font-bold">Olivia</span> — got questions? I&apos;m here to help!
+              </p>
+            </button>
+            {/* Arrow pointing right toward the bubble */}
+            <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-white drop-shadow-sm" />
+          </div>
+        </div>
       )}
 
       {/* Chat Panel */}
