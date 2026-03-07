@@ -916,7 +916,7 @@ export default function AdminDealDetailPage() {
                               )}
                             </button>
                             {showAddImageMenu && (
-                              <div className="absolute top-full left-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                              <div className="absolute bottom-full left-0 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
                                 <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
                                   <Upload className="w-3.5 h-3.5 text-gray-500" />
                                   Upload from Device
@@ -973,7 +973,7 @@ export default function AdminDealDetailPage() {
                           </>
                         )}
                         {showAddImageMenu && (
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
                             <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
                               <Upload className="w-3.5 h-3.5 text-gray-500" />
                               Upload from Device
