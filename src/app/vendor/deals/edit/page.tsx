@@ -135,6 +135,7 @@ function EditDealPageInner() {
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [newVideoUrl, setNewVideoUrl] = useState('');
+  const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [highlights, setHighlights] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
@@ -796,19 +797,24 @@ function EditDealPageInner() {
                     return (
                       <div key={i} className="relative group">
                         {isDirectVideo ? (
-                          <div className="w-32 h-20 rounded-lg overflow-hidden border border-gray-200 bg-black">
-                            <video src={url} className="w-full h-full object-cover" muted playsInline
-                              onMouseEnter={e => (e.target as HTMLVideoElement).play().catch(() => {})}
-                              onMouseLeave={e => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
-                          </div>
+                          <button type="button" onClick={() => setPreviewVideoUrl(url)}
+                            className="w-40 h-24 rounded-xl overflow-hidden border border-gray-200 bg-black relative cursor-pointer">
+                            <video src={`${url}#t=0.5`} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-100 group-hover:bg-black/40 transition-all">
+                              <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                                <span className="ml-0.5 border-l-[10px] border-l-gray-800 border-y-[6px] border-y-transparent" />
+                              </div>
+                            </div>
+                          </button>
                         ) : (
-                          <div className="w-32 h-20 rounded-lg overflow-hidden border border-gray-200 bg-gray-900 flex items-center justify-center">
-                            <Video className="w-6 h-6 text-gray-400" />
-                            <span className="absolute bottom-1 left-1 right-1 text-[8px] text-white truncate">{url}</span>
-                          </div>
+                          <button type="button" onClick={() => setPreviewVideoUrl(url)}
+                            className="w-40 h-24 rounded-xl overflow-hidden border border-gray-200 bg-gray-900 flex items-center justify-center relative cursor-pointer">
+                            <Video className="w-8 h-8 text-gray-400" />
+                            <span className="absolute bottom-1 left-1 right-1 text-[9px] text-white truncate">{url}</span>
+                          </button>
                         )}
-                        <button type="button" onClick={() => setVideoUrls(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow"><X className="w-2.5 h-2.5" /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); setVideoUrls(prev => prev.filter((_, idx) => idx !== i)); }}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md z-10"><X className="w-3 h-3" /></button>
                       </div>
                     );
                   })}
@@ -1163,6 +1169,43 @@ function EditDealPageInner() {
           setShowImagePicker(false);
         }}
       />
+
+      {/* Video Preview Modal */}
+      {previewVideoUrl && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] px-4" onClick={() => setPreviewVideoUrl(null)}>
+          <div className="relative max-w-3xl w-full animate-fade-up" onClick={e => e.stopPropagation()}>
+            <button type="button" onClick={() => setPreviewVideoUrl(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm font-medium">
+              <X className="w-5 h-5" /> Close
+            </button>
+            {(previewVideoUrl.match(/\.(mp4|webm|mov)(\?|$)/i) || previewVideoUrl.includes('supabase')) ? (
+              <video src={previewVideoUrl} controls autoPlay className="w-full rounded-xl shadow-2xl max-h-[80vh]" />
+            ) : previewVideoUrl.includes('youtube.com') || previewVideoUrl.includes('youtu.be') ? (
+              <iframe
+                src={previewVideoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                className="w-full aspect-video rounded-xl shadow-2xl"
+                allow="autoplay; fullscreen" allowFullScreen />
+            ) : (
+              <div className="bg-gray-900 rounded-xl p-8 text-center">
+                <Video className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-white text-sm mb-2">External video link</p>
+                <a href={previewVideoUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-primary-400 hover:text-primary-300 text-sm underline">Open in new tab</a>
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <button type="button" onClick={() => setPreviewVideoUrl(null)}
+                className="px-6 py-2.5 bg-white text-gray-900 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
+                Looks Good
+              </button>
+              <button type="button" onClick={() => { setVideoUrls(prev => prev.filter(u => u !== previewVideoUrl)); setPreviewVideoUrl(null); }}
+                className="px-6 py-2.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg font-semibold text-sm hover:bg-red-500/30 transition-colors">
+                Remove Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
