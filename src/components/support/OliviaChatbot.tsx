@@ -95,6 +95,14 @@ function getSuggestionKeys(userRole: string, pageContext?: string): string[] {
   return CUSTOMER_SUGGESTION_KEYS;
 }
 
+// Lead capture form state
+interface LeadForm {
+  name: string;
+  email: string;
+  phone: string;
+  business_name: string;
+}
+
 export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: OliviaChatbotProps) {
   const isFloating = variant === 'floating';
   const { t } = useLanguage();
@@ -114,6 +122,10 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [leadCaptured, setLeadCaptured] = useState(false);
+  const [leadSubmitting, setLeadSubmitting] = useState(false);
+  const [leadForm, setLeadForm] = useState<LeadForm>({ name: '', email: '', phone: '', business_name: '' });
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -178,7 +190,12 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
         body: JSON.stringify({ messages: updatedMessages, userRole, origin: window.location.origin }),
       });
       const data = await res.json();
-      const reply = data.reply || t('chatbot.couldntProcess');
+      let reply = data.reply || t('chatbot.couldntProcess');
+      // Detect lead capture trigger from Olivia
+      if (reply.includes('[CAPTURE_LEAD]') && !leadCaptured) {
+        reply = reply.replace(/\s*\[CAPTURE_LEAD\]\s*/g, '');
+        setShowLeadForm(true);
+      }
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch {
       setMessages((prev) => [
@@ -202,6 +219,37 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(input);
+    }
+  };
+
+  const handleLeadSubmit = async () => {
+    if (!leadForm.email.trim() || !leadForm.email.includes('@')) return;
+    setLeadSubmitting(true);
+    try {
+      await fetch('/api/leads/capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: leadForm.name,
+          email: leadForm.email,
+          phone: leadForm.phone,
+          business_name: leadForm.business_name,
+          source: 'olivia_chat',
+        }),
+      });
+      setLeadCaptured(true);
+      setShowLeadForm(false);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Got it! I'll make sure our team reaches out with everything you need. In the meantime, feel free to check out our deals or ask me anything else!",
+      }]);
+    } catch {
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Hmm, something went wrong saving your info. Could you try again?",
+      }]);
+    } finally {
+      setLeadSubmitting(false);
     }
   };
 
@@ -262,6 +310,57 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
                 <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                 <div className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lead capture form */}
+        {showLeadForm && !leadCaptured && (
+          <div className="mx-2 bg-gradient-to-br from-primary-50 to-orange-50 border border-primary-200 rounded-xl p-3.5 space-y-2.5">
+            <p className="text-xs font-semibold text-gray-700">Drop your info and we&apos;ll be in touch!</p>
+            <input
+              type="text"
+              placeholder="Your name"
+              value={leadForm.name}
+              onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <input
+              type="email"
+              placeholder="Email *"
+              required
+              value={leadForm.email}
+              onChange={e => setLeadForm(f => ({ ...f, email: e.target.value }))}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <input
+              type="tel"
+              placeholder="Phone (optional)"
+              value={leadForm.phone}
+              onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <input
+              type="text"
+              placeholder="Business name (optional)"
+              value={leadForm.business_name}
+              onChange={e => setLeadForm(f => ({ ...f, business_name: e.target.value }))}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleLeadSubmit}
+                disabled={leadSubmitting || !leadForm.email.includes('@')}
+                className="flex-1 text-sm font-medium bg-primary-500 text-white rounded-lg py-2 hover:bg-primary-600 disabled:opacity-50 transition-colors"
+              >
+                {leadSubmitting ? 'Sending...' : 'Send My Info'}
+              </button>
+              <button
+                onClick={() => setShowLeadForm(false)}
+                className="text-sm text-gray-500 hover:text-gray-700 px-3 transition-colors"
+              >
+                Skip
+              </button>
             </div>
           </div>
         )}

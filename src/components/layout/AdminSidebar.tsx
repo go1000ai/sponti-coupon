@@ -72,6 +72,7 @@ function useNavGroups(): NavGroup[] {
         { label: t('admin.sidebar.reviews'), href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
         { label: t('admin.sidebar.locations'), href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
         { label: t('admin.sidebar.leads'), href: '/admin/leads', icon: <Target className="w-5 h-5" /> },
+        { label: 'Prospects', href: '/admin/prospects', icon: <UsersRound className="w-5 h-5" /> },
       ],
     },
     {
