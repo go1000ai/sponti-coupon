@@ -837,9 +837,10 @@ export default function NewDealPage() {
     original_price: number; deal_price: number; deposit_amount: number;
     max_claims: number; duration_hours: number; duration_days: number;
     highlights: string[]; fine_print: string; terms_and_conditions: string;
+    how_it_works: string; amenities: string[];
     search_tags: string[]; image_prompt: string;
   }) => {
-    // Fill form fields
+    // Fill ALL form fields
     setDealType(deal.deal_type);
     setForm(prev => ({
       ...prev,
@@ -853,32 +854,34 @@ export default function NewDealPage() {
       duration_days: deal.duration_days.toString(),
       fine_print: deal.fine_print || prev.fine_print,
       terms_and_conditions: deal.terms_and_conditions || prev.terms_and_conditions,
+      how_it_works: deal.how_it_works || prev.how_it_works,
     }));
     if (deal.highlights.length > 0) setHighlights(deal.highlights);
+    if (deal.amenities?.length > 0) setAmenities(deal.amenities);
     if (deal.search_tags.length > 0) setSearchTags(deal.search_tags);
 
-    // Auto-generate image with AI prompt
-    if (deal.image_prompt && !form.image_url) {
+    // Auto-generate 3 images with AI prompt
+    if (deal.image_prompt) {
       setAiImageLoading(true);
       setCustomImagePrompt(deal.image_prompt);
-      try {
-        const res = await fetch('/api/vendor/generate-image', {
+      const imagePromises = Array.from({ length: 3 }, (_, i) =>
+        fetch('/api/vendor/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(withVendorId({
             title: deal.title,
             description: deal.description,
-            custom_prompt: deal.image_prompt,
+            custom_prompt: `${deal.image_prompt}${i > 0 ? ` (variation ${i + 1}, different angle or style)` : ''}`,
           })),
-        });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          addImageToGallery(data.url);
-        }
-      } catch { /* silent — user can generate manually */ }
+        }).then(r => r.json()).catch(() => null)
+      );
+      const results = await Promise.all(imagePromises);
+      for (const data of results) {
+        if (data?.url) addImageToGallery(data.url);
+      }
       setAiImageLoading(false);
     }
-  }, [form.image_url, addImageToGallery]);
+  }, [addImageToGallery]);
 
   // ── Submit ─────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {

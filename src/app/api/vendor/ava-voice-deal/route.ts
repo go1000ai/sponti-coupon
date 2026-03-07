@@ -70,7 +70,7 @@ Extract the following fields from the transcript. If a field is not mentioned, u
 
 Rules:
 - Title should be catchy and marketing-friendly (max 80 chars)
-- Description should be 1-3 sentences, professional but engaging
+- Description should be 2-4 sentences, professional but engaging, highlighting the value
 - If they mention a percentage off, calculate the deal_price from original_price
 - If they say "half off" or "50% off $60", calculate accordingly
 - deal_type: use "sponti_coupon" if they mention flash deal, limited time, today only, quick, rush, etc. Otherwise use "regular" for steady/ongoing deals
@@ -78,10 +78,12 @@ Rules:
 - duration_days: for regular deals, default 7 if not specified
 - deposit_amount: suggest 0 unless they mention a deposit or reservation fee
 - max_claims: suggest 50 for sponti deals, 100 for regular deals, unless specified
-- highlights: 2-4 short bullet points about what makes this deal great
-- fine_print: standard restrictions like "One per customer. Cannot be combined with other offers."
-- terms_and_conditions: brief terms if mentioned, otherwise leave empty
+- highlights: 3-5 short bullet points about what makes this deal great
+- fine_print: ALWAYS generate thorough fine print with standard restrictions. Include things like: "Limit one per customer. Cannot be combined with other offers or promotions. Subject to availability. Must present coupon at time of purchase. No cash value. Valid only at participating locations. Expires on deal end date." Tailor to the business type.
+- terms_and_conditions: ALWAYS generate complete terms. Include: "By claiming this deal, you agree to the following terms: This offer is valid during the specified deal period only. The vendor reserves the right to modify or cancel this offer. Unused claims are non-transferable and non-refundable. [business-specific terms based on the service/product type]." Add 2-3 more relevant terms based on the business category.
 - search_tags: 10-15 keywords customers might search for
+
+IMPORTANT: Every single field must be filled out — do NOT return empty strings for any field. Generate smart, professional defaults based on the business type and deal description.
 
 Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
 {
@@ -97,6 +99,8 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
   "highlights": ["string"],
   "fine_print": "string",
   "terms_and_conditions": "string",
+  "how_it_works": "string (step-by-step instructions: 1. Claim this deal... 2. Show your code... 3. Enjoy!)",
+  "amenities": ["string (relevant amenities/features like: WiFi, Parking, Outdoor Seating, etc.)"],
   "search_tags": ["string"],
   "image_prompt": "string (a prompt to generate a deal image — describe the product/service visually)"
 }${outputLanguage ? `\n\nIMPORTANT: Write ALL text content (title, description, highlights, fine_print, terms_and_conditions) in ${outputLanguage}. JSON keys stay in English, but all string VALUES must be in ${outputLanguage}. The image_prompt and search_tags should remain in English for optimal search and image generation.` : ''}`;
@@ -131,6 +135,10 @@ Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
         : [],
       fine_print: String(parsed.fine_print || ''),
       terms_and_conditions: String(parsed.terms_and_conditions || ''),
+      how_it_works: String(parsed.how_it_works || ''),
+      amenities: Array.isArray(parsed.amenities)
+        ? parsed.amenities.map((a: unknown) => String(a)).filter((a: string) => a.length > 0).slice(0, 10)
+        : [],
       search_tags: Array.isArray(parsed.search_tags)
         ? parsed.search_tags.map((t: unknown) => String(t).toLowerCase().trim()).filter((t: string) => t.length > 0).slice(0, 30)
         : [],

@@ -17,6 +17,8 @@ interface VoiceDealResult {
   highlights: string[];
   fine_print: string;
   terms_and_conditions: string;
+  how_it_works: string;
+  amenities: string[];
   search_tags: string[];
   image_prompt: string;
 }
