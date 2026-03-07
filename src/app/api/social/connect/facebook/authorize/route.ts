@@ -50,9 +50,12 @@ export async function GET(request: NextRequest) {
   });
   const encodedState = Buffer.from(state).toString('base64url');
 
-  const scopes = 'pages_manage_posts,pages_read_engagement,pages_show_list';
+  // Facebook Login for Business uses config_id instead of individual scopes
+  const configId = process.env.META_LOGIN_CONFIG_ID;
 
-  const authUrl = `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scopes)}&state=${encodedState}&response_type=code`;
+  const authUrl = configId
+    ? `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&config_id=${configId}&state=${encodedState}&response_type=code`
+    : `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list')}&state=${encodedState}&response_type=code`;
 
   return NextResponse.redirect(authUrl);
 }
