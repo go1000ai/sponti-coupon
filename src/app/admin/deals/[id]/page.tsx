@@ -254,6 +254,7 @@ export default function AdminDealDetailPage() {
   const [videoPrompt, setVideoPrompt] = useState('');
   const [videoSourceImage, setVideoSourceImage] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
+  const [originalTags, setOriginalTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [generatingTags, setGeneratingTags] = useState(false);
   const [avaLoading, setAvaLoading] = useState(false);
@@ -310,6 +311,7 @@ export default function AdminDealDetailPage() {
         setFormData(fd);
         setOriginalData(fd);
         setSearchTags(foundDeal.search_tags || []);
+        setOriginalTags(foundDeal.search_tags || []);
 
         if (catRes.ok) {
           const catData = await catRes.json();
@@ -338,9 +340,10 @@ export default function AdminDealDetailPage() {
 
   // ---------- Track changes ----------
   useEffect(() => {
-    const changed = JSON.stringify(formData) !== JSON.stringify(originalData);
-    setHasChanges(changed);
-  }, [formData, originalData]);
+    const formChanged = JSON.stringify(formData) !== JSON.stringify(originalData);
+    const tagsChanged = JSON.stringify(searchTags) !== JSON.stringify(originalTags);
+    setHasChanges(formChanged || tagsChanged);
+  }, [formData, originalData, searchTags, originalTags]);
 
   // ---------- Form field updaters ----------
   const updateField = (field: string, value: unknown) => {
@@ -760,8 +763,8 @@ export default function AdminDealDetailPage() {
         </div>
       )}
 
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-6 opacity-0 animate-[fadeIn_0.4s_ease-out_forwards]">
+      {/* Top Bar — sticky */}
+      <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-6 px-6 py-3 flex items-center justify-between mb-6 border-b border-gray-200/50">
         <Link
           href="/admin/deals"
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors group"
@@ -1755,6 +1758,21 @@ export default function AdminDealDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Bottom Save Bar */}
+      {hasChanges && (
+        <div className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-sm -mx-6 px-6 py-4 border-t border-gray-200 flex items-center justify-between mt-6">
+          <p className="text-sm text-gray-500">You have unsaved changes</p>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save Changes
+          </button>
+        </div>
+      )}
     </div>
   );
 }
