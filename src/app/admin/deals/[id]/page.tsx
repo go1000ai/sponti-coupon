@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -27,7 +27,6 @@ import {
   CheckCircle,
   TrendingUp,
   ChevronDown,
-  ChevronUp,
   Star,
   Copy,
   Check,
@@ -39,6 +38,11 @@ import {
   Wand2,
   Info,
   Sparkles,
+  DollarSign,
+  FileText,
+  MapPin,
+  Calendar,
+  ClipboardList,
 } from 'lucide-react';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
@@ -115,6 +119,58 @@ function useAnimatedCounter(target: number, duration = 500): number {
 }
 
 // ---------- Sub-components ----------
+
+function BentoCard({
+  icon,
+  title,
+  summary,
+  open,
+  onToggle,
+  color = 'gray',
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  color?: string;
+  children: ReactNode;
+}) {
+  const colorMap: Record<string, { bg: string; iconBg: string; border: string; ring: string }> = {
+    gray: { bg: 'bg-white', iconBg: 'bg-gray-100 text-gray-600', border: 'border-gray-200', ring: 'ring-gray-300' },
+    orange: { bg: 'bg-white', iconBg: 'bg-primary-50 text-primary-600', border: 'border-primary-200', ring: 'ring-primary-300' },
+    blue: { bg: 'bg-white', iconBg: 'bg-blue-50 text-blue-600', border: 'border-blue-200', ring: 'ring-blue-300' },
+    green: { bg: 'bg-white', iconBg: 'bg-green-50 text-green-600', border: 'border-green-200', ring: 'ring-green-300' },
+    amber: { bg: 'bg-white', iconBg: 'bg-amber-50 text-amber-600', border: 'border-amber-200', ring: 'ring-amber-300' },
+    emerald: { bg: 'bg-white', iconBg: 'bg-emerald-50 text-emerald-600', border: 'border-emerald-200', ring: 'ring-emerald-300' },
+  };
+  const c = colorMap[color] || colorMap.gray;
+
+  return (
+    <div className={`${c.bg} rounded-2xl border ${open ? c.border + ' ring-2 ' + c.ring : 'border-gray-200'} shadow-sm hover:shadow-md transition-all overflow-hidden`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 p-4 text-left"
+      >
+        <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center flex-shrink-0`}>
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-400 truncate">{summary}</p>
+        </div>
+        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AnimatedStat({ icon: Icon, value, label, suffix = '', color }: {
   icon: React.ElementType;
@@ -242,7 +298,10 @@ export default function AdminDealDetailPage() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [toast, setToast] = useState('');
   const [copiedId, setCopiedId] = useState(false);
-  const [detailsExpanded, setDetailsExpanded] = useState(true);
+
+  // Bento sections open state
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ content: true });
+  const toggleSection = (key: string) => setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   // Media library & AI state
   const [showImagePicker, setShowImagePicker] = useState(false);
@@ -308,7 +367,6 @@ export default function AdminDealDetailPage() {
 
     const fetchData = async () => {
       try {
-        // Fetch deals list and find the one we need
         const [dealsRes, catRes] = await Promise.all([
           fetch('/api/admin/deals'),
           fetch('/api/admin/categories'),
@@ -331,7 +389,6 @@ export default function AdminDealDetailPage() {
           setCategories(catData.categories || []);
         }
 
-        // Fetch analytics (may not exist)
         try {
           const analyticsRes = await fetch(`/api/admin/deals/${dealId}/analytics`);
           if (analyticsRes.ok) {
@@ -620,21 +677,17 @@ export default function AdminDealDetailPage() {
     if (!deal || !hasChanges) return;
     setSaving(true);
     try {
-      // Sync search_tags into formData before diffing
       formData.search_tags = searchTags;
 
-      // Build only changed fields
       const changedFields: Record<string, unknown> = {};
-      const skipFields = ['category_id']; // Not a real DB column
+      const skipFields = ['category_id'];
       for (const key of Object.keys(formData)) {
         if (skipFields.includes(key)) continue;
         if (JSON.stringify(formData[key]) !== JSON.stringify(originalData[key])) {
           let val = formData[key];
-          // Convert date fields to ISO
           if ((key === 'starts_at' || key === 'expires_at') && typeof val === 'string' && val) {
             val = new Date(val).toISOString();
           }
-          // Convert empty strings to null for nullable fields
           if (val === '' && ['deposit_amount', 'max_claims', 'description', 'how_it_works', 'fine_print', 'terms_and_conditions', 'website_url', 'image_url'].includes(key)) {
             val = null;
           }
@@ -701,14 +754,13 @@ export default function AdminDealDetailPage() {
           <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <SkeletonCard className="h-72" />
-            <SkeletonCard />
-            <SkeletonCard />
+          <div className="lg:col-span-2 space-y-4">
+            <SkeletonCard className="h-32" />
+            <SkeletonCard className="h-32" />
+            <SkeletonCard className="h-32" />
+            <SkeletonCard className="h-32" />
           </div>
-          <div className="space-y-6">
-            <SkeletonCard />
-            <SkeletonCard />
+          <div className="space-y-4">
             <SkeletonCard />
             <SkeletonCard />
           </div>
@@ -745,6 +797,16 @@ export default function AdminDealDetailPage() {
   const savings = (formData.original_price as number) - (formData.deal_price as number);
   const currentStatus = formData.status as DealStatus;
   const statusStyle = statusColors[currentStatus] || statusColors.draft;
+  const allImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
+
+  // Summaries for bento cards
+  const contentSummary = (formData.title as string) || 'No title';
+  const pricingSummary = `${formatCurrency(formData.deal_price as number)} (was ${formatCurrency(formData.original_price as number)})`;
+  const mediaSummary = `${allImages.length} image${allImages.length !== 1 ? 's' : ''}, ${((formData.video_urls as string[]) || []).length} video${((formData.video_urls as string[]) || []).length !== 1 ? 's' : ''}`;
+  const detailsSummary = `${((formData.highlights as string[]) || []).filter(Boolean).length} highlights, ${((formData.amenities as string[]) || []).filter(Boolean).length} amenities`;
+  const locationSummary = (formData.website_url as string) || 'No website URL';
+  const schedulingSummary = (formData.starts_at as string) ? `${new Date(formData.starts_at as string).toLocaleDateString()} - ${new Date(formData.expires_at as string).toLocaleDateString()}` : 'Not scheduled';
+  const termsSummary = [(formData.how_it_works as string) ? 'How It Works' : '', (formData.fine_print as string) ? 'Fine Print' : '', (formData.terms_and_conditions as string) ? 'T&C' : ''].filter(Boolean).join(', ') || 'None set';
 
   // ---------- Render ----------
   return (
@@ -780,6 +842,32 @@ export default function AdminDealDetailPage() {
         </div>
       )}
 
+      {/* ImagePickerModal */}
+      {deal && (
+        <ImagePickerModal
+          open={showImagePicker}
+          onClose={() => setShowImagePicker(false)}
+          initialImages={[
+            ...(formData.image_url ? [formData.image_url as string] : []),
+            ...((formData.image_urls as string[]) || []),
+          ]}
+          initialMainImage={formData.image_url as string}
+          maxImages={11}
+          vendorId={deal.vendor_id}
+          onConfirm={(images: SelectedImage[]) => {
+            if (images.length === 0) {
+              updateField('image_url', '');
+              updateField('image_urls', []);
+            } else {
+              const mainImg = images.find(img => img.isMain)?.url || images[0].url;
+              updateField('image_url', mainImg);
+              updateField('image_urls', images.filter(img => img.url !== mainImg).map(img => img.url));
+            }
+            setShowImagePicker(false);
+          }}
+        />
+      )}
+
       {/* Top Bar — sticky */}
       <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-6 px-6 py-3 flex items-center justify-between mb-6 border-b border-gray-200/50">
         <Link
@@ -808,303 +896,48 @@ export default function AdminDealDetailPage() {
         </div>
       </div>
 
-      {/* Two Column Layout */}
+      {/* Main Layout: Bento Cards + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        {/* ==================== LEFT COLUMN ==================== */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* ==================== LEFT: BENTO CARDS ==================== */}
+        <div className="lg:col-span-2 space-y-4">
 
-          {/* 1. Deal Images Card */}
-          <div
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.1s_forwards]"
+          {/* 1. Content */}
+          <BentoCard
+            icon={<FileText className="w-5 h-5" />}
+            title="Content"
+            summary={contentSummary}
+            color="orange"
+            open={!!openSections.content}
+            onToggle={() => toggleSection('content')}
           >
-            {(() => {
-              const allImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
-              return (
-                <>
-                  {/* Header */}
-                  <div className="px-4 pt-4 pb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4 text-primary-500" />
-                      <span className="text-sm font-semibold text-gray-700">Deal Images</span>
-                      <span className="text-xs text-gray-400">({allImages.length}/11)</span>
-                    </div>
-                  </div>
-
-                  {/* Hero preview of main image */}
-                  {formData.image_url && (
-                    <div className="relative overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={formData.image_url as string}
-                        alt={formData.title as string}
-                        className="w-full h-64 object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const gallery = (formData.image_urls as string[]) || [];
-                          if (gallery.length > 0) {
-                            updateField('image_url', gallery[0]);
-                            updateField('image_urls', gallery.slice(1));
-                          } else {
-                            updateField('image_url', '');
-                          }
-                        }}
-                        className="absolute top-3 right-3 p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Image grid (all images as thumbnails) + Add button */}
-                  <div className="px-4 pb-3 pt-3">
-                    {allImages.length > 0 ? (
-                      <div className="flex gap-2 flex-wrap">
-                        {allImages.map((url, i) => (
-                          <div key={i} className="relative group">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={url}
-                              alt={i === 0 ? 'Main image' : `Image ${i + 1}`}
-                              className={`w-24 h-24 rounded-lg object-cover border-2 transition-colors ${
-                                i === 0 ? 'border-primary-400 ring-2 ring-primary-200' : 'border-gray-100 group-hover:border-primary-300'
-                              }`}
-                            />
-                            {i === 0 && (
-                              <span className="absolute bottom-0 left-0 right-0 bg-primary-500/90 text-white text-[9px] text-center py-0.5 rounded-b-md font-medium">
-                                Main
-                              </span>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (i === 0) {
-                                  const gallery = (formData.image_urls as string[]) || [];
-                                  if (gallery.length > 0) {
-                                    updateField('image_url', gallery[0]);
-                                    updateField('image_urls', gallery.slice(1));
-                                  } else {
-                                    updateField('image_url', '');
-                                  }
-                                } else {
-                                  removeGalleryImage(i - 1);
-                                }
-                              }}
-                              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                        {/* Add more — dropdown menu */}
-                        {allImages.length < 11 && (
-                          <div className="relative" data-add-image-menu>
-                            <button
-                              type="button"
-                              onClick={() => setShowAddImageMenu(p => !p)}
-                              className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors"
-                            >
-                              {(uploadingImage || uploadingGallery || aiImageLoading) ? (
-                                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-                              ) : (
-                                <>
-                                  <Plus className="w-5 h-5 text-gray-400" />
-                                  <span className="text-[10px] text-gray-400">Add</span>
-                                </>
-                              )}
-                            </button>
-                            {showAddImageMenu && (
-                              <div className="absolute bottom-full left-0 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
-                                <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-                                  <Upload className="w-3.5 h-3.5 text-gray-500" />
-                                  Upload from Device
-                                  <input
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp,image/gif"
-                                    className="hidden"
-                                    disabled={uploadingImage || uploadingGallery}
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        if (!formData.image_url) handleImageUpload(file);
-                                        else handleGalleryImageUpload(file);
-                                      }
-                                      e.target.value = '';
-                                      setShowAddImageMenu(false);
-                                    }}
-                                  />
-                                </label>
-                                <button
-                                  type="button"
-                                  onClick={() => { setShowImagePicker(true); setShowAddImageMenu(false); }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
-                                  Browse Library
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => { setShowAiImageInput(true); setShowAddImageMenu(false); }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                  <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
-                                  Generate with AI
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div
-                        data-add-image-menu
-                        onClick={() => setShowAddImageMenu(p => !p)}
-                        className="relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200 cursor-pointer hover:border-primary-300 transition-colors"
-                      >
-                        {(uploadingImage || aiImageLoading) ? (
-                          <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
-                        ) : (
-                          <>
-                            <Plus className="w-8 h-8 text-gray-300" />
-                            <span className="text-gray-400 text-sm">Add an image</span>
-                            <span className="text-gray-300 text-xs">Upload, library, or AI</span>
-                          </>
-                        )}
-                        {showAddImageMenu && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
-                            <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
-                              <Upload className="w-3.5 h-3.5 text-gray-500" />
-                              Upload from Device
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                className="hidden"
-                                disabled={uploadingImage}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) handleImageUpload(file);
-                                  e.target.value = '';
-                                  setShowAddImageMenu(false);
-                                }}
-                              />
-                            </label>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setShowImagePicker(true); setShowAddImageMenu(false); }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
-                              Browse Library
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); setShowAiImageInput(true); setShowAddImageMenu(false); }}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                            >
-                              <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
-                              Generate with AI
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ava AI Image Generation — shown when triggered from Add menu */}
-                  {showAiImageInput && (
-                    <div className="px-4 pb-4">
-                      <div className="flex items-center gap-2">
-                        <input
-                          value={customImagePrompt}
-                          onChange={e => setCustomImagePrompt(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
-                          className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
-                          placeholder="Describe the image you want (or leave blank for auto)..."
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAiImageGenerate}
-                          disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
-                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                        >
-                          {aiImageLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-                          Generate
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowAiImageInput(false)}
-                          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
-
-          {/* ImagePickerModal — vendor's media library */}
-          {deal && (
-            <ImagePickerModal
-              open={showImagePicker}
-              onClose={() => setShowImagePicker(false)}
-              initialImages={[
-                ...(formData.image_url ? [formData.image_url as string] : []),
-                ...((formData.image_urls as string[]) || []),
-              ]}
-              initialMainImage={formData.image_url as string}
-              maxImages={11}
-              vendorId={deal.vendor_id}
-              onConfirm={(images: SelectedImage[]) => {
-                if (images.length === 0) {
-                  updateField('image_url', '');
-                  updateField('image_urls', []);
-                } else {
-                  const mainImg = images.find(img => img.isMain)?.url || images[0].url;
-                  updateField('image_url', mainImg);
-                  updateField('image_urls', images.filter(img => img.url !== mainImg).map(img => img.url));
-                }
-                setShowImagePicker(false);
-              }}
-            />
-          )}
-
-          {/* 2. Title & Description Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.2s_forwards]">
-            <div className="mb-1">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="h-1 w-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-300" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Title & Description</span>
-              </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title as string}
+                onChange={handleInputChange}
+                className="w-full text-lg font-bold text-gray-900 border border-gray-200 rounded-xl px-3 py-2.5 outline-none transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500"
+                placeholder="Deal title..."
+              />
             </div>
-            <input
-              type="text"
-              name="title"
-              value={formData.title as string}
-              onChange={handleInputChange}
-              className="w-full text-2xl font-bold text-gray-900 border-0 border-b-2 border-transparent focus:border-primary-500 bg-transparent px-0 py-2 outline-none transition-all duration-200 placeholder:text-gray-300"
-              placeholder="Deal title..."
-            />
-            <textarea
-              name="description"
-              value={formData.description as string}
-              onChange={handleInputChange}
-              rows={4}
-              className="w-full mt-3 px-3 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
-              placeholder="Describe this deal..."
-            />
-
-            {/* Ava AI Enhance */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+              <textarea
+                name="description"
+                value={formData.description as string}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                placeholder="Describe this deal..."
+              />
+            </div>
             <button
               type="button"
               onClick={handleAvaEnhance}
               disabled={avaLoading}
-              className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 text-sm font-medium transition-all disabled:opacity-50 shadow-sm"
             >
               {avaLoading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> {t('admin.deals.avaWorking')}</>
@@ -1112,326 +945,662 @@ export default function AdminDealDetailPage() {
                 <><Sparkles className="w-4 h-4" /> {t('admin.deals.avaEnhance')}</>
               )}
             </button>
-            <p className="mt-1 text-xs text-gray-400">
-              {t('admin.deals.avaDescription')}
-            </p>
-          </div>
+            <p className="text-xs text-gray-400">{t('admin.deals.avaDescription')}</p>
+          </BentoCard>
 
-          {/* 3. Deal Details Card (Collapsible) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.3s_forwards]">
-            <button
-              onClick={() => setDetailsExpanded(!detailsExpanded)}
-              className="w-full flex items-center justify-between p-6 text-left"
-            >
-              <div className="flex items-center gap-2">
-                <div className="h-1 w-8 rounded-full bg-gradient-to-r from-accent-500 to-accent-300" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Deal Details</span>
+          {/* 2. Pricing */}
+          <BentoCard
+            icon={<DollarSign className="w-5 h-5" />}
+            title="Pricing"
+            summary={pricingSummary}
+            color="green"
+            open={!!openSections.pricing}
+            onToggle={() => toggleSection('pricing')}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Original Price</label>
+                <input
+                  type="number"
+                  name="original_price"
+                  value={formData.original_price as number}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="0.00"
+                />
               </div>
-              {detailsExpanded ? (
-                <ChevronUp className="w-5 h-5 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Deal Price</label>
+                <input
+                  type="number"
+                  name="deal_price"
+                  value={formData.deal_price as number}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Discount %</label>
+                <input
+                  type="number"
+                  name="discount_percentage"
+                  value={formData.discount_percentage as number}
+                  onChange={handleInputChange}
+                  min="0"
+                  max="100"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Deposit Amount</label>
+                <input
+                  type="number"
+                  name="deposit_amount"
+                  value={formData.deposit_amount as number | ''}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Max Claims</label>
+              <input
+                type="number"
+                name="max_claims"
+                value={formData.max_claims as number | ''}
+                onChange={handleInputChange}
+                min="0"
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                placeholder="Unlimited"
+              />
+            </div>
+            {savings > 0 && (
+              <div className="p-3 bg-green-50 rounded-xl text-center">
+                <span className="text-green-700 text-sm font-semibold">
+                  {formatCurrency(savings)} off ({String(formData.discount_percentage || 0)}%)
+                </span>
+              </div>
+            )}
+          </BentoCard>
 
-            {detailsExpanded && (
-              <div className="px-6 pb-6 space-y-5 border-t border-gray-50 pt-4">
-                {/* How It Works */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">How It Works</label>
-                  <textarea
-                    name="how_it_works"
-                    value={formData.how_it_works as string}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
-                    placeholder="Explain how the deal works..."
-                  />
-                </div>
+          {/* 3. Media */}
+          <BentoCard
+            icon={<ImageIcon className="w-5 h-5" />}
+            title="Media"
+            summary={mediaSummary}
+            color="blue"
+            open={!!openSections.media}
+            onToggle={() => toggleSection('media')}
+          >
+            {/* Hero preview */}
+            {!!(formData.image_url as string) && (
+              <div className="relative overflow-hidden rounded-xl">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={formData.image_url as string}
+                  alt={formData.title as string}
+                  className="w-full h-56 object-cover rounded-xl"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const gallery = (formData.image_urls as string[]) || [];
+                    if (gallery.length > 0) {
+                      updateField('image_url', gallery[0]);
+                      updateField('image_urls', gallery.slice(1));
+                    } else {
+                      updateField('image_url', '');
+                    }
+                  }}
+                  className="absolute top-3 right-3 p-1.5 text-white bg-black/50 backdrop-blur-sm rounded-lg hover:bg-red-500/80 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
 
-                {/* Highlights */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Highlights</label>
-                  <ArrayEditor
-                    items={formData.highlights as string[]}
-                    onChange={(items) => updateField('highlights', items)}
-                    placeholder="Add a highlight..."
-                  />
-                </div>
-
-                {/* Amenities */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Amenities</label>
-                  <ArrayEditor
-                    items={formData.amenities as string[]}
-                    onChange={(items) => updateField('amenities', items)}
-                    placeholder="Add an amenity..."
-                  />
-                </div>
-
-                {/* Fine Print */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Fine Print</label>
-                  <textarea
-                    name="fine_print"
-                    value={formData.fine_print as string}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
-                    placeholder="Fine print details..."
-                  />
-                </div>
-
-                {/* Terms & Conditions */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Terms & Conditions</label>
-                  <textarea
-                    name="terms_and_conditions"
-                    value={formData.terms_and_conditions as string}
-                    onChange={handleInputChange}
-                    rows={3}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
-                    placeholder="Terms and conditions..."
-                  />
-                </div>
-
-                {/* Website URL */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Website URL</label>
-                  <input
-                    type="url"
-                    name="website_url"
-                    value={formData.website_url as string}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                    placeholder="https://..."
-                  />
-                </div>
-
-                {/* Videos */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Videos</label>
-                  <div className="space-y-2">
-                    {/* Existing videos with preview */}
-                    {(formData.video_urls as string[]).map((url, i) => (
-                      <div key={i} className="bg-gray-50 rounded-lg overflow-hidden group">
-                        <video
-                          src={url}
-                          controls
-                          preload="metadata"
-                          className="w-full max-h-48 rounded-t-lg bg-black"
-                        />
-                        <div className="flex items-center gap-2 p-2">
-                          <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-xs text-gray-500 truncate flex-1" title={url}>
-                            {url.split('/').pop() || url}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => removeVideo(i)}
-                            className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-
-                    {/* Upload button */}
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
-                      {uploadingVideo ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> Uploading video...</>
-                      ) : (
-                        <><Upload className="w-4 h-4" /> Upload Video</>
-                      )}
-                      <input
-                        type="file"
-                        accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                        className="hidden"
-                        disabled={uploadingVideo}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleVideoUpload(file);
-                          e.target.value = '';
-                        }}
-                      />
-                    </label>
-
-                    {/* Ava Video Studio */}
-                    {(() => {
-                      const allDealImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
-                      return (
-                        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <Video className="w-5 h-5 text-emerald-600" />
-                            <div>
-                              <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
-                              <p className="text-xs text-emerald-500">Pick an image &rarr; Ava turns it into a cinematic promo video</p>
-                            </div>
-                          </div>
-
-                          {allDealImages.length === 0 ? (
-                            <p className="text-xs text-amber-600 flex items-center gap-1">
-                              <Info className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
-                            </p>
-                          ) : (
-                            <>
-                              {/* Source image picker */}
-                              <div>
-                                <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1.5">Choose source image</p>
-                                <div className="flex gap-2 overflow-x-auto pb-1">
-                                  {allDealImages.map((img, i) => {
-                                    const isSelected = (videoSourceImage || (formData.image_url as string)) === img;
-                                    return (
-                                      <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
-                                        className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
-                                        {isSelected && (
-                                          <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                                            <CheckCircle className="w-6 h-6 text-emerald-600 drop-shadow" />
-                                          </div>
-                                        )}
-                                        {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">Main</span>}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-
-                              {/* Video prompt */}
-                              <div>
-                                <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1">Describe your video (optional)</p>
-                                <textarea value={videoPrompt} onChange={e => setVideoPrompt(e.target.value)}
-                                  className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400 outline-none"
-                                  rows={2} placeholder="e.g., Slow zoom into the product with warm lighting, then pan to show the details..." />
-                              </div>
-
-                              {/* Generate button + guidelines tooltip */}
-                              <div className="flex items-center gap-2">
-                                <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
-                                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
-                                  {aiVideoLoading ? (
-                                    <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating the video...</>
-                                  ) : (
-                                    <><Video className="w-4 h-4" /> Generate Video</>
-                                  )}
-                                </button>
-                                <div className="relative group">
-                                  <button type="button" className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" aria-label="Video guidelines">
-                                    <Info className="w-5 h-5" />
-                                  </button>
-                                  <div className="absolute bottom-full right-0 mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                    <p className="font-semibold mb-1.5">Video Generation Tips</p>
-                                    <p className="text-gray-300 mb-2">Google&apos;s AI has content guidelines. For best results:</p>
-                                    <ul className="space-y-1 text-gray-300">
-                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Use product/service photos without people</li>
-                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Clean images without text or logos</li>
-                                      <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Simple, descriptive video prompts</li>
-                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No photos with children</li>
-                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No copyrighted or branded content</li>
-                                      <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No violent or explicit imagery</li>
-                                    </ul>
-                                    <p className="text-gray-400 mt-2 text-[10px]">If an image is blocked, Ava will auto-retry with a generic video.</p>
-                                    <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Progress bar */}
-                              {aiVideoLoading && (
-                                <div className="space-y-2">
-                                  <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">
-                                    <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
-                                  </div>
-                                  <div className="flex justify-between items-center text-xs text-emerald-600">
-                                    <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
-                                    <span className="animate-pulse">{videoElapsed < 60 ? 'Est. 1-3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}</span>
-                                  </div>
-                                  <p className="text-[10px] text-emerald-500 text-center">You can keep editing while Ava works.</p>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })()}
-
-                    <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
-                  </div>
-                </div>
-
-                {/* Search Tags */}
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-sm font-medium text-gray-700">Search Tags</label>
-                    <button
-                      type="button"
-                      onClick={generateSearchTags}
-                      disabled={generatingTags || !(formData.title as string)?.trim()}
-                      className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white text-[10px] font-medium rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-all"
-                    >
-                      {generatingTags ? (
-                        <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                      ) : (
-                        <img src="/ava.png" alt="" className="w-3 h-3 rounded-full" />
-                      )}
-                      Ava Tags
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {searchTags.map((tag, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
-                        {tag}
-                        <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}>
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      value={newTag}
-                      onChange={e => setNewTag(e.target.value)}
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                      placeholder="Custom tag..."
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
-                            setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
-                            setNewTag('');
-                          }
-                        }
-                      }}
+            {/* Image grid + Add button */}
+            {allImages.length > 0 ? (
+              <div className="flex gap-2 flex-wrap">
+                {allImages.map((url, i) => (
+                  <div key={i} className="relative group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={i === 0 ? 'Main image' : `Image ${i + 1}`}
+                      className={`w-20 h-20 rounded-lg object-cover border-2 transition-colors ${
+                        i === 0 ? 'border-primary-400 ring-2 ring-primary-200' : 'border-gray-100 group-hover:border-primary-300'
+                      }`}
                     />
+                    {i === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-primary-500/90 text-white text-[9px] text-center py-0.5 rounded-b-md font-medium">
+                        Main
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
-                        if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
-                          setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
-                          setNewTag('');
+                        if (i === 0) {
+                          const gallery = (formData.image_urls as string[]) || [];
+                          if (gallery.length > 0) {
+                            updateField('image_url', gallery[0]);
+                            updateField('image_urls', gallery.slice(1));
+                          } else {
+                            updateField('image_url', '');
+                          }
+                        } else {
+                          removeGalleryImage(i - 1);
                         }
                       }}
-                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium"
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-600"
                     >
-                      Add
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
-                </div>
+                ))}
+                {allImages.length < 11 && (
+                  <div className="relative" data-add-image-menu>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddImageMenu(p => !p)}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-200 hover:border-primary-400 flex flex-col items-center justify-center gap-1 transition-colors"
+                    >
+                      {(uploadingImage || uploadingGallery || aiImageLoading) ? (
+                        <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                      ) : (
+                        <>
+                          <Plus className="w-5 h-5 text-gray-400" />
+                          <span className="text-[10px] text-gray-400">Add</span>
+                        </>
+                      )}
+                    </button>
+                    {showAddImageMenu && (
+                      <div className="absolute bottom-full left-0 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                        <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                          <Upload className="w-3.5 h-3.5 text-gray-500" />
+                          Upload from Device
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            disabled={uploadingImage || uploadingGallery}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (!formData.image_url) handleImageUpload(file);
+                                else handleGalleryImageUpload(file);
+                              }
+                              e.target.value = '';
+                              setShowAddImageMenu(false);
+                            }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => { setShowImagePicker(true); setShowAddImageMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
+                          Browse Library
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowAiImageInput(true); setShowAddImageMenu(false); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
+                          Generate with AI
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                data-add-image-menu
+                onClick={() => setShowAddImageMenu(p => !p)}
+                className="relative h-40 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl flex flex-col items-center justify-center gap-2 border border-dashed border-gray-200 cursor-pointer hover:border-primary-300 transition-colors"
+              >
+                {(uploadingImage || aiImageLoading) ? (
+                  <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+                ) : (
+                  <>
+                    <Plus className="w-8 h-8 text-gray-300" />
+                    <span className="text-gray-400 text-sm">Add an image</span>
+                    <span className="text-gray-300 text-xs">Upload, library, or AI</span>
+                  </>
+                )}
+                {showAddImageMenu && (
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-40">
+                    <label className="flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-gray-500" />
+                      Upload from Device
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="hidden"
+                        disabled={uploadingImage}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(file);
+                          e.target.value = '';
+                          setShowAddImageMenu(false);
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowImagePicker(true); setShowAddImageMenu(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 text-primary-500" />
+                      Browse Library
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowAiImageInput(true); setShowAddImageMenu(false); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Wand2 className="w-3.5 h-3.5 text-emerald-500" />
+                      Generate with AI
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+
+            {/* AI Image Generation Input */}
+            {showAiImageInput && (
+              <div className="flex items-center gap-2">
+                <input
+                  value={customImagePrompt}
+                  onChange={e => setCustomImagePrompt(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (!aiImageLoading) handleAiImageGenerate(); } }}
+                  className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none"
+                  placeholder="Describe the image you want (or leave blank for auto)..."
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAiImageGenerate}
+                  disabled={aiImageLoading || (!(formData.title as string) && !customImagePrompt)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-500 text-white text-xs font-medium rounded-lg hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                >
+                  {aiImageLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
+                  Generate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAiImageInput(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Videos Section */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-2">Videos</label>
+              <div className="space-y-2">
+                {(formData.video_urls as string[]).map((url, i) => (
+                  <div key={i} className="bg-gray-50 rounded-lg overflow-hidden group">
+                    <video src={url} controls preload="metadata" className="w-full max-h-48 rounded-t-lg bg-black" />
+                    <div className="flex items-center gap-2 p-2">
+                      <Video className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <span className="text-xs text-gray-500 truncate flex-1" title={url}>
+                        {url.split('/').pop() || url}
+                      </span>
+                      <button type="button" onClick={() => removeVideo(i)} className="text-red-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+                <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-primary-500 hover:text-primary-600 border border-dashed border-gray-200 hover:border-primary-400 rounded-lg transition-colors">
+                  {uploadingVideo ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Uploading video...</>
+                  ) : (
+                    <><Upload className="w-4 h-4" /> Upload Video</>
+                  )}
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                    className="hidden"
+                    disabled={uploadingVideo}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleVideoUpload(file);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Ava Video Studio */}
+            {(() => {
+              const dealImages = [formData.image_url as string, ...((formData.image_urls as string[]) || [])].filter(Boolean);
+              return (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Video className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <h4 className="text-sm font-semibold text-emerald-800">Ava&apos;s Video Studio</h4>
+                      <p className="text-xs text-emerald-500">Pick an image &rarr; Ava turns it into a cinematic promo video</p>
+                    </div>
+                  </div>
+
+                  {dealImages.length === 0 ? (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <Info className="w-3.5 h-3.5" /> Add a deal image first so Ava can generate a video from it
+                    </p>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1.5">Choose source image</p>
+                        <div className="flex gap-2 overflow-x-auto pb-1">
+                          {dealImages.map((img, i) => {
+                            const isSelected = (videoSourceImage || (formData.image_url as string)) === img;
+                            return (
+                              <button key={i} type="button" onClick={() => setVideoSourceImage(img)}
+                                className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${isSelected ? 'border-emerald-500 ring-2 ring-emerald-300 shadow-md' : 'border-gray-200 hover:border-emerald-300'}`}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={img} alt={`Source ${i + 1}`} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
+                                {isSelected && (
+                                  <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
+                                    <CheckCircle className="w-6 h-6 text-emerald-600 drop-shadow" />
+                                  </div>
+                                )}
+                                {i === 0 && <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5">Main</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <p className="text-[10px] font-medium text-emerald-700 uppercase tracking-wider mb-1">Describe your video (optional)</p>
+                        <textarea value={videoPrompt} onChange={e => setVideoPrompt(e.target.value)}
+                          className="w-full text-sm border border-emerald-200 rounded-lg p-2.5 bg-white focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-emerald-400 outline-none"
+                          rows={2} placeholder="e.g., Slow zoom into the product with warm lighting..." />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={handleAiVideoGenerate} disabled={aiVideoLoading}
+                          className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-5 py-2.5 rounded-lg font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm shadow-lg shadow-emerald-500/20">
+                          {aiVideoLoading ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" /> Ava is creating the video...</>
+                          ) : (
+                            <><Video className="w-4 h-4" /> Generate Video</>
+                          )}
+                        </button>
+                        <div className="relative group">
+                          <button type="button" className="p-2 text-emerald-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors" aria-label="Video guidelines">
+                            <Info className="w-5 h-5" />
+                          </button>
+                          <div className="absolute bottom-full right-0 mb-2 w-72 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <p className="font-semibold mb-1.5">Video Generation Tips</p>
+                            <p className="text-gray-300 mb-2">Google&apos;s AI has content guidelines. For best results:</p>
+                            <ul className="space-y-1 text-gray-300">
+                              <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Use product/service photos without people</li>
+                              <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Clean images without text or logos</li>
+                              <li className="flex gap-1.5"><span className="text-green-400 shrink-0">&#10003;</span> Simple, descriptive video prompts</li>
+                              <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No photos with children</li>
+                              <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No copyrighted or branded content</li>
+                              <li className="flex gap-1.5"><span className="text-red-400 shrink-0">&#10007;</span> No violent or explicit imagery</li>
+                            </ul>
+                            <p className="text-gray-400 mt-2 text-[10px]">If an image is blocked, Ava will auto-retry with a generic video.</p>
+                            <div className="absolute bottom-0 right-4 translate-y-1/2 rotate-45 w-2 h-2 bg-gray-900" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {aiVideoLoading && (
+                        <div className="space-y-2">
+                          <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">
+                            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${Math.round(videoProgress)}%` }} />
+                          </div>
+                          <div className="flex justify-between items-center text-xs text-emerald-600">
+                            <span>{Math.round(videoProgress)}% — {videoElapsed < 60 ? `${videoElapsed}s` : `${Math.floor(videoElapsed / 60)}m ${videoElapsed % 60}s`} elapsed</span>
+                            <span className="animate-pulse">{videoElapsed < 60 ? 'Est. 1-3 min' : videoElapsed < 120 ? 'Almost there...' : 'Finishing up...'}</span>
+                          </div>
+                          <p className="text-[10px] text-emerald-500 text-center">You can keep editing while Ava works.</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+            <p className="text-xs text-gray-400">MP4, WebM, MOV, or AVI. Max 100MB.</p>
+          </BentoCard>
+
+          {/* 4. Details */}
+          <BentoCard
+            icon={<ClipboardList className="w-5 h-5" />}
+            title="Details"
+            summary={detailsSummary}
+            color="amber"
+            open={!!openSections.details}
+            onToggle={() => toggleSection('details')}
+          >
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Highlights</label>
+              <ArrayEditor
+                items={formData.highlights as string[]}
+                onChange={(items) => updateField('highlights', items)}
+                placeholder="Add a highlight..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Features / Amenities</label>
+              <ArrayEditor
+                items={formData.amenities as string[]}
+                onChange={(items) => updateField('amenities', items)}
+                placeholder="Add an amenity..."
+              />
+            </div>
+
+            {/* Search Tags */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-medium text-gray-500">Search Tags</label>
+                <button
+                  type="button"
+                  onClick={generateSearchTags}
+                  disabled={generatingTags || !(formData.title as string)?.trim()}
+                  className="flex items-center gap-1 px-2 py-1 bg-emerald-500 text-white text-[10px] font-medium rounded-md hover:bg-emerald-600 disabled:opacity-50 transition-all"
+                >
+                  {generatingTags ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    <img src="/ava.png" alt="" className="w-3 h-3 rounded-full" />
+                  )}
+                  Ava Tags
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {searchTags.map((tag, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full border border-blue-200">
+                    {tag}
+                    <button type="button" onClick={() => setSearchTags(prev => prev.filter((_, idx) => idx !== i))}>
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  value={newTag}
+                  onChange={e => setNewTag(e.target.value)}
+                  className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                  placeholder="Custom tag..."
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                        setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                        setNewTag('');
+                      }
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newTag.trim() && !searchTags.includes(newTag.trim().toLowerCase())) {
+                      setSearchTags(prev => [...prev, newTag.trim().toLowerCase()]);
+                      setNewTag('');
+                    }
+                  }}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* 5. Location */}
+          <BentoCard
+            icon={<MapPin className="w-5 h-5" />}
+            title="Location"
+            summary={locationSummary}
+            color="gray"
+            open={!!openSections.location}
+            onToggle={() => toggleSection('location')}
+          >
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Website URL</label>
+              <input
+                type="url"
+                name="website_url"
+                value={formData.website_url as string}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                placeholder="https://..."
+              />
+            </div>
+          </BentoCard>
+
+          {/* 6. Scheduling */}
+          <BentoCard
+            icon={<Calendar className="w-5 h-5" />}
+            title="Scheduling"
+            summary={schedulingSummary}
+            color="blue"
+            open={!!openSections.scheduling}
+            onToggle={() => toggleSection('scheduling')}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Starts At</label>
+                <input
+                  type="datetime-local"
+                  name="starts_at"
+                  value={formData.starts_at as string}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Expires At</label>
+                <input
+                  type="datetime-local"
+                  name="expires_at"
+                  value={formData.expires_at as string}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Timezone</label>
+              <input
+                type="text"
+                name="timezone"
+                value={formData.timezone as string}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+                placeholder="America/New_York"
+              />
+            </div>
+            <div className="flex items-center gap-4 pt-1">
+              <div className="text-xs font-medium text-gray-500">Claims</div>
+              <div className="text-lg font-bold text-gray-900">
+                {deal.claims_count}
+                {deal.max_claims != null && (
+                  <span className="text-gray-400 text-sm font-normal"> / {deal.max_claims}</span>
+                )}
+              </div>
+            </div>
+          </BentoCard>
+
+          {/* 7. Terms & Legal */}
+          <BentoCard
+            icon={<FileText className="w-5 h-5" />}
+            title="Terms & Legal"
+            summary={termsSummary}
+            color="gray"
+            open={!!openSections.terms}
+            onToggle={() => toggleSection('terms')}
+          >
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">How It Works</label>
+              <textarea
+                name="how_it_works"
+                value={formData.how_it_works as string}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                placeholder="Explain how the deal works..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Fine Print</label>
+              <textarea
+                name="fine_print"
+                value={formData.fine_print as string}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                placeholder="Fine print details..."
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Terms & Conditions</label>
+              <textarea
+                name="terms_and_conditions"
+                value={formData.terms_and_conditions as string}
+                onChange={handleInputChange}
+                rows={3}
+                className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-none"
+                placeholder="Terms and conditions..."
+              />
+            </div>
+          </BentoCard>
         </div>
 
-        {/* ==================== RIGHT COLUMN ==================== */}
+        {/* ==================== RIGHT: ADMIN SIDEBAR ==================== */}
         <div className="space-y-6">
 
-          {/* 4. Status & Settings Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.15s_forwards]">
+          {/* Admin Controls Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-20">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-1 w-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-300" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Status & Settings</span>
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin Controls</span>
             </div>
 
             <div className="space-y-4">
@@ -1444,7 +1613,7 @@ export default function AdminDealDetailPage() {
                     name="status"
                     value={formData.status as string}
                     onChange={handleInputChange}
-                    className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
+                    className="w-full pl-8 pr-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
                   >
                     <option value="draft">Draft</option>
                     <option value="active">Active</option>
@@ -1461,7 +1630,7 @@ export default function AdminDealDetailPage() {
                   name="deal_type"
                   value={formData.deal_type as string}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
                 >
                   <option value="regular">Steady</option>
                   <option value="sponti_coupon">Sponti Coupon</option>
@@ -1475,7 +1644,7 @@ export default function AdminDealDetailPage() {
                   name="category_id"
                   value={formData.category_id as string}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
+                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none appearance-none bg-white"
                 >
                   <option value="">No Category</option>
                   {categories.map((c) => (
@@ -1485,7 +1654,7 @@ export default function AdminDealDetailPage() {
               </div>
 
               {/* Featured Toggle */}
-              <div className="flex items-center justify-between py-2">
+              <div className="flex items-center justify-between py-1">
                 <span className="text-xs font-medium text-gray-500">Featured</span>
                 <button
                   type="button"
@@ -1505,303 +1674,155 @@ export default function AdminDealDetailPage() {
                 </button>
               </div>
 
-              {/* Vendor */}
-              {deal.vendor && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Vendor</label>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-gray-900 rounded-lg text-sm font-medium">
-                    {deal.vendor.business_name}
+              <div className="border-t border-gray-100 pt-3 space-y-3">
+                {/* Vendor */}
+                {deal.vendor && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Vendor</label>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-900 rounded-lg text-sm font-medium">
+                      {deal.vendor.business_name}
+                    </div>
                   </div>
+                )}
+
+                {/* Deal ID */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Deal ID</label>
+                  <button
+                    onClick={copyDealId}
+                    className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 font-mono bg-gray-50 px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    {dealId.slice(0, 8)}...
+                    {copiedId ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                  </button>
                 </div>
-              )}
 
-              {/* Deal ID */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">Deal ID</label>
-                <button
-                  onClick={copyDealId}
-                  className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 font-mono bg-gray-50 px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  {dealId.slice(0, 8)}...
-                  {copiedId ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 5. Pricing Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.25s_forwards]">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-green-500 to-green-300" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pricing</span>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Original Price</label>
-                <input
-                  type="number"
-                  name="original_price"
-                  value={formData.original_price as number}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Deal Price</label>
-                <input
-                  type="number"
-                  name="deal_price"
-                  value={formData.deal_price as number}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Discount %</label>
-                <input
-                  type="number"
-                  name="discount_percentage"
-                  value={formData.discount_percentage as number}
-                  onChange={handleInputChange}
-                  min="0"
-                  max="100"
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Deposit Amount</label>
-                <input
-                  type="number"
-                  name="deposit_amount"
-                  value={formData.deposit_amount as number | ''}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  min="0"
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="Optional"
-                />
-              </div>
-
-              {/* Savings */}
-              {savings > 0 && (
-                <div className="mt-2 p-3 bg-green-50 rounded-xl text-center">
-                  <span className="text-green-700 text-sm font-semibold">
-                    {formatCurrency(savings)} off ({String(formData.discount_percentage || 0)}%)
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 6. Limits & Schedule Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.35s_forwards]">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-300" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Limits & Schedule</span>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Max Claims</label>
-                <input
-                  type="number"
-                  name="max_claims"
-                  value={formData.max_claims as number | ''}
-                  onChange={handleInputChange}
-                  min="0"
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="Unlimited"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Claims Count</label>
-                <div className="text-xl font-bold text-gray-900 px-1">
-                  {deal.claims_count}
-                  {deal.max_claims != null && (
-                    <span className="text-gray-400 text-sm font-normal"> / {deal.max_claims}</span>
+                {/* Claims Progress */}
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Claims</label>
+                  <div className="text-lg font-bold text-gray-900">
+                    {deal.claims_count}
+                    {deal.max_claims != null && (
+                      <span className="text-gray-400 text-sm font-normal"> / {deal.max_claims}</span>
+                    )}
+                  </div>
+                  {deal.max_claims != null && deal.max_claims > 0 && (
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 mt-1.5">
+                      <div
+                        className="bg-primary-500 h-full rounded-full transition-all"
+                        style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }}
+                      />
+                    </div>
                   )}
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Starts At</label>
-                <input
-                  type="datetime-local"
-                  name="starts_at"
-                  value={formData.starts_at as string}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Expires At</label>
-                <input
-                  type="datetime-local"
-                  name="expires_at"
-                  value={formData.expires_at as string}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Timezone</label>
-                <input
-                  type="text"
-                  name="timezone"
-                  value={formData.timezone as string}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
-                  placeholder="America/New_York"
-                />
-              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* 7. Performance Stats Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.45s_forwards]">
+      {/* ==================== ANALYTICS SECTION (Full Width) ==================== */}
+      <div className="mt-8 space-y-6">
+        {/* Performance Stats */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-1 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-300" />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Performance</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <AnimatedStat icon={Eye} value={analytics?.total_views ?? 0} label="Total Views" color="bg-blue-50 text-blue-600" />
+            <AnimatedStat icon={Users} value={analytics?.total_claims ?? 0} label="Total Claims" color="bg-primary-50 text-primary-600" />
+            <AnimatedStat icon={CheckCircle} value={analytics?.total_redemptions ?? 0} label="Redemptions" color="bg-green-50 text-green-600" />
+            <AnimatedStat icon={TrendingUp} value={analytics?.conversion_rate ? Math.round(analytics.conversion_rate * 100) : 0} label="Conversion" suffix="%" color="bg-blue-50 text-blue-600" />
+          </div>
+        </div>
+
+        {/* Trends Chart */}
+        {analytics && analytics.timeline.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center gap-2 mb-4">
-              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-300" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Performance</span>
+              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-primary-500 to-green-400" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Trends</span>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <AnimatedStat
-                icon={Eye}
-                value={analytics?.total_views ?? 0}
-                label="Total Views"
-                color="bg-blue-50 text-blue-600"
-              />
-              <AnimatedStat
-                icon={Users}
-                value={analytics?.total_claims ?? 0}
-                label="Total Claims"
-                color="bg-primary-50 text-primary-600"
-              />
-              <AnimatedStat
-                icon={CheckCircle}
-                value={analytics?.total_redemptions ?? 0}
-                label="Redemptions"
-                color="bg-green-50 text-green-600"
-              />
-              <AnimatedStat
-                icon={TrendingUp}
-                value={analytics?.conversion_rate ? Math.round(analytics.conversion_rate * 100) : 0}
-                label="Conversion"
-                suffix="%"
-                color="bg-blue-50 text-blue-600"
-              />
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.timeline} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="claimsFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#E8632B" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#E8632B" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="redemptionsFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 11, fill: '#9ca3af' }}
+                    tickFormatter={(v: string) => {
+                      const d = new Date(v);
+                      return `${d.getMonth() + 1}/${d.getDate()}`;
+                    }}
+                  />
+                  <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    }}
+                  />
+                  <Area type="monotone" dataKey="claims" stroke="#E8632B" strokeWidth={2} fill="url(#claimsFill)" />
+                  <Area type="monotone" dataKey="redemptions" stroke="#22c55e" strokeWidth={2} fill="url(#redemptionsFill)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex items-center justify-center gap-6 mt-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-primary-500" />
+                <span className="text-xs text-gray-500">Claims</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+                <span className="text-xs text-gray-500">Redemptions</span>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* 8. Performance Chart Card */}
-          {analytics && analytics.timeline.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.55s_forwards]">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="h-1 w-8 rounded-full bg-gradient-to-r from-primary-500 to-green-400" />
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Trends</span>
-              </div>
-
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics.timeline} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="claimsFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#E8632B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#E8632B" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="redemptionsFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      tickFormatter={(v: string) => {
-                        const d = new Date(v);
-                        return `${d.getMonth() + 1}/${d.getDate()}`;
-                      }}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#fff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="claims"
-                      stroke="#E8632B"
-                      strokeWidth={2}
-                      fill="url(#claimsFill)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="redemptions"
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      fill="url(#redemptionsFill)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex items-center justify-center gap-6 mt-3">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-primary-500" />
-                  <span className="text-xs text-gray-500">Claims</span>
+        {/* Recent Activity */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="h-1 w-8 rounded-full bg-gradient-to-r from-amber-500 to-amber-300" />
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent Activity</span>
+          </div>
+          {analytics && analytics.recent_claims.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {analytics.recent_claims.slice(0, 6).map((claim) => (
+                <div key={claim.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
+                      <Users className="w-3.5 h-3.5 text-primary-500" />
+                    </div>
+                    <span className="text-sm text-gray-700 truncate max-w-[180px]">{claim.customer_email}</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-400">
+                    <Clock className="w-3 h-3" />
+                    {relativeTime(claim.created_at)}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <span className="text-xs text-gray-500">Redemptions</span>
-                </div>
-              </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No claims yet</p>
             </div>
           )}
-
-          {/* 9. Recent Activity Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-300 opacity-0 animate-[fadeIn_0.5s_ease-out_0.65s_forwards]">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-1 w-8 rounded-full bg-gradient-to-r from-amber-500 to-amber-300" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Recent Activity</span>
-            </div>
-
-            {analytics && analytics.recent_claims.length > 0 ? (
-              <div className="space-y-3">
-                {analytics.recent_claims.slice(0, 5).map((claim) => (
-                  <div key={claim.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
-                        <Users className="w-3.5 h-3.5 text-primary-500" />
-                      </div>
-                      <span className="text-sm text-gray-700 truncate max-w-[180px]">{claim.customer_email}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Clock className="w-3 h-3" />
-                      {relativeTime(claim.created_at)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">No claims yet</p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 

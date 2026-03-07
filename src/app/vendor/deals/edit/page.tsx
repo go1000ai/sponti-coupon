@@ -57,6 +57,8 @@ function BentoCard({
   open,
   onToggle,
   color = 'gray',
+  locked,
+  lockedMessage,
   children,
 }: {
   icon: ReactNode;
@@ -65,6 +67,8 @@ function BentoCard({
   open: boolean;
   onToggle: () => void;
   color?: string;
+  locked?: boolean;
+  lockedMessage?: string;
   children: ReactNode;
 }) {
   const colorMap: Record<string, { bg: string; iconBg: string; border: string; ring: string }> = {
@@ -78,24 +82,36 @@ function BentoCard({
   const c = colorMap[color] || colorMap.gray;
 
   return (
-    <div className={`${c.bg} rounded-2xl border ${open ? c.border + ' ring-2 ' + c.ring : 'border-gray-200'} shadow-sm hover:shadow-md transition-all overflow-hidden`}>
+    <div className={`${locked ? 'bg-gray-50' : c.bg} rounded-2xl border ${open ? c.border + ' ring-2 ' + c.ring : 'border-gray-200'} shadow-sm hover:shadow-md transition-all overflow-hidden relative`}>
       <button
         type="button"
         onClick={onToggle}
         className="w-full flex items-center gap-3 p-4 text-left"
       >
-        <div className={`w-10 h-10 rounded-xl ${c.iconBg} flex items-center justify-center flex-shrink-0`}>
-          {icon}
+        <div className={`w-10 h-10 rounded-xl ${locked ? 'bg-gray-200 text-gray-400' : c.iconBg} flex items-center justify-center flex-shrink-0`}>
+          {locked ? <Lock className="w-5 h-5" /> : icon}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-gray-900 text-sm">{title}</h3>
+          <h3 className={`font-bold text-sm ${locked ? 'text-gray-400' : 'text-gray-900'}`}>{title}</h3>
           <p className="text-xs text-gray-400 truncate">{summary}</p>
         </div>
+        {locked && (
+          <span className="text-[10px] font-semibold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full mr-1">Locked</span>
+        )}
         <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4">
+        <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4 relative">
           {children}
+          {locked && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2 rounded-b-2xl">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <Lock className="w-6 h-6 text-amber-600" />
+              </div>
+              <p className="text-sm font-bold text-gray-700">Pricing Locked</p>
+              <p className="text-xs text-gray-500 text-center max-w-[280px] leading-relaxed">{lockedMessage}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -646,14 +662,11 @@ function EditDealPageInner() {
           </BentoCard>
 
           {/* Pricing */}
-          <BentoCard icon={<DollarSign className="w-5 h-5" />} title="Pricing" summary={pricingSummary} color="green"
-            open={!!openSections.pricing} onToggle={() => toggleSection('pricing')}>
-            {hasClaims && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] text-amber-800 flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                Prices are locked because {deal.claims_count} customer{deal.claims_count > 1 ? 's have' : ' has'} already claimed this deal.
-              </div>
-            )}
+          <BentoCard icon={<DollarSign className="w-5 h-5" />} title="Pricing"
+            summary={hasClaims ? `Locked — ${pricingSummary}` : pricingSummary} color="green"
+            open={!!openSections.pricing} onToggle={() => toggleSection('pricing')}
+            locked={hasClaims}
+            lockedMessage={`${deal.claims_count} customer${deal.claims_count > 1 ? 's have' : ' has'} already claimed this deal. Pricing cannot be changed to protect existing claims. You can still edit all other sections.`}>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Original Price *</label>
