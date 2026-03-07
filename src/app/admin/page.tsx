@@ -361,6 +361,7 @@ export default function AdminOverviewPage() {
   const [vendorConnections, setVendorConnections] = useState<SocialConnection[]>([]);
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
   const [socialLoading, setSocialLoading] = useState(false);
+  const [socialFetched, setSocialFetched] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [retryingPost, setRetryingPost] = useState<string | null>(null);
 
@@ -428,6 +429,7 @@ export default function AdminOverviewPage() {
       // Silent fail
     }
     setSocialLoading(false);
+    setSocialFetched(true);
   }, []);
 
   const disconnectAccount = async (connectionId: string) => {
@@ -460,10 +462,10 @@ export default function AdminOverviewPage() {
 
   // Fetch social data when social tab is activated
   useEffect(() => {
-    if (dashTab === 'social' && brandConnections.length === 0 && vendorConnections.length === 0 && !socialLoading) {
+    if (dashTab === 'social' && !socialFetched && !socialLoading) {
       fetchSocialData();
     }
-  }, [dashTab, brandConnections.length, vendorConnections.length, socialLoading, fetchSocialData]);
+  }, [dashTab, socialFetched, socialLoading, fetchSocialData]);
 
   const handleRangeChange = (newRange: DateRange) => {
     if (newRange === range) return;
