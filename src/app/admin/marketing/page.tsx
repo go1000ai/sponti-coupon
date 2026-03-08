@@ -8,6 +8,7 @@ import {
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
   Facebook, Instagram, Calendar as CalendarIcon, Eye, EyeOff, ArrowRight,
   Trash2, Archive, Copy, Film, ImagePlus,
+  ThumbsUp, MessageCircle, Share2, Heart, Bookmark, Globe,
 } from 'lucide-react';
 
 interface QueueItem {
@@ -94,6 +95,11 @@ export default function AdminMarketingPage() {
   const [createError, setCreateError] = useState('');
   const [generateImage, setGenerateImage] = useState(true);
   const [generateVideo, setGenerateVideo] = useState(false);
+  const [previewPlatform, setPreviewPlatform] = useState<'facebook' | 'instagram'>('facebook');
+  const [editingCaption, setEditingCaption] = useState(false);
+  const [regeneratingImage, setRegeneratingImage] = useState(false);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [imagePromptInput, setImagePromptInput] = useState('');
   const [avaSuggestions, setAvaSuggestions] = useState<{type: string; idea: string; why: string; hook: string}[]>([]);
   const [avaLoading, setAvaLoading] = useState(false);
   const [avaLoaded, setAvaLoaded] = useState(false);
@@ -313,12 +319,75 @@ export default function AdminMarketingPage() {
     setCreating(false);
   };
 
+  const handleRegenerateImage = async (item: QueueItem) => {
+    setRegeneratingImage(true);
+    try {
+      // Use custom prompt if provided, otherwise derive from caption
+      const prompt = imagePromptInput.trim() || `Professional promotional image for a social media post about: ${item.caption_facebook?.substring(0, 200)}`;
+      const res = await fetch('/api/vendor/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_prompt: prompt }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        // Update the queue item with new image
+        await fetch('/api/admin/marketing', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id, image_url: data.url }),
+        });
+        setImagePromptInput('');
+        await fetchItems();
+        // Update selected item in place
+        setSelectedItem(prev => prev ? { ...prev, image_url: data.url } : null);
+      } else {
+        alert(data.error || 'Failed to generate image');
+      }
+    } catch {
+      alert('Failed to regenerate image');
+    }
+    setRegeneratingImage(false);
+  };
+
+  const handleGenerateVideoFromModal = async (item: QueueItem) => {
+    if (!item.image_url) {
+      alert('Generate an image first — video needs a source image.');
+      return;
+    }
+    setGeneratingVideo(true);
+    try {
+      const prompt = imagePromptInput.trim() || `Professional marketing video: smooth camera movement, engaging transitions, warm inviting atmosphere. Based on: ${item.caption_facebook?.substring(0, 150)}`;
+      const res = await fetch('/api/vendor/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_url: item.image_url,
+          video_prompt: prompt,
+          aspect_ratio: '9:16',
+        }),
+      });
+      const data = await res.json();
+      if (data.status === 'processing') {
+        alert(`Video generation started! Operation: ${data.operation_name}\n\nThis takes 1-3 minutes. Check back shortly.`);
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch {
+      alert('Failed to start video generation');
+    }
+    setGeneratingVideo(false);
+  };
+
   const openPreview = (item: QueueItem) => {
     setSelectedItem(item);
     setEditCaption({
       facebook: item.caption_facebook || '',
       instagram: item.caption_instagram || '',
     });
+    setEditingCaption(false);
+    setPreviewPlatform('facebook');
+    setImagePromptInput('');
   };
 
   const formatDate = (d: string) => new Date(d).toLocaleString('en-US', {
@@ -630,7 +699,7 @@ export default function AdminMarketingPage() {
               <p className="text-sm text-gray-400 mt-1">Click &quot;Generate Content&quot; to create AI-powered posts</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {items.map(item => {
                 const typeConfig = CONTENT_TYPE_CONFIG[item.content_type] || CONTENT_TYPE_CONFIG.brand_awareness;
                 const statusConfig = STATUS_CONFIG[item.status] || STATUS_CONFIG.draft;
@@ -639,50 +708,63 @@ export default function AdminMarketingPage() {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white border rounded-xl p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
                     onClick={() => openPreview(item)}
                   >
-                    <div className="flex items-start gap-3">
-                      {item.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-                      ) : (
-                        <div className={`rounded-lg p-2 ${typeConfig.color}`}>
-                          <TypeIcon className="w-4 h-4" />
+                    {/* Image thumbnail */}
+                    {item.image_url ? (
+                      <div className="aspect-video bg-gray-100 relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute top-2 left-2 flex gap-1">
+                          {item.platforms.includes('facebook') && (
+                            <div className="bg-white/90 rounded-full p-1"><Facebook className="w-3 h-3 text-blue-600" /></div>
+                          )}
+                          {item.platforms.includes('instagram') && (
+                            <div className="bg-white/90 rounded-full p-1"><Instagram className="w-3 h-3 text-pink-600" /></div>
+                          )}
                         </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm text-gray-900">{typeConfig.label}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                        <div className="absolute top-2 right-2">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusConfig.color}`}>
                             {statusConfig.label}
                           </span>
-                          {item.was_edited && (
-                            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-50 text-amber-600">Edited</span>
-                          )}
-                          <div className="flex gap-1 ml-auto">
-                            {item.platforms.includes('facebook') && <Facebook className="w-3.5 h-3.5 text-blue-600" />}
-                            {item.platforms.includes('instagram') && <Instagram className="w-3.5 h-3.5 text-pink-600" />}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-12 bg-gradient-to-r from-gray-50 to-gray-100 flex items-center justify-between px-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`rounded p-1 ${typeConfig.color}`}>
+                            <TypeIcon className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex gap-1">
+                            {item.platforms.includes('facebook') && <Facebook className="w-3 h-3 text-blue-600" />}
+                            {item.platforms.includes('instagram') && <Instagram className="w-3 h-3 text-pink-600" />}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {item.caption_facebook || item.caption_instagram || 'No caption'}
-                        </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
-                          <span>{formatDate(item.created_at)}</span>
-                          {item.scheduled_for && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {formatDate(item.scheduled_for)}
-                            </span>
-                          )}
-                          {item.deals?.title && (
-                            <span className="text-orange-500">{item.deals.title}</span>
-                          )}
-                          {item.ai_content_score && (
-                            <span>Score: {(item.ai_content_score * 100).toFixed(0)}%</span>
-                          )}
-                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${statusConfig.color}`}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+                    )}
+                    {/* Content */}
+                    <div className="p-3 flex-1 flex flex-col">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="font-medium text-xs text-gray-900">{typeConfig.label}</span>
+                        {item.was_edited && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-50 text-amber-600">Edited</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-600 line-clamp-3 flex-1">
+                        {item.caption_facebook || item.caption_instagram || 'No caption'}
+                      </p>
+                      <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-400">
+                        <span>{formatDate(item.created_at)}</span>
+                        {item.scheduled_for && (
+                          <span className="flex items-center gap-0.5">
+                            <Clock className="w-2.5 h-2.5" />
+                            {formatDate(item.scheduled_for)}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -905,45 +987,135 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
-              {/* Image preview */}
-              {selectedItem.image_url && (
-                <div className="mb-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedItem.image_url}
-                    alt="Post image"
-                    className="w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
-                  />
+              {/* Platform Mockup Toggle */}
+              <div className="flex gap-1 mb-3 bg-gray-100 rounded-lg p-1 w-fit">
+                <button
+                  onClick={() => setPreviewPlatform('facebook')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    previewPlatform === 'facebook' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Facebook className="w-4 h-4" /> Facebook
+                </button>
+                <button
+                  onClick={() => setPreviewPlatform('instagram')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    previewPlatform === 'instagram' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Instagram className="w-4 h-4" /> Instagram
+                </button>
+              </div>
+
+              {/* Facebook Mockup */}
+              {previewPlatform === 'facebook' && (
+                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto mb-4">
+                  {/* Header */}
+                  <div className="flex items-center gap-2.5 p-3">
+                    <div className="w-10 h-10 rounded-full bg-[#E8632B] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      S
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">SpontiCoupon</p>
+                      <p className="text-[11px] text-gray-500">Sponsored · <Globe className="w-3 h-3 inline" /></p>
+                    </div>
+                  </div>
+                  {/* Caption */}
+                  <div className="px-3 pb-2">
+                    {editingCaption && selectedItem.status !== 'posted' ? (
+                      <textarea
+                        value={editCaption.facebook}
+                        onChange={e => setEditCaption(prev => ({ ...prev, facebook: e.target.value }))}
+                        rows={5}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 whitespace-pre-line">{editCaption.facebook}</p>
+                    )}
+                    {selectedItem.status !== 'posted' && (
+                      <button
+                        onClick={() => setEditingCaption(!editingCaption)}
+                        className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium"
+                      >
+                        {editingCaption ? 'Done' : 'Edit caption'}
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-400 ml-2">{editCaption.facebook.length} chars</span>
+                  </div>
+                  {/* Image */}
+                  {selectedItem.image_url && (
+                    <div className="aspect-video bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  {/* Actions bar */}
+                  <div className="px-3 py-2.5 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
+                    <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
+                    <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+                    <span className="flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Share</span>
+                  </div>
                 </div>
               )}
 
-              {/* Side-by-side captions */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
-                    <Facebook className="w-4 h-4 text-blue-600" /> Facebook
-                  </label>
-                  <textarea
-                    value={editCaption.facebook}
-                    onChange={e => setEditCaption(prev => ({ ...prev, facebook: e.target.value }))}
-                    className="w-full border rounded-lg p-3 text-sm min-h-[200px] focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
-                    disabled={selectedItem.status === 'posted'}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">{editCaption.facebook.length} chars</p>
+              {/* Instagram Mockup */}
+              {previewPlatform === 'instagram' && (
+                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto mb-4">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-gray-900">
+                          S
+                        </div>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">sponticoupon</p>
+                    </div>
+                    <span className="text-gray-400 tracking-widest font-bold">···</span>
+                  </div>
+                  {/* Image */}
+                  {selectedItem.image_url && (
+                    <div className="aspect-square bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  {/* Action icons */}
+                  <div className="flex items-center justify-between px-3 py-2.5">
+                    <div className="flex items-center gap-4">
+                      <Heart className="w-5 h-5 text-gray-800" />
+                      <MessageCircle className="w-5 h-5 text-gray-800" />
+                      <Send className="w-5 h-5 text-gray-800" />
+                    </div>
+                    <Bookmark className="w-5 h-5 text-gray-800" />
+                  </div>
+                  {/* Caption */}
+                  <div className="px-3 pb-3">
+                    {editingCaption && selectedItem.status !== 'posted' ? (
+                      <textarea
+                        value={editCaption.instagram}
+                        onChange={e => setEditCaption(prev => ({ ...prev, instagram: e.target.value }))}
+                        rows={5}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900">
+                        <span className="font-semibold">sponticoupon</span>{' '}
+                        <span className="whitespace-pre-line">{editCaption.instagram}</span>
+                      </p>
+                    )}
+                    {selectedItem.status !== 'posted' && (
+                      <button
+                        onClick={() => setEditingCaption(!editingCaption)}
+                        className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium"
+                      >
+                        {editingCaption ? 'Done' : 'Edit caption'}
+                      </button>
+                    )}
+                    <span className="text-xs text-gray-400 ml-2">{editCaption.instagram.length} chars</span>
+                  </div>
                 </div>
-                <div>
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
-                    <Instagram className="w-4 h-4 text-pink-600" /> Instagram
-                  </label>
-                  <textarea
-                    value={editCaption.instagram}
-                    onChange={e => setEditCaption(prev => ({ ...prev, instagram: e.target.value }))}
-                    className="w-full border rounded-lg p-3 text-sm min-h-[200px] focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
-                    disabled={selectedItem.status === 'posted'}
-                  />
-                  <p className="text-xs text-gray-400 mt-1">{editCaption.instagram.length} chars</p>
-                </div>
-              </div>
+              )}
 
               {/* Hashtags */}
               {selectedItem.hashtags?.length > 0 && (
@@ -954,6 +1126,45 @@ export default function AdminMarketingPage() {
                       <span key={i} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-xs">{tag}</span>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Regenerate Image / Generate Video */}
+              {selectedItem.status !== 'posted' && (
+                <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3">
+                  <p className="text-sm font-medium text-emerald-800 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-emerald-600" /> AI Media Tools
+                  </p>
+                  <div>
+                    <input
+                      type="text"
+                      value={imagePromptInput}
+                      onChange={e => setImagePromptInput(e.target.value)}
+                      placeholder="Custom prompt (optional) — e.g. 'Warm restaurant scene with happy customers'"
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white placeholder:text-gray-400"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleRegenerateImage(selectedItem)}
+                      disabled={regeneratingImage}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+                    >
+                      {regeneratingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                      {selectedItem.image_url ? 'Regenerate Image' : 'Generate Image'}
+                    </button>
+                    <button
+                      onClick={() => handleGenerateVideoFromModal(selectedItem)}
+                      disabled={generatingVideo || !selectedItem.image_url}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                      Generate Video
+                    </button>
+                  </div>
+                  {!selectedItem.image_url && (
+                    <p className="text-xs text-emerald-600">Generate an image first to enable video creation.</p>
+                  )}
                 </div>
               )}
 
