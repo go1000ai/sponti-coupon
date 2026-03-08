@@ -34,6 +34,10 @@ import {
   RefreshCw,
   Loader2,
   RotateCcw,
+  Send,
+  Sparkles,
+  ImageIcon,
+  Wand2,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -295,7 +299,7 @@ const DAILY_GOALS = { claims: 50, signups: 20, deals: 5 };
 // --- Social Media Types & Constants ---
 
 type DashTab = 'overview' | 'social';
-type SocialSubTab = 'brand' | 'vendors' | 'posts';
+type SocialSubTab = 'promote' | 'brand' | 'vendors' | 'posts';
 
 interface SocialConnection {
   id: string;
@@ -356,7 +360,7 @@ export default function AdminOverviewPage() {
 
   // Social tab state
   const [dashTab, setDashTab] = useState<DashTab>('overview');
-  const [socialSubTab, setSocialSubTab] = useState<SocialSubTab>('brand');
+  const [socialSubTab, setSocialSubTab] = useState<SocialSubTab>('promote');
   const [brandConnections, setBrandConnections] = useState<SocialConnection[]>([]);
   const [vendorConnections, setVendorConnections] = useState<SocialConnection[]>([]);
   const [socialPosts, setSocialPosts] = useState<SocialPost[]>([]);
@@ -364,6 +368,19 @@ export default function AdminOverviewPage() {
   const [socialFetched, setSocialFetched] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [retryingPost, setRetryingPost] = useState<string | null>(null);
+
+  // Promote tab state
+  const [promoCaption, setPromoCaption] = useState('');
+  const [promoImageUrl, setPromoImageUrl] = useState('');
+  const [promoFacebook, setPromoFacebook] = useState(true);
+  const [promoInstagram, setPromoInstagram] = useState(true);
+  const [promoPosting, setPromoPosting] = useState(false);
+  const [promoGenerating, setPromoGenerating] = useState(false);
+  const [promoResult, setPromoResult] = useState<{platform: string; success: boolean; error?: string; url?: string}[] | null>(null);
+  const [promoTopic, setPromoTopic] = useState('');
+  const [promoCampaign, setPromoCampaign] = useState('');
+  const [promoIdeas, setPromoIdeas] = useState<{title: string; caption: string; image_suggestion: string; best_time: string; target: string}[]>([]);
+  const [promoLoadingIdeas, setPromoLoadingIdeas] = useState(false);
 
   const handleRetryPost = async (postId: string) => {
     setRetryingPost(postId);
@@ -393,6 +410,78 @@ export default function AdminOverviewPage() {
     } finally {
       setRetryingPost(null);
     }
+  };
+
+  const generatePromoCaption = async () => {
+    if (!promoTopic.trim()) return;
+    setPromoGenerating(true);
+    try {
+      const res = await fetch('/api/admin/social/promote', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: promoTopic, campaign: promoCampaign || undefined }),
+      });
+      const data = await res.json();
+      if (data.caption) {
+        setPromoCaption(data.caption);
+      }
+    } catch {
+      // Silent fail
+    }
+    setPromoGenerating(false);
+  };
+
+  const generateCampaignIdeas = async (campaignType: string) => {
+    setPromoLoadingIdeas(true);
+    setPromoCampaign(campaignType);
+    try {
+      const res = await fetch('/api/admin/social/promote', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaign: campaignType, mode: 'ideas' }),
+      });
+      const data = await res.json();
+      if (data.ideas) {
+        setPromoIdeas(data.ideas);
+      }
+    } catch {
+      // Silent fail
+    }
+    setPromoLoadingIdeas(false);
+  };
+
+  const applyPostIdea = (idea: { caption: string; image_suggestion: string }) => {
+    setPromoCaption(idea.caption);
+    setPromoIdeas([]);
+  };
+
+  const handlePromote = async () => {
+    if (!promoCaption.trim()) return;
+    const platforms: string[] = [];
+    if (promoFacebook) platforms.push('facebook');
+    if (promoInstagram) platforms.push('instagram');
+    if (platforms.length === 0) return;
+
+    setPromoPosting(true);
+    setPromoResult(null);
+    try {
+      const res = await fetch('/api/admin/social/promote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: promoCaption,
+          image_url: promoImageUrl || undefined,
+          platforms,
+        }),
+      });
+      const data = await res.json();
+      setPromoResult(data.results || []);
+      // Refresh post history
+      fetchSocialData();
+    } catch {
+      setPromoResult([{ platform: 'all', success: false, error: 'Network error' }]);
+    }
+    setPromoPosting(false);
   };
 
   const fetchData = useCallback(async (selectedRange: DateRange) => {
@@ -648,7 +737,7 @@ export default function AdminOverviewPage() {
 
           {/* Social Sub-Tabs */}
           <div className="flex border-b border-gray-200 mb-6">
-            {(['brand', 'vendors', 'posts'] as const).map(tab => (
+            {(['promote', 'brand', 'vendors', 'posts'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setSocialSubTab(tab)}
@@ -658,7 +747,7 @@ export default function AdminOverviewPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {tab === 'brand' ? t('admin.social.brandAccounts') : tab === 'vendors' ? t('admin.social.vendorConnections') : t('admin.social.postHistory')}
+                {tab === 'promote' ? t('admin.social.promote') : tab === 'brand' ? t('admin.social.brandAccounts') : tab === 'vendors' ? t('admin.social.vendorConnections') : t('admin.social.postHistory')}
                 {tab === 'posts' && socialPosts.filter(p => p.status === 'failed').length > 0 && (
                   <span className="ml-1.5 bg-red-100 text-red-600 text-xs px-1.5 py-0.5 rounded-full">
                     {socialPosts.filter(p => p.status === 'failed').length}
@@ -674,6 +763,197 @@ export default function AdminOverviewPage() {
             </div>
           ) : (
             <>
+              {/* Promote */}
+              {socialSubTab === 'promote' && (
+                <div className="space-y-6">
+                  <p className="text-sm text-gray-500">
+                    {t('admin.social.promoteDescription')}
+                  </p>
+
+                  {/* Campaign Templates */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-[#E8632B]" />
+                      {t('admin.social.campaignTemplates')}
+                    </h3>
+                    <p className="text-xs text-gray-500">{t('admin.social.campaignDescription')}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: 'founders20', label: t('admin.social.campaignFounders'), icon: '🏆' },
+                        { id: 'launch', label: t('admin.social.campaignLaunch'), icon: '🚀' },
+                        { id: 'vendor_recruit', label: t('admin.social.campaignVendors'), icon: '🏪' },
+                        { id: 'customer_acquire', label: t('admin.social.campaignCustomers'), icon: '🛍️' },
+                        { id: 'engagement', label: t('admin.social.campaignEngagement'), icon: '💬' },
+                        { id: 'seasonal', label: t('admin.social.campaignSeasonal'), icon: '☀️' },
+                        { id: 'testimonial', label: t('admin.social.campaignTestimonial'), icon: '⭐' },
+                        { id: 'tips', label: t('admin.social.campaignTips'), icon: '💡' },
+                        { id: 'behind_scenes', label: t('admin.social.campaignBehindScenes'), icon: '🎬' },
+                      ].map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => generateCampaignIdeas(c.id)}
+                          disabled={promoLoadingIdeas}
+                          className={`text-left p-2.5 rounded-lg border text-sm transition-all ${
+                            promoCampaign === c.id ? 'border-[#E8632B] bg-orange-50 text-[#E8632B]' : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                          } disabled:opacity-50`}
+                        >
+                          <span className="mr-1.5">{c.icon}</span>{c.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Loading Ideas */}
+                    {promoLoadingIdeas && (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="w-5 h-5 animate-spin text-emerald-600 mr-2" />
+                        <span className="text-sm text-gray-500">{t('admin.social.generatingIdeas')}</span>
+                      </div>
+                    )}
+
+                    {/* Campaign Ideas */}
+                    {promoIdeas.length > 0 && (
+                      <div className="space-y-2 mt-3">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('admin.social.postIdeas')}</h4>
+                        {promoIdeas.map((idea, i) => (
+                          <div key={i} className="p-3 rounded-lg border border-gray-100 bg-gray-50 space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">{idea.title}</p>
+                                <p className="text-sm text-gray-600 mt-1">{idea.caption}</p>
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                  <span className="text-xs text-gray-400">📸 {idea.image_suggestion}</span>
+                                  <span className="text-xs text-gray-400">⏰ {idea.best_time}</span>
+                                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${idea.target === 'vendors' ? 'bg-orange-100 text-orange-600' : idea.target === 'customers' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                                    {idea.target}
+                                  </span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => applyPostIdea(idea)}
+                                className="text-xs bg-[#E8632B] text-white px-3 py-1.5 rounded-md hover:bg-orange-700 whitespace-nowrap flex-shrink-0"
+                              >
+                                {t('admin.social.useThis')}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* AI Caption Generator */}
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                      <Wand2 className="w-4 h-4 text-emerald-600" />
+                      {t('admin.social.aiCaption')}
+                    </h3>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promoTopic}
+                        onChange={(e) => setPromoTopic(e.target.value)}
+                        placeholder={t('admin.social.topicPlaceholder')}
+                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        onKeyDown={(e) => e.key === 'Enter' && generatePromoCaption()}
+                      />
+                      <button
+                        onClick={generatePromoCaption}
+                        disabled={promoGenerating || !promoTopic.trim()}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {promoGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {t('admin.social.generate')}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Caption Input */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">{t('admin.social.captionLabel')}</label>
+                    <textarea
+                      value={promoCaption}
+                      onChange={(e) => setPromoCaption(e.target.value)}
+                      rows={4}
+                      placeholder={t('admin.social.captionPlaceholder')}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8632B]"
+                    />
+                  </div>
+
+                  {/* Image URL */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4" />
+                      {t('admin.social.imageUrl')}
+                    </label>
+                    <input
+                      type="url"
+                      value={promoImageUrl}
+                      onChange={(e) => setPromoImageUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8632B]"
+                    />
+                    {promoImageUrl && (
+                      <img src={promoImageUrl} alt="Preview" className="w-32 h-32 object-cover rounded-lg border" />
+                    )}
+                    <p className="text-xs text-gray-400">{t('admin.social.imageNote')}</p>
+                  </div>
+
+                  {/* Platform Selection */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">{t('admin.social.selectPlatforms')}</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={promoFacebook}
+                          onChange={(e) => setPromoFacebook(e.target.checked)}
+                          className="rounded border-gray-300 text-[#E8632B] focus:ring-[#E8632B]"
+                        />
+                        <Facebook className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm">Facebook</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={promoInstagram}
+                          onChange={(e) => setPromoInstagram(e.target.checked)}
+                          className="rounded border-gray-300 text-[#E8632B] focus:ring-[#E8632B]"
+                        />
+                        <Instagram className="w-4 h-4 text-pink-500" />
+                        <span className="text-sm">Instagram</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Post Button */}
+                  <button
+                    onClick={handlePromote}
+                    disabled={promoPosting || !promoCaption.trim() || (!promoFacebook && !promoInstagram)}
+                    className="btn-primary flex items-center gap-2 w-full justify-center py-3"
+                  >
+                    {promoPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {promoPosting ? t('admin.social.posting') : t('admin.social.postNow')}
+                  </button>
+
+                  {/* Results */}
+                  {promoResult && (
+                    <div className="space-y-2">
+                      {promoResult.map((r, i) => (
+                        <div key={i} className={`flex items-center gap-2 p-3 rounded-lg text-sm ${r.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                          {r.success ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                          <span className="font-medium capitalize">{r.platform}:</span>
+                          {r.success ? (
+                            r.url ? <a href={r.url} target="_blank" rel="noopener noreferrer" className="underline">{t('admin.social.viewPost')}</a> : t('admin.social.posted')
+                          ) : (
+                            r.error || t('admin.social.failed')
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Brand Accounts */}
               {socialSubTab === 'brand' && (
                 <div className="space-y-4">
