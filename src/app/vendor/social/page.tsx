@@ -7,7 +7,7 @@ import {
   Clock, ArrowRight, AlertCircle, Unplug, X, Eye,
   CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
   Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
-  Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List, Search,
+  Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List, Search, Archive,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -197,11 +197,16 @@ export default function VendorSocialPage() {
   const [timeRange, setTimeRange] = useState(7);
   const [loadingCalendar, setLoadingCalendar] = useState(false);
 
-  // Post history
+  // Post history — active shows last 7 days, archived shows older
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [postView, setPostView] = useState<'active' | 'archived'>('active');
+  const [archivedPosts, setArchivedPosts] = useState<SocialPost[]>([]);
+  const [archivedTotal, setArchivedTotal] = useState(0);
+  const [loadingMoreArchived, setLoadingMoreArchived] = useState(false);
+  const [archivedLoaded, setArchivedLoaded] = useState(false);
 
   // Draft editing — track IDs of drafts being edited so we can update them
   const [editingDraftIds, setEditingDraftIds] = useState<string[]>([]);
@@ -270,7 +275,7 @@ export default function VendorSocialPage() {
       try {
         const [connRes, postsRes, dealsRes] = await Promise.all([
           fetch('/api/social/connections'),
-          fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0`),
+          fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0&view=active`),
           fetch('/api/vendor/deals?status=active&limit=50'),
         ]);
 
@@ -360,13 +365,42 @@ export default function VendorSocialPage() {
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const res = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=${posts.length}`);
+      const res = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=${posts.length}&view=active`);
       if (res.ok) {
         const data = await res.json();
         setPosts(prev => [...prev, ...(data.posts || [])]);
       }
     } finally {
       setLoadingMore(false);
+    }
+  };
+
+  const fetchArchived = async () => {
+    if (archivedLoaded) return;
+    setLoadingMoreArchived(true);
+    try {
+      const res = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0&view=archived`);
+      if (res.ok) {
+        const data = await res.json();
+        setArchivedPosts(data.posts || []);
+        setArchivedTotal(data.total || 0);
+        setArchivedLoaded(true);
+      }
+    } finally {
+      setLoadingMoreArchived(false);
+    }
+  };
+
+  const loadMoreArchived = async () => {
+    setLoadingMoreArchived(true);
+    try {
+      const res = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=${archivedPosts.length}&view=archived`);
+      if (res.ok) {
+        const data = await res.json();
+        setArchivedPosts(prev => [...prev, ...(data.posts || [])]);
+      }
+    } finally {
+      setLoadingMoreArchived(false);
     }
   };
 
@@ -514,7 +548,7 @@ export default function VendorSocialPage() {
         setSelectedDealId('');
         fetchCalendar();
         // Refresh post history
-        const postsRes = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0`);
+        const postsRes = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0&view=active`);
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           setPosts(postsData.posts || []);
@@ -715,23 +749,26 @@ export default function VendorSocialPage() {
     }
   };
 
-  // ── Delete a draft (or pending/failed) post ──
+  // ── Delete a post (works for both active and archived views) ──
   const deletePost = async (postId: string) => {
-    const post = posts.find(p => p.id === postId);
+    const post = posts.find(p => p.id === postId) || archivedPosts.find(p => p.id === postId);
     const isPosted = post?.status === 'posted';
     const msg = isPosted
       ? (locale === 'es' ? '¿Eliminar este post? También se eliminará de la plataforma (Facebook/Instagram).' : 'Delete this post? It will also be deleted from the platform (Facebook/Instagram).')
       : (locale === 'es' ? '¿Eliminar este post?' : 'Delete this post?');
     if (!confirm(msg)) return;
     try {
+      const removeFromState = () => {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        setTotal(prev => prev - 1);
+        setArchivedPosts(prev => prev.filter(p => p.id !== postId));
+        setArchivedTotal(prev => prev - 1);
+        fetchCalendar();
+      };
       if (isPosted) {
         // Delete from platform + DB via dedicated endpoint
         const res = await fetch(`/api/social/posts/${postId}`, { method: 'DELETE' });
-        if (res.ok) {
-          setPosts(prev => prev.filter(p => p.id !== postId));
-          setTotal(prev => prev - 1);
-          fetchCalendar();
-        }
+        if (res.ok) removeFromState();
       } else {
         // Cancel draft/scheduled/pending via schedule endpoint
         const res = await fetch('/api/social/schedule', {
@@ -739,11 +776,7 @@ export default function VendorSocialPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ post_id: postId, action: 'cancel' }),
         });
-        if (res.ok) {
-          setPosts(prev => prev.filter(p => p.id !== postId));
-          setTotal(prev => prev - 1);
-          fetchCalendar();
-        }
+        if (res.ok) removeFromState();
       }
     } catch { /* noop */ }
   };
@@ -1695,84 +1728,193 @@ export default function VendorSocialPage() {
 
             {/* ── Post History ── */}
             <div className="card overflow-hidden border border-gray-200 rounded-xl">
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                <h2 className="font-semibold text-gray-900">Post History</h2>
-                <span className="text-xs text-gray-400">{posts.length} of {total}</span>
+              <div className="p-4 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-semibold text-gray-900">Post History</h2>
+                  <span className="text-xs text-gray-400">
+                    {postView === 'active' ? `${posts.length} of ${total}` : `${archivedPosts.length} of ${archivedTotal}`}
+                  </span>
+                </div>
+                {/* Active / Archived tabs */}
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setPostView('active')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                      postView === 'active' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" /> Recent (7 days)
+                  </button>
+                  <button
+                    onClick={() => { setPostView('archived'); fetchArchived(); }}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                      postView === 'archived' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    <Archive className="w-3.5 h-3.5" /> Archived
+                  </button>
+                </div>
               </div>
 
-              {posts.length === 0 ? (
-                <div className="text-center py-16 px-4">
-                  <Share2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts yet</h3>
-                  <p className="text-gray-500 max-w-md mx-auto mb-4">
-                    When you publish a deal, it will be automatically posted to your connected social accounts with AI-generated captions.
-                  </p>
-                  {connectedPlatforms.size === 0 && (
-                    <p className="text-sm text-gray-500">Connect a platform above to get started.</p>
-                  )}
-                </div>
-              ) : (
+              {/* Active posts view */}
+              {postView === 'active' && (
                 <>
-                  {/* Desktop table */}
-                  <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50/50">
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Deal</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
-                          <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                  {posts.length === 0 ? (
+                    <div className="text-center py-16 px-4">
+                      <Share2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No recent posts</h3>
+                      <p className="text-gray-500 max-w-md mx-auto mb-4">
+                        When you publish a deal, it will be automatically posted to your connected social accounts with AI-generated captions.
+                      </p>
+                      {connectedPlatforms.size === 0 && (
+                        <p className="text-sm text-gray-500">Connect a platform above to get started.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* Desktop table */}
+                      <div className="hidden sm:block overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 bg-gray-50/50">
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Deal</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {posts.map(post => (
+                              <tr key={post.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-3 px-4">
+                                  <span className="flex items-center gap-1.5">
+                                    {PLATFORM_ICONS[post.platform]}
+                                    <span className="text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">{post.deals?.title || '\u2014'}</td>
+                                <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
+                                <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
+                                <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
+                                <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} /></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile card list */}
+                      <div className="sm:hidden divide-y divide-gray-100">
                         {posts.map(post => (
-                          <tr key={post.id} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-3 px-4">
+                          <div key={post.id} className="p-4 space-y-2">
+                            <div className="flex items-center justify-between">
                               <span className="flex items-center gap-1.5">
                                 {PLATFORM_ICONS[post.platform]}
-                                <span className="text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
+                                <span className="text-sm font-medium text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
                               </span>
-                            </td>
-                            <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">{post.deals?.title || '\u2014'}</td>
-                            <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
-                            <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
-                            <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
-                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} /></td>
-                          </tr>
+                              <StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} />
+                            </div>
+                            {post.deals?.title && <p className="text-sm text-gray-700 font-medium truncate">{post.deals.title}</p>}
+                            <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
+                              <PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} />
+                            </div>
+                          </div>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Mobile card list */}
-                  <div className="sm:hidden divide-y divide-gray-100">
-                    {posts.map(post => (
-                      <div key={post.id} className="p-4 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1.5">
-                            {PLATFORM_ICONS[post.platform]}
-                            <span className="text-sm font-medium text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
-                          </span>
-                          <StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} />
-                        </div>
-                        {post.deals?.title && <p className="text-sm text-gray-700 font-medium truncate">{post.deals.title}</p>}
-                        <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
-                          <PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} />
-                        </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {posts.length < total && (
-                    <div className="p-4 text-center border-t border-gray-100">
-                      <button onClick={loadMore} disabled={loadingMore} className="text-sm font-medium text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
-                        {loadingMore ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</> : <>Load more posts</>}
-                      </button>
+                      {posts.length < total && (
+                        <div className="p-4 text-center border-t border-gray-100">
+                          <button onClick={loadMore} disabled={loadingMore} className="text-sm font-medium text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
+                            {loadingMore ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</> : <>Load more</>}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Archived posts view */}
+              {postView === 'archived' && (
+                <>
+                  {loadingMoreArchived && archivedPosts.length === 0 ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
                     </div>
+                  ) : archivedPosts.length === 0 ? (
+                    <div className="text-center py-16 px-4">
+                      <Archive className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No archived posts</h3>
+                      <p className="text-gray-500 max-w-md mx-auto">Posts older than 7 days will appear here.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Desktop table */}
+                      <div className="hidden sm:block overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 bg-gray-50/50">
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Platform</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Deal</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Caption</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Date</th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-500">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {archivedPosts.map(post => (
+                              <tr key={post.id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-3 px-4">
+                                  <span className="flex items-center gap-1.5">
+                                    {PLATFORM_ICONS[post.platform]}
+                                    <span className="text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">{post.deals?.title || '\u2014'}</td>
+                                <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
+                                <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
+                                <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
+                                <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onDelete={deletePost} /></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile card list */}
+                      <div className="sm:hidden divide-y divide-gray-100">
+                        {archivedPosts.map(post => (
+                          <div key={post.id} className="p-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="flex items-center gap-1.5">
+                                {PLATFORM_ICONS[post.platform]}
+                                <span className="text-sm font-medium text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
+                              </span>
+                              <StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} />
+                            </div>
+                            {post.deals?.title && <p className="text-sm text-gray-700 font-medium truncate">{post.deals.title}</p>}
+                            <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
+                              <PostActions post={post} retrying={retrying} onRetry={handleRetry} onDelete={deletePost} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {archivedPosts.length < archivedTotal && (
+                        <div className="p-4 text-center border-t border-gray-100">
+                          <button onClick={loadMoreArchived} disabled={loadingMoreArchived} className="text-sm font-medium text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
+                            {loadingMoreArchived ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</> : <>Load more</>}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
