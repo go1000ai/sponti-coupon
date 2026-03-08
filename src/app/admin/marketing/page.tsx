@@ -7,7 +7,7 @@ import {
   RefreshCw, Loader2, Edit3, PenLine, ChevronDown, ChevronUp, ImageIcon,
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
   Facebook, Instagram, Calendar as CalendarIcon, Eye, EyeOff, ArrowRight,
-  Trash2, Archive, Copy,
+  Trash2, Archive, Copy, Film, ImagePlus,
 } from 'lucide-react';
 
 interface QueueItem {
@@ -92,6 +92,8 @@ export default function AdminMarketingPage() {
   const [createImageUrl, setCreateImageUrl] = useState('');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [generateImage, setGenerateImage] = useState(true);
+  const [generateVideo, setGenerateVideo] = useState(false);
   const [avaSuggestions, setAvaSuggestions] = useState<{type: string; idea: string; why: string; hook: string}[]>([]);
   const [avaLoading, setAvaLoading] = useState(false);
   const [avaLoaded, setAvaLoaded] = useState(false);
@@ -138,6 +140,8 @@ export default function AdminMarketingPage() {
           instructions: createInstructions,
           content_type: createContentType,
           image_url: createImageUrl || undefined,
+          generate_image: generateImage,
+          generate_video: generateVideo,
         }),
       });
       const data = await res.json();
@@ -499,6 +503,52 @@ export default function AdminMarketingPage() {
               </div>
             </div>
 
+            {/* AI Media Generation */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <p className="text-sm font-medium text-gray-700">AI Media Generation</p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <label className={`flex items-center gap-3 flex-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  generateImage ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={generateImage}
+                    onChange={(e) => setGenerateImage(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`p-2 rounded-lg ${generateImage ? 'bg-emerald-600' : 'bg-gray-200'}`}>
+                    <ImagePlus className={`w-4 h-4 ${generateImage ? 'text-white' : 'text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${generateImage ? 'text-emerald-800' : 'text-gray-600'}`}>Generate Image</p>
+                    <p className="text-xs text-gray-400">AI creates a matching image</p>
+                  </div>
+                </label>
+                <label className={`flex items-center gap-3 flex-1 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                  generateVideo ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={generateVideo}
+                    onChange={(e) => setGenerateVideo(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <div className={`p-2 rounded-lg ${generateVideo ? 'bg-emerald-600' : 'bg-gray-200'}`}>
+                    <Film className={`w-4 h-4 ${generateVideo ? 'text-white' : 'text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${generateVideo ? 'text-emerald-800' : 'text-gray-600'}`}>Generate Video</p>
+                    <p className="text-xs text-gray-400">AI creates a Reel/video (9:16)</p>
+                  </div>
+                </label>
+              </div>
+              {createImageUrl && generateImage && (
+                <p className="text-xs text-amber-600 bg-amber-50 rounded p-2">
+                  You provided an image URL — AI image generation will be skipped, your URL will be used.
+                </p>
+              )}
+            </div>
+
             {createError && (
               <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{createError}</div>
             )}
@@ -512,18 +562,18 @@ export default function AdminMarketingPage() {
               {creating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating captions with AI...
+                  {generateImage ? 'Generating captions + image...' : 'Generating captions...'}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Create Post (AI will write Facebook & Instagram captions)
+                  Create Post {generateImage ? '(Captions + Image)' : '(Captions only)'}
                 </>
               )}
             </button>
 
             <p className="text-xs text-gray-400 text-center">
-              The AI will generate platform-specific captions based on your instructions. You can edit them before posting.
+              AI generates platform-specific captions{generateImage ? ' and a matching image' : ''}{generateVideo ? ' + starts video generation' : ''}. You can edit everything before posting.
             </p>
           </div>
         )}
@@ -593,9 +643,14 @@ export default function AdminMarketingPage() {
                     onClick={() => openPreview(item)}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`rounded-lg p-2 ${typeConfig.color}`}>
-                        <TypeIcon className="w-4 h-4" />
-                      </div>
+                      {item.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.image_url} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                      ) : (
+                        <div className={`rounded-lg p-2 ${typeConfig.color}`}>
+                          <TypeIcon className="w-4 h-4" />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm text-gray-900">{typeConfig.label}</span>
@@ -847,6 +902,18 @@ export default function AdminMarketingPage() {
                   {selectedItem.target_audience && (
                     <p className="text-gray-400 mt-1">Target: {selectedItem.target_audience}</p>
                   )}
+                </div>
+              )}
+
+              {/* Image preview */}
+              {selectedItem.image_url && (
+                <div className="mb-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={selectedItem.image_url}
+                    alt="Post image"
+                    className="w-full max-h-64 object-contain rounded-lg border border-gray-200 bg-gray-50"
+                  />
                 </div>
               )}
 
