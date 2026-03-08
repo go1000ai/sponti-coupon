@@ -184,6 +184,7 @@ export default function VendorSocialPage() {
   const [avaMessage, setAvaMessage] = useState('');
   const [avaSuggestion, setAvaSuggestion] = useState('');
   const [showTips, setShowTips] = useState(false);
+  const [animatePrompt, setAnimatePrompt] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoProgress, setVideoProgress] = useState('');
@@ -306,6 +307,7 @@ export default function VendorSocialPage() {
       setAvaPrompt('');
       setAvaMessage('');
       setAvaSuggestion('');
+      setAnimatePrompt('');
       setVideoPrompt('');
       return;
     }
@@ -1070,37 +1072,56 @@ export default function VendorSocialPage() {
                           </div>
                         )}
 
-                        {/* Video: ready */}
+                        {/* Video: ready — preview player + regenerate */}
                         {mediaMode === 'video' && socialVideoUrl && !videoGenerating && (
-                          <div className="space-y-2">
-                            <div className="border border-green-200 rounded-xl bg-green-50/50 p-3 flex items-center gap-3">
-                              <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-green-200">
-                                <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
+                          <div className="space-y-3">
+                            {/* Video preview player */}
+                            <div className="border border-green-200 rounded-xl bg-green-50/50 overflow-hidden">
+                              <div className="flex items-center justify-between px-3 py-2 border-b border-green-200/50">
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <p className="text-sm font-medium text-green-800">{locale === 'es' ? 'Video listo — Vista previa' : 'Video ready — Preview'}</p>
+                                </div>
+                                <button onClick={() => { setSocialVideoUrl(''); }} className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0" title={locale === 'es' ? 'Eliminar' : 'Remove'}>
+                                  <X className="w-4 h-4" />
+                                </button>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-green-800">{locale === 'es' ? 'Video listo' : 'Video ready'}</p>
+                              <div className="aspect-[9/16] max-h-[360px] bg-black mx-auto">
+                                <video
+                                  src={socialVideoUrl}
+                                  className="w-full h-full object-contain"
+                                  controls
+                                  autoPlay
+                                  muted
+                                  loop
+                                  playsInline
+                                />
+                              </div>
+                              <div className="px-3 py-2 text-center">
                                 <p className="text-xs text-green-600">{locale === 'es' ? 'Reel en Instagram / Video en Facebook' : 'Reel on Instagram / Video on Facebook'}</p>
                               </div>
-                              <button onClick={() => { setSocialVideoUrl(''); }} className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0" title={locale === 'es' ? 'Eliminar' : 'Remove'}>
-                                <X className="w-4 h-4" />
-                              </button>
                             </div>
-                            <div className="flex gap-2 items-center">
-                              <input
-                                type="text"
-                                value={videoPrompt}
-                                onChange={e => setVideoPrompt(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && generateVideoFromImage(videoPrompt || `Professional promotional video for ${selectedDealTitle}`)}
-                                placeholder={locale === 'es' ? 'Describir otro estilo de video...' : 'Describe a different video style...'}
-                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400"
-                              />
-                              <button
-                                onClick={() => { setSocialVideoUrl(''); generateVideoFromImage(videoPrompt || `Professional promotional video for ${selectedDealTitle}`); }}
-                                className="px-3 py-2 text-sm text-[#E8632B] border border-[#E8632B] rounded-lg font-medium hover:bg-orange-50 flex-shrink-0 inline-flex items-center gap-1.5"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                {locale === 'es' ? 'Regenerar' : 'Regenerate'}
-                              </button>
+
+                            {/* Not happy? Regenerate */}
+                            <div className="p-3 bg-white rounded-lg border border-gray-200 space-y-2">
+                              <p className="text-xs font-medium text-gray-600">{locale === 'es' ? '¿No te gusta? Genera otro:' : 'Not happy? Generate another:'}</p>
+                              <div className="flex gap-2 items-center">
+                                <input
+                                  type="text"
+                                  value={animatePrompt}
+                                  onChange={e => setAnimatePrompt(e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && generateVideoFromImage(animatePrompt || `Professional promotional video for ${selectedDealTitle}`)}
+                                  placeholder={locale === 'es' ? 'Describir otro estilo de video...' : 'Describe a different video style...'}
+                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400"
+                                />
+                                <button
+                                  onClick={() => { setSocialVideoUrl(''); generateVideoFromImage(animatePrompt || `Professional promotional video for ${selectedDealTitle}`); }}
+                                  className="px-3 py-2 text-sm text-[#E8632B] border border-[#E8632B] rounded-lg font-medium hover:bg-orange-50 flex-shrink-0 inline-flex items-center gap-1.5"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  {locale === 'es' ? 'Regenerar' : 'Regenerate'}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -1109,34 +1130,47 @@ export default function VendorSocialPage() {
                         {mediaMode === 'video' && !socialVideoUrl && !videoGenerating && (
                           <div className="border border-orange-200 rounded-xl bg-white p-4 space-y-3">
                             <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Crear Video / Reel' : 'Create Video / Reel'}</p>
-                            {/* Option 1: Animate image */}
-                            <div className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-lg border border-orange-100">
-                              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                                {(socialImageUrl || dealMedia?.deal_image) ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={socialImageUrl || dealMedia?.deal_image || ''} alt="" className="w-full h-full object-cover" />
-                                ) : (
-                                  <div className="w-full h-full bg-gray-100 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-gray-300" /></div>
-                                )}
+                            {/* Option 1: Animate image with a prompt */}
+                            <div className="p-3 bg-orange-50/50 rounded-lg border border-orange-100 space-y-2.5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                                  {(socialImageUrl || dealMedia?.deal_image) ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={socialImageUrl || dealMedia?.deal_image || ''} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full bg-gray-100 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-gray-300" /></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Animar tu imagen' : 'Animate your image'}</p>
+                                  <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Describe cómo quieres que se anime tu imagen' : 'Describe how you want your image animated'}</p>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Animar tu imagen' : 'Animate your image'}</p>
-                                <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Convierte tu imagen en un video de 8 seg' : 'Turn your image into an 8-sec video'}</p>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={animatePrompt}
+                                  onChange={e => setAnimatePrompt(e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && generateVideoFromImage(animatePrompt || `Cinematic animated promotional video for ${selectedDealTitle}`)}
+                                  placeholder={locale === 'es' ? 'Ej: "zoom lento al producto con música suave"' : 'E.g. "slow zoom on product with soft music"'}
+                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400 bg-white"
+                                />
+                                <button
+                                  onClick={() => generateVideoFromImage(animatePrompt || `Cinematic animated promotional video for ${selectedDealTitle}`)}
+                                  className="px-3 py-2 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-orange-700 flex-shrink-0 inline-flex items-center gap-1.5"
+                                >
+                                  <Video className="w-3.5 h-3.5" />
+                                  {locale === 'es' ? 'Animar' : 'Animate'}
+                                </button>
                               </div>
-                              <button
-                                onClick={() => generateVideoFromImage(`Cinematic animated promotional video for ${selectedDealTitle}`)}
-                                className="px-3 py-2 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-orange-700 flex-shrink-0 inline-flex items-center gap-1.5"
-                              >
-                                <Video className="w-3.5 h-3.5" />
-                                {locale === 'es' ? 'Animar' : 'Animate'}
-                              </button>
                             </div>
-                            {/* Option 2: Create from prompt */}
+                            {/* Option 2: Create a brand new video with Ava */}
                             <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100 space-y-2">
                               <div className="flex items-center gap-1.5">
                                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Crear con un prompt (Ava AI)' : 'Create from a prompt (Ava AI)'}</p>
+                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Crear un video nuevo (Ava AI)' : 'Create a new video (Ava AI)'}</p>
                               </div>
+                              <p className="text-[11px] text-gray-400">{locale === 'es' ? 'No tienes video? Ava crea uno desde cero con tu prompt' : "Don't have a video? Ava creates one from scratch with your prompt"}</p>
                               <div className="flex gap-2">
                                 <input
                                   type="text"
