@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { postDealToSocial } from '@/lib/social/post-manager';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 
@@ -77,7 +78,6 @@ export async function POST(request: NextRequest) {
 
   // If post_now, trigger immediate posting via auto-post endpoint
   if (action === 'post_now') {
-    const secret = process.env.SOCIAL_POST_INTERNAL_SECRET || '';
     // Create social_posts entries as pending, then trigger posting
     const rows = connections.map(conn => ({
       deal_id,
@@ -104,21 +104,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Trigger auto-post (fire-and-forget) with custom captions
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    fetch(`${appUrl}/api/social/auto-post`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-social-post-secret': secret,
-      },
-      body: JSON.stringify({
-        deal_id,
-        vendor_id: vendorId,
-        custom_captions: captions,
-        post_ids: posts?.map(p => p.id) || [],
-      }),
-    }).catch(() => {});
+    // Post directly instead of fire-and-forget HTTP call (avoids silent failures)
+    try {
+      await postDealToSocial(deal_id, vendorId, {
+        customCaptions: captions,
+        postIds: posts?.map(p => p.id) || [],
+      });
+    } catch (postError) {
+      console.error('[Social Schedule] Direct posting failed:', postError);
+      // Posts are already created as pending — post-manager updates their status internally
+      // Return success anyway since the records exist and show the error in the calendar
+    }
 
     return NextResponse.json({ success: true, action: 'post_now', count: connections.length });
   }
