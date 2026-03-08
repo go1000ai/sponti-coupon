@@ -735,6 +735,7 @@ export default function NewDealPage() {
           title: form.title,
           description: form.description,
           video_prompt: videoPrompt || undefined,
+          aspect_ratio: '16:9',
         })),
       });
       const startData = await startRes.json();

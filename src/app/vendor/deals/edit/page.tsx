@@ -442,7 +442,7 @@ function EditDealPageInner() {
       // Phase 1: Start
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description, video_prompt: videoPrompt || undefined }),
+        body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description, video_prompt: videoPrompt || undefined, aspect_ratio: '16:9' }),
       });
       const startData = await startRes.json();
       if (!startRes.ok) { setError(startData.error || 'Failed to generate video'); setAiVideoLoading(false); return; }

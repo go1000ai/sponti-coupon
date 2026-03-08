@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
-  const { image_url, video_prompt } = body;
+  const { image_url, video_prompt, aspect_ratio: requestedAspectRatio } = body;
+  // Default to 9:16 (vertical) for social media Reels; callers can pass '16:9' for website/deal pages
+  const aspectRatio = requestedAspectRatio === '16:9' ? '16:9' : '9:16';
 
   if (!image_url) {
     return NextResponse.json({ error: 'An image URL is required to generate a video' }, { status: 400 });
@@ -109,9 +111,10 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
+    const formatHint = aspectRatio === '9:16' ? 'Vertical 9:16 format for social media Reels.' : 'Landscape 16:9 format.';
     const prompt = video_prompt
-      ? `${video_prompt}. Professional commercial quality, clean imagery, no text or logos.`
-      : `Gentle cinematic camera movement showcasing a ${vendor?.category || 'business'} service. Professional commercial quality, clean and appealing imagery, warm inviting atmosphere. No text, no logos, no watermarks.`;
+      ? `${video_prompt}. ${formatHint} Professional commercial quality, clean imagery, no text or logos.`
+      : `Gentle cinematic camera movement showcasing a ${vendor?.category || 'business'} service. ${formatHint} Professional commercial quality, clean and appealing imagery, warm inviting atmosphere. No text, no logos, no watermarks.`;
 
     // Pre-flight: verify Veo model is accessible with this API key
     const modelCheckUrl = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview?key=${geminiKey}`;
@@ -137,7 +140,7 @@ export async function POST(request: NextRequest) {
         mimeType: imageMimeType,
       },
       config: {
-        aspectRatio: '16:9',
+        aspectRatio,
         numberOfVideos: 1,
         durationSeconds: 8,
       },
@@ -250,12 +253,12 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
       // Auto-retry as text-to-video (no image) to bypass image-based safety filter
       try {
         const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const fallbackPrompt = `Professional commercial video for a local business service. Cinematic camera movement, warm inviting atmosphere, clean modern visuals. No text, no logos, no people.`;
+        const fallbackPrompt = `Professional commercial video for a local business service. Vertical 9:16 format for Instagram Reels. Cinematic camera movement, warm inviting atmosphere, clean modern visuals. No text, no logos, no people.`;
         const retryOp = await ai.models.generateVideos({
           model: 'veo-3.1-generate-preview',
           prompt: fallbackPrompt,
           config: {
-            aspectRatio: '16:9',
+            aspectRatio: '9:16',
             numberOfVideos: 1,
             durationSeconds: 8,
           },
