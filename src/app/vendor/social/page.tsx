@@ -848,7 +848,7 @@ export default function VendorSocialPage() {
                             <span className="text-gray-400 tracking-widest font-bold">···</span>
                           </div>
                           {(isVideo || displayImg) && (
-                            <div className={`${isVideo ? 'aspect-[9/16] max-h-[400px]' : 'aspect-square'} bg-gray-100 relative`}>
+                            <div className={`aspect-square bg-gray-100 relative`}>
                               {isVideo ? (
                                 <>
                                   <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />

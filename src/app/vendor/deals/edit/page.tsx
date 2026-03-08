@@ -9,7 +9,7 @@ import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { useLanguage } from '@/lib/i18n';
 import { formatPercentage, formatCurrency, calculateDiscount } from '@/lib/utils';
 import {
-  ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown, Info,
+  ArrowLeft, ArrowRight, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown, Info,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
   Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause, Calendar, Clock,
   Ticket, Download, Share2, Facebook, Instagram, Twitter, Send, Eye,
@@ -1577,6 +1577,7 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
   const [avaMessage, setAvaMessage] = useState('');
   const [avaSuggestion, setAvaSuggestion] = useState('');
   const [showTips, setShowTips] = useState(false);
+  const [socialStep, setSocialStep] = useState<'create' | 'review'>('create');
 
   useEffect(() => {
     fetch('/api/social/connections')
@@ -1754,6 +1755,7 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
       if (res.ok) {
         setResult({ type: 'success', text: `Posted to ${selectedPlatforms.size} platform${selectedPlatforms.size > 1 ? 's' : ''}!` });
         setPreview(null);
+        setSocialStep('create');
       } else {
         const err = await res.json();
         setResult({ type: 'error', text: err.error || 'Failed to post' });
@@ -1789,6 +1791,7 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
         const label = action === 'schedule' ? 'Scheduled' : 'Saved as draft';
         setResult({ type: 'success', text: `${label} for ${selectedPlatforms.size} platform${selectedPlatforms.size > 1 ? 's' : ''}!` });
         setPreview(null);
+        setSocialStep('create');
       } else {
         const err = await res.json();
         setResult({ type: 'error', text: err.error || `Failed to ${action}` });
@@ -1810,6 +1813,12 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
           <h3 className="font-bold text-gray-900">Post to Social Media</h3>
           <p className="text-xs text-gray-500">Share this deal on your connected platforms</p>
         </div>
+        {/* Step indicator */}
+        <div className="ml-auto flex items-center gap-2 text-xs text-gray-400">
+          <span className={`px-2 py-0.5 rounded-full font-medium ${socialStep === 'create' ? 'bg-orange-100 text-[#E8632B]' : 'bg-gray-100 text-gray-500'}`}>1. {language === 'es' ? 'Crear' : 'Create'}</span>
+          <ArrowRight className="w-3 h-3" />
+          <span className={`px-2 py-0.5 rounded-full font-medium ${socialStep === 'review' ? 'bg-orange-100 text-[#E8632B]' : 'bg-gray-100 text-gray-500'}`}>2. {language === 'es' ? 'Revisar' : 'Review'}</span>
+        </div>
       </div>
 
       <div className="p-5 space-y-4">
@@ -1820,505 +1829,556 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
           </div>
         )}
 
-        {/* Platform selection */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Select platforms</span>
-            <button onClick={selectAll} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">Select All</button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {SOCIAL_PLATFORMS.map(p => {
-              const isConnected = connectedSet.has(p.key);
-              const isSelected = selectedPlatforms.has(p.key);
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => isConnected && togglePlatform(p.key)}
-                  disabled={!isConnected}
-                  className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2.5 ${
-                    !isConnected
-                      ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
-                      : isSelected
-                        ? `${p.border} ${p.bg} ring-2 ${p.ring} ring-offset-1`
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                  }`}
-                >
-                  <span className={isConnected ? p.color : 'text-gray-300'}>{p.icon}</span>
-                  <div className="text-left">
-                    <span className="text-sm font-medium text-gray-900 block leading-tight">{p.label}</span>
-                    <span className="text-[10px] text-gray-400">
-                      {isConnected ? (isSelected ? 'Selected' : 'Connected') : 'Not connected'}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Media Editor */}
-        {preview && (
-          <div className="space-y-3 pt-3 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">{language === 'es' ? 'Multimedia' : 'Media'}</span>
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => setMediaMode('image')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{language === 'es' ? 'Imagen' : 'Image'}
-                </button>
-                <button
-                  onClick={() => setMediaMode('video')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                  <Video className="w-3.5 h-3.5 inline mr-1" />{language === 'es' ? 'Video' : 'Video'}
-                </button>
+        {/* ===== STEP 1: CREATE ===== */}
+        {socialStep === 'create' && (
+          <>
+            {/* Platform selection */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">{language === 'es' ? 'Seleccionar plataformas' : 'Select platforms'}</span>
+                <button onClick={selectAll} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">{language === 'es' ? 'Seleccionar todas' : 'Select All'}</button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {SOCIAL_PLATFORMS.map(p => {
+                  const isConnected = connectedSet.has(p.key);
+                  const isSelected = selectedPlatforms.has(p.key);
+                  return (
+                    <button
+                      key={p.key}
+                      onClick={() => isConnected && togglePlatform(p.key)}
+                      disabled={!isConnected}
+                      className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2.5 ${
+                        !isConnected
+                          ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                          : isSelected
+                            ? `${p.border} ${p.bg} ring-2 ${p.ring} ring-offset-1`
+                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={isConnected ? p.color : 'text-gray-300'}>{p.icon}</span>
+                      <div className="text-left">
+                        <span className="text-sm font-medium text-gray-900 block leading-tight">{p.label}</span>
+                        <span className="text-[10px] text-gray-400">
+                          {isConnected ? (isSelected ? (language === 'es' ? 'Seleccionado' : 'Selected') : (language === 'es' ? 'Conectado' : 'Connected')) : (language === 'es' ? 'No conectado' : 'Not connected')}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Current media thumbnail */}
-            <div className="flex items-start gap-3">
-              <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0">
-                {mediaMode === 'video' && socialVideoUrl ? (
-                  <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
-                ) : (socialImageUrl || preview.image_url) ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <ImageIcon className="w-6 h-6" />
+            {/* Generate Preview button */}
+            <button
+              onClick={generatePreview}
+              disabled={loadingPreview || selectedPlatforms.size === 0}
+              className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+              {preview ? (language === 'es' ? 'Regenerar contenido' : 'Refresh Preview') : (language === 'es' ? 'Generar contenido' : 'Generate Preview')}
+            </button>
+
+            {/* Media Editor — only after preview loaded */}
+            {preview && (
+              <div className="space-y-3 pt-3 border-t border-gray-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">{language === 'es' ? 'Multimedia' : 'Media'}</span>
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setMediaMode('image')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{language === 'es' ? 'Imagen' : 'Image'}
+                    </button>
+                    <button
+                      onClick={() => setMediaMode('video')}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      <Video className="w-3.5 h-3.5 inline mr-1" />{language === 'es' ? 'Video' : 'Video'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Current media thumbnail */}
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0">
+                    {mediaMode === 'video' && socialVideoUrl ? (
+                      <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
+                    ) : (socialImageUrl || preview.image_url) ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <ImageIcon className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 mb-1">
+                      {mediaMode === 'video'
+                        ? (language === 'es' ? 'Video actual para publicación' : 'Current video for post')
+                        : (language === 'es' ? 'Imagen actual para publicación' : 'Current image for post')}
+                    </p>
+                    <button
+                      onClick={() => setShowMediaPicker(!showMediaPicker)}
+                      className="text-xs text-[#E8632B] hover:text-orange-700 font-medium"
+                    >
+                      {showMediaPicker
+                        ? (language === 'es' ? 'Ocultar biblioteca' : 'Hide library')
+                        : (language === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Library horizontal scroll */}
+                {showMediaPicker && (
+                  <div className="overflow-x-auto pb-1">
+                    <div className="flex gap-2 min-w-min">
+                      {mediaMode === 'image' ? (
+                        (preview.media?.images || []).length > 0 ? (
+                          (preview.media?.images || []).map((url, i) => (
+                            <button
+                              key={i}
+                              onClick={() => { setSocialImageUrl(url); setSocialVideoUrl(''); setShowMediaPicker(false); }}
+                              className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${socialImageUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={url} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-400 py-2">{language === 'es' ? 'No hay imágenes en la biblioteca' : 'No images in library'}</p>
+                        )
+                      ) : (
+                        (preview.media?.videos || []).length > 0 ? (
+                          (preview.media?.videos || []).map((url, i) => (
+                            <button
+                              key={i}
+                              onClick={() => { setSocialVideoUrl(url); setMediaMode('video'); setShowMediaPicker(false); }}
+                              className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all relative ${socialVideoUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}
+                            >
+                              <video src={url} className="w-full h-full object-cover" muted />
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                <Video className="w-4 h-4 text-white" />
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <p className="text-xs text-gray-400 py-2">{language === 'es' ? 'No hay videos en la biblioteca' : 'No videos in library'}</p>
+                        )
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-gray-500 mb-1">
-                  {mediaMode === 'video'
-                    ? (language === 'es' ? 'Video actual para publicación' : 'Current video for post')
-                    : (language === 'es' ? 'Imagen actual para publicación' : 'Current image for post')}
-                </p>
-                <button
-                  onClick={() => setShowMediaPicker(!showMediaPicker)}
-                  className="text-xs text-[#E8632B] hover:text-orange-700 font-medium"
-                >
-                  {showMediaPicker
-                    ? (language === 'es' ? 'Ocultar biblioteca' : 'Hide library')
-                    : (language === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
-                </button>
-              </div>
-            </div>
 
-            {/* Library horizontal scroll */}
-            {showMediaPicker && (
-              <div className="overflow-x-auto pb-1">
-                <div className="flex gap-2 min-w-min">
-                  {mediaMode === 'image' ? (
-                    (preview.media?.images || []).length > 0 ? (
-                      (preview.media?.images || []).map((url, i) => (
-                        <button
-                          key={i}
-                          onClick={() => { setSocialImageUrl(url); setSocialVideoUrl(''); setShowMediaPicker(false); }}
-                          className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${socialImageUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={url} alt="" className="w-full h-full object-cover" />
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-xs text-gray-400 py-2">{language === 'es' ? 'No hay imágenes en la biblioteca' : 'No images in library'}</p>
-                    )
-                  ) : (
-                    (preview.media?.videos || []).length > 0 ? (
-                      (preview.media?.videos || []).map((url, i) => (
-                        <button
-                          key={i}
-                          onClick={() => { setSocialVideoUrl(url); setMediaMode('video'); setShowMediaPicker(false); }}
-                          className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all relative ${socialVideoUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}
-                        >
-                          <video src={url} className="w-full h-full object-cover" muted />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                            <Video className="w-4 h-4 text-white" />
-                          </div>
-                        </button>
-                      ))
-                    ) : (
-                      <p className="text-xs text-gray-400 py-2">{language === 'es' ? 'No hay videos en la biblioteca' : 'No videos in library'}</p>
-                    )
+                {/* Ava AI Assistant */}
+                <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-semibold text-emerald-800">
+                      {language === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full font-medium">AI</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={avaPrompt}
+                      onChange={e => setAvaPrompt(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
+                      placeholder={mediaMode === 'video'
+                        ? (language === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...')
+                        : (language === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
+                      className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400"
+                    />
+                    <button
+                      onClick={askAva}
+                      disabled={avaLoading || !avaPrompt.trim()}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5"
+                    >
+                      {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {language === 'es' ? 'Preguntar' : 'Ask'}
+                    </button>
+                  </div>
+
+                  {avaMessage && (
+                    <div className="text-sm text-emerald-800 bg-emerald-100/60 rounded-lg p-2.5">
+                      <span className="font-medium">Ava:</span> {avaMessage}
+                    </div>
                   )}
+
+                  {avaSuggestion && (
+                    <div className="space-y-2">
+                      <div className="text-xs text-gray-600 bg-white rounded-lg p-2.5 border border-emerald-100 font-mono">
+                        {avaSuggestion}
+                      </div>
+                      <div className="flex gap-2">
+                        {mediaMode === 'image' ? (
+                          <button
+                            onClick={() => generateAvaImage(avaSuggestion)}
+                            disabled={avaLoading}
+                            className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                          >
+                            {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                            {language === 'es' ? 'Generar Imagen' : 'Generate Image'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => generateAvaVideo(avaSuggestion)}
+                            disabled={avaLoading}
+                            className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                          >
+                            {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                            {language === 'es' ? 'Generar Video' : 'Generate Video'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }}
+                          className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Collapsible Tips */}
+                  <button
+                    onClick={() => setShowTips(!showTips)}
+                    className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-medium w-full"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                    {language === 'es' ? 'Tips para mejores resultados' : 'Tips for better results'}
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTips ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showTips && (
+                    <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-emerald-100 space-y-2">
+                      {mediaMode === 'video' ? (
+                        <>
+                          <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{language === 'es' ? 'Tips para Videos' : 'Video Tips'}</p>
+                          <ul className="space-y-1.5 list-disc pl-3.5">
+                            <li>{language === 'es' ? 'Especifica la música: "música electrónica animada" o "guitarra acústica tranquila"' : 'Specify music: "upbeat electronic music" or "calm acoustic guitar"'}</li>
+                            <li>{language === 'es' ? 'Describe el ritmo: "rápido con cortes rápidos" o "revelación cinematográfica lenta"' : 'Describe pacing: "fast-paced with quick cuts" or "slow cinematic reveal"'}</li>
+                            <li>{language === 'es' ? 'Define el ambiente: "enérgico y divertido" o "profesional y limpio"' : 'Set the mood: "energetic and fun" or "professional and clean"'}</li>
+                            <li>{language === 'es' ? 'Menciona transiciones: "zoom suave al producto" o "fundido entre escenas"' : 'Mention transitions: "smooth zoom-in on product" or "fade between scenes"'}</li>
+                            <li>{language === 'es' ? 'Ángulos de cámara: "primer plano de la comida" o "toma amplia del local"' : 'Include camera angles: "close-up of food details" or "wide shot of venue"'}</li>
+                            <li>{language === 'es' ? 'Referencia el estilo: "vertical tipo TikTok" o "comercial cinematográfico"' : 'Reference style: "TikTok-style vertical" or "cinematic commercial"'}</li>
+                            <li className="font-medium text-emerald-700">{language === 'es' ? '¡Sé específico! Evita prompts vagos como "haz un video cool"' : 'Be specific! Avoid vague prompts like "make a cool video"'}</li>
+                          </ul>
+                        </>
+                      ) : (
+                        <>
+                          <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{language === 'es' ? 'Tips para Imágenes' : 'Image Tips'}</p>
+                          <ul className="space-y-1.5 list-disc pl-3.5">
+                            <li>{language === 'es' ? 'Describe la iluminación: "hora dorada cálida" o "iluminación de estudio brillante"' : 'Describe lighting: "warm golden hour" or "bright studio lighting"'}</li>
+                            <li>{language === 'es' ? 'Composición: "vista cenital (flat-lay)" o "poca profundidad de campo"' : 'Set composition: "overhead flat-lay" or "eye-level with shallow depth of field"'}</li>
+                            <li>{language === 'es' ? 'Estilo: "fondo blanco minimalista" o "fotografía callejera vibrante"' : 'Mention style: "minimalist with white background" or "vibrant street photography"'}</li>
+                            <li>{language === 'es' ? 'Sin texto: Ava crea imágenes sin textos superpuestos' : 'No text: Ava generates images without text overlays'}</li>
+                          </ul>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Caption text areas per platform */}
+                <div className="space-y-3 pt-3 border-t border-gray-100">
+                  <span className="text-sm font-medium text-gray-700">{language === 'es' ? 'Leyendas' : 'Captions'}</span>
+                  {Array.from(selectedPlatforms).filter(p => connectedSet.has(p)).map(platform => (
+                    <div key={platform} className="space-y-1">
+                      <label className="text-xs font-medium text-gray-600 flex items-center gap-1.5">
+                        {SOCIAL_PLATFORMS.find(sp => sp.key === platform)?.icon}
+                        {SOCIAL_PLATFORMS.find(sp => sp.key === platform)?.label}
+                      </label>
+                      <textarea
+                        value={editedCaptions[platform] || ''}
+                        onChange={e => setEditedCaptions(prev => ({ ...prev, [platform]: e.target.value }))}
+                        rows={3}
+                        placeholder={language === 'es' ? 'Escribe tu mensaje...' : 'Write your message...'}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent resize-none"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* Ava AI Assistant */}
-            <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm font-semibold text-emerald-800">
-                  {language === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}
-                </span>
-                <span className="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full font-medium">AI</span>
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={avaPrompt}
-                  onChange={e => setAvaPrompt(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
-                  placeholder={mediaMode === 'video'
-                    ? (language === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...')
-                    : (language === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
-                  className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400"
-                />
-                <button
-                  onClick={askAva}
-                  disabled={avaLoading || !avaPrompt.trim()}
-                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5"
-                >
-                  {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                  {language === 'es' ? 'Preguntar' : 'Ask'}
-                </button>
-              </div>
-
-              {avaMessage && (
-                <div className="text-sm text-emerald-800 bg-emerald-100/60 rounded-lg p-2.5">
-                  <span className="font-medium">Ava:</span> {avaMessage}
-                </div>
-              )}
-
-              {avaSuggestion && (
-                <div className="space-y-2">
-                  <div className="text-xs text-gray-600 bg-white rounded-lg p-2.5 border border-emerald-100 font-mono">
-                    {avaSuggestion}
-                  </div>
-                  <div className="flex gap-2">
-                    {mediaMode === 'image' ? (
-                      <button
-                        onClick={() => generateAvaImage(avaSuggestion)}
-                        disabled={avaLoading}
-                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
-                      >
-                        {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                        {language === 'es' ? 'Generar Imagen' : 'Generate Image'}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => generateAvaVideo(avaSuggestion)}
-                        disabled={avaLoading}
-                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
-                      >
-                        {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
-                        {language === 'es' ? 'Generar Video' : 'Generate Video'}
-                      </button>
-                    )}
-                    <button
-                      onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }}
-                      className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Collapsible Tips */}
-              <button
-                onClick={() => setShowTips(!showTips)}
-                className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-medium w-full"
-              >
-                <Info className="w-3.5 h-3.5" />
-                {language === 'es' ? 'Tips para mejores resultados' : 'Tips for better results'}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTips ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showTips && (
-                <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-emerald-100 space-y-2">
-                  {mediaMode === 'video' ? (
-                    <>
-                      <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{language === 'es' ? 'Tips para Videos' : 'Video Tips'}</p>
-                      <ul className="space-y-1.5 list-disc pl-3.5">
-                        <li>{language === 'es' ? 'Especifica la música: "música electrónica animada" o "guitarra acústica tranquila"' : 'Specify music: "upbeat electronic music" or "calm acoustic guitar"'}</li>
-                        <li>{language === 'es' ? 'Describe el ritmo: "rápido con cortes rápidos" o "revelación cinematográfica lenta"' : 'Describe pacing: "fast-paced with quick cuts" or "slow cinematic reveal"'}</li>
-                        <li>{language === 'es' ? 'Define el ambiente: "enérgico y divertido" o "profesional y limpio"' : 'Set the mood: "energetic and fun" or "professional and clean"'}</li>
-                        <li>{language === 'es' ? 'Menciona transiciones: "zoom suave al producto" o "fundido entre escenas"' : 'Mention transitions: "smooth zoom-in on product" or "fade between scenes"'}</li>
-                        <li>{language === 'es' ? 'Ángulos de cámara: "primer plano de la comida" o "toma amplia del local"' : 'Include camera angles: "close-up of food details" or "wide shot of venue"'}</li>
-                        <li>{language === 'es' ? 'Referencia el estilo: "vertical tipo TikTok" o "comercial cinematográfico"' : 'Reference style: "TikTok-style vertical" or "cinematic commercial"'}</li>
-                        <li className="font-medium text-emerald-700">{language === 'es' ? '¡Sé específico! Evita prompts vagos como "haz un video cool"' : 'Be specific! Avoid vague prompts like "make a cool video"'}</li>
-                      </ul>
-                    </>
-                  ) : (
-                    <>
-                      <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{language === 'es' ? 'Tips para Imágenes' : 'Image Tips'}</p>
-                      <ul className="space-y-1.5 list-disc pl-3.5">
-                        <li>{language === 'es' ? 'Describe la iluminación: "hora dorada cálida" o "iluminación de estudio brillante"' : 'Describe lighting: "warm golden hour" or "bright studio lighting"'}</li>
-                        <li>{language === 'es' ? 'Composición: "vista cenital (flat-lay)" o "poca profundidad de campo"' : 'Set composition: "overhead flat-lay" or "eye-level with shallow depth of field"'}</li>
-                        <li>{language === 'es' ? 'Estilo: "fondo blanco minimalista" o "fotografía callejera vibrante"' : 'Mention style: "minimalist with white background" or "vibrant street photography"'}</li>
-                        <li>{language === 'es' ? 'Sin texto: Ava crea imágenes sin textos superpuestos' : 'No text: Ava generates images without text overlays'}</li>
-                      </ul>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+            {/* Create Post button — advances to review step */}
+            <button
+              onClick={() => setSocialStep('review')}
+              disabled={!preview || selectedPlatforms.size === 0}
+              className="w-full px-4 py-3 bg-[#E8632B] text-white rounded-xl text-sm font-semibold hover:bg-orange-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25 transition-all"
+            >
+              <ArrowRight className="w-4 h-4" />
+              {language === 'es' ? 'Crear publicación' : 'Create Post'}
+            </button>
+          </>
         )}
 
-        {/* Preview section — Platform Mockups */}
-        {preview && (() => {
-          const displayImg = socialImageUrl || preview.image_url;
-          const displayVid = socialVideoUrl;
-          const isVideo = mediaMode === 'video' && displayVid;
-          return (
-          <div className="space-y-4 pt-3 border-t border-gray-100">
-            <div className="flex items-center gap-2">
-              <Eye className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Preview</span>
-            </div>
+        {/* ===== STEP 2: REVIEW & POST ===== */}
+        {socialStep === 'review' && (
+          <>
+            {/* Back to Edit */}
+            <button
+              onClick={() => { setSocialStep('create'); setEditingPlatform(null); }}
+              className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {language === 'es' ? 'Volver a editar' : 'Back to Edit'}
+            </button>
 
-            <div className="space-y-4">
-              {/* Facebook Mockup */}
-              {selectedPlatforms.has('facebook') && (
-                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
-                  <div className="flex items-center gap-2.5 p-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {preview.vendor?.business_name?.charAt(0) || 'S'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</p>
-                      <p className="text-[11px] text-gray-500">Sponsored · <Globe className="w-3 h-3 inline" /></p>
-                    </div>
-                  </div>
-                  <div className="px-3 pb-2">
-                    {editingPlatform === 'facebook' ? (
-                      <textarea
-                        value={editedCaptions.facebook || ''}
-                        onChange={e => setEditedCaptions(prev => ({ ...prev, facebook: e.target.value }))}
-                        rows={4}
-                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-900 whitespace-pre-line line-clamp-4">{editedCaptions.facebook || ''}</p>
-                    )}
-                    <button onClick={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                      {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
-                    </button>
-                  </div>
-                  {(isVideo || displayImg) && (
-                    <div className="aspect-video bg-gray-100 relative">
-                      {isVideo ? (
-                        <>
-                          <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
-                          <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">VIDEO</div>
-                        </>
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={displayImg} alt="" className="w-full h-full object-cover" />
-                      )}
-                    </div>
-                  )}
-                  <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
-                    <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
-                    <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
-                    <span className="flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Share</span>
-                  </div>
+            {/* Platform Mockup Previews */}
+            {preview && (() => {
+              const displayImg = socialImageUrl || preview.image_url;
+              const displayVid = socialVideoUrl;
+              const isVideo = mediaMode === 'video' && displayVid;
+              return (
+              <div className="space-y-4 pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">{language === 'es' ? 'Vista previa' : 'Preview'}</span>
                 </div>
-              )}
 
-              {/* Instagram Mockup */}
-              {selectedPlatforms.has('instagram') && (
-                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
-                  <div className="flex items-center justify-between p-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px] flex-shrink-0">
-                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-gray-900">
+                <div className="space-y-4">
+                  {/* Facebook Mockup */}
+                  {selectedPlatforms.has('facebook') && (
+                    <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                      <div className="flex items-center gap-2.5 p-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                           {preview.vendor?.business_name?.charAt(0) || 'S'}
                         </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</p>
+                          <p className="text-[11px] text-gray-500">Sponsored · <Globe className="w-3 h-3 inline" /></p>
+                        </div>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</p>
-                    </div>
-                    <span className="text-gray-400 tracking-widest font-bold">···</span>
-                  </div>
-                  {(isVideo || displayImg) && (
-                    <div className={`${isVideo ? 'aspect-[9/16] max-h-[400px]' : 'aspect-square'} bg-gray-100 relative`}>
-                      {isVideo ? (
-                        <>
-                          <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
-                          <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1"><Video className="w-3 h-3" /> Reel</div>
-                        </>
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={displayImg} alt="" className="w-full h-full object-cover" />
-                      )}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between px-3 py-2.5">
-                    <div className="flex items-center gap-4">
-                      <Heart className="w-5 h-5 text-gray-800" />
-                      <MessageCircle className="w-5 h-5 text-gray-800" />
-                      <Send className="w-5 h-5 text-gray-800" />
-                    </div>
-                    <Bookmark className="w-5 h-5 text-gray-800" />
-                  </div>
-                  <div className="px-3 pb-3">
-                    {editingPlatform === 'instagram' ? (
-                      <textarea
-                        value={editedCaptions.instagram || ''}
-                        onChange={e => setEditedCaptions(prev => ({ ...prev, instagram: e.target.value }))}
-                        rows={4}
-                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-900">
-                        <span className="font-semibold">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>{' '}
-                        <span className="whitespace-pre-line line-clamp-3">{editedCaptions.instagram || ''}</span>
-                      </p>
-                    )}
-                    <button onClick={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                      {editingPlatform === 'instagram' ? 'Done' : 'Edit caption'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* X/Twitter Mockup */}
-              {selectedPlatforms.has('twitter') && (
-                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto p-3">
-                  <div className="flex gap-2.5">
-                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                      {preview.vendor?.business_name?.charAt(0) || 'S'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-sm font-bold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</span>
-                        <span className="text-sm text-gray-500 truncate">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                      <div className="px-3 pb-2">
+                        {editingPlatform === 'facebook' ? (
+                          <textarea
+                            value={editedCaptions.facebook || ''}
+                            onChange={e => setEditedCaptions(prev => ({ ...prev, facebook: e.target.value }))}
+                            rows={4}
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-900 whitespace-pre-line line-clamp-4">{editedCaptions.facebook || ''}</p>
+                        )}
+                        <button onClick={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                          {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
+                        </button>
                       </div>
-                      {editingPlatform === 'twitter' ? (
-                        <textarea
-                          value={editedCaptions.twitter || ''}
-                          onChange={e => setEditedCaptions(prev => ({ ...prev, twitter: e.target.value }))}
-                          rows={3}
-                          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none mt-1"
-                        />
-                      ) : (
-                        <p className="text-sm text-gray-900 whitespace-pre-line mt-1 line-clamp-3">{editedCaptions.twitter || ''}</p>
-                      )}
-                      <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                        {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
-                      </button>
                       {(isVideo || displayImg) && (
-                        <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 relative">
+                        <div className="aspect-video bg-gray-100 relative">
                           {isVideo ? (
-                            <video src={displayVid} className="w-full aspect-video object-cover" muted loop autoPlay playsInline />
+                            <>
+                              <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                              <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">VIDEO</div>
+                            </>
                           ) : (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={displayImg} alt="" className="w-full aspect-video object-cover" />
+                            <img src={displayImg} alt="" className="w-full h-full object-cover" />
                           )}
                         </div>
                       )}
-                      <div className="flex items-center justify-between mt-2 text-gray-400">
-                        <MessageCircle className="w-4 h-4" />
-                        <RotateCcw className="w-4 h-4" />
-                        <Heart className="w-4 h-4" />
-                        <Share2 className="w-4 h-4" />
+                      <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
+                        <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
+                        <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+                        <span className="flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Share</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  )}
 
-              {/* TikTok simple preview */}
-              {selectedPlatforms.has('tiktok') && (
-                <div className="border border-gray-300 rounded-lg bg-black overflow-hidden max-w-md mx-auto">
-                  {(isVideo || displayImg) && (
-                    <div className="aspect-[9/16] max-h-[300px] bg-gray-900 relative">
-                      {isVideo ? (
-                        <video src={displayVid} className="w-full h-full object-cover opacity-80" muted loop autoPlay playsInline />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={displayImg} alt="" className="w-full h-full object-cover opacity-80" />
-                      )}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                  {/* Instagram Mockup */}
+                  {selectedPlatforms.has('instagram') && (
+                    <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px] flex-shrink-0">
+                            <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-gray-900">
+                              {preview.vendor?.business_name?.charAt(0) || 'S'}
+                            </div>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</p>
                         </div>
-                        {editingPlatform === 'tiktok' ? (
+                        <span className="text-gray-400 tracking-widest font-bold">···</span>
+                      </div>
+                      {(isVideo || displayImg) && (
+                        <div className="aspect-square bg-gray-100 relative">
+                          {isVideo ? (
+                            <>
+                              <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                              <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1"><Video className="w-3 h-3" /> Reel</div>
+                            </>
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={displayImg} alt="" className="w-full h-full object-cover" />
+                          )}
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between px-3 py-2.5">
+                        <div className="flex items-center gap-4">
+                          <Heart className="w-5 h-5 text-gray-800" />
+                          <MessageCircle className="w-5 h-5 text-gray-800" />
+                          <Send className="w-5 h-5 text-gray-800" />
+                        </div>
+                        <Bookmark className="w-5 h-5 text-gray-800" />
+                      </div>
+                      <div className="px-3 pb-3">
+                        {editingPlatform === 'instagram' ? (
                           <textarea
-                            value={editedCaptions.tiktok || ''}
-                            onChange={e => setEditedCaptions(prev => ({ ...prev, tiktok: e.target.value }))}
-                            rows={3}
-                            className="w-full bg-white/20 text-white rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-[#E8632B] resize-none placeholder-white/50"
+                            value={editedCaptions.instagram || ''}
+                            onChange={e => setEditedCaptions(prev => ({ ...prev, instagram: e.target.value }))}
+                            rows={4}
+                            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
                           />
                         ) : (
-                          <p className="text-white text-xs line-clamp-2">{editedCaptions.tiktok || ''}</p>
+                          <p className="text-sm text-gray-900">
+                            <span className="font-semibold">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>{' '}
+                            <span className="whitespace-pre-line line-clamp-3">{editedCaptions.instagram || ''}</span>
+                          </p>
                         )}
-                        <button onClick={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')} className="text-xs text-orange-400 mt-1 font-medium">
-                          {editingPlatform === 'tiktok' ? 'Done' : 'Edit caption'}
+                        <button onClick={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                          {editingPlatform === 'instagram' ? 'Done' : 'Edit caption'}
                         </button>
                       </div>
                     </div>
                   )}
+
+                  {/* X/Twitter Mockup */}
+                  {selectedPlatforms.has('twitter') && (
+                    <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto p-3">
+                      <div className="flex gap-2.5">
+                        <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {preview.vendor?.business_name?.charAt(0) || 'S'}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-bold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</span>
+                            <span className="text-sm text-gray-500 truncate">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                          </div>
+                          {editingPlatform === 'twitter' ? (
+                            <textarea
+                              value={editedCaptions.twitter || ''}
+                              onChange={e => setEditedCaptions(prev => ({ ...prev, twitter: e.target.value }))}
+                              rows={3}
+                              className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none mt-1"
+                            />
+                          ) : (
+                            <p className="text-sm text-gray-900 whitespace-pre-line mt-1 line-clamp-3">{editedCaptions.twitter || ''}</p>
+                          )}
+                          <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                            {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
+                          </button>
+                          {(isVideo || displayImg) && (
+                            <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 relative">
+                              {isVideo ? (
+                                <video src={displayVid} className="w-full aspect-video object-cover" muted loop autoPlay playsInline />
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={displayImg} alt="" className="w-full aspect-video object-cover" />
+                              )}
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between mt-2 text-gray-400">
+                            <MessageCircle className="w-4 h-4" />
+                            <RotateCcw className="w-4 h-4" />
+                            <Heart className="w-4 h-4" />
+                            <Share2 className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TikTok simple preview */}
+                  {selectedPlatforms.has('tiktok') && (
+                    <div className="border border-gray-300 rounded-lg bg-black overflow-hidden max-w-md mx-auto">
+                      {(isVideo || displayImg) && (
+                        <div className="aspect-[9/16] max-h-[300px] bg-gray-900 relative">
+                          {isVideo ? (
+                            <video src={displayVid} className="w-full h-full object-cover opacity-80" muted loop autoPlay playsInline />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={displayImg} alt="" className="w-full h-full object-cover opacity-80" />
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                            </div>
+                            {editingPlatform === 'tiktok' ? (
+                              <textarea
+                                value={editedCaptions.tiktok || ''}
+                                onChange={e => setEditedCaptions(prev => ({ ...prev, tiktok: e.target.value }))}
+                                rows={3}
+                                className="w-full bg-white/20 text-white rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-[#E8632B] resize-none placeholder-white/50"
+                              />
+                            ) : (
+                              <p className="text-white text-xs line-clamp-2">{editedCaptions.tiktok || ''}</p>
+                            )}
+                            <button onClick={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')} className="text-xs text-orange-400 mt-1 font-medium">
+                              {editingPlatform === 'tiktok' ? 'Done' : 'Edit caption'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+              );
+            })()}
+
+            {/* Action buttons — Post Now, Schedule, Save Draft */}
+            <div className="space-y-2 pt-3">
+              <button
+                onClick={handlePost}
+                disabled={posting || scheduling || selectedPlatforms.size === 0}
+                className="w-full px-4 py-2.5 bg-[#E8632B] text-white rounded-xl text-sm font-medium hover:bg-orange-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25"
+              >
+                {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {language === 'es' ? 'Publicar ahora' : 'Post Now'}
+              </button>
+
+              {/* Schedule row */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex gap-2 flex-1">
+                  <input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={e => setScheduleDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                  />
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={e => setScheduleTime(e.target.value)}
+                    className="w-[100px] border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                  />
+                </div>
+                <button
+                  onClick={() => handleScheduleOrDraft('schedule')}
+                  disabled={scheduling || posting || !scheduleDate || selectedPlatforms.size === 0}
+                  className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+                  {language === 'es' ? 'Programar' : 'Schedule'}
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleScheduleOrDraft('draft')}
+                disabled={scheduling || posting || selectedPlatforms.size === 0}
+                className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" />
+                {language === 'es' ? 'Guardar borrador' : 'Save Draft'}
+              </button>
             </div>
-          </div>
-          );
-        })()}
-
-        {/* Action buttons — stacked vertically on mobile */}
-        <div className="space-y-2 pt-3">
-          <button
-            onClick={generatePreview}
-            disabled={loadingPreview || selectedPlatforms.size === 0}
-            className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-          >
-            {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-            {preview ? 'Refresh Preview' : 'Preview'}
-          </button>
-          <button
-            onClick={handlePost}
-            disabled={posting || scheduling || selectedPlatforms.size === 0}
-            className="w-full px-4 py-2.5 bg-[#E8632B] text-white rounded-xl text-sm font-medium hover:bg-orange-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25"
-          >
-            {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Post Now
-          </button>
-
-          {/* Schedule row */}
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex gap-2 flex-1">
-              <input
-                type="date"
-                value={scheduleDate}
-                onChange={e => setScheduleDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
-              />
-              <input
-                type="time"
-                value={scheduleTime}
-                onChange={e => setScheduleTime(e.target.value)}
-                className="w-[100px] border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={() => handleScheduleOrDraft('schedule')}
-              disabled={scheduling || posting || !scheduleDate || selectedPlatforms.size === 0}
-              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-            >
-              {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
-              Schedule
-            </button>
-          </div>
-
-          <button
-            onClick={() => handleScheduleOrDraft('draft')}
-            disabled={scheduling || posting || selectedPlatforms.size === 0}
-            className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-          >
-            <Save className="w-4 h-4" />
-            Save Draft
-          </button>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
