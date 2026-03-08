@@ -165,16 +165,16 @@ export default function VendorSocialPage() {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('12:00');
 
-  // Pre-generation setup (optional)
-  const [showSetup, setShowSetup] = useState(false);
+  // Deal selector
   const [postTone, setPostTone] = useState('');
-  const [setupMediaType, setSetupMediaType] = useState<'image' | 'video'>('image');
   const [dealViewMode, setDealViewMode] = useState<'grid' | 'list'>('grid');
   const [dealSearch, setDealSearch] = useState('');
   const [dealPageSize, setDealPageSize] = useState(8);
   const DEAL_PAGE_INCREMENT = 8;
 
-  // Media editor
+  // Media editor (shown BEFORE generate preview)
+  const [dealMedia, setDealMedia] = useState<{ deal_image: string; media: { images: string[]; videos: string[] } } | null>(null);
+  const [loadingMedia, setLoadingMedia] = useState(false);
   const [socialImageUrl, setSocialImageUrl] = useState('');
   const [socialVideoUrl, setSocialVideoUrl] = useState('');
   const [mediaMode, setMediaMode] = useState<'image' | 'video'>('image');
@@ -295,6 +295,40 @@ export default function VendorSocialPage() {
     fetchData();
   }, [user]);
 
+  // ── Fetch media library when deal is selected ──
+  useEffect(() => {
+    if (!selectedDealId) {
+      setDealMedia(null);
+      setSocialImageUrl('');
+      setSocialVideoUrl('');
+      setMediaMode('image');
+      setShowMediaPicker(false);
+      setAvaPrompt('');
+      setAvaMessage('');
+      setAvaSuggestion('');
+      setVideoPrompt('');
+      return;
+    }
+    let cancelled = false;
+    async function fetchMedia() {
+      setLoadingMedia(true);
+      try {
+        const res = await fetch(`/api/vendor/deal-media?deal_id=${selectedDealId}`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setDealMedia(data);
+          // Set deal image as default
+          if (data.deal_image && !socialImageUrl) setSocialImageUrl(data.deal_image);
+        }
+      } finally {
+        if (!cancelled) setLoadingMedia(false);
+      }
+    }
+    fetchMedia();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDealId]);
+
   // ── Fetch calendar data ──
   const fetchCalendar = useCallback(async () => {
     if (!user) return;
@@ -401,7 +435,7 @@ export default function VendorSocialPage() {
     }
   };
 
-  // ── Preview ──
+  // ── Preview — generates captions using already-selected media + tone ──
   const generatePreview = async () => {
     if (!selectedDealId) return;
     setLoadingPreview(true);
@@ -417,9 +451,12 @@ export default function VendorSocialPage() {
         setPreview(data);
         setEditedCaptions({ ...data.captions });
         setEditingPlatform(null);
+        // Don't override socialImageUrl if already set by the media editor
         if (!socialImageUrl) setSocialImageUrl(data.image_url || '');
-        // Apply setup media type preference
-        if (showSetup) setMediaMode(setupMediaType);
+        // Merge media from preview into dealMedia if not already loaded
+        if (data.media && !dealMedia) {
+          setDealMedia({ deal_image: data.image_url || '', media: data.media });
+        }
       } else {
         const err = await res.json();
         setMessage({ type: 'error', text: err.error || 'Failed to generate preview' });
@@ -488,6 +525,12 @@ export default function VendorSocialPage() {
     }
   };
 
+  // ── Helper: get selected deal title ──
+  const selectedDealTitle = useMemo(() => {
+    const d = deals.find(d => d.id === selectedDealId);
+    return d?.title || preview?.deal?.title || '';
+  }, [deals, selectedDealId, preview]);
+
   // ── Ava AI functions ──
   const askAva = async () => {
     if (!avaPrompt.trim()) return;
@@ -498,7 +541,7 @@ export default function VendorSocialPage() {
       const res = await fetch('/api/vendor/ava-social-assist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: avaPrompt, deal_title: preview?.deal?.title || '', media_mode: mediaMode }),
+        body: JSON.stringify({ prompt: avaPrompt, deal_title: selectedDealTitle, media_mode: mediaMode }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -517,7 +560,7 @@ export default function VendorSocialPage() {
       const res = await fetch('/api/vendor/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ custom_prompt: prompt, title: preview?.deal?.title || '' }),
+        body: JSON.stringify({ custom_prompt: prompt, title: selectedDealTitle }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -540,7 +583,7 @@ export default function VendorSocialPage() {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: socialImageUrl || preview?.image_url || '', title: preview?.deal?.title || '', video_prompt: prompt }),
+        body: JSON.stringify({ image_url: socialImageUrl || dealMedia?.deal_image || '', title: selectedDealTitle, video_prompt: prompt }),
       });
       if (!startRes.ok) {
         const err = await startRes.json().catch(() => ({}));
@@ -578,7 +621,7 @@ export default function VendorSocialPage() {
 
   // ── Generate video from deal image ──
   const generateVideoFromImage = async (prompt: string) => {
-    const imageUrl = socialImageUrl || preview?.image_url || '';
+    const imageUrl = socialImageUrl || dealMedia?.deal_image || '';
     if (!imageUrl) {
       setMessage({ type: 'error', text: locale === 'es' ? 'No hay imagen disponible para crear el video' : 'No image available to create video' });
       return;
@@ -589,7 +632,7 @@ export default function VendorSocialPage() {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: imageUrl, title: preview?.deal?.title || '', video_prompt: prompt }),
+        body: JSON.stringify({ image_url: imageUrl, title: selectedDealTitle, video_prompt: prompt }),
       });
       if (!startRes.ok) {
         const err = await startRes.json().catch(() => ({}));
@@ -771,37 +814,24 @@ export default function VendorSocialPage() {
                   </div>
                 )}
 
-                {/* Deal selector */}
+                {/* Step 1: Deal selector */}
                 <div className="mb-4 space-y-3">
-                  {/* Header row: label + search + view toggle + customize */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-700">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold mr-1.5">1</span>
                         {locale === 'es' ? 'Selecciona un deal' : 'Select a deal'}
                         {deals.length > 0 && <span className="text-xs text-gray-400 font-normal ml-1.5">({filteredDeals.length})</span>}
                       </p>
-                      <div className="flex items-center gap-2">
-                        {/* Grid / List toggle */}
-                        <div className="flex bg-gray-100 rounded-lg p-0.5">
-                          <button onClick={() => setDealViewMode('grid')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista cuadrícula' : 'Grid view'}>
-                            <LayoutGrid className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => setDealViewMode('list')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista lista' : 'List view'}>
-                            <List className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        {/* Customize button */}
-                        <button
-                          onClick={() => setShowSetup(s => !s)}
-                          className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors ${showSetup ? 'border-[#E8632B] text-[#E8632B] bg-orange-50' : 'border-gray-300 text-gray-500 hover:border-gray-400'}`}
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">{locale === 'es' ? 'Personalizar' : 'Customize'}</span>
-                          <ChevronDown className={`w-3 h-3 transition-transform ${showSetup ? 'rotate-180' : ''}`} />
+                      <div className="flex bg-gray-100 rounded-lg p-0.5">
+                        <button onClick={() => setDealViewMode('grid')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista cuadrícula' : 'Grid view'}>
+                          <LayoutGrid className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => setDealViewMode('list')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista lista' : 'List view'}>
+                          <List className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
-                    {/* Search box */}
                     {deals.length > 4 && (
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -821,14 +851,13 @@ export default function VendorSocialPage() {
                     )}
                   </div>
 
-                  {/* Bento grid view */}
                   {dealViewMode === 'grid' ? (
                     <div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {visibleDeals.map(d => (
                           <button
                             key={d.id}
-                            onClick={() => { setSelectedDealId(d.id); setEditingDraftIds([]); }}
+                            onClick={() => { setSelectedDealId(d.id); setEditingDraftIds([]); setPreview(null); }}
                             className={`relative group rounded-xl overflow-hidden border-2 transition-all text-left ${
                               selectedDealId === d.id
                                 ? 'border-[#E8632B] ring-2 ring-orange-200 shadow-md'
@@ -880,10 +909,9 @@ export default function VendorSocialPage() {
                       )}
                     </div>
                   ) : (
-                    /* List / dropdown view */
                     <select
                       value={selectedDealId}
-                      onChange={e => { setSelectedDealId(e.target.value); setEditingDraftIds([]); }}
+                      onChange={e => { setSelectedDealId(e.target.value); setEditingDraftIds([]); setPreview(null); }}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
                     >
                       <option value="">{locale === 'es' ? 'Selecciona un deal...' : 'Select a deal...'}</option>
@@ -894,392 +922,358 @@ export default function VendorSocialPage() {
                       ))}
                     </select>
                   )}
-
-                  {/* Optional pre-generation setup */}
-                  {showSetup && (
-                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                      <p className="text-xs text-gray-500">
-                        {locale === 'es'
-                          ? 'Personaliza tu publicación antes de generar. ¿No estás seguro? Solo haz clic en "Generar Vista Previa" y edita después.'
-                          : 'Customize your post before generating. Not sure? Just click "Generate Preview" and edit from there.'}
-                      </p>
-
-                      {/* Tone / Mood */}
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                          {locale === 'es' ? 'Tono / Estilo' : 'Tone / Style'}
-                        </label>
-                        <select
-                          value={postTone}
-                          onChange={e => setPostTone(e.target.value)}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
-                        >
-                          <option value="">{locale === 'es' ? 'Automático (amigable y emocionante)' : 'Auto (friendly & exciting)'}</option>
-                          <option value="friendly and casual">{locale === 'es' ? 'Amigable y casual' : 'Friendly & casual'}</option>
-                          <option value="professional and polished">{locale === 'es' ? 'Profesional y pulido' : 'Professional & polished'}</option>
-                          <option value="fun and playful">{locale === 'es' ? 'Divertido y juguetón' : 'Fun & playful'}</option>
-                          <option value="urgent and exciting">{locale === 'es' ? 'Urgente y emocionante' : 'Urgent & exciting'}</option>
-                          <option value="luxurious and exclusive">{locale === 'es' ? 'Lujoso y exclusivo' : 'Luxurious & exclusive'}</option>
-                          <option value="warm and community-focused">{locale === 'es' ? 'Cálido y comunitario' : 'Warm & community-focused'}</option>
-                        </select>
-                      </div>
-
-                      {/* Media type preference */}
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                          {locale === 'es' ? 'Tipo de multimedia' : 'Media type'}
-                        </label>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => setSetupMediaType('image')}
-                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${setupMediaType === 'image' ? 'border-[#E8632B] bg-orange-50 text-[#E8632B]' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}
-                          >
-                            <ImageIcon className="w-4 h-4" />
-                            {locale === 'es' ? 'Imagen' : 'Image'}
-                          </button>
-                          <button
-                            onClick={() => setSetupMediaType('video')}
-                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${setupMediaType === 'video' ? 'border-[#E8632B] bg-orange-50 text-[#E8632B]' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}
-                          >
-                            <Video className="w-4 h-4" />
-                            {locale === 'es' ? 'Video' : 'Video'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Generate Preview + Customize buttons */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                    <button
-                      onClick={generatePreview}
-                      disabled={!selectedDealId || loadingPreview}
-                      className="px-4 py-2.5 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                    >
-                      {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                      {locale === 'es' ? 'Generar Vista Previa' : 'Generate Preview'}
-                    </button>
-                    {!showSetup && (
-                      <button
-                        onClick={() => setShowSetup(true)}
-                        className="px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:border-gray-400 hover:bg-gray-50 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        {locale === 'es' ? 'Personalizar' : 'Customize'}
-                      </button>
-                    )}
-                    {!showSetup && !preview && selectedDealId && (
-                      <p className="text-xs text-gray-400 text-center sm:text-left hidden sm:block">
-                        {locale === 'es'
-                          ? 'Puedes personalizar después de generar.'
-                          : 'You can customize after generating.'}
-                      </p>
-                    )}
-                  </div>
                 </div>
 
-                {/* Media Editor + Preview Mockups */}
+                {/* Step 2: Choose media + tone (shown when deal is selected, BEFORE Generate Preview) */}
+                {selectedDealId && (
+                  <div className="mb-4 space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                    <p className="text-sm font-medium text-gray-700">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold mr-1.5">2</span>
+                      {locale === 'es' ? 'Elige tu multimedia y estilo' : 'Choose your media & style'}
+                    </p>
+
+                    {loadingMedia ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                        <span className="ml-2 text-sm text-gray-500">{locale === 'es' ? 'Cargando biblioteca...' : 'Loading media library...'}</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Image / Video toggle */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600">{locale === 'es' ? 'Tipo de multimedia' : 'Media type'}</span>
+                          <div className="flex bg-white rounded-lg p-0.5 border border-gray-200">
+                            <button onClick={() => setMediaMode('image')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                              <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Imagen' : 'Image'}
+                            </button>
+                            <button onClick={() => setMediaMode('video')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                              <Video className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Video' : 'Video'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Current media thumbnail */}
+                        <div className="flex items-start gap-3">
+                          <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0 relative">
+                            {mediaMode === 'video' && socialVideoUrl ? (
+                              <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
+                            ) : mediaMode === 'video' && !socialVideoUrl ? (
+                              <>
+                                {(socialImageUrl || dealMedia?.deal_image) ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={socialImageUrl || dealMedia?.deal_image || ''} alt="" className="w-full h-full object-cover opacity-50" />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-200" />
+                                )}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                                  <Video className="w-6 h-6 text-white" />
+                                </div>
+                              </>
+                            ) : (socialImageUrl || dealMedia?.deal_image) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={socialImageUrl || dealMedia?.deal_image || ''} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon className="w-6 h-6" /></div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {mediaMode === 'video' && !socialVideoUrl ? (
+                              <>
+                                <p className="text-xs font-medium text-orange-600 mb-0.5">{locale === 'es' ? 'No hay video aún' : 'No video yet'}</p>
+                                <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Crea uno abajo o elige de la biblioteca' : 'Create one below or pick from library'}</p>
+                              </>
+                            ) : mediaMode === 'video' && socialVideoUrl ? (
+                              <p className="text-xs text-green-600 font-medium mb-1">{locale === 'es' ? 'Video listo para publicar' : 'Video ready to post'}</p>
+                            ) : (
+                              <p className="text-xs text-gray-500 mb-1">{locale === 'es' ? 'Imagen actual para publicación' : 'Current image for post'}</p>
+                            )}
+                            <button onClick={() => setShowMediaPicker(!showMediaPicker)} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">
+                              {showMediaPicker ? (locale === 'es' ? 'Ocultar biblioteca' : 'Hide library') : (locale === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Media library picker */}
+                        {showMediaPicker && (
+                          <div className="space-y-2">
+                            <div className="overflow-x-auto pb-1">
+                              <div className="flex gap-2 min-w-min">
+                                {mediaMode === 'image' ? (
+                                  (dealMedia?.media?.images || []).length > 0 ? (dealMedia?.media?.images || []).map((url, i) => (
+                                    <button key={i} onClick={() => { setSocialImageUrl(url); setSocialVideoUrl(''); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${socialImageUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={url} alt="" className="w-full h-full object-cover" />
+                                    </button>
+                                  )) : <p className="text-xs text-gray-400 py-2">{locale === 'es' ? 'No hay imágenes en la biblioteca' : 'No images in library'}</p>
+                                ) : (
+                                  (dealMedia?.media?.videos || []).length > 0 ? (dealMedia?.media?.videos || []).map((url, i) => (
+                                    <button key={i} onClick={() => { setSocialVideoUrl(url); setMediaMode('video'); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all relative ${socialVideoUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
+                                      <video src={url} className="w-full h-full object-cover" muted />
+                                      <div className="absolute inset-0 flex items-center justify-center bg-black/20"><Video className="w-4 h-4 text-white" /></div>
+                                    </button>
+                                  )) : <p className="text-xs text-gray-400 py-2">{locale === 'es' ? 'No hay videos en la biblioteca' : 'No videos in library'}</p>
+                                )}
+                              </div>
+                            </div>
+                            {/* Upload image */}
+                            {mediaMode === 'image' && (
+                              <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E8632B] hover:bg-orange-50/50 transition-colors">
+                                <ImageIcon className="w-4 h-4 text-gray-400" />
+                                <span className="text-xs text-gray-500">{locale === 'es' ? 'Subir una imagen' : 'Upload an image'}</span>
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp,image/gif"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const formData = new FormData();
+                                    formData.append('file', file);
+                                    try {
+                                      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                                      if (res.ok) {
+                                        const data = await res.json();
+                                        setSocialImageUrl(data.url);
+                                        setSocialVideoUrl('');
+                                        setShowMediaPicker(false);
+                                        setMessage({ type: 'success', text: locale === 'es' ? 'Imagen subida' : 'Image uploaded' });
+                                      } else {
+                                        const err = await res.json().catch(() => ({}));
+                                        setMessage({ type: 'error', text: err.error || (locale === 'es' ? 'Error al subir' : 'Upload failed') });
+                                      }
+                                    } catch {
+                                      setMessage({ type: 'error', text: locale === 'es' ? 'Error al subir' : 'Upload failed' });
+                                    }
+                                    e.target.value = '';
+                                  }}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Video: generating progress */}
+                        {mediaMode === 'video' && videoGenerating && (
+                          <div className="border-2 border-orange-300 rounded-xl bg-orange-50 p-4 space-y-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-[#E8632B] flex items-center justify-center flex-shrink-0 animate-pulse">
+                                <Video className="w-5 h-5 text-white" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Creando tu Reel / Video...' : 'Creating your Reel / Video...'}</p>
+                                <p className="text-xs text-gray-500">{videoProgress || (locale === 'es' ? 'Esto puede tomar 30-60 segundos' : 'This may take 30-60 seconds')}</p>
+                              </div>
+                            </div>
+                            <div className="w-full bg-orange-200 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-[#E8632B] h-full rounded-full animate-pulse" style={{ width: '60%' }} />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Video: ready */}
+                        {mediaMode === 'video' && socialVideoUrl && !videoGenerating && (
+                          <div className="space-y-2">
+                            <div className="border border-green-200 rounded-xl bg-green-50/50 p-3 flex items-center gap-3">
+                              <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-green-200">
+                                <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-800">{locale === 'es' ? 'Video listo' : 'Video ready'}</p>
+                                <p className="text-xs text-green-600">{locale === 'es' ? 'Reel en Instagram / Video en Facebook' : 'Reel on Instagram / Video on Facebook'}</p>
+                              </div>
+                              <button onClick={() => { setSocialVideoUrl(''); }} className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0" title={locale === 'es' ? 'Eliminar' : 'Remove'}>
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              <input
+                                type="text"
+                                value={videoPrompt}
+                                onChange={e => setVideoPrompt(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && generateVideoFromImage(videoPrompt || `Professional promotional video for ${selectedDealTitle}`)}
+                                placeholder={locale === 'es' ? 'Describir otro estilo de video...' : 'Describe a different video style...'}
+                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400"
+                              />
+                              <button
+                                onClick={() => { setSocialVideoUrl(''); generateVideoFromImage(videoPrompt || `Professional promotional video for ${selectedDealTitle}`); }}
+                                className="px-3 py-2 text-sm text-[#E8632B] border border-[#E8632B] rounded-lg font-medium hover:bg-orange-50 flex-shrink-0 inline-flex items-center gap-1.5"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                                {locale === 'es' ? 'Regenerar' : 'Regenerate'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Video: create — two options */}
+                        {mediaMode === 'video' && !socialVideoUrl && !videoGenerating && (
+                          <div className="border border-orange-200 rounded-xl bg-white p-4 space-y-3">
+                            <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Crear Video / Reel' : 'Create Video / Reel'}</p>
+                            {/* Option 1: Animate image */}
+                            <div className="flex items-center gap-3 p-3 bg-orange-50/50 rounded-lg border border-orange-100">
+                              <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
+                                {(socialImageUrl || dealMedia?.deal_image) ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={socialImageUrl || dealMedia?.deal_image || ''} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-100 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-gray-300" /></div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Animar tu imagen' : 'Animate your image'}</p>
+                                <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Convierte tu imagen en un video de 8 seg' : 'Turn your image into an 8-sec video'}</p>
+                              </div>
+                              <button
+                                onClick={() => generateVideoFromImage(`Cinematic animated promotional video for ${selectedDealTitle}`)}
+                                className="px-3 py-2 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-orange-700 flex-shrink-0 inline-flex items-center gap-1.5"
+                              >
+                                <Video className="w-3.5 h-3.5" />
+                                {locale === 'es' ? 'Animar' : 'Animate'}
+                              </button>
+                            </div>
+                            {/* Option 2: Create from prompt */}
+                            <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100 space-y-2">
+                              <div className="flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Crear con un prompt (Ava AI)' : 'Create from a prompt (Ava AI)'}</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={videoPrompt}
+                                  onChange={e => setVideoPrompt(e.target.value)}
+                                  onKeyDown={e => e.key === 'Enter' && videoPrompt.trim() && generateVideoFromImage(videoPrompt)}
+                                  placeholder={locale === 'es' ? 'Ej: "video con música latina y zoom al producto"' : 'E.g. "video with latin music and zoom on product"'}
+                                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400"
+                                />
+                                <button
+                                  onClick={() => { if (videoPrompt.trim()) generateVideoFromImage(videoPrompt); }}
+                                  disabled={!videoPrompt.trim()}
+                                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 disabled:opacity-40 flex-shrink-0 inline-flex items-center gap-1.5"
+                                >
+                                  <Video className="w-3.5 h-3.5" />
+                                  {locale === 'es' ? 'Crear' : 'Create'}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Ava AI Assistant */}
+                        <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-emerald-600" />
+                            <span className="text-sm font-semibold text-emerald-800">{locale === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}</span>
+                            <span className="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full font-medium">AI</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <input type="text" value={avaPrompt} onChange={e => setAvaPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
+                              placeholder={mediaMode === 'video' ? (locale === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...') : (locale === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
+                              className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400" />
+                            <button onClick={askAva} disabled={avaLoading || !avaPrompt.trim()} className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5">
+                              {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                              {locale === 'es' ? 'Preguntar' : 'Ask'}
+                            </button>
+                          </div>
+                          {avaMessage && <div className="text-sm text-emerald-800 bg-emerald-100/60 rounded-lg p-2.5"><span className="font-medium">Ava:</span> {avaMessage}</div>}
+                          {avaSuggestion && (
+                            <div className="space-y-2">
+                              <div className="text-xs text-gray-600 bg-white rounded-lg p-2.5 border border-emerald-100 font-mono">{avaSuggestion}</div>
+                              <div className="flex gap-2">
+                                {mediaMode === 'image' ? (
+                                  <button onClick={() => generateAvaImage(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
+                                    {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                                    {locale === 'es' ? 'Generar Imagen' : 'Generate Image'}
+                                  </button>
+                                ) : (
+                                  <button onClick={() => generateAvaVideo(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
+                                    {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                                    {locale === 'es' ? 'Generar Video' : 'Generate Video'}
+                                  </button>
+                                )}
+                                <button onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }} className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"><X className="w-3.5 h-3.5" /></button>
+                              </div>
+                            </div>
+                          )}
+                          <button onClick={() => setShowTips(!showTips)} className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-medium w-full">
+                            <Info className="w-3.5 h-3.5" />
+                            {locale === 'es' ? 'Tips para mejores resultados' : 'Tips for better results'}
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTips ? 'rotate-180' : ''}`} />
+                          </button>
+                          {showTips && (
+                            <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-emerald-100 space-y-2">
+                              {mediaMode === 'video' ? (
+                                <>
+                                  <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{locale === 'es' ? 'Tips para Videos' : 'Video Tips'}</p>
+                                  <ul className="space-y-1.5 list-disc pl-3.5">
+                                    <li>{locale === 'es' ? 'Especifica la música: "música electrónica animada" o "guitarra acústica tranquila"' : 'Specify music: "upbeat electronic music" or "calm acoustic guitar"'}</li>
+                                    <li>{locale === 'es' ? 'Describe el ritmo: "rápido con cortes rápidos" o "revelación cinematográfica lenta"' : 'Describe pacing: "fast-paced with quick cuts" or "slow cinematic reveal"'}</li>
+                                    <li>{locale === 'es' ? 'Define el ambiente: "enérgico y divertido" o "profesional y limpio"' : 'Set the mood: "energetic and fun" or "professional and clean"'}</li>
+                                    <li>{locale === 'es' ? 'Menciona transiciones: "zoom suave al producto" o "fundido entre escenas"' : 'Mention transitions: "smooth zoom-in on product" or "fade between scenes"'}</li>
+                                    <li>{locale === 'es' ? 'Ángulos de cámara: "primer plano de la comida" o "toma amplia del local"' : 'Include camera angles: "close-up of food details" or "wide shot of venue"'}</li>
+                                    <li>{locale === 'es' ? 'Referencia el estilo: "vertical tipo TikTok" o "comercial cinematográfico"' : 'Reference style: "TikTok-style vertical" or "cinematic commercial"'}</li>
+                                    <li className="font-medium text-emerald-700">{locale === 'es' ? '¡Sé específico! Evita prompts vagos como "haz un video cool"' : 'Be specific! Avoid vague prompts like "make a cool video"'}</li>
+                                  </ul>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{locale === 'es' ? 'Tips para Imágenes' : 'Image Tips'}</p>
+                                  <ul className="space-y-1.5 list-disc pl-3.5">
+                                    <li>{locale === 'es' ? 'Describe la iluminación: "hora dorada cálida" o "iluminación de estudio brillante"' : 'Describe lighting: "warm golden hour" or "bright studio lighting"'}</li>
+                                    <li>{locale === 'es' ? 'Composición: "vista cenital (flat-lay)" o "poca profundidad de campo"' : 'Set composition: "overhead flat-lay" or "eye-level with shallow depth of field"'}</li>
+                                    <li>{locale === 'es' ? 'Estilo: "fondo blanco minimalista" o "fotografía callejera vibrante"' : 'Mention style: "minimalist with white background" or "vibrant street photography"'}</li>
+                                    <li>{locale === 'es' ? 'Sin texto: Ava crea imágenes sin textos superpuestos' : 'No text: Ava generates images without text overlays'}</li>
+                                  </ul>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Tone / Style */}
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">
+                            {locale === 'es' ? 'Tono / Estilo de los captions' : 'Caption tone / style'}
+                          </label>
+                          <select
+                            value={postTone}
+                            onChange={e => setPostTone(e.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent bg-white"
+                          >
+                            <option value="">{locale === 'es' ? 'Automático (amigable y emocionante)' : 'Auto (friendly & exciting)'}</option>
+                            <option value="friendly and casual">{locale === 'es' ? 'Amigable y casual' : 'Friendly & casual'}</option>
+                            <option value="professional and polished">{locale === 'es' ? 'Profesional y pulido' : 'Professional & polished'}</option>
+                            <option value="fun and playful">{locale === 'es' ? 'Divertido y juguetón' : 'Fun & playful'}</option>
+                            <option value="urgent and exciting">{locale === 'es' ? 'Urgente y emocionante' : 'Urgent & exciting'}</option>
+                            <option value="luxurious and exclusive">{locale === 'es' ? 'Lujoso y exclusivo' : 'Luxurious & exclusive'}</option>
+                            <option value="warm and community-focused">{locale === 'es' ? 'Cálido y comunitario' : 'Warm & community-focused'}</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Generate Preview button (Step 3) */}
+                    <div className="pt-2">
+                      <button
+                        onClick={generatePreview}
+                        disabled={!selectedDealId || loadingPreview}
+                        className="w-full px-4 py-3 bg-[#E8632B] text-white rounded-xl text-sm font-semibold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25"
+                      >
+                        {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold mr-0.5">3</span>
+                        {locale === 'es' ? 'Generar Vista Previa' : 'Generate Preview'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview Mockups + Actions (shown after Generate Preview) */}
                 {preview && (() => {
-                  const lang = locale;
                   const displayImg = socialImageUrl || preview.image_url;
                   const displayVid = socialVideoUrl;
                   const isVideo = mediaMode === 'video' && displayVid;
                   return (
                   <div className="space-y-4">
-                    {/* Media Editor */}
-                    <div className="space-y-3 pb-3 border-b border-gray-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700">{lang === 'es' ? 'Multimedia' : 'Media'}</span>
-                        <div className="flex bg-gray-100 rounded-lg p-0.5">
-                          <button onClick={() => setMediaMode('image')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                            <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{lang === 'es' ? 'Imagen' : 'Image'}
-                          </button>
-                          <button onClick={() => setMediaMode('video')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                            <Video className="w-3.5 h-3.5 inline mr-1" />{lang === 'es' ? 'Video' : 'Video'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0 relative">
-                          {mediaMode === 'video' && socialVideoUrl ? (
-                            <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
-                          ) : mediaMode === 'video' && !socialVideoUrl ? (
-                            /* Video mode but no video yet — show image with play overlay */
-                            <>
-                              {(socialImageUrl || preview.image_url) ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover opacity-50" />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200" />
-                              )}
-                              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
-                                <Video className="w-6 h-6 text-white" />
-                              </div>
-                            </>
-                          ) : (socialImageUrl || preview.image_url) ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon className="w-6 h-6" /></div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          {mediaMode === 'video' && !socialVideoUrl ? (
-                            <>
-                              <p className="text-xs font-medium text-orange-600 mb-0.5">{lang === 'es' ? 'No hay video aún' : 'No video yet'}</p>
-                              <p className="text-[11px] text-gray-400">{lang === 'es' ? 'Crea uno abajo o elige de la biblioteca' : 'Create one below or pick from library'}</p>
-                            </>
-                          ) : mediaMode === 'video' && socialVideoUrl ? (
-                            <p className="text-xs text-green-600 font-medium mb-1">{lang === 'es' ? 'Video listo para publicar' : 'Video ready to post'}</p>
-                          ) : (
-                            <p className="text-xs text-gray-500 mb-1">{lang === 'es' ? 'Imagen actual para publicación' : 'Current image for post'}</p>
-                          )}
-                          <button onClick={() => setShowMediaPicker(!showMediaPicker)} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">
-                            {showMediaPicker ? (lang === 'es' ? 'Ocultar biblioteca' : 'Hide library') : (lang === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
-                          </button>
-                        </div>
-                      </div>
-                      {showMediaPicker && (
-                        <div className="space-y-2">
-                          {/* Library thumbnails */}
-                          <div className="overflow-x-auto pb-1">
-                            <div className="flex gap-2 min-w-min">
-                              {mediaMode === 'image' ? (
-                                (preview.media?.images || []).length > 0 ? (preview.media?.images || []).map((url, i) => (
-                                  <button key={i} onClick={() => { setSocialImageUrl(url); setSocialVideoUrl(''); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${socialImageUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={url} alt="" className="w-full h-full object-cover" />
-                                  </button>
-                                )) : <p className="text-xs text-gray-400 py-2">{lang === 'es' ? 'No hay imágenes en la biblioteca' : 'No images in library'}</p>
-                              ) : (
-                                (preview.media?.videos || []).length > 0 ? (preview.media?.videos || []).map((url, i) => (
-                                  <button key={i} onClick={() => { setSocialVideoUrl(url); setMediaMode('video'); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all relative ${socialVideoUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
-                                    <video src={url} className="w-full h-full object-cover" muted />
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20"><Video className="w-4 h-4 text-white" /></div>
-                                  </button>
-                                )) : <p className="text-xs text-gray-400 py-2">{lang === 'es' ? 'No hay videos en la biblioteca' : 'No videos in library'}</p>
-                              )}
-                            </div>
-                          </div>
-                          {/* Upload your own image */}
-                          {mediaMode === 'image' && (
-                            <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E8632B] hover:bg-orange-50/50 transition-colors">
-                              <ImageIcon className="w-4 h-4 text-gray-400" />
-                              <span className="text-xs text-gray-500">{lang === 'es' ? 'Subir una imagen' : 'Upload an image'}</span>
-                              <input
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp,image/gif"
-                                className="hidden"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (!file) return;
-                                  const formData = new FormData();
-                                  formData.append('file', file);
-                                  try {
-                                    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-                                    if (res.ok) {
-                                      const data = await res.json();
-                                      setSocialImageUrl(data.url);
-                                      setSocialVideoUrl('');
-                                      setShowMediaPicker(false);
-                                      setMessage({ type: 'success', text: lang === 'es' ? 'Imagen subida' : 'Image uploaded' });
-                                    } else {
-                                      const err = await res.json().catch(() => ({}));
-                                      setMessage({ type: 'error', text: err.error || (lang === 'es' ? 'Error al subir' : 'Upload failed') });
-                                    }
-                                  } catch {
-                                    setMessage({ type: 'error', text: lang === 'es' ? 'Error al subir' : 'Upload failed' });
-                                  }
-                                  e.target.value = '';
-                                }}
-                              />
-                            </label>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Video: generating progress */}
-                      {mediaMode === 'video' && videoGenerating && (
-                        <div className="border-2 border-orange-300 rounded-xl bg-orange-50 p-4 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-[#E8632B] flex items-center justify-center flex-shrink-0 animate-pulse">
-                              <Video className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-semibold text-gray-900">{lang === 'es' ? 'Creando tu Reel / Video...' : 'Creating your Reel / Video...'}</p>
-                              <p className="text-xs text-gray-500">{videoProgress || (lang === 'es' ? 'Esto puede tomar 30-60 segundos' : 'This may take 30-60 seconds')}</p>
-                            </div>
-                          </div>
-                          <div className="w-full bg-orange-200 rounded-full h-1.5 overflow-hidden">
-                            <div className="bg-[#E8632B] h-full rounded-full animate-pulse" style={{ width: '60%' }} />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Video: ready — with regenerate option */}
-                      {mediaMode === 'video' && socialVideoUrl && !videoGenerating && (
-                        <div className="space-y-2">
-                          <div className="border border-green-200 rounded-xl bg-green-50/50 p-3 flex items-center gap-3">
-                            <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border border-green-200">
-                              <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-green-800">{lang === 'es' ? 'Video listo' : 'Video ready'}</p>
-                              <p className="text-xs text-green-600">{lang === 'es' ? 'Reel en Instagram / Video en Facebook' : 'Reel on Instagram / Video on Facebook'}</p>
-                            </div>
-                            <button onClick={() => { setSocialVideoUrl(''); }} className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0" title={lang === 'es' ? 'Eliminar' : 'Remove'}>
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          {/* Compact regenerate */}
-                          <div className="flex gap-2 items-center">
-                            <input
-                              type="text"
-                              value={videoPrompt}
-                              onChange={e => setVideoPrompt(e.target.value)}
-                              onKeyDown={e => e.key === 'Enter' && generateVideoFromImage(videoPrompt || `Professional promotional video for ${preview.deal?.title || 'this deal'}`)}
-                              placeholder={lang === 'es' ? 'Describir otro estilo de video...' : 'Describe a different video style...'}
-                              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400"
-                            />
-                            <button
-                              onClick={() => { setSocialVideoUrl(''); generateVideoFromImage(videoPrompt || `Professional promotional video for ${preview.deal?.title || 'this deal'}`); }}
-                              className="px-3 py-2 text-sm text-[#E8632B] border border-[#E8632B] rounded-lg font-medium hover:bg-orange-50 flex-shrink-0 inline-flex items-center gap-1.5"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                              {lang === 'es' ? 'Regenerar' : 'Regenerate'}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Video: not started — two options: animate image OR create from prompt */}
-                      {mediaMode === 'video' && !socialVideoUrl && !videoGenerating && (
-                        <div className="border border-orange-200 rounded-xl bg-orange-50/50 p-4 space-y-3">
-                          <p className="text-sm font-semibold text-gray-900">{lang === 'es' ? 'Crear Video / Reel' : 'Create Video / Reel'}</p>
-
-                          {/* Option 1: Animate your deal image */}
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-orange-100">
-                            <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-gray-200">
-                              {(socialImageUrl || preview.image_url) ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-gray-100 flex items-center justify-center"><ImageIcon className="w-4 h-4 text-gray-300" /></div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-gray-800">{lang === 'es' ? 'Animar tu imagen' : 'Animate your image'}</p>
-                              <p className="text-[11px] text-gray-400">{lang === 'es' ? 'Convierte tu imagen del deal en un video de 8 seg' : 'Turn your deal image into an 8-sec video'}</p>
-                            </div>
-                            <button
-                              onClick={() => generateVideoFromImage(`Cinematic animated promotional video for ${preview.deal?.title || 'this deal'}`)}
-                              className="px-3 py-2 bg-[#E8632B] text-white rounded-lg text-xs font-medium hover:bg-orange-700 flex-shrink-0 inline-flex items-center gap-1.5"
-                            >
-                              <Video className="w-3.5 h-3.5" />
-                              {lang === 'es' ? 'Animar' : 'Animate'}
-                            </button>
-                          </div>
-
-                          {/* Option 2: Describe a new video with Ava */}
-                          <div className="p-3 bg-white rounded-lg border border-emerald-100 space-y-2">
-                            <div className="flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                              <p className="text-xs font-medium text-gray-800">{lang === 'es' ? 'Crear con un prompt (Ava AI)' : 'Create from a prompt (Ava AI)'}</p>
-                            </div>
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                value={videoPrompt}
-                                onChange={e => setVideoPrompt(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && videoPrompt.trim() && generateVideoFromImage(videoPrompt)}
-                                placeholder={lang === 'es' ? 'Ej: "video con música latina y zoom al producto"' : 'E.g. "video with latin music and zoom on product"'}
-                                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400"
-                              />
-                              <button
-                                onClick={() => { if (videoPrompt.trim()) generateVideoFromImage(videoPrompt); }}
-                                disabled={!videoPrompt.trim()}
-                                className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 disabled:opacity-40 flex-shrink-0 inline-flex items-center gap-1.5"
-                              >
-                                <Video className="w-3.5 h-3.5" />
-                                {lang === 'es' ? 'Crear' : 'Create'}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Ava AI Assistant */}
-                      <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-emerald-600" />
-                          <span className="text-sm font-semibold text-emerald-800">{lang === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}</span>
-                          <span className="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full font-medium">AI</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <input type="text" value={avaPrompt} onChange={e => setAvaPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
-                            placeholder={mediaMode === 'video' ? (lang === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...') : (lang === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
-                            className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400" />
-                          <button onClick={askAva} disabled={avaLoading || !avaPrompt.trim()} className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5">
-                            {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                            {lang === 'es' ? 'Preguntar' : 'Ask'}
-                          </button>
-                        </div>
-                        {avaMessage && <div className="text-sm text-emerald-800 bg-emerald-100/60 rounded-lg p-2.5"><span className="font-medium">Ava:</span> {avaMessage}</div>}
-                        {avaSuggestion && (
-                          <div className="space-y-2">
-                            <div className="text-xs text-gray-600 bg-white rounded-lg p-2.5 border border-emerald-100 font-mono">{avaSuggestion}</div>
-                            <div className="flex gap-2">
-                              {mediaMode === 'image' ? (
-                                <button onClick={() => generateAvaImage(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
-                                  {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                                  {lang === 'es' ? 'Generar Imagen' : 'Generate Image'}
-                                </button>
-                              ) : (
-                                <button onClick={() => generateAvaVideo(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
-                                  {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
-                                  {lang === 'es' ? 'Generar Video' : 'Generate Video'}
-                                </button>
-                              )}
-                              <button onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }} className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"><X className="w-3.5 h-3.5" /></button>
-                            </div>
-                          </div>
-                        )}
-                        <button onClick={() => setShowTips(!showTips)} className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-medium w-full">
-                          <Info className="w-3.5 h-3.5" />
-                          {lang === 'es' ? 'Tips para mejores resultados' : 'Tips for better results'}
-                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTips ? 'rotate-180' : ''}`} />
-                        </button>
-                        {showTips && (
-                          <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-emerald-100 space-y-2">
-                            {mediaMode === 'video' ? (
-                              <>
-                                <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{lang === 'es' ? 'Tips para Videos' : 'Video Tips'}</p>
-                                <ul className="space-y-1.5 list-disc pl-3.5">
-                                  <li>{lang === 'es' ? 'Especifica la música: "música electrónica animada" o "guitarra acústica tranquila"' : 'Specify music: "upbeat electronic music" or "calm acoustic guitar"'}</li>
-                                  <li>{lang === 'es' ? 'Describe el ritmo: "rápido con cortes rápidos" o "revelación cinematográfica lenta"' : 'Describe pacing: "fast-paced with quick cuts" or "slow cinematic reveal"'}</li>
-                                  <li>{lang === 'es' ? 'Define el ambiente: "enérgico y divertido" o "profesional y limpio"' : 'Set the mood: "energetic and fun" or "professional and clean"'}</li>
-                                  <li>{lang === 'es' ? 'Menciona transiciones: "zoom suave al producto" o "fundido entre escenas"' : 'Mention transitions: "smooth zoom-in on product" or "fade between scenes"'}</li>
-                                  <li>{lang === 'es' ? 'Ángulos de cámara: "primer plano de la comida" o "toma amplia del local"' : 'Include camera angles: "close-up of food details" or "wide shot of venue"'}</li>
-                                  <li>{lang === 'es' ? 'Referencia el estilo: "vertical tipo TikTok" o "comercial cinematográfico"' : 'Reference style: "TikTok-style vertical" or "cinematic commercial"'}</li>
-                                  <li className="font-medium text-emerald-700">{lang === 'es' ? '¡Sé específico! Evita prompts vagos como "haz un video cool"' : 'Be specific! Avoid vague prompts like "make a cool video"'}</li>
-                                </ul>
-                              </>
-                            ) : (
-                              <>
-                                <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{lang === 'es' ? 'Tips para Imágenes' : 'Image Tips'}</p>
-                                <ul className="space-y-1.5 list-disc pl-3.5">
-                                  <li>{lang === 'es' ? 'Describe la iluminación: "hora dorada cálida" o "iluminación de estudio brillante"' : 'Describe lighting: "warm golden hour" or "bright studio lighting"'}</li>
-                                  <li>{lang === 'es' ? 'Composición: "vista cenital (flat-lay)" o "poca profundidad de campo"' : 'Set composition: "overhead flat-lay" or "eye-level with shallow depth of field"'}</li>
-                                  <li>{lang === 'es' ? 'Estilo: "fondo blanco minimalista" o "fotografía callejera vibrante"' : 'Mention style: "minimalist with white background" or "vibrant street photography"'}</li>
-                                  <li>{lang === 'es' ? 'Sin texto: Ava crea imágenes sin textos superpuestos' : 'No text: Ava generates images without text overlays'}</li>
-                                </ul>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Platform Mockups */}
                     <div className="space-y-4">
                       {/* Facebook Mockup */}
@@ -1530,8 +1524,12 @@ export default function VendorSocialPage() {
                   );
                 })()}
 
-                {!preview && !loadingPreview && (
-                  <p className="text-sm text-gray-400 text-center py-4">Select a deal and click &quot;Generate Preview&quot; to see how your social posts will look.</p>
+                {!preview && !loadingPreview && !selectedDealId && (
+                  <p className="text-sm text-gray-400 text-center py-4">
+                    {locale === 'es'
+                      ? 'Selecciona un deal para comenzar a crear tu publicación.'
+                      : 'Select a deal to start creating your social post.'}
+                  </p>
                 )}
               </div>
             )}
