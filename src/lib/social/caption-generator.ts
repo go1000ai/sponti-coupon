@@ -7,7 +7,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
  * Generate platform-specific social media captions using Gemini AI.
  * Falls back to templates if Gemini is unavailable.
  */
-export async function generateCaptions(deal: DealForSocialPost): Promise<PlatformCaptions> {
+export async function generateCaptions(deal: DealForSocialPost, tone?: string): Promise<PlatformCaptions> {
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
   const discount = Math.round(deal.discount_percentage);
 
@@ -43,7 +43,7 @@ Rules:
 - instagram: Visual focus, 200-300 chars, 5-8 relevant hashtags at the end, say "Link in bio to claim!", do NOT include the URL in the caption
 - twitter: Under 240 chars (leave room for link), punchy and exciting, include the claim link, 1-2 hashtags
 - tiktok: 100-200 chars, trendy/casual tone, 3-5 hashtags
-- Brand voice: Friendly, excited, local-first
+- Brand voice: ${tone ? `${tone} tone` : 'Friendly, excited, local-first'}
 - For Sponti deals: emphasize urgency and limited time
 - For Steady deals: emphasize consistent value and savings
 - Use fire, money, and deal-related emojis. NEVER use purple/violet emojis

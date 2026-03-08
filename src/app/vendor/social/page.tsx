@@ -164,6 +164,11 @@ export default function VendorSocialPage() {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('12:00');
 
+  // Pre-generation setup (optional)
+  const [showSetup, setShowSetup] = useState(false);
+  const [postTone, setPostTone] = useState('');
+  const [setupMediaType, setSetupMediaType] = useState<'image' | 'video'>('image');
+
   // Media editor
   const [socialImageUrl, setSocialImageUrl] = useState('');
   const [socialVideoUrl, setSocialVideoUrl] = useState('');
@@ -186,6 +191,9 @@ export default function VendorSocialPage() {
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [retrying, setRetrying] = useState<string | null>(null);
+
+  // Draft editing — track IDs of drafts being edited so we can update them
+  const [editingDraftIds, setEditingDraftIds] = useState<string[]>([]);
 
   const PAGE_SIZE = 20;
   const connectedPlatforms = useMemo(() => new Set(connections.map(c => c.platform)), [connections]);
@@ -381,7 +389,7 @@ export default function VendorSocialPage() {
       const res = await fetch('/api/social/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deal_id: selectedDealId }),
+        body: JSON.stringify({ deal_id: selectedDealId, tone: postTone || undefined }),
       });
       if (res.ok) {
         const data: PreviewData = await res.json();
@@ -389,6 +397,8 @@ export default function VendorSocialPage() {
         setEditedCaptions({ ...data.captions });
         setEditingPlatform(null);
         if (!socialImageUrl) setSocialImageUrl(data.image_url || '');
+        // Apply setup media type preference
+        if (showSetup) setMediaMode(setupMediaType);
       } else {
         const err = await res.json();
         setMessage({ type: 'error', text: err.error || 'Failed to generate preview' });
@@ -423,6 +433,19 @@ export default function VendorSocialPage() {
       });
 
       if (res.ok) {
+        // If we were editing drafts, delete the old draft records (new ones were created)
+        if (editingDraftIds.length > 0) {
+          await Promise.all(
+            editingDraftIds.map(id =>
+              fetch('/api/social/schedule', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ post_id: id, action: 'cancel' }),
+              }).catch(() => {})
+            )
+          );
+          setEditingDraftIds([]);
+        }
         const labels = { post_now: 'Posts sent!', schedule: 'Posts scheduled!', draft: 'Saved as draft.' };
         setMessage({ type: 'success', text: labels[action] });
         setPreview(null);
@@ -532,6 +555,44 @@ export default function VendorSocialPage() {
     } finally { setAvaLoading(false); }
   };
 
+  // ── Load a draft back into the editor ──
+  const loadDraft = async (draftPost: SocialPost) => {
+    // Find all drafts for the same deal (there may be one per platform)
+    const relatedDrafts = posts.filter(p => p.deal_id === draftPost.deal_id && p.status === 'draft');
+    setEditingDraftIds(relatedDrafts.map(d => d.id));
+
+    // Set the deal and generate a preview
+    setSelectedDealId(draftPost.deal_id);
+    setLoadingPreview(true);
+    setPreview(null);
+    try {
+      const res = await fetch('/api/social/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_id: draftPost.deal_id }),
+      });
+      if (res.ok) {
+        const data: PreviewData = await res.json();
+        setPreview(data);
+        // Pre-fill captions from drafts (override AI-generated)
+        const draftCaptions: Record<string, string> = { ...data.captions };
+        relatedDrafts.forEach(d => {
+          if (d.caption) draftCaptions[d.platform] = d.caption;
+        });
+        setEditedCaptions(draftCaptions);
+        setEditingPlatform(null);
+        // Set media from draft
+        const firstDraft = relatedDrafts[0];
+        if (firstDraft?.image_url) setSocialImageUrl(firstDraft.image_url);
+        else if (!socialImageUrl) setSocialImageUrl(data.image_url || '');
+      }
+    } finally {
+      setLoadingPreview(false);
+      // Scroll to top of preview section
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // ── Calendar data grouped by date ──
   const postsByDate = useMemo(() => {
     const map = new Map<string, SocialPost[]>();
@@ -627,28 +688,111 @@ export default function VendorSocialPage() {
                   <h2 className="font-semibold text-gray-900">Create & Preview Post</h2>
                 </div>
 
+                {/* Editing draft banner */}
+                {editingDraftIds.length > 0 && preview && (
+                  <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5 mb-4">
+                    <span className="text-sm text-amber-800 font-medium">Editing draft — make changes and post, schedule, or save again.</span>
+                    <button onClick={() => { setEditingDraftIds([]); setPreview(null); setSelectedDealId(''); }} className="text-xs text-amber-600 hover:text-amber-800 font-medium">Cancel</button>
+                  </div>
+                )}
+
                 {/* Deal selector */}
-                <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                  <select
-                    value={selectedDealId}
-                    onChange={e => setSelectedDealId(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
-                  >
-                    <option value="">Select a deal to preview...</option>
-                    {deals.map(d => (
-                      <option key={d.id} value={d.id}>
-                        {d.title} ({d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={generatePreview}
-                    disabled={!selectedDealId || loadingPreview}
-                    className="px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-                  >
-                    {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                    Generate Preview
-                  </button>
+                <div className="mb-4">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={selectedDealId}
+                      onChange={e => { setSelectedDealId(e.target.value); setEditingDraftIds([]); }}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                    >
+                      <option value="">{locale === 'es' ? 'Selecciona un deal...' : 'Select a deal to preview...'}</option>
+                      {deals.map(d => (
+                        <option key={d.id} value={d.id}>
+                          {d.title} ({d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => setShowSetup(s => !s)}
+                      className={`px-3 py-2 border rounded-lg text-sm font-medium inline-flex items-center gap-1.5 transition-colors ${showSetup ? 'border-[#E8632B] text-[#E8632B] bg-orange-50' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      {locale === 'es' ? 'Personalizar' : 'Customize'}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showSetup ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* Optional pre-generation setup */}
+                  {showSetup && (
+                    <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+                      <p className="text-xs text-gray-500">
+                        {locale === 'es'
+                          ? 'Personaliza tu publicación antes de generar. ¿No estás seguro? Solo haz clic en "Generar Vista Previa" y edita después.'
+                          : 'Customize your post before generating. Not sure? Just click "Generate Preview" and edit from there.'}
+                      </p>
+
+                      {/* Tone / Mood */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          {locale === 'es' ? 'Tono / Estilo' : 'Tone / Style'}
+                        </label>
+                        <select
+                          value={postTone}
+                          onChange={e => setPostTone(e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                        >
+                          <option value="">{locale === 'es' ? 'Automático (amigable y emocionante)' : 'Auto (friendly & exciting)'}</option>
+                          <option value="friendly and casual">{locale === 'es' ? 'Amigable y casual' : 'Friendly & casual'}</option>
+                          <option value="professional and polished">{locale === 'es' ? 'Profesional y pulido' : 'Professional & polished'}</option>
+                          <option value="fun and playful">{locale === 'es' ? 'Divertido y juguetón' : 'Fun & playful'}</option>
+                          <option value="urgent and exciting">{locale === 'es' ? 'Urgente y emocionante' : 'Urgent & exciting'}</option>
+                          <option value="luxurious and exclusive">{locale === 'es' ? 'Lujoso y exclusivo' : 'Luxurious & exclusive'}</option>
+                          <option value="warm and community-focused">{locale === 'es' ? 'Cálido y comunitario' : 'Warm & community-focused'}</option>
+                        </select>
+                      </div>
+
+                      {/* Media type preference */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          {locale === 'es' ? 'Tipo de multimedia' : 'Media type'}
+                        </label>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSetupMediaType('image')}
+                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${setupMediaType === 'image' ? 'border-[#E8632B] bg-orange-50 text-[#E8632B]' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}
+                          >
+                            <ImageIcon className="w-4 h-4" />
+                            {locale === 'es' ? 'Imagen' : 'Image'}
+                          </button>
+                          <button
+                            onClick={() => setSetupMediaType('video')}
+                            className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors inline-flex items-center justify-center gap-1.5 ${setupMediaType === 'video' ? 'border-[#E8632B] bg-orange-50 text-[#E8632B]' : 'border-gray-300 text-gray-600 hover:border-gray-400'}`}
+                          >
+                            <Video className="w-4 h-4" />
+                            {locale === 'es' ? 'Video' : 'Video'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Generate Preview button */}
+                  <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                    <button
+                      onClick={generatePreview}
+                      disabled={!selectedDealId || loadingPreview}
+                      className="px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                    >
+                      {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                      {locale === 'es' ? 'Generar Vista Previa' : 'Generate Preview'}
+                    </button>
+                    {!showSetup && !preview && (
+                      <p className="text-xs text-gray-400">
+                        {locale === 'es'
+                          ? 'Selecciona un deal y genera. Puedes personalizar después.'
+                          : 'Pick a deal and generate. You can customize after.'}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Media Editor + Preview Mockups */}
@@ -1170,7 +1314,7 @@ export default function VendorSocialPage() {
                             <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
                             <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
                             <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
-                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} /></td>
+                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1192,7 +1336,7 @@ export default function VendorSocialPage() {
                         <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
-                          <PostActions post={post} retrying={retrying} onRetry={handleRetry} />
+                          <PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} />
                         </div>
                       </div>
                     ))}
@@ -1417,13 +1561,18 @@ function StatusBadge({ status, error, scheduledAt }: { status: string; error: st
   }
 }
 
-function PostActions({ post, retrying, onRetry }: { post: SocialPost; retrying: string | null; onRetry: (id: string) => void }) {
+function PostActions({ post, retrying, onRetry, onEditDraft }: { post: SocialPost; retrying: string | null; onRetry: (id: string) => void; onEditDraft?: (post: SocialPost) => void }) {
   return (
     <div className="flex items-center gap-2">
       {post.platform_post_url && (
         <a href={post.platform_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
           <ExternalLink className="w-3.5 h-3.5" /> View
         </a>
+      )}
+      {post.status === 'draft' && onEditDraft && (
+        <button onClick={() => onEditDraft(post)} className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
+          <Eye className="w-3.5 h-3.5" /> Edit
+        </button>
       )}
       {post.status === 'failed' && (post.retry_count || 0) < 3 && (
         <button onClick={() => onRetry(post.id)} disabled={retrying === post.id} className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">

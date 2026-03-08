@@ -60,7 +60,7 @@ function useNavItems(): NavItem[] {
       icon: <Tag className="w-5 h-5" />,
       dataTour: 'vendor-nav-deals',
       children: [
-        { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals/calendar', icon: <Tag className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals', icon: <Tag className="w-4 h-4" /> },
         { label: t('vendor.sidebar.websiteImport'), href: '/vendor/deals/from-website', icon: <Globe className="w-4 h-4" /> },
         { label: t('vendor.sidebar.scanRedeem'), href: '/vendor/scan', icon: <ScanLine className="w-4 h-4" /> },
       ],
@@ -131,7 +131,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
   const isActive = (href: string) => {
     if (href === '/vendor/dashboard') return pathname === '/vendor/dashboard';
     if (href === '/vendor/deals/from-website') return pathname.startsWith('/vendor/deals/from-website');
-    if (href === '/vendor/deals/calendar') return pathname.startsWith('/vendor/deals') && !pathname.startsWith('/vendor/deals/from-website');
+    if (href === '/vendor/deals') return (pathname === '/vendor/deals' || pathname.startsWith('/vendor/deals/calendar') || pathname.startsWith('/vendor/deals/edit') || pathname.startsWith('/vendor/deals/new')) && !pathname.startsWith('/vendor/deals/from-website');
     return pathname.startsWith(href);
   };
 

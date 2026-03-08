@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { deal_id } = await request.json();
+  const { deal_id, tone } = await request.json();
   if (!deal_id) {
     return NextResponse.json({ error: 'deal_id is required' }, { status: 400 });
   }
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
   };
 
   // Generate captions
-  const captions = await generateCaptions(dealForPost);
+  const captions = await generateCaptions(dealForPost, tone || undefined);
   const imageUrl = deal.image_url || "";
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
 
