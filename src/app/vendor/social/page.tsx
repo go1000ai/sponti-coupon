@@ -632,8 +632,8 @@ export default function VendorSocialPage() {
         return;
       }
       const { operation_name } = await startRes.json();
-      setAvaMessage('Ava is creating your video... This may take 30-60 seconds.');
-      for (let i = 0; i < 24; i++) {
+      setAvaMessage('Ava is creating your video... This may take 1-3 minutes.');
+      for (let i = 0; i < 36; i++) {
         await new Promise(r => setTimeout(r, 5000));
         const pollRes = await fetch('/api/vendor/generate-video', {
           method: 'POST',
@@ -683,10 +683,10 @@ export default function VendorSocialPage() {
         return;
       }
       const { operation_name } = await startRes.json();
-      setVideoProgress(locale === 'es' ? 'Ava está creando tu video... (30-60 seg)' : 'Ava is creating your video... (30-60 sec)');
-      for (let i = 0; i < 24; i++) {
+      setVideoProgress(locale === 'es' ? 'Ava está creando tu video... (1-3 min)' : 'Ava is creating your video... (1-3 min)');
+      for (let i = 0; i < 36; i++) {
         await new Promise(r => setTimeout(r, 5000));
-        setVideoProgress(locale === 'es' ? `Generando video... ${Math.min((i + 1) * 5, 100)}%` : `Generating video... ${Math.min((i + 1) * 5, 100)}%`);
+        setVideoProgress(locale === 'es' ? `Generando video... ${Math.min(Math.round((i + 1) * 100 / 36), 99)}%` : `Generating video... ${Math.min(Math.round((i + 1) * 100 / 36), 99)}%`);
         const pollRes = await fetch('/api/vendor/generate-video', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
