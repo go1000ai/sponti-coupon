@@ -1097,7 +1097,6 @@ export default function VendorSocialPage() {
                                   className="w-full h-full object-contain"
                                   controls
                                   autoPlay
-                                  muted
                                   loop
                                   playsInline
                                 />
