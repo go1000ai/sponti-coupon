@@ -621,7 +621,7 @@ export default function VendorSocialPage() {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: socialImageUrl || dealMedia?.deal_image || '', title: selectedDealTitle, video_prompt: prompt }),
+        body: JSON.stringify({ image_url: socialImageUrl || dealMedia?.deal_image || '', title: selectedDealTitle, video_prompt: prompt, aspect_ratio: '9:16' }),
       });
       if (!startRes.ok) {
         const err = await startRes.json().catch(() => ({}));
@@ -670,7 +670,7 @@ export default function VendorSocialPage() {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_url: imageUrl, title: selectedDealTitle, video_prompt: prompt }),
+        body: JSON.stringify({ image_url: imageUrl, title: selectedDealTitle, video_prompt: prompt, aspect_ratio: '9:16' }),
       });
       if (!startRes.ok) {
         const err = await startRes.json().catch(() => ({}));

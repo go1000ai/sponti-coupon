@@ -111,7 +111,9 @@ export async function POST(request: NextRequest) {
 
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
-    const formatHint = aspectRatio === '9:16' ? 'Vertical 9:16 format for social media Reels.' : 'Landscape 16:9 format.';
+    const formatHint = aspectRatio === '9:16'
+      ? 'IMPORTANT: Vertical 9:16 portrait format for social media Reels. Frame all subjects vertically — tall composition, subject centered in a portrait frame. Do NOT use landscape or horizontal framing.'
+      : 'Landscape 16:9 widescreen format.';
     const prompt = video_prompt
       ? `${video_prompt}. ${formatHint} Professional commercial quality, clean imagery, no text or logos.`
       : `Gentle cinematic camera movement showcasing a ${vendor?.category || 'business'} service. ${formatHint} Professional commercial quality, clean and appealing imagery, warm inviting atmosphere. No text, no logos, no watermarks.`;

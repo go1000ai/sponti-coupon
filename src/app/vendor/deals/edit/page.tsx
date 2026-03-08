@@ -1693,6 +1693,7 @@ function DealSocialPost({ dealId, dealTitle }: { dealId: string; dealTitle?: str
           image_url: socialImageUrl || preview?.image_url || '',
           title: preview?.deal?.title || '',
           video_prompt: prompt,
+          aspect_ratio: '9:16',
         }),
       });
       if (!startRes.ok) {
