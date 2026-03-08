@@ -717,17 +717,33 @@ export default function VendorSocialPage() {
 
   // ── Delete a draft (or pending/failed) post ──
   const deletePost = async (postId: string) => {
-    if (!confirm(locale === 'es' ? '¿Eliminar este post?' : 'Delete this post?')) return;
+    const post = posts.find(p => p.id === postId);
+    const isPosted = post?.status === 'posted';
+    const msg = isPosted
+      ? (locale === 'es' ? '¿Eliminar este post? También se eliminará de la plataforma (Facebook/Instagram).' : 'Delete this post? It will also be deleted from the platform (Facebook/Instagram).')
+      : (locale === 'es' ? '¿Eliminar este post?' : 'Delete this post?');
+    if (!confirm(msg)) return;
     try {
-      const res = await fetch('/api/social/schedule', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ post_id: postId, action: 'cancel' }),
-      });
-      if (res.ok) {
-        setPosts(prev => prev.filter(p => p.id !== postId));
-        setTotal(prev => prev - 1);
-        fetchCalendar();
+      if (isPosted) {
+        // Delete from platform + DB via dedicated endpoint
+        const res = await fetch(`/api/social/posts/${postId}`, { method: 'DELETE' });
+        if (res.ok) {
+          setPosts(prev => prev.filter(p => p.id !== postId));
+          setTotal(prev => prev - 1);
+          fetchCalendar();
+        }
+      } else {
+        // Cancel draft/scheduled/pending via schedule endpoint
+        const res = await fetch('/api/social/schedule', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ post_id: postId, action: 'cancel' }),
+        });
+        if (res.ok) {
+          setPosts(prev => prev.filter(p => p.id !== postId));
+          setTotal(prev => prev - 1);
+          fetchCalendar();
+        }
       }
     } catch { /* noop */ }
   };
@@ -1983,7 +1999,7 @@ function PostActions({ post, retrying, onRetry, onEditDraft, onDelete }: { post:
           <Eye className="w-3.5 h-3.5" /> Edit
         </button>
       )}
-      {(post.status === 'draft' || post.status === 'pending' || post.status === 'failed') && onDelete && (
+      {(post.status === 'draft' || post.status === 'pending' || post.status === 'failed' || post.status === 'posted') && onDelete && (
         <button onClick={() => onDelete(post.id)} className="text-xs text-red-500 hover:text-red-700 inline-flex items-center gap-1">
           <X className="w-3.5 h-3.5" /> Delete
         </button>
