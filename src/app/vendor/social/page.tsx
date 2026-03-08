@@ -818,6 +818,12 @@ export default function VendorSocialPage() {
                                 <>
                                   <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
                                   <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">VIDEO</div>
+                                  {/* Caption subtitle overlay for silent videos */}
+                                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent">
+                                    <p className="text-white text-xs text-center font-medium line-clamp-2 drop-shadow-lg">
+                                      {(editedCaptions.facebook || '').replace(/https?:\/\/\S+/g, '').replace(/#\w+/g, '').trim().substring(0, 100)}
+                                    </p>
+                                  </div>
                                 </>
                               ) : (
                                 // eslint-disable-next-line @next/next/no-img-element
@@ -853,6 +859,12 @@ export default function VendorSocialPage() {
                                 <>
                                   <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
                                   <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1"><Video className="w-3 h-3" /> Reel</div>
+                                  {/* Caption subtitle overlay for silent videos */}
+                                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                                    <p className="text-white text-xs text-center font-medium line-clamp-2 drop-shadow-lg">
+                                      {(editedCaptions.instagram || '').replace(/https?:\/\/\S+/g, '').replace(/#\w+/g, '').trim().substring(0, 100)}
+                                    </p>
+                                  </div>
                                 </>
                               ) : (
                                 // eslint-disable-next-line @next/next/no-img-element

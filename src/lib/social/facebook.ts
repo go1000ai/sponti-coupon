@@ -3,8 +3,86 @@ import type { SocialPostResult } from './types';
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
 
 /**
+ * Generate an SRT subtitle file from caption text.
+ * Splits into ~10-word chunks displayed over the video duration.
+ */
+function generateSrt(caption: string, durationSeconds: number = 15): string {
+  // Strip URLs and hashtags for cleaner subtitles
+  const cleanText = caption
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/#\w+/g, '')
+    .trim();
+
+  if (!cleanText) return '';
+
+  const words = cleanText.split(/\s+/).filter(Boolean);
+  const wordsPerChunk = 8;
+  const chunks: string[] = [];
+
+  for (let i = 0; i < words.length; i += wordsPerChunk) {
+    chunks.push(words.slice(i, i + wordsPerChunk).join(' '));
+  }
+
+  if (chunks.length === 0) return '';
+
+  const chunkDuration = durationSeconds / chunks.length;
+  const lines: string[] = [];
+
+  chunks.forEach((chunk, i) => {
+    const startSec = i * chunkDuration;
+    const endSec = Math.min((i + 1) * chunkDuration, durationSeconds);
+    lines.push(`${i + 1}`);
+    lines.push(`${formatSrtTime(startSec)} --> ${formatSrtTime(endSec)}`);
+    lines.push(chunk);
+    lines.push('');
+  });
+
+  return lines.join('\n');
+}
+
+function formatSrtTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const ms = Math.round((seconds % 1) * 1000);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms).padStart(3, '0')}`;
+}
+
+/**
+ * Upload SRT captions to a Facebook video after publishing.
+ * Uses POST /{video-id}/captions endpoint.
+ */
+async function uploadVideoCaptions(
+  accessToken: string,
+  videoId: string,
+  caption: string,
+  locale: string = 'en_US'
+): Promise<void> {
+  try {
+    const srtContent = generateSrt(caption);
+    if (!srtContent) return;
+
+    // Facebook expects the SRT content as a file upload via multipart/form-data
+    const formData = new FormData();
+    formData.append('captions_file', new Blob([srtContent], { type: 'application/x-subrip' }), 'captions.srt');
+    formData.append('default_locale', locale);
+    formData.append('locales_to_upload', JSON.stringify([locale]));
+    formData.append('access_token', accessToken);
+
+    await fetch(`${META_GRAPH_URL}/${videoId}/captions`, {
+      method: 'POST',
+      body: formData,
+    });
+    // Non-critical — don't fail the post if captions fail
+  } catch (err) {
+    console.warn('[Facebook] Caption upload failed (non-critical):', err instanceof Error ? err.message : err);
+  }
+}
+
+/**
  * Post a deal to a Facebook Page — image or video.
  * Uses the Page access token to create a photo/video post with caption + link.
+ * For videos: also uploads SRT captions since AI-generated videos are silent.
  */
 export async function postToFacebook(
   accessToken: string,
@@ -42,6 +120,10 @@ export async function postToFacebook(
       }
 
       const postId = data.id;
+
+      // Upload SRT captions for the silent AI-generated video
+      await uploadVideoCaptions(accessToken, postId, fullCaption);
+
       return {
         platform: 'facebook',
         connectionId,
