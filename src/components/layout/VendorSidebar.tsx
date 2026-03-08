@@ -54,24 +54,54 @@ function useNavItems(): NavItem[] {
       href: '/vendor/dashboard',
       icon: <LayoutDashboard className="w-5 h-5" />,
     },
-    { label: t('vendor.sidebar.scanRedeem'), href: '/vendor/scan', icon: <ScanLine className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.analytics'), href: '/vendor/analytics', icon: <BarChart3 className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.avaInsights'), href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-5 h-5 rounded-full object-cover" /> },
-    { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals/calendar', icon: <Tag className="w-5 h-5" />, dataTour: 'vendor-nav-deals' },
-    { label: t('vendor.sidebar.websiteImport'), href: '/vendor/deals/from-website', icon: <Globe className="w-5 h-5" />, dataTour: 'vendor-website-import' },
-    { label: t('vendor.sidebar.mediaLibrary'), href: '/vendor/media', icon: <ImagePlus className="w-5 h-5" />, dataTour: 'vendor-nav-media' },
-    { label: t('vendor.sidebar.reviews'), href: '/vendor/reviews', icon: <MessageSquare className="w-5 h-5" />, dataTour: 'vendor-nav-reviews' },
-    { label: t('vendor.sidebar.loyalty'), href: '/vendor/loyalty', icon: <Gift className="w-5 h-5" />, dataTour: 'vendor-nav-loyalty' },
-    { label: t('vendor.sidebar.customers'), href: '/vendor/customers', icon: <ShoppingBag className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.locations'), href: '/vendor/locations', icon: <MapPin className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.team'), href: '/vendor/team', icon: <Users className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.api'), href: '/vendor/api', icon: <Key className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.social'), href: '/vendor/social', icon: <Share2 className="w-5 h-5" />, dataTour: 'vendor-nav-social' },
-    { label: t('vendor.sidebar.branding'), href: '/vendor/branding', icon: <Palette className="w-5 h-5" />, dataTour: 'vendor-nav-branding' },
-    { label: t('vendor.sidebar.subscription'), href: '/vendor/subscription', icon: <CreditCard className="w-5 h-5" /> },
-    { label: t('vendor.sidebar.getPaid'), href: '/vendor/payments', icon: <DollarSign className="w-5 h-5" />, dataTour: 'vendor-nav-getpaid' },
-    { label: t('vendor.sidebar.support'), href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
+    {
+      label: t('vendor.sidebar.groupDeals'),
+      href: '/vendor/deals',
+      icon: <Tag className="w-5 h-5" />,
+      dataTour: 'vendor-nav-deals',
+      children: [
+        { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals/calendar', icon: <Tag className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.websiteImport'), href: '/vendor/deals/from-website', icon: <Globe className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.scanRedeem'), href: '/vendor/scan', icon: <ScanLine className="w-4 h-4" /> },
+      ],
+    },
+    {
+      label: t('vendor.sidebar.groupMarketing'),
+      href: '/vendor/social',
+      icon: <Share2 className="w-5 h-5" />,
+      dataTour: 'vendor-nav-social',
+      children: [
+        { label: t('vendor.sidebar.social'), href: '/vendor/social', icon: <Share2 className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.mediaLibrary'), href: '/vendor/media', icon: <ImagePlus className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.loyalty'), href: '/vendor/loyalty', icon: <Gift className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.branding'), href: '/vendor/branding', icon: <Palette className="w-4 h-4" /> },
+      ],
+    },
+    {
+      label: t('vendor.sidebar.groupBusiness'),
+      href: '/vendor/analytics',
+      icon: <BarChart3 className="w-5 h-5" />,
+      children: [
+        { label: t('vendor.sidebar.analytics'), href: '/vendor/analytics', icon: <BarChart3 className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.avaInsights'), href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full object-cover" /> },
+        { label: t('vendor.sidebar.reviews'), href: '/vendor/reviews', icon: <MessageSquare className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.customers'), href: '/vendor/customers', icon: <ShoppingBag className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.locations'), href: '/vendor/locations', icon: <MapPin className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.team'), href: '/vendor/team', icon: <Users className="w-4 h-4" /> },
+      ],
+    },
+    {
+      label: t('vendor.sidebar.groupBilling'),
+      href: '/vendor/subscription',
+      icon: <CreditCard className="w-5 h-5" />,
+      children: [
+        { label: t('vendor.sidebar.subscription'), href: '/vendor/subscription', icon: <CreditCard className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.getPaid'), href: '/vendor/payments', icon: <DollarSign className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.api'), href: '/vendor/api', icon: <Key className="w-4 h-4" /> },
+      ],
+    },
     { label: t('vendor.sidebar.settings'), href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
+    { label: t('vendor.sidebar.support'), href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
   ];
 }
 
@@ -100,9 +130,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
 
   const isActive = (href: string) => {
     if (href === '/vendor/dashboard') return pathname === '/vendor/dashboard';
-    // Website Import has its own nav item
     if (href === '/vendor/deals/from-website') return pathname.startsWith('/vendor/deals/from-website');
-    // My Deals calendar link should highlight for all /vendor/deals routes except from-website
     if (href === '/vendor/deals/calendar') return pathname.startsWith('/vendor/deals') && !pathname.startsWith('/vendor/deals/from-website');
     return pathname.startsWith(href);
   };
@@ -110,10 +138,13 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
   // Auto-expand parent groups when a child route is active
   useEffect(() => {
     navItems.forEach(item => {
-      if (item.children && pathname.startsWith(item.href)) {
-        setExpandedGroups(prev =>
-          prev.includes(item.href) ? prev : [...prev, item.href]
-        );
+      if (item.children) {
+        const childMatch = item.children.some(c => isActive(c.href));
+        if (childMatch) {
+          setExpandedGroups(prev =>
+            prev.includes(item.href) ? prev : [...prev, item.href]
+          );
+        }
       }
     });
   }, [pathname]);
@@ -190,28 +221,32 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             <div key={item.href}>
               {/* Main nav item */}
               <div className="flex items-center" {...(enableTourAttrs && item.dataTour ? { 'data-tour': item.dataTour } : {})}>
-                <Link
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    active
-                      ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                      : groupActive
-                        ? 'bg-gray-700/30 text-white'
-                        : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
-                  }`}
-                >
-                  {item.icon}
-                  <span className="flex-1">{item.label}</span>
-                </Link>
-                {hasChildren && (
+                {hasChildren ? (
                   <button
                     onClick={() => toggleGroup(item.href)}
-                    className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-gray-700/20"
-                    aria-label={expanded ? 'Collapse' : 'Expand'}
+                    className={`flex items-center gap-3 flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      groupActive
+                        ? 'bg-gray-700/30 text-white'
+                        : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
+                    }`}
                   >
+                    {item.icon}
+                    <span className="flex-1 text-left">{item.label}</span>
                     <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
                   </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 flex-1 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      active
+                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                        : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
+                    }`}
+                  >
+                    {item.icon}
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
                 )}
               </div>
 

@@ -7,6 +7,7 @@ import {
   Clock, ArrowRight, AlertCircle, Unplug, X, Eye,
   CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
   Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
+  Sparkles, Video, Image as ImageIcon, Info, ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -99,6 +100,7 @@ interface PreviewData {
   claim_url: string;
   deal: { id: string; title: string; deal_type: string; discount_percentage: number };
   vendor: { business_name: string; city: string | null; state: string | null };
+  media?: { images: string[]; videos: string[] };
 }
 
 /* ─── Helpers ─── */
@@ -140,7 +142,7 @@ function getDaysArray(start: Date, end: Date): Date[] {
 /* ─── Main Page ─── */
 export default function VendorSocialPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
 
   // Connections
@@ -161,6 +163,17 @@ export default function VendorSocialPage() {
   const [scheduling, setScheduling] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('12:00');
+
+  // Media editor
+  const [socialImageUrl, setSocialImageUrl] = useState('');
+  const [socialVideoUrl, setSocialVideoUrl] = useState('');
+  const [mediaMode, setMediaMode] = useState<'image' | 'video'>('image');
+  const [showMediaPicker, setShowMediaPicker] = useState(false);
+  const [avaPrompt, setAvaPrompt] = useState('');
+  const [avaLoading, setAvaLoading] = useState(false);
+  const [avaMessage, setAvaMessage] = useState('');
+  const [avaSuggestion, setAvaSuggestion] = useState('');
+  const [showTips, setShowTips] = useState(false);
 
   // Calendar / Bento
   const [calendarPosts, setCalendarPosts] = useState<SocialPost[]>([]);
@@ -375,6 +388,7 @@ export default function VendorSocialPage() {
         setPreview(data);
         setEditedCaptions({ ...data.captions });
         setEditingPlatform(null);
+        if (!socialImageUrl) setSocialImageUrl(data.image_url || '');
       } else {
         const err = await res.json();
         setMessage({ type: 'error', text: err.error || 'Failed to generate preview' });
@@ -399,6 +413,8 @@ export default function VendorSocialPage() {
       if (action === 'schedule' && scheduleDate) {
         body.scheduled_at = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
       }
+      if (socialImageUrl && socialImageUrl !== preview.image_url) body.image_url = socialImageUrl;
+      if (socialVideoUrl) body.video_url = socialVideoUrl;
 
       const res = await fetch('/api/social/schedule', {
         method: 'POST',
@@ -426,6 +442,94 @@ export default function VendorSocialPage() {
     } finally {
       setScheduling(false);
     }
+  };
+
+  // ── Ava AI functions ──
+  const askAva = async () => {
+    if (!avaPrompt.trim()) return;
+    setAvaLoading(true);
+    setAvaSuggestion('');
+    setAvaMessage('');
+    try {
+      const res = await fetch('/api/vendor/ava-social-assist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: avaPrompt, deal_title: preview?.deal?.title || '', media_mode: mediaMode }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvaSuggestion(data.suggestion || '');
+        setAvaMessage(data.message || '');
+      } else {
+        setAvaMessage('Ava couldn\'t process that. Try rephrasing.');
+      }
+    } finally { setAvaLoading(false); }
+  };
+
+  const generateAvaImage = async (prompt: string) => {
+    setAvaLoading(true);
+    setAvaMessage('');
+    try {
+      const res = await fetch('/api/vendor/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_prompt: prompt, title: preview?.deal?.title || '' }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSocialImageUrl(data.url);
+        setMediaMode('image');
+        setSocialVideoUrl('');
+        setAvaMessage('Image generated! It\'s now set as your social post image.');
+        setShowMediaPicker(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setAvaMessage(err.error || 'Image generation failed.');
+      }
+    } finally { setAvaLoading(false); }
+  };
+
+  const generateAvaVideo = async (prompt: string) => {
+    setAvaLoading(true);
+    setAvaMessage('');
+    try {
+      const startRes = await fetch('/api/vendor/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: socialImageUrl || preview?.image_url || '', title: preview?.deal?.title || '', video_prompt: prompt }),
+      });
+      if (!startRes.ok) {
+        const err = await startRes.json().catch(() => ({}));
+        setAvaMessage(err.error || 'Video generation failed to start.');
+        setAvaLoading(false);
+        return;
+      }
+      const { operation_name } = await startRes.json();
+      setAvaMessage('Ava is creating your video... This may take 30-60 seconds.');
+      for (let i = 0; i < 24; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        const pollRes = await fetch('/api/vendor/generate-video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operation_name }),
+        });
+        if (pollRes.ok) {
+          const data = await pollRes.json();
+          if (data.url) {
+            setSocialVideoUrl(data.url);
+            setMediaMode('video');
+            setAvaMessage('Video created! It\'s now set for your social post.');
+            setShowMediaPicker(false);
+            setAvaLoading(false);
+            return;
+          }
+          if (data.operation_name) continue;
+        }
+      }
+      setAvaMessage('Video generation timed out. Try again.');
+    } catch {
+      setAvaMessage('Video generation failed.');
+    } finally { setAvaLoading(false); }
   };
 
   // ── Calendar data grouped by date ──
@@ -547,9 +651,139 @@ export default function VendorSocialPage() {
                   </button>
                 </div>
 
-                {/* Preview cards — Platform Mockups */}
-                {preview && (
+                {/* Media Editor + Preview Mockups */}
+                {preview && (() => {
+                  const lang = locale;
+                  const displayImg = socialImageUrl || preview.image_url;
+                  const displayVid = socialVideoUrl;
+                  const isVideo = mediaMode === 'video' && displayVid;
+                  return (
                   <div className="space-y-4">
+                    {/* Media Editor */}
+                    <div className="space-y-3 pb-3 border-b border-gray-100">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-gray-700">{lang === 'es' ? 'Multimedia' : 'Media'}</span>
+                        <div className="flex bg-gray-100 rounded-lg p-0.5">
+                          <button onClick={() => setMediaMode('image')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                            <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{lang === 'es' ? 'Imagen' : 'Image'}
+                          </button>
+                          <button onClick={() => setMediaMode('video')} className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                            <Video className="w-3.5 h-3.5 inline mr-1" />{lang === 'es' ? 'Video' : 'Video'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="w-20 h-20 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden flex-shrink-0">
+                          {mediaMode === 'video' && socialVideoUrl ? (
+                            <video src={socialVideoUrl} className="w-full h-full object-cover" muted />
+                          ) : (socialImageUrl || preview.image_url) ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={socialImageUrl || preview.image_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-400"><ImageIcon className="w-6 h-6" /></div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500 mb-1">{mediaMode === 'video' ? (lang === 'es' ? 'Video actual para publicación' : 'Current video for post') : (lang === 'es' ? 'Imagen actual para publicación' : 'Current image for post')}</p>
+                          <button onClick={() => setShowMediaPicker(!showMediaPicker)} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">
+                            {showMediaPicker ? (lang === 'es' ? 'Ocultar biblioteca' : 'Hide library') : (lang === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
+                          </button>
+                        </div>
+                      </div>
+                      {showMediaPicker && (
+                        <div className="overflow-x-auto pb-1">
+                          <div className="flex gap-2 min-w-min">
+                            {mediaMode === 'image' ? (
+                              (preview.media?.images || []).length > 0 ? (preview.media?.images || []).map((url, i) => (
+                                <button key={i} onClick={() => { setSocialImageUrl(url); setSocialVideoUrl(''); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${socialImageUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt="" className="w-full h-full object-cover" />
+                                </button>
+                              )) : <p className="text-xs text-gray-400 py-2">{lang === 'es' ? 'No hay imágenes en la biblioteca' : 'No images in library'}</p>
+                            ) : (
+                              (preview.media?.videos || []).length > 0 ? (preview.media?.videos || []).map((url, i) => (
+                                <button key={i} onClick={() => { setSocialVideoUrl(url); setMediaMode('video'); setShowMediaPicker(false); }} className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all relative ${socialVideoUrl === url ? 'border-[#E8632B] ring-2 ring-orange-200' : 'border-gray-200 hover:border-gray-300'}`}>
+                                  <video src={url} className="w-full h-full object-cover" muted />
+                                  <div className="absolute inset-0 flex items-center justify-center bg-black/20"><Video className="w-4 h-4 text-white" /></div>
+                                </button>
+                              )) : <p className="text-xs text-gray-400 py-2">{lang === 'es' ? 'No hay videos en la biblioteca' : 'No videos in library'}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {/* Ava AI Assistant */}
+                      <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-emerald-600" />
+                          <span className="text-sm font-semibold text-emerald-800">{lang === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}</span>
+                          <span className="text-[10px] text-emerald-600 bg-emerald-100 px-1.5 py-0.5 rounded-full font-medium">AI</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <input type="text" value={avaPrompt} onChange={e => setAvaPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
+                            placeholder={mediaMode === 'video' ? (lang === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...') : (lang === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
+                            className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400" />
+                          <button onClick={askAva} disabled={avaLoading || !avaPrompt.trim()} className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5">
+                            {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            {lang === 'es' ? 'Preguntar' : 'Ask'}
+                          </button>
+                        </div>
+                        {avaMessage && <div className="text-sm text-emerald-800 bg-emerald-100/60 rounded-lg p-2.5"><span className="font-medium">Ava:</span> {avaMessage}</div>}
+                        {avaSuggestion && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-gray-600 bg-white rounded-lg p-2.5 border border-emerald-100 font-mono">{avaSuggestion}</div>
+                            <div className="flex gap-2">
+                              {mediaMode === 'image' ? (
+                                <button onClick={() => generateAvaImage(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
+                                  {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                                  {lang === 'es' ? 'Generar Imagen' : 'Generate Image'}
+                                </button>
+                              ) : (
+                                <button onClick={() => generateAvaVideo(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
+                                  {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
+                                  {lang === 'es' ? 'Generar Video' : 'Generate Video'}
+                                </button>
+                              )}
+                              <button onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }} className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                        )}
+                        <button onClick={() => setShowTips(!showTips)} className="flex items-center gap-1.5 text-xs text-emerald-700 hover:text-emerald-800 font-medium w-full">
+                          <Info className="w-3.5 h-3.5" />
+                          {lang === 'es' ? 'Tips para mejores resultados' : 'Tips for better results'}
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showTips ? 'rotate-180' : ''}`} />
+                        </button>
+                        {showTips && (
+                          <div className="text-xs text-gray-600 bg-white rounded-lg p-3 border border-emerald-100 space-y-2">
+                            {mediaMode === 'video' ? (
+                              <>
+                                <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{lang === 'es' ? 'Tips para Videos' : 'Video Tips'}</p>
+                                <ul className="space-y-1.5 list-disc pl-3.5">
+                                  <li>{lang === 'es' ? 'Especifica la música: "música electrónica animada" o "guitarra acústica tranquila"' : 'Specify music: "upbeat electronic music" or "calm acoustic guitar"'}</li>
+                                  <li>{lang === 'es' ? 'Describe el ritmo: "rápido con cortes rápidos" o "revelación cinematográfica lenta"' : 'Describe pacing: "fast-paced with quick cuts" or "slow cinematic reveal"'}</li>
+                                  <li>{lang === 'es' ? 'Define el ambiente: "enérgico y divertido" o "profesional y limpio"' : 'Set the mood: "energetic and fun" or "professional and clean"'}</li>
+                                  <li>{lang === 'es' ? 'Menciona transiciones: "zoom suave al producto" o "fundido entre escenas"' : 'Mention transitions: "smooth zoom-in on product" or "fade between scenes"'}</li>
+                                  <li>{lang === 'es' ? 'Ángulos de cámara: "primer plano de la comida" o "toma amplia del local"' : 'Include camera angles: "close-up of food details" or "wide shot of venue"'}</li>
+                                  <li>{lang === 'es' ? 'Referencia el estilo: "vertical tipo TikTok" o "comercial cinematográfico"' : 'Reference style: "TikTok-style vertical" or "cinematic commercial"'}</li>
+                                  <li className="font-medium text-emerald-700">{lang === 'es' ? '¡Sé específico! Evita prompts vagos como "haz un video cool"' : 'Be specific! Avoid vague prompts like "make a cool video"'}</li>
+                                </ul>
+                              </>
+                            ) : (
+                              <>
+                                <p className="font-semibold text-emerald-800 text-[11px] uppercase tracking-wide">{lang === 'es' ? 'Tips para Imágenes' : 'Image Tips'}</p>
+                                <ul className="space-y-1.5 list-disc pl-3.5">
+                                  <li>{lang === 'es' ? 'Describe la iluminación: "hora dorada cálida" o "iluminación de estudio brillante"' : 'Describe lighting: "warm golden hour" or "bright studio lighting"'}</li>
+                                  <li>{lang === 'es' ? 'Composición: "vista cenital (flat-lay)" o "poca profundidad de campo"' : 'Set composition: "overhead flat-lay" or "eye-level with shallow depth of field"'}</li>
+                                  <li>{lang === 'es' ? 'Estilo: "fondo blanco minimalista" o "fotografía callejera vibrante"' : 'Mention style: "minimalist with white background" or "vibrant street photography"'}</li>
+                                  <li>{lang === 'es' ? 'Sin texto: Ava crea imágenes sin textos superpuestos' : 'No text: Ava generates images without text overlays'}</li>
+                                </ul>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Platform Mockups */}
                     <div className="space-y-4">
                       {/* Facebook Mockup */}
                       {connectedPlatforms.has('facebook') && (
@@ -578,10 +812,17 @@ export default function VendorSocialPage() {
                               {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
                             </button>
                           </div>
-                          {preview.image_url && (
-                            <div className="aspect-video bg-gray-100">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                          {(isVideo || displayImg) && (
+                            <div className="aspect-video bg-gray-100 relative">
+                              {isVideo ? (
+                                <>
+                                  <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                                  <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium">VIDEO</div>
+                                </>
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={displayImg} alt="" className="w-full h-full object-cover" />
+                              )}
                             </div>
                           )}
                           <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
@@ -606,10 +847,17 @@ export default function VendorSocialPage() {
                             </div>
                             <span className="text-gray-400 tracking-widest font-bold">···</span>
                           </div>
-                          {preview.image_url && (
-                            <div className="aspect-square bg-gray-100">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                          {(isVideo || displayImg) && (
+                            <div className={`${isVideo ? 'aspect-[9/16] max-h-[400px]' : 'aspect-square'} bg-gray-100 relative`}>
+                              {isVideo ? (
+                                <>
+                                  <video src={displayVid} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                                  <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-medium flex items-center gap-1"><Video className="w-3 h-3" /> Reel</div>
+                                </>
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={displayImg} alt="" className="w-full h-full object-cover" />
+                              )}
                             </div>
                           )}
                           <div className="flex items-center justify-between px-3 py-2.5">
@@ -666,10 +914,14 @@ export default function VendorSocialPage() {
                               <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
                                 {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
                               </button>
-                              {preview.image_url && (
-                                <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={preview.image_url} alt="" className="w-full aspect-video object-cover" />
+                              {(isVideo || displayImg) && (
+                                <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 relative">
+                                  {isVideo ? (
+                                    <video src={displayVid} className="w-full aspect-video object-cover" muted loop autoPlay playsInline />
+                                  ) : (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img src={displayImg} alt="" className="w-full aspect-video object-cover" />
+                                  )}
                                 </div>
                               )}
                               <div className="flex items-center justify-between mt-2 text-gray-400">
@@ -686,10 +938,14 @@ export default function VendorSocialPage() {
                       {/* TikTok Mockup */}
                       {connectedPlatforms.has('tiktok') && (
                         <div className="border border-gray-300 rounded-lg bg-black overflow-hidden max-w-md mx-auto">
-                          {preview.image_url && (
+                          {(isVideo || displayImg) && (
                             <div className="aspect-[9/16] max-h-[300px] bg-gray-900 relative">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={preview.image_url} alt="" className="w-full h-full object-cover opacity-80" />
+                              {isVideo ? (
+                                <video src={displayVid} className="w-full h-full object-cover opacity-80" muted loop autoPlay playsInline />
+                              ) : (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={displayImg} alt="" className="w-full h-full object-cover opacity-80" />
+                              )}
                               <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
@@ -762,7 +1018,8 @@ export default function VendorSocialPage() {
                       </button>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {!preview && !loadingPreview && (
                   <p className="text-sm text-gray-400 text-center py-4">Select a deal and click &quot;Generate Preview&quot; to see how your social posts will look.</p>

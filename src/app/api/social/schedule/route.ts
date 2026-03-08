@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { deal_id, platforms, captions, action, scheduled_at } = body;
+  const { deal_id, platforms, captions, action, scheduled_at, image_url: customImageUrl, video_url: customVideoUrl } = body;
 
   if (!deal_id || !platforms?.length || !captions || !action) {
     return NextResponse.json({ error: 'deal_id, platforms, captions, and action are required' }, { status: 400 });
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No active connections for selected platforms' }, { status: 400 });
   }
 
-  const imageUrl = `${APP_URL}/api/social/generate-image?deal_id=${deal.id}`;
+  const imageUrl = customImageUrl || deal.image_url || '';
+  const videoUrl = customVideoUrl || null;
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
   const now = new Date().toISOString();
 
@@ -86,6 +87,8 @@ export async function POST(request: NextRequest) {
       caption: captions[conn.platform] || '',
       caption_edited: captions[conn.platform] || null,
       image_url: imageUrl,
+      video_url: videoUrl,
+      media_type: videoUrl ? (conn.platform === 'instagram' ? 'reel' : 'video') : 'image',
       claim_url: claimUrl,
       status: 'pending',
       scheduled_by: user.id,
@@ -131,6 +134,8 @@ export async function POST(request: NextRequest) {
     caption: captions[conn.platform] || '',
     caption_edited: captions[conn.platform] || null,
     image_url: imageUrl,
+    video_url: videoUrl,
+    media_type: videoUrl ? (conn.platform === 'instagram' ? 'reel' : 'video') : 'image',
     claim_url: claimUrl,
     status,
     scheduled_at: action === 'schedule' ? scheduled_at : null,

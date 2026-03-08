@@ -47,6 +47,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
+  // Fetch deal video URLs if any
+  const { data: dealFull } = await serviceClient
+    .from('deals')
+    .select('video_urls')
+    .eq('id', deal_id)
+    .single();
+
+  // Fetch vendor media library (images + videos, most recent first)
+  const { data: mediaLibrary } = await serviceClient
+    .from('vendor_media')
+    .select('url, type, title, source, ai_prompt')
+    .eq('vendor_id', deal.vendor_id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
   // Fetch vendor info
   const { data: vendor } = await serviceClient
     .from('vendors')
@@ -82,6 +97,11 @@ export async function POST(request: NextRequest) {
   const imageUrl = deal.image_url || "";
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
 
+  // Separate library into images and videos
+  const libraryImages = (mediaLibrary || []).filter(m => m.type === 'image').map(m => m.url);
+  const libraryVideos = (mediaLibrary || []).filter(m => m.type === 'video').map(m => m.url);
+  const dealVideos = (dealFull?.video_urls || []) as string[];
+
   return NextResponse.json({
     captions,
     image_url: imageUrl,
@@ -99,6 +119,10 @@ export async function POST(request: NextRequest) {
       business_name: vendor.business_name,
       city: vendor.city,
       state: vendor.state,
+    },
+    media: {
+      images: libraryImages,
+      videos: [...dealVideos, ...libraryVideos],
     },
   });
 }

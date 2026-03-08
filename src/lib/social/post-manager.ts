@@ -171,7 +171,8 @@ async function postToConnection(
   accessToken: string,
   captions: PlatformCaptions,
   imageUrl: string,
-  claimUrl: string
+  claimUrl: string,
+  videoUrl?: string
 ): Promise<SocialPostResult> {
   const platform = conn.platform as keyof PlatformCaptions;
   const caption = captions[platform] || '';
@@ -184,7 +185,8 @@ async function postToConnection(
         caption,
         imageUrl,
         claimUrl,
-        conn.id
+        conn.id,
+        videoUrl
       );
 
     case 'instagram':
@@ -193,7 +195,8 @@ async function postToConnection(
         conn.platform_page_id || '',
         caption,
         imageUrl,
-        conn.id
+        conn.id,
+        videoUrl
       );
 
     case 'twitter':
@@ -206,15 +209,15 @@ async function postToConnection(
       );
 
     case 'tiktok':
-      if (!imageUrl) {
+      if (!imageUrl && !videoUrl) {
         return {
           platform: 'tiktok',
           connectionId: conn.id,
           success: false,
-          error: 'No image available for TikTok post',
+          error: 'No media available for TikTok post',
         };
       }
-      return postToTikTok(accessToken, caption, imageUrl, conn.id);
+      return postToTikTok(accessToken, caption, imageUrl || videoUrl || '', conn.id);
 
     default:
       return {

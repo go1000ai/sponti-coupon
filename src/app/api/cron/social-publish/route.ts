@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
   // Find scheduled posts ready to publish
   const { data: posts, error } = await supabase
     .from('social_posts')
-    .select('id, deal_id, connection_id, platform, caption, image_url, claim_url, account_type')
+    .select('id, deal_id, connection_id, platform, caption, image_url, video_url, claim_url, account_type')
     .eq('status', 'scheduled')
     .lte('scheduled_at', now)
     .limit(50);
@@ -78,14 +78,15 @@ export async function GET(request: NextRequest) {
       let result: SocialPostResult;
       const caption = post.caption || '';
       const imageUrl = post.image_url || '';
+      const videoUrl = post.video_url || undefined;
       const claimUrl = post.claim_url || '';
 
       switch (post.platform) {
         case 'facebook':
-          result = await postToFacebook(validToken, conn.platform_page_id || '', caption, imageUrl, claimUrl, conn.id);
+          result = await postToFacebook(validToken, conn.platform_page_id || '', caption, imageUrl, claimUrl, conn.id, videoUrl);
           break;
         case 'instagram':
-          result = await postToInstagram(validToken, conn.platform_page_id || '', caption, imageUrl, conn.id);
+          result = await postToInstagram(validToken, conn.platform_page_id || '', caption, imageUrl, conn.id, videoUrl);
           break;
         case 'twitter':
           result = await postToTwitter(validToken, caption, imageUrl, claimUrl, conn.id);
