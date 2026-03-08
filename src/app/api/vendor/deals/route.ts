@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   const { data: deals, error } = await supabase
     .from('deals')
-    .select('id, title, deal_type, original_price, deal_price, status')
+    .select('id, title, deal_type, original_price, deal_price, status, image_url')
     .eq('vendor_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
