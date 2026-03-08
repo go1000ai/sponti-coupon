@@ -7,7 +7,7 @@ import {
   Clock, ArrowRight, AlertCircle, Unplug, X, Eye,
   CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
   Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
-  Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List,
+  Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List, Search,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -170,6 +170,9 @@ export default function VendorSocialPage() {
   const [postTone, setPostTone] = useState('');
   const [setupMediaType, setSetupMediaType] = useState<'image' | 'video'>('image');
   const [dealViewMode, setDealViewMode] = useState<'grid' | 'list'>('grid');
+  const [dealSearch, setDealSearch] = useState('');
+  const [dealPageSize, setDealPageSize] = useState(8);
+  const DEAL_PAGE_INCREMENT = 8;
 
   // Media editor
   const [socialImageUrl, setSocialImageUrl] = useState('');
@@ -202,6 +205,19 @@ export default function VendorSocialPage() {
 
   const PAGE_SIZE = 20;
   const connectedPlatforms = useMemo(() => new Set(connections.map(c => c.platform)), [connections]);
+
+  // Filtered + paginated deals for the selector
+  const filteredDeals = useMemo(() => {
+    if (!dealSearch.trim()) return deals;
+    const q = dealSearch.toLowerCase();
+    return deals.filter(d =>
+      d.title.toLowerCase().includes(q) ||
+      d.deal_type.toLowerCase().includes(q) ||
+      (d.deal_type === 'sponti_coupon' ? 'sponti' : 'steady').includes(q)
+    );
+  }, [deals, dealSearch]);
+  const visibleDeals = useMemo(() => filteredDeals.slice(0, dealPageSize), [filteredDeals, dealPageSize]);
+  const hasMoreDeals = filteredDeals.length > dealPageSize;
 
   // ── Read URL params on mount ──
   useEffect(() => {
@@ -757,79 +773,110 @@ export default function VendorSocialPage() {
 
                 {/* Deal selector */}
                 <div className="mb-4 space-y-3">
-                  {/* Header row: label + view toggle + customize */}
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-700">
-                      {locale === 'es' ? 'Selecciona un deal' : 'Select a deal'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {/* Grid / List toggle */}
-                      <div className="flex bg-gray-100 rounded-lg p-0.5">
-                        <button onClick={() => setDealViewMode('grid')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista cuadrícula' : 'Grid view'}>
-                          <LayoutGrid className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => setDealViewMode('list')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista lista' : 'List view'}>
-                          <List className="w-3.5 h-3.5" />
+                  {/* Header row: label + search + view toggle + customize */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-700">
+                        {locale === 'es' ? 'Selecciona un deal' : 'Select a deal'}
+                        {deals.length > 0 && <span className="text-xs text-gray-400 font-normal ml-1.5">({filteredDeals.length})</span>}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        {/* Grid / List toggle */}
+                        <div className="flex bg-gray-100 rounded-lg p-0.5">
+                          <button onClick={() => setDealViewMode('grid')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista cuadrícula' : 'Grid view'}>
+                            <LayoutGrid className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => setDealViewMode('list')} className={`p-1.5 rounded-md transition-all ${dealViewMode === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`} title={locale === 'es' ? 'Vista lista' : 'List view'}>
+                            <List className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {/* Customize button */}
+                        <button
+                          onClick={() => setShowSetup(s => !s)}
+                          className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors ${showSetup ? 'border-[#E8632B] text-[#E8632B] bg-orange-50' : 'border-gray-300 text-gray-500 hover:border-gray-400'}`}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">{locale === 'es' ? 'Personalizar' : 'Customize'}</span>
+                          <ChevronDown className={`w-3 h-3 transition-transform ${showSetup ? 'rotate-180' : ''}`} />
                         </button>
                       </div>
-                      {/* Customize button */}
-                      <button
-                        onClick={() => setShowSetup(s => !s)}
-                        className={`px-2.5 py-1.5 border rounded-lg text-xs font-medium inline-flex items-center gap-1 transition-colors ${showSetup ? 'border-[#E8632B] text-[#E8632B] bg-orange-50' : 'border-gray-300 text-gray-500 hover:border-gray-400'}`}
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{locale === 'es' ? 'Personalizar' : 'Customize'}</span>
-                        <ChevronDown className={`w-3 h-3 transition-transform ${showSetup ? 'rotate-180' : ''}`} />
-                      </button>
                     </div>
+                    {/* Search box */}
+                    {deals.length > 4 && (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={dealSearch}
+                          onChange={e => { setDealSearch(e.target.value); setDealPageSize(DEAL_PAGE_INCREMENT); }}
+                          placeholder={locale === 'es' ? 'Buscar por nombre, tipo...' : 'Search by name, type...'}
+                          className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent placeholder-gray-400"
+                        />
+                        {dealSearch && (
+                          <button onClick={() => { setDealSearch(''); setDealPageSize(DEAL_PAGE_INCREMENT); }} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Bento grid view */}
                   {dealViewMode === 'grid' ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {deals.map(d => (
-                        <button
-                          key={d.id}
-                          onClick={() => { setSelectedDealId(d.id); setEditingDraftIds([]); }}
-                          className={`relative group rounded-xl overflow-hidden border-2 transition-all text-left ${
-                            selectedDealId === d.id
-                              ? 'border-[#E8632B] ring-2 ring-orange-200 shadow-md'
-                              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                          }`}
-                        >
-                          {/* Deal image */}
-                          <div className="aspect-[4/3] bg-gray-100 relative">
-                            {d.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={d.image_url} alt={d.title} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                <ImageIcon className="w-8 h-8" />
-                              </div>
-                            )}
-                            {/* Deal type badge */}
-                            <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white ${
-                              d.deal_type === 'sponti_coupon' ? 'bg-[#E8632B]' : 'bg-[#29ABE2]'
-                            }`}>
-                              {d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}
-                            </span>
-                            {/* Selected checkmark */}
-                            {selectedDealId === d.id && (
-                              <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#E8632B] rounded-full flex items-center justify-center">
-                                <CheckCircle className="w-3.5 h-3.5 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          {/* Title */}
-                          <div className="p-2">
-                            <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">{d.title}</p>
-                          </div>
-                        </button>
-                      ))}
-                      {deals.length === 0 && (
-                        <p className="col-span-full text-sm text-gray-400 text-center py-6">
-                          {locale === 'es' ? 'No hay deals activos' : 'No active deals'}
+                    <div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {visibleDeals.map(d => (
+                          <button
+                            key={d.id}
+                            onClick={() => { setSelectedDealId(d.id); setEditingDraftIds([]); }}
+                            className={`relative group rounded-xl overflow-hidden border-2 transition-all text-left ${
+                              selectedDealId === d.id
+                                ? 'border-[#E8632B] ring-2 ring-orange-200 shadow-md'
+                                : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                            }`}
+                          >
+                            <div className="aspect-[4/3] bg-gray-100 relative">
+                              {d.image_url ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={d.image_url} alt={d.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                  <ImageIcon className="w-8 h-8" />
+                                </div>
+                              )}
+                              <span className={`absolute top-1.5 left-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white ${
+                                d.deal_type === 'sponti_coupon' ? 'bg-[#E8632B]' : 'bg-[#29ABE2]'
+                              }`}>
+                                {d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}
+                              </span>
+                              {selectedDealId === d.id && (
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-[#E8632B] rounded-full flex items-center justify-center">
+                                  <CheckCircle className="w-3.5 h-3.5 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="p-2">
+                              <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">{d.title}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      {filteredDeals.length === 0 && (
+                        <p className="text-sm text-gray-400 text-center py-6">
+                          {dealSearch
+                            ? (locale === 'es' ? `No se encontraron deals para "${dealSearch}"` : `No deals found for "${dealSearch}"`)
+                            : (locale === 'es' ? 'No hay deals activos' : 'No active deals')}
                         </p>
+                      )}
+                      {hasMoreDeals && (
+                        <button
+                          onClick={() => setDealPageSize(prev => prev + DEAL_PAGE_INCREMENT)}
+                          className="mt-3 w-full py-2 text-sm text-[#E8632B] hover:text-orange-700 font-medium border border-gray-200 rounded-lg hover:bg-orange-50/50 transition-colors"
+                        >
+                          {locale === 'es'
+                            ? `Ver más (${filteredDeals.length - dealPageSize} restantes)`
+                            : `Load more (${filteredDeals.length - dealPageSize} remaining)`}
+                        </button>
                       )}
                     </div>
                   ) : (
@@ -840,7 +887,7 @@ export default function VendorSocialPage() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
                     >
                       <option value="">{locale === 'es' ? 'Selecciona un deal...' : 'Select a deal...'}</option>
-                      {deals.map(d => (
+                      {filteredDeals.map(d => (
                         <option key={d.id} value={d.id}>
                           {d.title} ({d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'})
                         </option>
@@ -902,7 +949,7 @@ export default function VendorSocialPage() {
                     </div>
                   )}
 
-                  {/* Generate Preview button */}
+                  {/* Generate Preview + Customize buttons */}
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <button
                       onClick={generatePreview}
@@ -912,8 +959,17 @@ export default function VendorSocialPage() {
                       {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
                       {locale === 'es' ? 'Generar Vista Previa' : 'Generate Preview'}
                     </button>
+                    {!showSetup && (
+                      <button
+                        onClick={() => setShowSetup(true)}
+                        className="px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:border-gray-400 hover:bg-gray-50 inline-flex items-center justify-center gap-2 w-full sm:w-auto"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        {locale === 'es' ? 'Personalizar' : 'Customize'}
+                      </button>
+                    )}
                     {!showSetup && !preview && selectedDealId && (
-                      <p className="text-xs text-gray-400 text-center sm:text-left">
+                      <p className="text-xs text-gray-400 text-center sm:text-left hidden sm:block">
                         {locale === 'es'
                           ? 'Puedes personalizar después de generar.'
                           : 'You can customize after generating.'}
