@@ -190,6 +190,7 @@ export default function VendorSocialPage() {
   const [videoPrompt, setVideoPrompt] = useState('');
   const [videoGenerating, setVideoGenerating] = useState(false);
   const [videoProgress, setVideoProgress] = useState('');
+  const [videoError, setVideoError] = useState('');
 
   // Calendar / Bento
   const [calendarPosts, setCalendarPosts] = useState<SocialPost[]>([]);
@@ -617,6 +618,7 @@ export default function VendorSocialPage() {
   const generateAvaVideo = async (prompt: string) => {
     setAvaLoading(true);
     setAvaMessage('');
+    setVideoError('');
     try {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
@@ -661,11 +663,12 @@ export default function VendorSocialPage() {
   const generateVideoFromImage = async (prompt: string) => {
     const imageUrl = socialImageUrl || dealMedia?.deal_image || '';
     if (!imageUrl) {
-      setMessage({ type: 'error', text: locale === 'es' ? 'No hay imagen disponible para crear el video' : 'No image available to create video' });
+      setVideoError(locale === 'es' ? 'No hay imagen disponible para crear el video' : 'No image available to create video');
       return;
     }
     setVideoGenerating(true);
     setVideoProgress(locale === 'es' ? 'Iniciando generación de video...' : 'Starting video generation...');
+    setVideoError('');
     try {
       const startRes = await fetch('/api/vendor/generate-video', {
         method: 'POST',
@@ -674,7 +677,7 @@ export default function VendorSocialPage() {
       });
       if (!startRes.ok) {
         const err = await startRes.json().catch(() => ({}));
-        setMessage({ type: 'error', text: err.error || (locale === 'es' ? 'No se pudo iniciar la generación' : 'Failed to start generation') });
+        setVideoError(err.error || (locale === 'es' ? 'No se pudo iniciar la generación' : 'Failed to start generation'));
         setVideoGenerating(false);
         setVideoProgress('');
         return;
@@ -704,10 +707,10 @@ export default function VendorSocialPage() {
         }
       }
       setVideoProgress('');
-      setMessage({ type: 'error', text: locale === 'es' ? 'La generación de video tardó demasiado. Intenta de nuevo.' : 'Video generation timed out. Try again.' });
+      setVideoError(locale === 'es' ? 'La generación de video tardó demasiado. Intenta de nuevo.' : 'Video generation timed out. Try again.');
     } catch {
       setVideoProgress('');
-      setMessage({ type: 'error', text: locale === 'es' ? 'Error al generar el video' : 'Video generation failed' });
+      setVideoError(locale === 'es' ? 'Error al generar el video' : 'Video generation failed');
     } finally { setVideoGenerating(false); }
   };
 
@@ -1263,6 +1266,19 @@ export default function VendorSocialPage() {
                                 </button>
                               </div>
                             </div>
+                          </div>
+                        )}
+
+                        {/* Inline video error — shown right where the action happened */}
+                        {videoError && !videoGenerating && (
+                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-red-700">{videoError}</p>
+                            </div>
+                            <button onClick={() => setVideoError('')} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
                           </div>
                         )}
 
