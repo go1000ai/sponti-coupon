@@ -941,18 +941,23 @@ export default function VendorSocialPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {/* Image / Video toggle */}
+                        {/* Post / Reel toggle */}
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-600">{locale === 'es' ? 'Tipo de multimedia' : 'Media type'}</span>
+                          <span className="text-xs font-medium text-gray-600">{locale === 'es' ? '¿Qué quieres crear?' : 'What do you want to create?'}</span>
                           <div className="flex bg-white rounded-lg p-0.5 border border-gray-200">
-                            <button onClick={() => setMediaMode('image')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                              <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Imagen' : 'Image'}
+                            <button onClick={() => setMediaMode('image')} className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                              <ImageIcon className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Post' : 'Post'}
                             </button>
-                            <button onClick={() => setMediaMode('video')} className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                              <Video className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Video' : 'Video'}
+                            <button onClick={() => setMediaMode('video')} className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'video' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                              <Video className="w-3.5 h-3.5 inline mr-1" />{locale === 'es' ? 'Reel' : 'Reel'}
                             </button>
                           </div>
                         </div>
+                        <p className="text-[11px] text-gray-400 -mt-1">
+                          {mediaMode === 'image'
+                            ? (locale === 'es' ? 'Publicación con imagen en Facebook e Instagram' : 'Image post on Facebook & Instagram')
+                            : (locale === 'es' ? 'Video vertical (9:16) para Instagram Reels y Facebook Reels' : 'Vertical video (9:16) for Instagram Reels & Facebook Reels')}
+                        </p>
 
                         {/* Current media thumbnail */}
                         <div className="flex items-start gap-3">
@@ -981,13 +986,13 @@ export default function VendorSocialPage() {
                           <div className="flex-1 min-w-0">
                             {mediaMode === 'video' && !socialVideoUrl ? (
                               <>
-                                <p className="text-xs font-medium text-orange-600 mb-0.5">{locale === 'es' ? 'No hay video aún' : 'No video yet'}</p>
+                                <p className="text-xs font-medium text-orange-600 mb-0.5">{locale === 'es' ? 'No hay Reel aún' : 'No Reel yet'}</p>
                                 <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Crea uno abajo o elige de la biblioteca' : 'Create one below or pick from library'}</p>
                               </>
                             ) : mediaMode === 'video' && socialVideoUrl ? (
-                              <p className="text-xs text-green-600 font-medium mb-1">{locale === 'es' ? 'Video listo para publicar' : 'Video ready to post'}</p>
+                              <p className="text-xs text-green-600 font-medium mb-1">{locale === 'es' ? 'Reel listo para publicar' : 'Reel ready to post'}</p>
                             ) : (
-                              <p className="text-xs text-gray-500 mb-1">{locale === 'es' ? 'Imagen actual para publicación' : 'Current image for post'}</p>
+                              <p className="text-xs text-gray-500 mb-1">{locale === 'es' ? 'Imagen actual para tu post' : 'Current image for your post'}</p>
                             )}
                             <button onClick={() => setShowMediaPicker(!showMediaPicker)} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">
                               {showMediaPicker ? (locale === 'es' ? 'Ocultar biblioteca' : 'Hide library') : (locale === 'es' ? 'Elegir de la biblioteca' : 'Choose from library')}
@@ -1062,7 +1067,7 @@ export default function VendorSocialPage() {
                                 <Video className="w-5 h-5 text-white" />
                               </div>
                               <div className="flex-1">
-                                <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Creando tu Reel / Video...' : 'Creating your Reel / Video...'}</p>
+                                <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Creando tu Reel...' : 'Creating your Reel...'}</p>
                                 <p className="text-xs text-gray-500">{videoProgress || (locale === 'es' ? 'Esto puede tomar 30-60 segundos' : 'This may take 30-60 seconds')}</p>
                               </div>
                             </div>
@@ -1080,7 +1085,7 @@ export default function VendorSocialPage() {
                               <div className="flex items-center justify-between px-3 py-2 border-b border-green-200/50">
                                 <div className="flex items-center gap-2">
                                   <CheckCircle className="w-4 h-4 text-green-600" />
-                                  <p className="text-sm font-medium text-green-800">{locale === 'es' ? 'Video listo — Vista previa' : 'Video ready — Preview'}</p>
+                                  <p className="text-sm font-medium text-green-800">{locale === 'es' ? 'Reel listo — Vista previa' : 'Reel ready — Preview'}</p>
                                 </div>
                                 <button onClick={() => { setSocialVideoUrl(''); }} className="text-xs text-gray-400 hover:text-red-500 flex-shrink-0" title={locale === 'es' ? 'Eliminar' : 'Remove'}>
                                   <X className="w-4 h-4" />
@@ -1129,7 +1134,7 @@ export default function VendorSocialPage() {
                         {/* Video: create — two options */}
                         {mediaMode === 'video' && !socialVideoUrl && !videoGenerating && (
                           <div className="border border-orange-200 rounded-xl bg-white p-4 space-y-3">
-                            <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Crear Video / Reel' : 'Create Video / Reel'}</p>
+                            <p className="text-sm font-semibold text-gray-900">{locale === 'es' ? 'Crear tu Reel' : 'Create your Reel'}</p>
                             {/* Option 1: Animate image with a prompt */}
                             <div className="p-3 bg-orange-50/50 rounded-lg border border-orange-100 space-y-2.5">
                               <div className="flex items-center gap-3">
@@ -1143,7 +1148,7 @@ export default function VendorSocialPage() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Animar tu imagen' : 'Animate your image'}</p>
-                                  <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Describe cómo quieres que se anime tu imagen' : 'Describe how you want your image animated'}</p>
+                                  <p className="text-[11px] text-gray-400">{locale === 'es' ? 'Convierte tu imagen en un Reel vertical' : 'Turn your image into a vertical Reel'}</p>
                                 </div>
                               </div>
                               <div className="flex gap-2">
@@ -1168,9 +1173,9 @@ export default function VendorSocialPage() {
                             <div className="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100 space-y-2">
                               <div className="flex items-center gap-1.5">
                                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Crear un video nuevo (Ava AI)' : 'Create a new video (Ava AI)'}</p>
+                                <p className="text-xs font-medium text-gray-800">{locale === 'es' ? 'Crear un Reel nuevo (Ava AI)' : 'Create a new Reel (Ava AI)'}</p>
                               </div>
-                              <p className="text-[11px] text-gray-400">{locale === 'es' ? 'No tienes video? Ava crea uno desde cero con tu prompt' : "Don't have a video? Ava creates one from scratch with your prompt"}</p>
+                              <p className="text-[11px] text-gray-400">{locale === 'es' ? 'No tienes video? Ava crea un Reel desde cero con tu prompt' : "Don't have a video? Ava creates a Reel from scratch with your prompt"}</p>
                               <div className="flex gap-2">
                                 <input
                                   type="text"
@@ -1202,7 +1207,7 @@ export default function VendorSocialPage() {
                           </div>
                           <div className="flex gap-2">
                             <input type="text" value={avaPrompt} onChange={e => setAvaPrompt(e.target.value)} onKeyDown={e => e.key === 'Enter' && !avaLoading && askAva()}
-                              placeholder={mediaMode === 'video' ? (locale === 'es' ? 'Describe el video que quieres crear...' : 'Describe the video you want to create...') : (locale === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
+                              placeholder={mediaMode === 'video' ? (locale === 'es' ? 'Describe el Reel que quieres crear...' : 'Describe the Reel you want to create...') : (locale === 'es' ? 'Describe la imagen que quieres crear...' : 'Describe the image you want to create...')}
                               className="flex-1 border border-emerald-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-emerald-400 focus:border-transparent placeholder-gray-400" />
                             <button onClick={askAva} disabled={avaLoading || !avaPrompt.trim()} className="px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex-shrink-0 inline-flex items-center gap-1.5">
                               {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -1222,7 +1227,7 @@ export default function VendorSocialPage() {
                                 ) : (
                                   <button onClick={() => generateAvaVideo(avaSuggestion)} disabled={avaLoading} className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
                                     {avaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Video className="w-3.5 h-3.5" />}
-                                    {locale === 'es' ? 'Generar Video' : 'Generate Video'}
+                                    {locale === 'es' ? 'Generar Reel' : 'Generate Reel'}
                                   </button>
                                 )}
                                 <button onClick={() => { setAvaSuggestion(''); setAvaMessage(''); }} className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50"><X className="w-3.5 h-3.5" /></button>
