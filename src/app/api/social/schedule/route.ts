@@ -182,7 +182,7 @@ export async function PATCH(request: NextRequest) {
     .eq('id', post_id)
     .single();
 
-  if (!post || !['draft', 'scheduled'].includes(post.status)) {
+  if (!post || !['draft', 'scheduled', 'pending', 'failed'].includes(post.status)) {
     return NextResponse.json({ error: 'Post not found or cannot be modified' }, { status: 404 });
   }
 

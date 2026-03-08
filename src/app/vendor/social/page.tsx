@@ -715,6 +715,23 @@ export default function VendorSocialPage() {
     }
   };
 
+  // ── Delete a draft (or pending/failed) post ──
+  const deletePost = async (postId: string) => {
+    if (!confirm(locale === 'es' ? '¿Eliminar este post?' : 'Delete this post?')) return;
+    try {
+      const res = await fetch('/api/social/schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: postId, action: 'cancel' }),
+      });
+      if (res.ok) {
+        setPosts(prev => prev.filter(p => p.id !== postId));
+        setTotal(prev => prev - 1);
+        fetchCalendar();
+      }
+    } catch { /* noop */ }
+  };
+
   // ── Calendar data grouped by date ──
   const postsByDate = useMemo(() => {
     const map = new Map<string, SocialPost[]>();
@@ -1706,7 +1723,7 @@ export default function VendorSocialPage() {
                             <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
                             <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
                             <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
-                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} /></td>
+                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -1728,7 +1745,7 @@ export default function VendorSocialPage() {
                         <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
-                          <PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} />
+                          <PostActions post={post} retrying={retrying} onRetry={handleRetry} onEditDraft={loadDraft} onDelete={deletePost} />
                         </div>
                       </div>
                     ))}
@@ -1953,7 +1970,7 @@ function StatusBadge({ status, error, scheduledAt }: { status: string; error: st
   }
 }
 
-function PostActions({ post, retrying, onRetry, onEditDraft }: { post: SocialPost; retrying: string | null; onRetry: (id: string) => void; onEditDraft?: (post: SocialPost) => void }) {
+function PostActions({ post, retrying, onRetry, onEditDraft, onDelete }: { post: SocialPost; retrying: string | null; onRetry: (id: string) => void; onEditDraft?: (post: SocialPost) => void; onDelete?: (id: string) => void }) {
   return (
     <div className="flex items-center gap-2">
       {post.platform_post_url && (
@@ -1964,6 +1981,11 @@ function PostActions({ post, retrying, onRetry, onEditDraft }: { post: SocialPos
       {post.status === 'draft' && onEditDraft && (
         <button onClick={() => onEditDraft(post)} className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
           <Eye className="w-3.5 h-3.5" /> Edit
+        </button>
+      )}
+      {(post.status === 'draft' || post.status === 'pending' || post.status === 'failed') && onDelete && (
+        <button onClick={() => onDelete(post.id)} className="text-xs text-red-500 hover:text-red-700 inline-flex items-center gap-1">
+          <X className="w-3.5 h-3.5" /> Delete
         </button>
       )}
       {post.status === 'failed' && (post.retry_count || 0) < 3 && (
