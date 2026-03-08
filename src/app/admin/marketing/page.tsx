@@ -19,6 +19,7 @@ interface QueueItem {
   caption_instagram: string | null;
   hashtags: string[];
   image_url: string | null;
+  image_prompt: string | null;
   deal_id: string | null;
   vendor_id: string | null;
   ai_reasoning: string | null;
@@ -51,6 +52,7 @@ interface AgentRun {
   started_at: string;
   completed_at: string | null;
   duration_ms: number | null;
+  created_at?: string;
 }
 
 const CONTENT_TYPE_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
@@ -100,6 +102,11 @@ export default function AdminMarketingPage() {
   const [regeneratingImage, setRegeneratingImage] = useState(false);
   const [generatingVideo, setGeneratingVideo] = useState(false);
   const [imagePromptInput, setImagePromptInput] = useState('');
+  const [avaFeedback, setAvaFeedback] = useState('');
+  const [avaRefining, setAvaRefining] = useState(false);
+  const [avaExplanation, setAvaExplanation] = useState('');
+  const [avaTips, setAvaTips] = useState<string[]>([]);
+  const [mediaMode, setMediaMode] = useState<'image' | 'video'>('image');
   const [avaSuggestions, setAvaSuggestions] = useState<{type: string; idea: string; why: string; hook: string}[]>([]);
   const [avaLoading, setAvaLoading] = useState(false);
   const [avaLoaded, setAvaLoaded] = useState(false);
@@ -379,15 +386,60 @@ export default function AdminMarketingPage() {
     setGeneratingVideo(false);
   };
 
+  const handleAskAvaPrompt = async (item: QueueItem) => {
+    setAvaRefining(true);
+    setAvaExplanation('');
+    setAvaTips([]);
+    try {
+      const res = await fetch('/api/admin/marketing/ava-image-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: item.caption_facebook || item.caption_instagram || '',
+          current_prompt: imagePromptInput || item.image_prompt || null,
+          feedback: avaFeedback.trim() || null,
+          mode: mediaMode,
+        }),
+      });
+      const data = await res.json();
+      if (data.refined_prompt) {
+        setImagePromptInput(data.refined_prompt);
+        setAvaExplanation(data.explanation || '');
+        setAvaTips(data.tips || []);
+        setAvaFeedback('');
+      } else {
+        alert(data.error || 'Ava could not refine the prompt. Try again.');
+      }
+    } catch {
+      alert('Failed to reach Ava. Try again.');
+    }
+    setAvaRefining(false);
+  };
+
+  // Clean caption text — strip JSON wrapping, literal \n, extra quotes
+  const cleanCaption = (raw: unknown): string => {
+    if (!raw) return '';
+    let s = typeof raw === 'string' ? raw : JSON.stringify(raw);
+    if (s.startsWith('{') && s.includes('"caption"')) {
+      try { s = JSON.parse(s).caption || s; } catch { /* use as-is */ }
+    }
+    s = s.replace(/\\n/g, '\n').replace(/^["']+|["']+$/g, '').trim();
+    return s;
+  };
+
   const openPreview = (item: QueueItem) => {
     setSelectedItem(item);
     setEditCaption({
-      facebook: item.caption_facebook || '',
-      instagram: item.caption_instagram || '',
+      facebook: cleanCaption(item.caption_facebook),
+      instagram: cleanCaption(item.caption_instagram),
     });
     setEditingCaption(false);
     setPreviewPlatform('facebook');
-    setImagePromptInput('');
+    setImagePromptInput(item.image_prompt || '');
+    setAvaFeedback('');
+    setAvaExplanation('');
+    setAvaTips([]);
+    setMediaMode('image');
   };
 
   const formatDate = (d: string) => new Date(d).toLocaleString('en-US', {
@@ -405,14 +457,6 @@ export default function AdminMarketingPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">AI-powered social media content for Facebook & Instagram</p>
         </div>
-        <button
-          onClick={() => handleGenerate()}
-          disabled={generating}
-          className="btn-primary flex items-center gap-2"
-        >
-          {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {generating ? 'Generating...' : 'Generate Content'}
-        </button>
       </div>
 
       {/* Ava's Suggestions Section */}
@@ -696,7 +740,7 @@ export default function AdminMarketingPage() {
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <Sparkles className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No content yet</p>
-              <p className="text-sm text-gray-400 mt-1">Click &quot;Generate Content&quot; to create AI-powered posts</p>
+              <p className="text-sm text-gray-400 mt-1">Create a post above or use Ava&apos;s suggestions to get started</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -775,54 +819,68 @@ export default function AdminMarketingPage() {
         </>
       )}
 
-      {/* Post History Tab */}
+      {/* Post History Tab — Bento Grid */}
       {activeTab === 'history' && (
-        <div className="space-y-3">
+        <div>
           {items.filter(i => i.status === 'posted').length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <Send className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">No posts yet</p>
             </div>
           ) : (
-            items.filter(i => i.status === 'posted').map(item => (
-              <div key={item.id} className="bg-white border rounded-xl p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-medium text-sm">{CONTENT_TYPE_CONFIG[item.content_type]?.label}</span>
-                    <span className="text-xs text-gray-400 ml-2">{item.posted_at ? formatDate(item.posted_at) : ''}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    {item.facebook_post_url && (
-                      <a href={item.facebook_post_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs flex items-center gap-1">
-                        <Facebook className="w-3 h-3" /> View
-                      </a>
-                    )}
-                    {item.instagram_post_url && (
-                      <a href={item.instagram_post_url} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline text-xs flex items-center gap-1">
-                        <Instagram className="w-3 h-3" /> View
-                      </a>
-                    )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.filter(i => i.status === 'posted').map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => openPreview(item)}
+                  className="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all group"
+                >
+                  {/* Image thumbnail */}
+                  {item.image_url && (
+                    <div className="h-36 overflow-hidden bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    </div>
+                  )}
+                  <div className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${CONTENT_TYPE_CONFIG[item.content_type]?.color || 'bg-gray-100 text-gray-600'}`}>
+                        {CONTENT_TYPE_CONFIG[item.content_type]?.label || item.content_type}
+                      </span>
+                      <div className="flex gap-1.5">
+                        {item.facebook_post_url && <Facebook className="w-3.5 h-3.5 text-blue-600" />}
+                        {item.instagram_post_url && <Instagram className="w-3.5 h-3.5 text-pink-500" />}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 line-clamp-3">{cleanCaption(item.caption_facebook) || cleanCaption(item.caption_instagram)}</p>
+                    <p className="text-[10px] text-gray-400 mt-2">{item.posted_at ? formatDate(item.posted_at) : ''}</p>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">{item.caption_facebook || item.caption_instagram}</p>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
 
-      {/* Agent Runs Tab */}
+      {/* Agent Runs Tab — Bento Grid */}
       {activeTab === 'agent' && (
-        <div className="space-y-3">
-          <div className="flex gap-2 mb-4">
-            {['morning', 'afternoon', 'evening'].map(type => (
+        <div>
+          {/* Trigger Buttons */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {[
+              { type: 'morning', icon: '🌅', label: 'Morning Run', desc: 'Analyze deals & generate content' },
+              { type: 'afternoon', icon: '☀️', label: 'Afternoon Run', desc: 'Boost engagement & promotions' },
+              { type: 'evening', icon: '🌙', label: 'Evening Run', desc: 'Schedule next-day content' },
+            ].map(({ type, icon, label, desc }) => (
               <button
                 key={type}
                 onClick={() => handleGenerate(type)}
                 disabled={generating}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700"
+                className="bg-white border border-gray-200 rounded-xl p-4 text-left hover:shadow-md hover:border-orange-300 transition-all disabled:opacity-50 group"
               >
-                Run {type}
+                <span className="text-2xl">{icon}</span>
+                <p className="font-medium text-sm text-gray-900 mt-2 group-hover:text-orange-600 transition-colors">{label}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
               </button>
             ))}
           </div>
@@ -831,48 +889,58 @@ export default function AdminMarketingPage() {
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <RefreshCw className="w-10 h-10 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">No agent runs yet</p>
+              <p className="text-xs text-gray-400 mt-1">Click a run button above to start</p>
             </div>
           ) : (
-            runs.map(run => (
-              <div key={run.id} className="bg-white border rounded-xl p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm">{run.run_id}</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600">{run.run_type}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {runs.map(run => (
+                <div key={run.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
+                  {/* Header */}
+                  <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${run.duration_ms ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`} />
+                      <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]">{run.run_id}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600 capitalize">{run.run_type}</span>
                   </div>
-                  <span className="text-xs text-gray-400">
-                    {run.duration_ms ? `${(run.duration_ms / 1000).toFixed(1)}s` : 'Running...'}
-                  </span>
+                  {/* Stats grid */}
+                  <div className="px-4 pb-3">
+                    <div className="grid grid-cols-5 gap-1.5 text-xs">
+                      <div className="bg-gray-50 rounded-lg p-2 text-center">
+                        <p className="font-bold text-gray-900">{run.deals_analyzed}</p>
+                        <p className="text-[10px] text-gray-400">Analyzed</p>
+                      </div>
+                      <div className="bg-orange-50 rounded-lg p-2 text-center">
+                        <p className="font-bold text-orange-600">{run.promotions_generated}</p>
+                        <p className="text-[10px] text-gray-400">Promos</p>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-2 text-center">
+                        <p className="font-bold text-blue-600">{run.brand_content_generated}</p>
+                        <p className="text-[10px] text-gray-400">Brand</p>
+                      </div>
+                      <div className="bg-green-50 rounded-lg p-2 text-center">
+                        <p className="font-bold text-green-600">{run.auto_posted}</p>
+                        <p className="text-[10px] text-gray-400">Posted</p>
+                      </div>
+                      <div className="bg-amber-50 rounded-lg p-2 text-center">
+                        <p className="font-bold text-amber-600">{run.queued_for_approval}</p>
+                        <p className="text-[10px] text-gray-400">Queued</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Footer */}
+                  <div className="px-4 py-2 border-t bg-gray-50/50 flex items-center justify-between text-[10px] text-gray-400">
+                    <span>{run.duration_ms ? `${(run.duration_ms / 1000).toFixed(1)}s` : '⏳ Running...'}</span>
+                    <span>{new Date(run.created_at || '').toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                  </div>
+                  {run.errors?.length ? (
+                    <div className="px-4 py-2 text-xs text-red-500 bg-red-50 border-t border-red-100">
+                      {run.errors.join('; ')}
+                    </div>
+                  ) : null}
                 </div>
-                <div className="grid grid-cols-5 gap-2 text-xs">
-                  <div className="bg-gray-50 rounded p-2 text-center">
-                    <p className="font-bold text-gray-900">{run.deals_analyzed}</p>
-                    <p className="text-gray-400">Analyzed</p>
-                  </div>
-                  <div className="bg-orange-50 rounded p-2 text-center">
-                    <p className="font-bold text-orange-600">{run.promotions_generated}</p>
-                    <p className="text-gray-400">Promotions</p>
-                  </div>
-                  <div className="bg-blue-50 rounded p-2 text-center">
-                    <p className="font-bold text-blue-600">{run.brand_content_generated}</p>
-                    <p className="text-gray-400">Brand</p>
-                  </div>
-                  <div className="bg-green-50 rounded p-2 text-center">
-                    <p className="font-bold text-green-600">{run.auto_posted}</p>
-                    <p className="text-gray-400">Posted</p>
-                  </div>
-                  <div className="bg-amber-50 rounded p-2 text-center">
-                    <p className="font-bold text-amber-600">{run.queued_for_approval}</p>
-                    <p className="text-gray-400">Queued</p>
-                  </div>
-                </div>
-                {run.errors?.length ? (
-                  <div className="mt-2 text-xs text-red-500 bg-red-50 rounded p-2">
-                    {run.errors.join('; ')}
-                  </div>
-                ) : null}
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}
@@ -960,8 +1028,8 @@ export default function AdminMarketingPage() {
       {/* Preview/Edit Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="p-6">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="p-6 overflow-y-auto flex-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-lg">
@@ -1129,41 +1197,116 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
-              {/* Regenerate Image / Generate Video */}
+              {/* Ava AI Media Tools */}
               {selectedItem.status !== 'posted' && (
                 <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3">
-                  <p className="text-sm font-medium text-emerald-800 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-emerald-600" /> AI Media Tools
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-emerald-800 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-emerald-600" /> Ava AI Media Tools
+                    </p>
+                    {/* Image / Video toggle */}
+                    <div className="flex bg-emerald-100 rounded-lg p-0.5">
+                      <button
+                        onClick={() => setMediaMode('image')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mediaMode === 'image' ? 'bg-emerald-600 text-white' : 'text-emerald-700 hover:text-emerald-900'}`}
+                      >
+                        <ImagePlus className="w-3 h-3 inline mr-1" />Image
+                      </button>
+                      <button
+                        onClick={() => setMediaMode('video')}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mediaMode === 'video' ? 'bg-emerald-600 text-white' : 'text-emerald-700 hover:text-emerald-900'}`}
+                      >
+                        <Film className="w-3 h-3 inline mr-1" />Video
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Step 1: Ask Ava for help */}
+                  <div className="bg-white border border-emerald-200 rounded-lg p-3 space-y-2">
+                    <p className="text-xs font-medium text-emerald-700">
+                      Tell Ava what you want (or what you didn&apos;t like):
+                    </p>
+                    <textarea
+                      value={avaFeedback}
+                      onChange={e => setAvaFeedback(e.target.value)}
+                      placeholder={mediaMode === 'video'
+                        ? "e.g. 'Make it energetic with latin music and quick cuts of Orlando restaurants'"
+                        : "e.g. 'The image was too generic — show diverse Orlando business owners smiling'"
+                      }
+                      rows={2}
+                      className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-gray-400"
+                    />
+                    <button
+                      onClick={() => handleAskAvaPrompt(selectedItem)}
+                      disabled={avaRefining}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors w-full justify-center"
+                    >
+                      {avaRefining ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                      {avaRefining ? 'Ava is thinking...' : `Ask Ava to craft ${mediaMode} prompt`}
+                    </button>
+                  </div>
+
+                  {/* Ava explanation */}
+                  {avaExplanation && (
+                    <div className="bg-emerald-100/50 rounded-lg p-3 text-sm">
+                      <p className="font-medium text-emerald-800 mb-1 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Ava says:
+                      </p>
+                      <p className="text-emerald-700">{avaExplanation}</p>
+                      {avaTips.length > 0 && (
+                        <ul className="mt-2 space-y-0.5">
+                          {avaTips.map((tip, i) => (
+                            <li key={i} className="text-xs text-emerald-600 flex items-start gap-1">
+                              <span className="mt-0.5">&#x2728;</span> {tip}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Step 2: Refined prompt (editable) + Generate */}
                   <div>
-                    <input
-                      type="text"
+                    <label className="text-xs font-medium text-emerald-700 mb-1 block">
+                      {mediaMode === 'video' ? 'Video' : 'Image'} prompt {imagePromptInput ? '(Ava-refined — edit if needed)' : '(or type your own)'}:
+                    </label>
+                    <textarea
                       value={imagePromptInput}
                       onChange={e => setImagePromptInput(e.target.value)}
-                      placeholder="Custom prompt (optional) — e.g. 'Warm restaurant scene with happy customers'"
-                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white placeholder:text-gray-400"
+                      placeholder={mediaMode === 'video'
+                        ? "Describe the video: motion, transitions, music mood, pacing..."
+                        : "Describe the image: scene, lighting, composition, style..."
+                      }
+                      rows={3}
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 bg-white placeholder:text-gray-400 resize-none"
                     />
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleRegenerateImage(selectedItem)}
-                      disabled={regeneratingImage}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
-                    >
-                      {regeneratingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
-                      {selectedItem.image_url ? 'Regenerate Image' : 'Generate Image'}
-                    </button>
-                    <button
-                      onClick={() => handleGenerateVideoFromModal(selectedItem)}
-                      disabled={generatingVideo || !selectedItem.image_url}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
-                      Generate Video
-                    </button>
+                    {mediaMode === 'image' ? (
+                      <button
+                        onClick={() => handleRegenerateImage(selectedItem)}
+                        disabled={regeneratingImage || !imagePromptInput.trim()}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {regeneratingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImagePlus className="w-3.5 h-3.5" />}
+                        {regeneratingImage ? 'Generating...' : selectedItem.image_url ? 'Regenerate Image' : 'Generate Image'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleGenerateVideoFromModal(selectedItem)}
+                        disabled={generatingVideo || !selectedItem.image_url || !imagePromptInput.trim()}
+                        className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
+                        {generatingVideo ? 'Generating...' : 'Generate Video'}
+                      </button>
+                    )}
                   </div>
-                  {!selectedItem.image_url && (
+                  {mediaMode === 'video' && !selectedItem.image_url && (
                     <p className="text-xs text-emerald-600">Generate an image first to enable video creation.</p>
+                  )}
+                  {!imagePromptInput.trim() && (
+                    <p className="text-xs text-emerald-600">Ask Ava for help above, or type a prompt directly to enable generation.</p>
                   )}
                 </div>
               )}
@@ -1232,8 +1375,10 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
-              {/* Primary Actions */}
-              <div className="flex flex-wrap gap-2 pt-4 border-t">
+            </div>
+            {/* Sticky Action Bar */}
+            <div className="border-t bg-gray-50 rounded-b-2xl px-6 py-4">
+              <div className="flex flex-wrap gap-2">
                 {/* Save edits */}
                 {(editCaption.facebook !== selectedItem.caption_facebook || editCaption.instagram !== selectedItem.caption_instagram) && selectedItem.status !== 'posted' && (
                   <button
@@ -1267,7 +1412,7 @@ export default function AdminMarketingPage() {
                 )}
 
                 {/* Post Now */}
-                {['draft', 'approved', 'scheduled'].includes(selectedItem.status) && (
+                {['draft', 'approved', 'scheduled', 'failed'].includes(selectedItem.status) && (
                   <button
                     onClick={() => handlePostNow(selectedItem.id)}
                     disabled={actionLoading === selectedItem.id}

@@ -39,10 +39,17 @@ export async function postMarketingContent(
     return { success: false, errors };
   }
 
-  // Determine image URL
-  const imageUrl = item.image_url || (item.deal_id
-    ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/api/social/generate-image?deal_id=${item.deal_id}`
+  // Determine image URL — resolve /media/ paths to full public URLs
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let imageUrl = item.image_url || (item.deal_id
+    ? `${appUrl}/api/social/generate-image?deal_id=${item.deal_id}`
     : null);
+  if (imageUrl?.startsWith('/media/') && supabaseUrl) {
+    imageUrl = `${supabaseUrl}/storage/v1/object/public/${imageUrl.replace('/media/', '')}`;
+  } else if (imageUrl?.startsWith('/')) {
+    imageUrl = `${appUrl}${imageUrl}`;
+  }
 
   for (const conn of connections) {
     try {
@@ -68,7 +75,6 @@ export async function postMarketingContent(
         }
       }
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
       const claimUrl = item.deal_id ? `${appUrl}/deals/${item.deal_id}` : appUrl;
       const postImage = imageUrl || `${appUrl}/logo-og.png`;
 

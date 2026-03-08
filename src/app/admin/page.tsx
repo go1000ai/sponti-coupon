@@ -1022,6 +1022,7 @@ export default function AdminOverviewPage() {
                             <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.account')}</th>
                             <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.users.status')}</th>
                             <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.social.lastPost')}</th>
+                            <th className="text-left py-3 px-4 font-medium text-gray-500">{t('admin.users.actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1052,6 +1053,16 @@ export default function AdminOverviewPage() {
                                 {conn.last_posted_at
                                   ? new Date(conn.last_posted_at).toLocaleDateString()
                                   : t('admin.social.never')}
+                              </td>
+                              <td className="py-3 px-4">
+                                <button
+                                  onClick={() => disconnectAccount(conn.id)}
+                                  disabled={disconnecting === conn.id}
+                                  className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                                >
+                                  {disconnecting === conn.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                                  {t('admin.social.disconnect')}
+                                </button>
                               </td>
                             </tr>
                           ))}

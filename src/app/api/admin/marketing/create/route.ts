@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         output_format: {
           facebook: 'Facebook caption (200-400 chars). Include links to sponticoupon.com. Emojis, hashtags, engaging.',
           instagram: 'Instagram caption (200-350 chars). No links. Use "Link in bio". 5-8 hashtags.',
-          image_prompt: 'A detailed visual description for AI image generation. Photorealistic, vibrant, no text overlays. Describe the scene, lighting, composition, colors, mood. Must relate to the post content. 1-3 sentences.',
+          image_prompt: 'A detailed visual description for AI image generation. MUST be photorealistic (real photography look) unless user says otherwise. Describe scene, lighting, composition, colors, mood. NEVER include any text, words, letters, signs, displays, watermarks, logos, or overlays. 1-3 sentences.',
           video_prompt: 'Only if video requested. Describe motion, transitions, pacing, music mood, camera angles. 1-3 sentences.',
           reasoning: 'Brief explanation of your marketing strategy for this post.',
           target_audience: 'vendors | customers | both',
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
           'Match tone to content type',
           'Include specific details (prices, numbers, names) exactly as given',
           'Natural and engaging, not corporate',
-          'Image prompt: NO text, watermarks, logos, or overlays. Just visual scene.',
+          'CRITICAL image_prompt rule: ALWAYS photorealistic (real photography). NEVER include ANY text, words, letters, numbers, signs, screens, digital displays, watermarks, logos, or overlays of any kind. Describe only visual scenes without readable content.',
+          'NEVER use purple, violet, or indigo in image prompts — brand colors are orange and blue',
           'Return ONLY valid JSON, no markdown fences',
         ],
       }),
@@ -90,6 +91,24 @@ export async function POST(request: NextRequest) {
     } catch {
       return NextResponse.json({ error: 'AI generated invalid response. Try again.' }, { status: 500 });
     }
+
+    // Clean captions — strip any nested JSON wrapping, literal \n, extra quotes
+    const cleanCaption = (raw: unknown): string => {
+      if (!raw) return '';
+      let s = typeof raw === 'string' ? raw : JSON.stringify(raw);
+      // If AI wrapped in JSON like {"caption":"..."}, extract the value
+      if (s.startsWith('{') && s.includes('"caption"')) {
+        try { s = JSON.parse(s).caption || s; } catch { /* use as-is */ }
+      }
+      // Replace literal \n with actual newlines
+      s = s.replace(/\\n/g, '\n');
+      // Trim leading/trailing whitespace and quotes
+      s = s.replace(/^["']+|["']+$/g, '').trim();
+      return s;
+    };
+
+    parsed.facebook = cleanCaption(parsed.facebook);
+    parsed.instagram = cleanCaption(parsed.instagram);
 
     const supabase = await createServiceRoleClient();
     let finalImageUrl = image_url || null;
