@@ -891,7 +891,7 @@ export default function VendorSocialPage() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-700">
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold mr-1.5">1</span>
-                        {locale === 'es' ? 'Selecciona un deal' : 'Select a deal'}
+                        {locale === 'es' ? 'Paso 1: Selecciona un deal' : 'Step 1: Select a Deal'}
                         {deals.length > 0 && <span className="text-xs text-gray-400 font-normal ml-1.5">({filteredDeals.length})</span>}
                       </p>
                       <div className="flex bg-gray-100 rounded-lg p-0.5">
@@ -1000,7 +1000,7 @@ export default function VendorSocialPage() {
                   <div data-tour="social-media-section" className="mb-4 space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
                     <p className="text-sm font-medium text-gray-700">
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold mr-1.5">2</span>
-                      {locale === 'es' ? 'Elige tu multimedia y estilo' : 'Choose your media & style'}
+                      {locale === 'es' ? 'Paso 2: Elige tu multimedia y estilo' : 'Step 2: Choose Your Media & Style'}
                     </p>
 
                     {loadingMedia ? (
@@ -1368,7 +1368,7 @@ export default function VendorSocialPage() {
                       >
                         {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
                         <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/20 text-[10px] font-bold mr-0.5">3</span>
-                        {locale === 'es' ? 'Generar Vista Previa' : 'Generate Preview'}
+                        {locale === 'es' ? 'Paso 3: Generar Vista Previa' : 'Step 3: Generate Preview'}
                       </button>
                     </div>
                   </div>
