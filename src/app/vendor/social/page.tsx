@@ -13,6 +13,8 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
 import { useLanguage } from '@/lib/i18n';
+import { GuidedTour } from '@/components/ui/GuidedTour';
+import { SOCIAL_PAGE_TOUR_STEPS } from '@/lib/constants/tour-steps';
 
 /* ─── Platform config ─── */
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -735,6 +737,7 @@ export default function VendorSocialPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6">
+      <GuidedTour tourKey="social-page" steps={SOCIAL_PAGE_TOUR_STEPS} />
       {/* Header */}
       <div className="flex items-center gap-3 mb-2">
         <Share2 className="w-7 h-7 text-[#E8632B]" />
@@ -766,7 +769,7 @@ export default function VendorSocialPage() {
         ) : (
           <>
             {/* ── Connection Status Bar ── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+            <div data-tour="social-connections" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
               {PLATFORMS.map(({ key, label, icon, iconColor, bgColor, borderColor, connectUrl, available }) => {
                 const conn = connections.find(c => c.platform === key);
                 const isConnected = !!conn;
@@ -817,7 +820,7 @@ export default function VendorSocialPage() {
                 )}
 
                 {/* Step 1: Deal selector */}
-                <div className="mb-4 space-y-3">
+                <div data-tour="social-deal-select" className="mb-4 space-y-3">
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-700">
@@ -928,7 +931,7 @@ export default function VendorSocialPage() {
 
                 {/* Step 2: Choose media + tone (shown when deal is selected, BEFORE Generate Preview) */}
                 {selectedDealId && (
-                  <div className="mb-4 space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                  <div data-tour="social-media-section" className="mb-4 space-y-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
                     <p className="text-sm font-medium text-gray-700">
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold mr-1.5">2</span>
                       {locale === 'es' ? 'Elige tu multimedia y estilo' : 'Choose your media & style'}
@@ -942,7 +945,7 @@ export default function VendorSocialPage() {
                     ) : (
                       <div className="space-y-3">
                         {/* Post / Reel toggle */}
-                        <div className="flex items-center justify-between">
+                        <div data-tour="social-post-reel" className="flex items-center justify-between">
                           <span className="text-xs font-medium text-gray-600">{locale === 'es' ? '¿Qué quieres crear?' : 'What do you want to create?'}</span>
                           <div className="flex bg-white rounded-lg p-0.5 border border-gray-200">
                             <button onClick={() => setMediaMode('image')} className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${mediaMode === 'image' ? 'bg-[#E8632B] text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
@@ -1198,7 +1201,7 @@ export default function VendorSocialPage() {
                         )}
 
                         {/* Ava AI Assistant */}
-                        <div className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
+                        <div data-tour="social-ava" className="border border-emerald-200 rounded-xl bg-emerald-50/50 p-3 space-y-2.5">
                           <div className="flex items-center gap-2">
                             <Sparkles className="w-4 h-4 text-emerald-600" />
                             <span className="text-sm font-semibold text-emerald-800">{locale === 'es' ? 'Pregúntale a Ava' : 'Ask Ava'}</span>
@@ -1269,7 +1272,7 @@ export default function VendorSocialPage() {
                         </div>
 
                         {/* Tone / Style */}
-                        <div>
+                        <div data-tour="social-tone">
                           <label className="block text-xs font-medium text-gray-600 mb-1">
                             {locale === 'es' ? 'Tono / Estilo de los captions' : 'Caption tone / style'}
                           </label>
@@ -1291,7 +1294,7 @@ export default function VendorSocialPage() {
                     )}
 
                     {/* Generate Preview button (Step 3) */}
-                    <div className="pt-2">
+                    <div data-tour="social-generate" className="pt-2">
                       <button
                         onClick={generatePreview}
                         disabled={!selectedDealId || loadingPreview}
@@ -1313,7 +1316,7 @@ export default function VendorSocialPage() {
                   return (
                   <div className="space-y-4">
                     {/* Platform Mockups */}
-                    <div className="space-y-4">
+                    <div data-tour="social-mockups" className="space-y-4">
                       {/* Facebook Mockup */}
                       {connectedPlatforms.has('facebook') && (
                         <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
@@ -1512,7 +1515,7 @@ export default function VendorSocialPage() {
                     </div>
 
                     {/* Action buttons — stacked for mobile */}
-                    <div className="space-y-2 pt-3 border-t border-gray-100">
+                    <div data-tour="social-actions" className="space-y-2 pt-3 border-t border-gray-100">
                       <button
                         onClick={() => handleAction('post_now')}
                         disabled={scheduling}
@@ -1610,7 +1613,7 @@ export default function VendorSocialPage() {
             </div>
 
             {/* ── Calendar / Bento View ── */}
-            <div className="card overflow-hidden mb-8 border border-gray-200 rounded-xl">
+            <div data-tour="social-calendar" className="card overflow-hidden mb-8 border border-gray-200 rounded-xl">
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-900">Content Calendar</h2>
                 <div className="flex items-center gap-3">

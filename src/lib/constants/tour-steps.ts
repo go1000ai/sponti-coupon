@@ -174,6 +174,122 @@ export const VENDOR_DASHBOARD_STEPS: Step[] = [
 ];
 
 /**
+ * Social Media Page Tour
+ * Step-by-step guide to creating the most effective Post or Reel.
+ */
+export const SOCIAL_PAGE_TOUR_STEPS: Step[] = [
+  // ── Welcome ──
+  {
+    target: 'body',
+    title: 'Social Media Posting Guide',
+    content:
+      "Let's walk you through how to create an effective social media post or Reel for your deal. Follow these steps and you'll have a professional post ready in minutes!",
+    placement: 'center',
+    disableBeacon: true,
+  },
+
+  // ── Step 1: Connect platforms ──
+  {
+    target: '[data-tour="social-connections"]',
+    title: 'Step 1: Connect Your Accounts',
+    content:
+      'First, connect your social media accounts. Click "Connect" on Facebook and Instagram to link them. Once connected, your posts will go directly to your business pages.',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 2: Select a deal ──
+  {
+    target: '[data-tour="social-deal-select"]',
+    title: 'Step 2: Pick a Deal to Promote',
+    content:
+      'Choose which deal you want to post about. Pick your best-performing deal or a new one you want to push. The deal\'s image and info will be used to create your post.',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 3: Post vs Reel toggle ──
+  {
+    target: '[data-tour="social-post-reel"]',
+    title: 'Step 3: Post or Reel?',
+    content:
+      'Choose your format. A "Post" uses a static image — great for deals with eye-catching photos. A "Reel" is a short vertical video (9:16) — these get 2-3x more reach on Instagram and Facebook. If you have a good image, try a Reel!',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 4: Media options ──
+  {
+    target: '[data-tour="social-media-section"]',
+    title: 'Step 4: Choose or Create Your Media',
+    content:
+      'For Posts: pick an image from your library or use the deal\'s image. For Reels: you have two options — "Animate your image" turns your photo into a video with motion, or "Ask Ava" to create something brand new. Describe what you want — the more specific, the better!',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 5: Ava AI ──
+  {
+    target: '[data-tour="social-ava"]',
+    title: 'Pro Tip: Use Ava for Best Results',
+    content:
+      'Ava is your AI creative assistant. Tell her what you want: "fun food video with latin music and zoom on the dish" or "bright flat-lay photo of our spa products." She\'ll generate a professional image or Reel for you. Be specific about music, mood, camera angles, and style!',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 6: Tone ──
+  {
+    target: '[data-tour="social-tone"]',
+    title: 'Step 5: Set Your Caption Tone',
+    content:
+      'Pick the vibe for your captions. "Fun & playful" works great for restaurants and bars. "Professional & polished" is better for spas and services. "Urgent & exciting" drives FOMO for flash deals. The AI writes platform-specific captions in your chosen tone.',
+    placement: 'bottom',
+    disableBeacon: true,
+  },
+
+  // ── Step 7: Generate Preview ──
+  {
+    target: '[data-tour="social-generate"]',
+    title: 'Step 6: Generate Preview',
+    content:
+      'Hit this button to see exactly how your post will look on Facebook and Instagram. The AI writes tailored captions for each platform — you can edit them before posting.',
+    placement: 'top',
+    disableBeacon: true,
+  },
+
+  // ── Step 8: Preview mockups ──
+  {
+    target: '[data-tour="social-mockups"]',
+    title: 'Step 7: Review Your Post',
+    content:
+      'See realistic mockups of how your post will appear on each platform. Click "Edit caption" to tweak the text. If you chose a Reel, preview the video with sound — make sure it looks and sounds great before posting!',
+    placement: 'top',
+    disableBeacon: true,
+  },
+
+  // ── Step 9: Post / Schedule ──
+  {
+    target: '[data-tour="social-actions"]',
+    title: 'Step 8: Post, Schedule, or Save',
+    content:
+      '"Post Now" publishes immediately to all connected platforms. "Schedule" lets you pick a date and time — great for posting during peak hours (lunch time, evenings). "Save Draft" saves your work to finish later. That\'s it — you\'re a social media pro!',
+    placement: 'top',
+    disableBeacon: true,
+  },
+
+  // ── Calendar ──
+  {
+    target: '[data-tour="social-calendar"]',
+    title: 'Bonus: Content Calendar',
+    content:
+      'Track all your posts here — see what\'s scheduled, what\'s been posted, and plan your content strategy. Aim for 3-4 posts per week for best results. Consistency is key!',
+    placement: 'top',
+    disableBeacon: true,
+  },
+];
+
+/**
  * Customer Dashboard Tour
  * Comprehensive guide covering every dashboard section and sidebar tab.
  */
