@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     } catch { /* handled below */ }
   }
 
-  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/social';
   const sep = state.isBrand ? '&' : '?';
 
   if (error || !code || !stateParam) {
@@ -64,6 +64,16 @@ export async function GET(request: NextRequest) {
     const longLivedData = await longLivedRes.json();
     const userToken = longLivedData.access_token || tokenData.access_token;
 
+    // Step 2.5: Check granted permissions and user identity
+    const [permRes, meRes] = await Promise.all([
+      fetch(`${META_GRAPH_URL}/me/permissions?access_token=${userToken}`),
+      fetch(`${META_GRAPH_URL}/me?fields=id,name&access_token=${userToken}`),
+    ]);
+    const permData = await permRes.json();
+    const meData = await meRes.json();
+    console.log('[FB OAuth] User:', JSON.stringify(meData));
+    console.log('[FB OAuth] Permissions:', JSON.stringify(permData));
+
     // Step 3: Get user's Pages
     const pagesRes = await fetch(
       `${META_GRAPH_URL}/me/accounts?access_token=${userToken}&fields=id,name,access_token,picture`
@@ -77,94 +87,105 @@ export async function GET(request: NextRequest) {
       error: pagesData.error || null,
     }));
 
-    if (!pagesData.data || pagesData.data.length === 0) {
-      console.error('[FB OAuth] No pages. Full response:', JSON.stringify(pagesData));
-      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=no_pages`, appUrl));
+    let allPages = pagesData.data || [];
+
+    // Step 3b: If /me/accounts is empty, try Business API (pages managed via Business Portfolio)
+    if (allPages.length === 0) {
+      console.log('[FB OAuth] No pages from /me/accounts, trying Business API...');
+      try {
+        const bizRes = await fetch(
+          `${META_GRAPH_URL}/me/businesses?access_token=${userToken}&fields=id,name`
+        );
+        const bizData = await bizRes.json();
+        console.log('[FB OAuth] Businesses:', JSON.stringify(bizData));
+
+        if (bizData.data && bizData.data.length > 0) {
+          for (const biz of bizData.data) {
+            const bizPagesRes = await fetch(
+              `${META_GRAPH_URL}/${biz.id}/owned_pages?access_token=${userToken}&fields=id,name,access_token,picture`
+            );
+            const bizPagesData = await bizPagesRes.json();
+            console.log(`[FB OAuth] Business ${biz.name} (${biz.id}) pages:`, JSON.stringify({
+              hasData: !!bizPagesData.data,
+              count: bizPagesData.data?.length || 0,
+              error: bizPagesData.error || null,
+            }));
+            if (bizPagesData.data) {
+              allPages = [...allPages, ...bizPagesData.data];
+            }
+          }
+        }
+      } catch (bizErr) {
+        console.error('[FB OAuth] Business API fallback error:', bizErr);
+      }
+    }
+
+    if (allPages.length === 0) {
+      const grantedPerms = permData.data?.filter((p: { status: string }) => p.status === 'granted').map((p: { permission: string }) => p.permission) || [];
+      const declinedPerms = permData.data?.filter((p: { status: string }) => p.status === 'declined').map((p: { permission: string }) => p.permission) || [];
+      console.error('[FB OAuth] No pages. Granted:', grantedPerms, 'Declined:', declinedPerms, 'User:', meData.name, meData.id);
+      const debugInfo = encodeURIComponent(`Granted: ${grantedPerms.join(', ')}. Declined: ${declinedPerms.join(', ') || 'none'}. User: ${meData.name || 'unknown'}`);
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=no_pages&debug=${debugInfo}`, appUrl));
     }
 
     const supabase = await createServiceRoleClient();
 
-    // If multiple pages, store them temporarily and redirect to picker
-    if (pagesData.data.length > 1) {
-      const pages = pagesData.data.map((p: { id: string; name: string; access_token: string; picture?: { data?: { url?: string } } }) => ({
-        id: p.id,
-        name: p.name,
-        token: p.access_token,
-        avatar: p.picture?.data?.url || null,
-      }));
+    const pages = allPages.map((p: { id: string; name: string; access_token: string; picture?: { data?: { url?: string } } }) => ({
+      id: p.id,
+      name: p.name,
+      token: p.access_token,
+      avatar: p.picture?.data?.url || null,
+    }));
 
-      // Store encrypted page tokens temporarily in DB
-      const { data: tempRecord, error: tempError } = await supabase
-        .from('social_connections')
-        .upsert({
-          vendor_id: state.isBrand ? null : state.userId,
-          is_brand_account: state.isBrand,
-          platform: 'facebook',
-          access_token: encrypt(JSON.stringify(pages)),
-          refresh_token: 'PENDING_PAGE_SELECTION',
-          token_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 min expiry
-          platform_user_id: null,
-          platform_page_id: null,
-          account_name: null,
-          account_username: null,
-          account_avatar_url: null,
-          is_active: false,
-          last_error: null,
-          connected_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'vendor_id,platform,is_brand_account',
-        })
-        .select('id')
-        .single();
+    console.log('[FB OAuth] Saving pages for picker. userId:', state.userId, 'isBrand:', state.isBrand, 'pageCount:', pages.length);
 
-      if (tempError) {
-        console.error('[FB OAuth] Temp store error:', tempError);
-        return NextResponse.redirect(new URL(`${basePath}${sep}social_error=db_error`, appUrl));
-      }
+    // Delete any existing facebook connection for this vendor to avoid upsert conflicts
+    const vendorId = state.isBrand ? null : state.userId;
+    await supabase
+      .from('social_connections')
+      .delete()
+      .eq('vendor_id', vendorId)
+      .eq('platform', 'facebook')
+      .eq('is_brand_account', state.isBrand);
 
-      // Redirect with page names for the picker (no tokens in URL)
-      const pageList = pages.map((p: { id: string; name: string }) => `${p.id}:${encodeURIComponent(p.name)}`).join(',');
-      return NextResponse.redirect(new URL(`${basePath}${sep}fb_pick_page=${tempRecord?.id || 'true'}&fb_pages=${pageList}`, appUrl));
+    // Insert fresh temp record for page picker
+    const { data: tempRecord, error: tempError } = await supabase
+      .from('social_connections')
+      .insert({
+        vendor_id: vendorId,
+        is_brand_account: state.isBrand,
+        platform: 'facebook',
+        access_token: encrypt(JSON.stringify(pages)),
+        refresh_token: 'PENDING_PAGE_SELECTION',
+        token_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+        platform_user_id: null,
+        platform_page_id: null,
+        account_name: null,
+        account_username: null,
+        account_avatar_url: null,
+        is_active: false,
+        last_error: null,
+        connected_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+
+    if (tempError) {
+      console.error('[FB OAuth] Insert error:', JSON.stringify(tempError));
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_error=db_error`, appUrl));
     }
 
-    // Single page — save directly
-    const page = pagesData.data[0];
-    await savePage(supabase, state, page);
+    console.log('[FB OAuth] Temp record created:', tempRecord?.id);
 
-    return NextResponse.redirect(new URL(`${basePath}${sep}social_connected=facebook`, appUrl));
+    // Redirect with page names for the picker (no tokens in URL)
+    const pageList = pages.map((p: { id: string; name: string }) => `${p.id}:${encodeURIComponent(p.name)}`).join(',');
+    const redirectUrl = `${basePath}${sep}fb_pick_page=${tempRecord?.id || 'true'}&fb_pages=${pageList}`;
+    console.log('[FB OAuth] Redirecting to:', redirectUrl);
+    return NextResponse.redirect(new URL(redirectUrl, appUrl));
   } catch (err) {
     console.error('[FB OAuth] Error:', err);
     return NextResponse.redirect(new URL(`${basePath}${sep}social_error=unknown`, appUrl));
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function savePage(supabase: any, state: { userId: string; isBrand: boolean }, page: { id: string; name: string; access_token: string; picture?: { data?: { url?: string } } }) {
-  const { error: upsertError } = await supabase
-    .from('social_connections')
-    .upsert({
-      vendor_id: state.isBrand ? null : state.userId,
-      is_brand_account: state.isBrand,
-      platform: 'facebook',
-      access_token: encrypt(page.access_token),
-      refresh_token: null,
-      token_expires_at: null,
-      platform_user_id: null,
-      platform_page_id: page.id,
-      account_name: page.name,
-      account_username: null,
-      account_avatar_url: page.picture?.data?.url || null,
-      is_active: true,
-      last_error: null,
-      connected_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'vendor_id,platform,is_brand_account',
-    });
-
-  if (upsertError) {
-    console.error('[FB OAuth] Upsert error:', upsertError);
-    throw upsertError;
-  }
-}

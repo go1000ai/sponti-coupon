@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isBrand = request.nextUrl.searchParams.get('brand') === 'true';
-  const errorRedirect = isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const errorRedirect = isBrand ? '/admin?tab=social' : '/vendor/social';
   const sep = isBrand ? '&' : '?';
 
   if (!user) {

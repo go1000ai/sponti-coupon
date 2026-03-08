@@ -13,20 +13,20 @@ export async function GET(request: NextRequest) {
   const error = request.nextUrl.searchParams.get('error');
 
   if (error || !code || !stateParam) {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=access_denied', appUrl));
+    return NextResponse.redirect(new URL('/vendor/social?social_error=access_denied', appUrl));
   }
 
   let state: { userId: string; isBrand: boolean; codeVerifier: string };
   try {
     state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
   } catch {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=invalid_state', appUrl));
+    return NextResponse.redirect(new URL('/vendor/social?social_error=invalid_state', appUrl));
   }
 
   const clientId = process.env.TWITTER_CLIENT_ID;
   const clientSecret = process.env.TWITTER_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=not_configured', appUrl));
+    return NextResponse.redirect(new URL('/vendor/social?social_error=not_configured', appUrl));
   }
 
   const callbackUrl = `${appUrl}/api/social/connect/twitter/callback`;
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
 
     if (!tokenRes.ok || tokenData.error) {
       console.error('[Twitter OAuth] Token exchange failed:', tokenData);
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=token_exchange_failed', appUrl));
+      return NextResponse.redirect(new URL('/vendor/social?social_error=token_exchange_failed', appUrl));
     }
 
     const accessToken = tokenData.access_token;
@@ -92,13 +92,13 @@ export async function GET(request: NextRequest) {
 
     if (upsertError) {
       console.error('[Twitter OAuth] Upsert error:', upsertError);
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=db_error', appUrl));
+      return NextResponse.redirect(new URL('/vendor/social?social_error=db_error', appUrl));
     }
 
-    const redirectPath = state.isBrand ? '/admin/social' : '/vendor/settings';
+    const redirectPath = state.isBrand ? '/admin/social' : '/vendor/social';
     return NextResponse.redirect(new URL(`${redirectPath}?social_connected=twitter`, appUrl));
   } catch (err) {
     console.error('[Twitter OAuth] Error:', err);
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=unknown', appUrl));
+    return NextResponse.redirect(new URL('/vendor/social?social_error=unknown', appUrl));
   }
 }

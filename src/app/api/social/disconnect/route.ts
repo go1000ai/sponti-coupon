@@ -48,13 +48,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Soft-delete: set is_active to false
+  // Hard-delete: remove the connection so reconnect creates a fresh row
   const { error: updateError } = await serviceClient
     .from('social_connections')
-    .update({
-      is_active: false,
-      updated_at: new Date().toISOString(),
-    })
+    .delete()
     .eq('id', connection_id);
 
   if (updateError) {

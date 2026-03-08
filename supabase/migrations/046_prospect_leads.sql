@@ -18,9 +18,11 @@ CREATE INDEX idx_prospect_leads_status ON prospect_leads (status);
 CREATE INDEX idx_prospect_leads_email ON prospect_leads (email);
 CREATE INDEX idx_prospect_leads_created ON prospect_leads (created_at DESC);
 
--- Prevent duplicate emails within 24 hours
-CREATE UNIQUE INDEX idx_prospect_leads_email_24h ON prospect_leads (email)
-  WHERE created_at > now() - interval '24 hours';
+-- Prevent duplicate emails (unique constraint on email)
+-- Note: 24-hour dedup is handled in application code, not via partial index
+-- (Postgres requires IMMUTABLE functions in index predicates, and now() is STABLE)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_prospect_leads_email_unique ON prospect_leads (email)
+  WHERE status = 'new';
 
 -- RLS: only service role can read/write (admin API uses service role)
 ALTER TABLE prospect_leads ENABLE ROW LEVEL SECURITY;

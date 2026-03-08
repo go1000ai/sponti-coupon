@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     } catch { /* handled below */ }
   }
 
-  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const basePath = state.isBrand ? '/admin?tab=social' : '/vendor/social';
   const sep = state.isBrand ? '&' : '?';
 
   if (error || !code || !stateParam) {

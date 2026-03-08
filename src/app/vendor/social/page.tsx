@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Share2, Facebook, Instagram, Twitter, ExternalLink,
   CheckCircle, XCircle, Loader2, RotateCcw, BarChart3,
-  Clock, ArrowRight, AlertCircle,
+  Clock, ArrowRight, AlertCircle, Unplug, X, Eye,
+  CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
+  Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -39,6 +41,22 @@ const PLATFORM_LABELS: Record<string, string> = {
   tiktok: 'TikTok',
 };
 
+const STATUS_COLORS: Record<string, string> = {
+  posted: 'bg-green-500',
+  failed: 'bg-red-500',
+  scheduled: 'bg-blue-500',
+  draft: 'bg-gray-400',
+  pending: 'bg-yellow-500',
+  posting: 'bg-yellow-500',
+};
+
+const TIME_RANGES = [
+  { label: '7 days', days: 7 },
+  { label: '14 days', days: 14 },
+  { label: '30 days', days: 30 },
+  { label: '60 days', days: 60 },
+];
+
 /* ─── Types ─── */
 interface SocialConnectionItem {
   id: string;
@@ -59,13 +77,28 @@ interface SocialPost {
   image_url: string | null;
   claim_url: string | null;
   status: string;
+  scheduled_at: string | null;
   platform_post_id: string | null;
   platform_post_url: string | null;
   error_message: string | null;
   retry_count: number;
   created_at: string;
   posted_at: string | null;
-  deals?: { title: string; image_url: string | null } | null;
+  deals?: { title: string; image_url: string | null; deal_type: string } | null;
+}
+
+interface DealOption {
+  id: string;
+  title: string;
+  deal_type: string;
+}
+
+interface PreviewData {
+  captions: Record<string, string>;
+  image_url: string;
+  claim_url: string;
+  deal: { id: string; title: string; deal_type: string; discount_percentage: number };
+  vendor: { business_name: string; city: string | null; state: string | null };
 }
 
 /* ─── Helpers ─── */
@@ -81,29 +114,119 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatDateFull(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function getDateKey(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getDaysArray(start: Date, end: Date): Date[] {
+  const arr: Date[] = [];
+  const dt = new Date(start);
+  while (dt <= end) {
+    arr.push(new Date(dt));
+    dt.setDate(dt.getDate() + 1);
+  }
+  return arr;
+}
+
 /* ─── Main Page ─── */
 export default function VendorSocialPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { canAccess, loading: tierLoading } = useVendorTier();
 
+  // Connections
   const [connections, setConnections] = useState<SocialConnectionItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [fbPagePicker, setFbPagePicker] = useState<{ connectionId: string; pages: { id: string; name: string }[] } | null>(null);
+  const [selectingPage, setSelectingPage] = useState(false);
+
+  // Preview & Schedule
+  const [deals, setDeals] = useState<DealOption[]>([]);
+  const [selectedDealId, setSelectedDealId] = useState('');
+  const [preview, setPreview] = useState<PreviewData | null>(null);
+  const [editedCaptions, setEditedCaptions] = useState<Record<string, string>>({});
+  const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('12:00');
+
+  // Calendar / Bento
+  const [calendarPosts, setCalendarPosts] = useState<SocialPost[]>([]);
+  const [viewMode, setViewMode] = useState<'calendar' | 'bento'>('bento');
+  const [timeRange, setTimeRange] = useState(7);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
+
+  // Post history
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [retrying, setRetrying] = useState<string | null>(null);
 
   const PAGE_SIZE = 20;
+  const connectedPlatforms = useMemo(() => new Set(connections.map(c => c.platform)), [connections]);
 
+  // ── Read URL params on mount ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    const fbPickPage = params.get('fb_pick_page');
+    const fbPagesParam = params.get('fb_pages');
+    if (fbPickPage && fbPagesParam) {
+      const pages = fbPagesParam.split(',').map(entry => {
+        const [id, ...nameParts] = entry.split(':');
+        return { id, name: decodeURIComponent(nameParts.join(':')) };
+      });
+      setFbPagePicker({ connectionId: fbPickPage, pages });
+    }
+
+    const connected = params.get('social_connected');
+    if (connected) {
+      setMessage({ type: 'success', text: `${connected.charAt(0).toUpperCase() + connected.slice(1)} connected successfully!` });
+    }
+
+    const socialError = params.get('social_error');
+    if (socialError) {
+      const debugInfo = params.get('debug');
+      const errorMessages: Record<string, string> = {
+        no_pages: 'No Facebook Pages found. Make sure your Facebook account manages at least one Page.',
+        access_denied: 'You denied access. Please try again and grant the required permissions.',
+        token_exchange_failed: 'Failed to exchange token with the platform. Please try again.',
+        not_configured: 'Social platform not configured. Contact support.',
+        db_error: 'Database error saving connection. Please try again.',
+        no_instagram_business: 'No Instagram Business Account linked to your Facebook Pages.',
+      };
+      const baseMsg = errorMessages[socialError] || `Social connection failed: ${socialError}`;
+      const fullMsg = debugInfo ? `${baseMsg}\n\nDebug: ${decodeURIComponent(debugInfo)}` : baseMsg;
+      setMessage({ type: 'error', text: fullMsg });
+    }
+
+    if (fbPickPage || connected || socialError) {
+      window.history.replaceState({}, '', '/vendor/social');
+    }
+  }, []);
+
+  // ── Fetch data ──
   useEffect(() => {
     if (!user) return;
 
     async function fetchData() {
       try {
-        const [connRes, postsRes] = await Promise.all([
+        const [connRes, postsRes, dealsRes] = await Promise.all([
           fetch('/api/social/connections'),
           fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0`),
+          fetch('/api/vendor/deals?status=active&limit=50'),
         ]);
 
         if (connRes.ok) {
@@ -116,6 +239,12 @@ export default function VendorSocialPage() {
           setPosts(postsData.posts || []);
           setTotal(postsData.total || 0);
         }
+
+        if (dealsRes.ok) {
+          const dealsData = await dealsRes.json();
+          const dealsList = (dealsData.deals || dealsData || []);
+          setDeals(Array.isArray(dealsList) ? dealsList.map((d: { id: string; title: string; deal_type: string }) => ({ id: d.id, title: d.title, deal_type: d.deal_type })) : []);
+        }
       } finally {
         setLoading(false);
       }
@@ -124,6 +253,30 @@ export default function VendorSocialPage() {
     fetchData();
   }, [user]);
 
+  // ── Fetch calendar data ──
+  const fetchCalendar = useCallback(async () => {
+    if (!user) return;
+    setLoadingCalendar(true);
+    try {
+      const start = new Date();
+      start.setDate(start.getDate() - timeRange);
+      const end = new Date();
+      end.setDate(end.getDate() + timeRange);
+      const res = await fetch(`/api/social/calendar?start=${start.toISOString()}&end=${end.toISOString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCalendarPosts(data.posts || []);
+      }
+    } finally {
+      setLoadingCalendar(false);
+    }
+  }, [user, timeRange]);
+
+  useEffect(() => {
+    if (user && !loading) fetchCalendar();
+  }, [user, loading, fetchCalendar]);
+
+  // ── Actions ──
   const loadMore = async () => {
     setLoadingMore(true);
     try {
@@ -150,14 +303,7 @@ export default function VendorSocialPage() {
         setPosts(prev =>
           prev.map(p =>
             p.id === postId
-              ? {
-                  ...p,
-                  status: data.result?.status || p.status,
-                  error_message: data.result?.error || null,
-                  retry_count: (p.retry_count || 0) + 1,
-                  platform_post_url: data.result?.platform_post_url || p.platform_post_url,
-                  posted_at: data.result?.status === 'posted' ? new Date().toISOString() : p.posted_at,
-                }
+              ? { ...p, status: data.result?.status || p.status, error_message: data.result?.error || null, retry_count: (p.retry_count || 0) + 1, platform_post_url: data.result?.platform_post_url || p.platform_post_url, posted_at: data.result?.status === 'posted' ? new Date().toISOString() : p.posted_at }
               : p
           )
         );
@@ -167,14 +313,140 @@ export default function VendorSocialPage() {
     }
   };
 
+  const disconnectSocial = async (connectionId: string, platform: string) => {
+    if (!confirm(`Disconnect ${platform}? Future deals won't auto-post to this account.`)) return;
+    setDisconnecting(connectionId);
+    try {
+      const res = await fetch('/api/social/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_id: connectionId }),
+      });
+      if (res.ok) {
+        setConnections(prev => prev.filter(c => c.id !== connectionId));
+        setMessage({ type: 'success', text: `${platform} disconnected.` });
+      } else {
+        setMessage({ type: 'error', text: 'Failed to disconnect. Try again.' });
+      }
+    } finally {
+      setDisconnecting(null);
+    }
+  };
+
+  const selectFbPage = async (pageId: string) => {
+    if (!fbPagePicker) return;
+    setSelectingPage(true);
+    try {
+      const res = await fetch('/api/social/select-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_id: fbPagePicker.connectionId, page_id: pageId }),
+      });
+      if (res.ok) {
+        setFbPagePicker(null);
+        setMessage({ type: 'success', text: 'Facebook Page connected!' });
+        const connRes = await fetch('/api/social/connections');
+        if (connRes.ok) {
+          const connData = await connRes.json();
+          setConnections(connData.vendor || []);
+        }
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error || 'Failed to select page.' });
+      }
+    } finally {
+      setSelectingPage(false);
+    }
+  };
+
+  // ── Preview ──
+  const generatePreview = async () => {
+    if (!selectedDealId) return;
+    setLoadingPreview(true);
+    setPreview(null);
+    try {
+      const res = await fetch('/api/social/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_id: selectedDealId }),
+      });
+      if (res.ok) {
+        const data: PreviewData = await res.json();
+        setPreview(data);
+        setEditedCaptions({ ...data.captions });
+        setEditingPlatform(null);
+      } else {
+        const err = await res.json();
+        setMessage({ type: 'error', text: err.error || 'Failed to generate preview' });
+      }
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // ── Schedule / Post ──
+  const handleAction = async (action: 'post_now' | 'schedule' | 'draft') => {
+    if (!preview) return;
+    setScheduling(true);
+    try {
+      const activePlatforms = Array.from(connectedPlatforms);
+      const body: Record<string, unknown> = {
+        deal_id: preview.deal.id,
+        platforms: activePlatforms,
+        captions: editedCaptions,
+        action,
+      };
+      if (action === 'schedule' && scheduleDate) {
+        body.scheduled_at = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      }
+
+      const res = await fetch('/api/social/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        const labels = { post_now: 'Posts sent!', schedule: 'Posts scheduled!', draft: 'Saved as draft.' };
+        setMessage({ type: 'success', text: labels[action] });
+        setPreview(null);
+        setSelectedDealId('');
+        fetchCalendar();
+        // Refresh post history
+        const postsRes = await fetch(`/api/social/posts?limit=${PAGE_SIZE}&offset=0`);
+        if (postsRes.ok) {
+          const postsData = await postsRes.json();
+          setPosts(postsData.posts || []);
+          setTotal(postsData.total || 0);
+        }
+      } else {
+        const err = await res.json();
+        setMessage({ type: 'error', text: err.error || 'Failed to process' });
+      }
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  // ── Calendar data grouped by date ──
+  const postsByDate = useMemo(() => {
+    const map = new Map<string, SocialPost[]>();
+    calendarPosts.forEach(p => {
+      const dateStr = p.scheduled_at || p.posted_at || p.created_at;
+      const key = getDateKey(dateStr);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(p);
+    });
+    return map;
+  }, [calendarPosts]);
+
   // Stats
   const totalPosts = total;
   const postedCount = posts.filter(p => p.status === 'posted').length;
   const failedCount = posts.filter(p => p.status === 'failed').length;
+  const scheduledCount = calendarPosts.filter(p => p.status === 'scheduled').length;
   const successRate = totalPosts > 0 ? Math.round((postedCount / posts.length) * 100) : 0;
   const lastPosted = posts.find(p => p.status === 'posted')?.posted_at;
-
-  const connectedPlatforms = new Set(connections.map(c => c.platform));
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6">
@@ -183,9 +455,16 @@ export default function VendorSocialPage() {
         <Share2 className="w-7 h-7 text-[#E8632B]" />
         <h1 className="text-2xl font-bold text-gray-900">{t('vendor.social.title')}</h1>
       </div>
-      <p className="text-gray-500 mb-8">
+      <p className="text-gray-500 mb-4">
         Track your social media posts and manage connections. When you publish a deal, it gets automatically posted with AI-generated captions.
       </p>
+
+      {message && (
+        <div className={`mb-6 p-3 rounded-lg flex items-start justify-between text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+          <span className="whitespace-pre-line">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-2 hover:opacity-70 flex-shrink-0 mt-0.5"><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       <GatedSection
         loading={tierLoading}
@@ -206,12 +485,8 @@ export default function VendorSocialPage() {
               {PLATFORMS.map(({ key, label, icon, iconColor, bgColor, borderColor, connectUrl, available }) => {
                 const conn = connections.find(c => c.platform === key);
                 const isConnected = !!conn;
-
                 return (
-                  <div
-                    key={key}
-                    className={`p-4 rounded-xl border ${isConnected ? `${borderColor} ${bgColor}` : !available ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-gray-50'} transition-all`}
-                  >
+                  <div key={key} className={`p-4 rounded-xl border ${isConnected ? `${borderColor} ${bgColor}` : !available ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-gray-50'} transition-all`}>
                     <div className="flex items-center gap-2.5 mb-2">
                       <span className={isConnected ? iconColor : 'text-gray-400'}>{icon}</span>
                       <span className="font-medium text-gray-900 text-sm">{label}</span>
@@ -219,19 +494,19 @@ export default function VendorSocialPage() {
                     {!available ? (
                       <span className="text-xs text-gray-400 font-medium">Coming Soon</span>
                     ) : isConnected ? (
-                      <div className="flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                        <span className="text-xs text-green-600 truncate">
-                          {conn.account_username ? `@${conn.account_username}` : conn.account_name || 'Connected'}
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
+                          <span className="text-xs text-green-600 truncate">
+                            {conn.account_username ? `@${conn.account_username}` : conn.account_name || 'Connected'}
+                          </span>
+                        </div>
+                        <button onClick={() => disconnectSocial(conn.id, label)} disabled={disconnecting === conn.id} className="text-gray-400 hover:text-red-500 transition-colors" title="Disconnect">
+                          {disconnecting === conn.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
+                        </button>
                       </div>
                     ) : (
-                      <a
-                        href={connectUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-[#E8632B] hover:text-orange-700 font-medium"
-                      >
+                      <a href={connectUrl} className="inline-flex items-center gap-1 text-xs text-[#E8632B] hover:text-orange-700 font-medium">
                         Connect <ArrowRight className="w-3 h-3" />
                       </a>
                     )}
@@ -240,8 +515,263 @@ export default function VendorSocialPage() {
               })}
             </div>
 
+            {/* ── Preview & Schedule Section ── */}
+            {connectedPlatforms.size > 0 && (
+              <div className="card p-5 mb-8 border border-gray-200 rounded-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="w-5 h-5 text-[#E8632B]" />
+                  <h2 className="font-semibold text-gray-900">Create & Preview Post</h2>
+                </div>
+
+                {/* Deal selector */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <select
+                    value={selectedDealId}
+                    onChange={e => setSelectedDealId(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                  >
+                    <option value="">Select a deal to preview...</option>
+                    {deals.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.title} ({d.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={generatePreview}
+                    disabled={!selectedDealId || loadingPreview}
+                    className="px-4 py-2 bg-[#E8632B] text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                  >
+                    {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                    Generate Preview
+                  </button>
+                </div>
+
+                {/* Preview cards — Platform Mockups */}
+                {preview && (
+                  <div className="space-y-4">
+                    <div className="space-y-4">
+                      {/* Facebook Mockup */}
+                      {connectedPlatforms.has('facebook') && (
+                        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                          <div className="flex items-center gap-2.5 p-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {preview.vendor?.business_name?.charAt(0) || 'S'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</p>
+                              <p className="text-[11px] text-gray-500">Sponsored · <Globe className="w-3 h-3 inline" /></p>
+                            </div>
+                          </div>
+                          <div className="px-3 pb-2">
+                            {editingPlatform === 'facebook' ? (
+                              <textarea
+                                value={editedCaptions.facebook || ''}
+                                onChange={e => setEditedCaptions(prev => ({ ...prev, facebook: e.target.value }))}
+                                rows={4}
+                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                              />
+                            ) : (
+                              <p className="text-sm text-gray-900 whitespace-pre-line line-clamp-4">{editedCaptions.facebook || ''}</p>
+                            )}
+                            <button onClick={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                              {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
+                            </button>
+                          </div>
+                          {preview.image_url && (
+                            <div className="aspect-video bg-gray-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
+                            <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
+                            <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+                            <span className="flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Share</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Instagram Mockup */}
+                      {connectedPlatforms.has('instagram') && (
+                        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                          <div className="flex items-center justify-between p-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px] flex-shrink-0">
+                                <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-gray-900">
+                                  {preview.vendor?.business_name?.charAt(0) || 'S'}
+                                </div>
+                              </div>
+                              <p className="text-sm font-semibold text-gray-900">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</p>
+                            </div>
+                            <span className="text-gray-400 tracking-widest font-bold">···</span>
+                          </div>
+                          {preview.image_url && (
+                            <div className="aspect-square bg-gray-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between px-3 py-2.5">
+                            <div className="flex items-center gap-4">
+                              <Heart className="w-5 h-5 text-gray-800" />
+                              <MessageCircle className="w-5 h-5 text-gray-800" />
+                              <Send className="w-5 h-5 text-gray-800" />
+                            </div>
+                            <Bookmark className="w-5 h-5 text-gray-800" />
+                          </div>
+                          <div className="px-3 pb-3">
+                            {editingPlatform === 'instagram' ? (
+                              <textarea
+                                value={editedCaptions.instagram || ''}
+                                onChange={e => setEditedCaptions(prev => ({ ...prev, instagram: e.target.value }))}
+                                rows={4}
+                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                              />
+                            ) : (
+                              <p className="text-sm text-gray-900">
+                                <span className="font-semibold">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>{' '}
+                                <span className="whitespace-pre-line line-clamp-3">{editedCaptions.instagram || ''}</span>
+                              </p>
+                            )}
+                            <button onClick={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                              {editingPlatform === 'instagram' ? 'Done' : 'Edit caption'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* X/Twitter Mockup */}
+                      {connectedPlatforms.has('twitter') && (
+                        <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto p-3">
+                          <div className="flex gap-2.5">
+                            <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {preview.vendor?.business_name?.charAt(0) || 'S'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm font-bold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</span>
+                                <span className="text-sm text-gray-500 truncate">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                              </div>
+                              {editingPlatform === 'twitter' ? (
+                                <textarea
+                                  value={editedCaptions.twitter || ''}
+                                  onChange={e => setEditedCaptions(prev => ({ ...prev, twitter: e.target.value }))}
+                                  rows={3}
+                                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none mt-1"
+                                />
+                              ) : (
+                                <p className="text-sm text-gray-900 whitespace-pre-line mt-1 line-clamp-3">{editedCaptions.twitter || ''}</p>
+                              )}
+                              <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                                {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
+                              </button>
+                              {preview.image_url && (
+                                <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={preview.image_url} alt="" className="w-full aspect-video object-cover" />
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between mt-2 text-gray-400">
+                                <MessageCircle className="w-4 h-4" />
+                                <RotateCcw className="w-4 h-4" />
+                                <Heart className="w-4 h-4" />
+                                <Share2 className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TikTok Mockup */}
+                      {connectedPlatforms.has('tiktok') && (
+                        <div className="border border-gray-300 rounded-lg bg-black overflow-hidden max-w-md mx-auto">
+                          {preview.image_url && (
+                            <div className="aspect-[9/16] max-h-[300px] bg-gray-900 relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={preview.image_url} alt="" className="w-full h-full object-cover opacity-80" />
+                              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                                </div>
+                                {editingPlatform === 'tiktok' ? (
+                                  <textarea
+                                    value={editedCaptions.tiktok || ''}
+                                    onChange={e => setEditedCaptions(prev => ({ ...prev, tiktok: e.target.value }))}
+                                    rows={3}
+                                    className="w-full bg-white/20 text-white rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-[#E8632B] resize-none placeholder-white/50"
+                                  />
+                                ) : (
+                                  <p className="text-white text-xs line-clamp-2">{editedCaptions.tiktok || ''}</p>
+                                )}
+                                <button onClick={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')} className="text-xs text-orange-400 mt-1 font-medium">
+                                  {editingPlatform === 'tiktok' ? 'Done' : 'Edit caption'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action buttons — stacked for mobile */}
+                    <div className="space-y-2 pt-3 border-t border-gray-100">
+                      <button
+                        onClick={() => handleAction('post_now')}
+                        disabled={scheduling}
+                        className="w-full px-4 py-2.5 bg-[#E8632B] text-white rounded-xl text-sm font-medium hover:bg-orange-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25"
+                      >
+                        {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        Post Now
+                      </button>
+
+                      {/* Schedule row */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex gap-2 flex-1">
+                          <input
+                            type="date"
+                            value={scheduleDate}
+                            onChange={e => setScheduleDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                          />
+                          <input
+                            type="time"
+                            value={scheduleTime}
+                            onChange={e => setScheduleTime(e.target.value)}
+                            className="w-[100px] border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleAction('schedule')}
+                          disabled={scheduling || !scheduleDate}
+                          className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                        >
+                          {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+                          Schedule
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => handleAction('draft')}
+                        disabled={scheduling}
+                        className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        Save Draft
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!preview && !loadingPreview && (
+                  <p className="text-sm text-gray-400 text-center py-4">Select a deal and click &quot;Generate Preview&quot; to see how your social posts will look.</p>
+                )}
+              </div>
+            )}
+
             {/* ── Stats Row ── */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-1">
                   <BarChart3 className="w-4 h-4 text-[#E8632B]" />
@@ -257,9 +787,14 @@ export default function VendorSocialPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {totalPosts > 0 ? `${successRate}%` : '\u2014'}
                 </p>
-                {failedCount > 0 && (
-                  <p className="text-xs text-red-500 mt-0.5">{failedCount} failed</p>
-                )}
+                {failedCount > 0 && <p className="text-xs text-red-500 mt-0.5">{failedCount} failed</p>}
+              </div>
+              <div className="card p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <CalendarDays className="w-4 h-4 text-blue-500" />
+                  <span className="text-xs text-gray-500 font-medium">Scheduled</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900">{scheduledCount}</p>
               </div>
               <div className="card p-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -272,8 +807,56 @@ export default function VendorSocialPage() {
               </div>
             </div>
 
+            {/* ── Calendar / Bento View ── */}
+            <div className="card overflow-hidden mb-8 border border-gray-200 rounded-xl">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h2 className="font-semibold text-gray-900">Content Calendar</h2>
+                <div className="flex items-center gap-3">
+                  {/* Time range filter */}
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    {TIME_RANGES.map(r => (
+                      <button
+                        key={r.days}
+                        onClick={() => setTimeRange(r.days)}
+                        className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${timeRange === r.days ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  {/* View toggle */}
+                  <div className="flex bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setViewMode('bento')}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === 'bento' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      title="Grid view"
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('calendar')}
+                      className={`p-1.5 rounded-md transition-colors ${viewMode === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      title="Calendar view"
+                    >
+                      <CalendarDays className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {loadingCalendar ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                </div>
+              ) : viewMode === 'bento' ? (
+                <BentoGrid postsByDate={postsByDate} timeRange={timeRange} />
+              ) : (
+                <WeeklyCalendar postsByDate={postsByDate} timeRange={timeRange} />
+              )}
+            </div>
+
             {/* ── Post History ── */}
-            <div className="card overflow-hidden">
+            <div className="card overflow-hidden border border-gray-200 rounded-xl">
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <h2 className="font-semibold text-gray-900">Post History</h2>
                 <span className="text-xs text-gray-400">{posts.length} of {total}</span>
@@ -287,12 +870,7 @@ export default function VendorSocialPage() {
                     When you publish a deal, it will be automatically posted to your connected social accounts with AI-generated captions.
                   </p>
                   {connectedPlatforms.size === 0 && (
-                    <a
-                      href="/vendor/settings"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-[#E8632B] hover:text-orange-700"
-                    >
-                      Connect your accounts in Settings <ArrowRight className="w-4 h-4" />
-                    </a>
+                    <p className="text-sm text-gray-500">Connect a platform above to get started.</p>
                   )}
                 </div>
               ) : (
@@ -319,25 +897,11 @@ export default function VendorSocialPage() {
                                 <span className="text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
                               </span>
                             </td>
-                            <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">
-                              {post.deals?.title || '\u2014'}
-                            </td>
-                            <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">
-                              {post.caption?.substring(0, 80) || '\u2014'}
-                            </td>
-                            <td className="py-3 px-4">
-                              <StatusBadge status={post.status} error={post.error_message} />
-                            </td>
-                            <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">
-                              {timeAgo(post.created_at)}
-                            </td>
-                            <td className="py-3 px-4">
-                              <PostActions
-                                post={post}
-                                retrying={retrying}
-                                onRetry={handleRetry}
-                              />
-                            </td>
+                            <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">{post.deals?.title || '\u2014'}</td>
+                            <td className="py-3 px-4 text-gray-500 max-w-[200px] truncate">{post.caption?.substring(0, 80) || '\u2014'}</td>
+                            <td className="py-3 px-4"><StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} /></td>
+                            <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{timeAgo(post.created_at)}</td>
+                            <td className="py-3 px-4"><PostActions post={post} retrying={retrying} onRetry={handleRetry} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -351,15 +915,11 @@ export default function VendorSocialPage() {
                         <div className="flex items-center justify-between">
                           <span className="flex items-center gap-1.5">
                             {PLATFORM_ICONS[post.platform]}
-                            <span className="text-sm font-medium text-gray-700">
-                              {PLATFORM_LABELS[post.platform]}
-                            </span>
+                            <span className="text-sm font-medium text-gray-700">{PLATFORM_LABELS[post.platform]}</span>
                           </span>
-                          <StatusBadge status={post.status} error={post.error_message} />
+                          <StatusBadge status={post.status} error={post.error_message} scheduledAt={post.scheduled_at} />
                         </div>
-                        {post.deals?.title && (
-                          <p className="text-sm text-gray-700 font-medium truncate">{post.deals.title}</p>
-                        )}
+                        {post.deals?.title && <p className="text-sm text-gray-700 font-medium truncate">{post.deals.title}</p>}
                         <p className="text-xs text-gray-500 line-clamp-2">{post.caption}</p>
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-xs text-gray-400">{timeAgo(post.created_at)}</span>
@@ -369,19 +929,10 @@ export default function VendorSocialPage() {
                     ))}
                   </div>
 
-                  {/* Load more */}
                   {posts.length < total && (
                     <div className="p-4 text-center border-t border-gray-100">
-                      <button
-                        onClick={loadMore}
-                        disabled={loadingMore}
-                        className="text-sm font-medium text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1"
-                      >
-                        {loadingMore ? (
-                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</>
-                        ) : (
-                          <>Load more posts</>
-                        )}
+                      <button onClick={loadMore} disabled={loadingMore} className="text-sm font-medium text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
+                        {loadingMore ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading...</> : <>Load more posts</>}
                       </button>
                     </div>
                   )}
@@ -391,80 +942,228 @@ export default function VendorSocialPage() {
           </>
         )}
       </GatedSection>
+
+      {/* Facebook Page Picker Modal */}
+      {fbPagePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Select a Facebook Page</h3>
+              <button onClick={() => setFbPagePicker(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Choose which page to connect for auto-posting:</p>
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {fbPagePicker.pages.map(page => (
+                <button
+                  key={page.id}
+                  onClick={() => selectFbPage(page.id)}
+                  disabled={selectingPage}
+                  className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <Facebook className="w-5 h-5 text-blue-600" />
+                    <span className="font-medium text-gray-900">{page.name}</span>
+                  </div>
+                  {selectingPage ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <ArrowRight className="w-4 h-4 text-gray-400" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Bento Grid Component ─── */
+function BentoGrid({ postsByDate, timeRange }: { postsByDate: Map<string, SocialPost[]>; timeRange: number }) {
+  const today = new Date();
+  const startDate = new Date();
+  startDate.setDate(today.getDate() - Math.floor(timeRange / 2));
+  const endDate = new Date();
+  endDate.setDate(today.getDate() + Math.ceil(timeRange / 2));
+  const days = getDaysArray(startDate, endDate);
+
+  // Group into weeks of 7
+  const weeks: Date[][] = [];
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7));
+  }
+
+  return (
+    <div className="p-4">
+      {weeks.map((week, wi) => (
+        <div key={wi} className="grid grid-cols-7 gap-2 mb-2">
+          {week.map(day => {
+            const key = getDateKey(day.toISOString());
+            const dayPosts = postsByDate.get(key) || [];
+            const isToday = getDateKey(new Date().toISOString()) === key;
+
+            return (
+              <div
+                key={key}
+                className={`min-h-[90px] p-2 rounded-lg border transition-all ${isToday ? 'border-[#E8632B] bg-orange-50/50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+              >
+                <div className={`text-xs font-medium mb-1 ${isToday ? 'text-[#E8632B]' : 'text-gray-500'}`}>
+                  {formatDate(day.toISOString())}
+                </div>
+                {dayPosts.length > 0 ? (
+                  <div className="space-y-1">
+                    {dayPosts.slice(0, 3).map(p => (
+                      <div key={p.id} className="flex items-center gap-1">
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${STATUS_COLORS[p.status] || 'bg-gray-300'}`} />
+                        <span className="text-[10px] text-gray-600 truncate">{PLATFORM_LABELS[p.platform]}</span>
+                      </div>
+                    ))}
+                    {dayPosts.length > 3 && (
+                      <span className="text-[10px] text-gray-400">+{dayPosts.length - 3} more</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-[10px] text-gray-300 mt-2">No posts</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      {/* Legend */}
+      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
+        {Object.entries({ posted: 'Posted', scheduled: 'Scheduled', draft: 'Draft', failed: 'Failed' }).map(([status, label]) => (
+          <div key={status} className="flex items-center gap-1.5">
+            <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[status]}`} />
+            <span className="text-xs text-gray-500">{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Weekly Calendar Component ─── */
+function WeeklyCalendar({ postsByDate, timeRange }: { postsByDate: Map<string, SocialPost[]>; timeRange: number }) {
+  const [weekOffset, setWeekOffset] = useState(0);
+
+  const startOfWeek = useMemo(() => {
+    const d = new Date();
+    const day = d.getDay();
+    d.setDate(d.getDate() - day + (weekOffset * 7));
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, [weekOffset]);
+
+  const weekDays = useMemo(() => {
+    return getDaysArray(startOfWeek, new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000));
+  }, [startOfWeek]);
+
+  const maxWeeks = Math.ceil(timeRange / 7);
+
+  return (
+    <div className="p-4">
+      {/* Week navigation */}
+      <div className="flex items-center justify-between mb-4">
+        <button
+          onClick={() => setWeekOffset(prev => Math.max(prev - 1, -maxWeeks))}
+          className="p-1 rounded hover:bg-gray-100 text-gray-500"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-sm font-medium text-gray-700">
+          {formatDateFull(weekDays[0].toISOString())} — {formatDateFull(weekDays[6].toISOString())}
+        </span>
+        <button
+          onClick={() => setWeekOffset(prev => Math.min(prev + 1, maxWeeks))}
+          className="p-1 rounded hover:bg-gray-100 text-gray-500"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 gap-2 mb-2">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          <div key={d} className="text-xs font-medium text-gray-400 text-center">{d}</div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      <div className="grid grid-cols-7 gap-2">
+        {weekDays.map(day => {
+          const key = getDateKey(day.toISOString());
+          const dayPosts = postsByDate.get(key) || [];
+          const isToday = getDateKey(new Date().toISOString()) === key;
+
+          return (
+            <div
+              key={key}
+              className={`min-h-[120px] p-2.5 rounded-xl border transition-all ${isToday ? 'border-[#E8632B] bg-orange-50/30 shadow-sm' : 'border-gray-200 bg-white'}`}
+            >
+              <div className={`text-sm font-semibold mb-2 ${isToday ? 'text-[#E8632B]' : 'text-gray-700'}`}>
+                {day.getDate()}
+              </div>
+              {dayPosts.length > 0 ? (
+                <div className="space-y-1.5">
+                  {dayPosts.map(p => (
+                    <div key={p.id} className="flex items-center gap-1.5 group">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_COLORS[p.status] || 'bg-gray-300'}`} />
+                      <span className="text-[11px] text-gray-600 truncate flex-1">
+                        {PLATFORM_LABELS[p.platform]}
+                      </span>
+                      {p.platform_post_url && (
+                        <a href={p.platform_post_url} target="_blank" rel="noopener noreferrer" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ExternalLink className="w-3 h-3 text-gray-400" />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[10px] text-gray-300 mt-4 text-center">—</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 /* ─── Sub-components ─── */
 
-function StatusBadge({ status, error }: { status: string; error: string | null }) {
+function StatusBadge({ status, error, scheduledAt }: { status: string; error: string | null; scheduledAt?: string | null }) {
   switch (status) {
     case 'posted':
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full">
-          <CheckCircle className="w-3 h-3" /> Posted
-        </span>
-      );
+      return <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full"><CheckCircle className="w-3 h-3" /> Posted</span>;
     case 'failed':
-      return (
-        <span
-          className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded-full"
-          title={error || ''}
-        >
-          <XCircle className="w-3 h-3" /> Failed
-        </span>
-      );
+      return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded-full" title={error || ''}><XCircle className="w-3 h-3" /> Failed</span>;
+    case 'scheduled':
+      return <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 bg-blue-50 px-2 py-1 rounded-full"><CalendarDays className="w-3 h-3" /> {scheduledAt ? formatDate(scheduledAt) : 'Scheduled'}</span>;
+    case 'draft':
+      return <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full"><Save className="w-3 h-3" /> Draft</span>;
     case 'pending':
     case 'posting':
-      return (
-        <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-50 px-2 py-1 rounded-full">
-          <Loader2 className="w-3 h-3 animate-spin" /> Pending
-        </span>
-      );
+      return <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-50 px-2 py-1 rounded-full"><Loader2 className="w-3 h-3 animate-spin" /> Pending</span>;
     default:
       return <span className="text-xs text-gray-400">{status}</span>;
   }
 }
 
-function PostActions({
-  post,
-  retrying,
-  onRetry,
-}: {
-  post: SocialPost;
-  retrying: string | null;
-  onRetry: (id: string) => void;
-}) {
+function PostActions({ post, retrying, onRetry }: { post: SocialPost; retrying: string | null; onRetry: (id: string) => void }) {
   return (
     <div className="flex items-center gap-2">
       {post.platform_post_url && (
-        <a
-          href={post.platform_post_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1"
-        >
+        <a href={post.platform_post_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
           <ExternalLink className="w-3.5 h-3.5" /> View
         </a>
       )}
       {post.status === 'failed' && (post.retry_count || 0) < 3 && (
-        <button
-          onClick={() => onRetry(post.id)}
-          disabled={retrying === post.id}
-          className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1"
-        >
-          {retrying === post.id ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <RotateCcw className="w-3.5 h-3.5" />
-          )}
+        <button onClick={() => onRetry(post.id)} disabled={retrying === post.id} className="text-xs text-[#E8632B] hover:text-orange-700 inline-flex items-center gap-1">
+          {retrying === post.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
           Retry
         </button>
       )}
       {post.status === 'failed' && (post.retry_count || 0) >= 3 && (
-        <span className="text-xs text-gray-400 inline-flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" /> Max retries
-        </span>
+        <span className="text-xs text-gray-400 inline-flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Max retries</span>
       )}
     </div>
   );

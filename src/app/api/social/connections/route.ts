@@ -31,6 +31,7 @@ export async function GET() {
     .from('social_connections')
     .select('id, vendor_id, is_brand_account, platform, platform_user_id, platform_page_id, account_name, account_username, account_avatar_url, is_active, last_posted_at, last_error, connected_at, updated_at')
     .eq('vendor_id', user.id)
+    .eq('is_active', true)
     .order('platform');
 
   // If admin, also fetch brand connections
@@ -40,6 +41,7 @@ export async function GET() {
       .from('social_connections')
       .select('id, vendor_id, is_brand_account, platform, platform_user_id, platform_page_id, account_name, account_username, account_avatar_url, is_active, last_posted_at, last_error, connected_at, updated_at')
       .eq('is_brand_account', true)
+      .eq('is_active', true)
       .order('platform');
     brandConnections = brands || [];
   }

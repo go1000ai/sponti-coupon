@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   const isBrand = request.nextUrl.searchParams.get('brand') === 'true';
-  const errorRedirect = isBrand ? '/admin?tab=social' : '/vendor/settings';
+  const errorRedirect = isBrand ? '/admin?tab=social' : '/vendor/social';
   const sep = isBrand ? '&' : '?';
 
   if (!user) {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
   const authUrl = configId
     ? `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&config_id=${configId}&state=${encodedState}&response_type=code`
-    : `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list')}&state=${encodedState}&response_type=code`;
+    : `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list,business_management')}&auth_type=rerequest&state=${encodedState}&response_type=code`;
 
   return NextResponse.redirect(authUrl);
 }

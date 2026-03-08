@@ -11,7 +11,8 @@ import {
   ArrowLeft, Save, Loader2, AlertCircle, Tag, Lock, X, ChevronDown, Info,
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
   Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause, Calendar, Clock,
-  Ticket, Download,
+  Ticket, Download, Share2, Facebook, Instagram, Twitter, Send, Eye,
+  Heart, MessageCircle, Bookmark, ThumbsUp, CalendarDays, RotateCcw,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
@@ -1466,6 +1467,11 @@ function EditDealPageInner() {
         </div>
       </form>
 
+      {/* Social Media Posting */}
+      {deal && deal.status === 'active' && (
+        <DealSocialPost dealId={deal.id} dealTitle={deal.title} />
+      )}
+
       {/* Unified Image Picker Modal */}
       <ImagePickerModal
         open={showImagePicker}
@@ -1522,6 +1528,435 @@ function EditDealPageInner() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── Social Post from Deal ─── */
+const TikTokIconSmall = ({ className }: { className?: string }) => (
+  <svg className={className || 'w-5 h-5'} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52V6.84a4.84 4.84 0 01-1-.15z" />
+  </svg>
+);
+
+const SOCIAL_PLATFORMS = [
+  { key: 'facebook', label: 'Facebook', icon: <Facebook className="w-5 h-5" />, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', ring: 'ring-blue-500' },
+  { key: 'instagram', label: 'Instagram', icon: <Instagram className="w-5 h-5" />, color: 'text-pink-500', bg: 'bg-pink-50', border: 'border-pink-200', ring: 'ring-pink-500' },
+  { key: 'twitter', label: 'X (Twitter)', icon: <Twitter className="w-5 h-5" />, color: 'text-gray-800', bg: 'bg-gray-50', border: 'border-gray-200', ring: 'ring-gray-500' },
+  { key: 'tiktok', label: 'TikTok', icon: <TikTokIconSmall className="w-5 h-5" />, color: 'text-gray-800', bg: 'bg-gray-50', border: 'border-gray-200', ring: 'ring-gray-500' },
+];
+
+function DealSocialPost({ dealId }: { dealId: string; dealTitle?: string }) {
+  const [connections, setConnections] = useState<{ platform: string; account_name: string | null }[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Set<string>>(new Set());
+  const [preview, setPreview] = useState<{ captions: Record<string, string>; image_url: string; vendor?: { business_name: string }; deal?: { deal_type: string } } | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [posting, setPosting] = useState(false);
+  const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [editedCaptions, setEditedCaptions] = useState<Record<string, string>>({});
+  const [editingPlatform, setEditingPlatform] = useState<string | null>(null);
+  const [scheduleDate, setScheduleDate] = useState('');
+  const [scheduleTime, setScheduleTime] = useState('12:00');
+  const [scheduling, setScheduling] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/social/connections')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.vendor) {
+          setConnections(data.vendor);
+          const connected = new Set<string>(data.vendor.map((c: { platform: string }) => c.platform));
+          setSelectedPlatforms(connected);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const connectedSet = new Set(connections.map(c => c.platform));
+
+  const togglePlatform = (key: string) => {
+    setSelectedPlatforms(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedPlatforms(new Set(connections.map(c => c.platform)));
+  };
+
+  const generatePreview = async () => {
+    setLoadingPreview(true);
+    setPreview(null);
+    setResult(null);
+    try {
+      const res = await fetch('/api/social/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_id: dealId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPreview(data);
+        setEditedCaptions({ ...data.captions });
+      } else {
+        setResult({ type: 'error', text: 'Failed to generate preview' });
+      }
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handlePost = async () => {
+    if (selectedPlatforms.size === 0) return;
+    setPosting(true);
+    setResult(null);
+    try {
+      const captions = preview ? editedCaptions : {};
+      const res = await fetch('/api/social/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deal_id: dealId,
+          platforms: Array.from(selectedPlatforms),
+          captions,
+          action: 'post_now',
+        }),
+      });
+      if (res.ok) {
+        setResult({ type: 'success', text: `Posted to ${selectedPlatforms.size} platform${selectedPlatforms.size > 1 ? 's' : ''}!` });
+        setPreview(null);
+      } else {
+        const err = await res.json();
+        setResult({ type: 'error', text: err.error || 'Failed to post' });
+      }
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const handleScheduleOrDraft = async (action: 'schedule' | 'draft') => {
+    if (selectedPlatforms.size === 0) return;
+    setScheduling(true);
+    setResult(null);
+    try {
+      const captions = preview ? editedCaptions : {};
+      const body: Record<string, unknown> = {
+        deal_id: dealId,
+        platforms: Array.from(selectedPlatforms),
+        captions,
+        action,
+      };
+      if (action === 'schedule' && scheduleDate) {
+        body.scheduled_at = `${scheduleDate}T${scheduleTime || '12:00'}:00`;
+      }
+      const res = await fetch('/api/social/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const label = action === 'schedule' ? 'Scheduled' : 'Saved as draft';
+        setResult({ type: 'success', text: `${label} for ${selectedPlatforms.size} platform${selectedPlatforms.size > 1 ? 's' : ''}!` });
+        setPreview(null);
+      } else {
+        const err = await res.json();
+        setResult({ type: 'error', text: err.error || `Failed to ${action}` });
+      }
+    } finally {
+      setScheduling(false);
+    }
+  };
+
+  if (connections.length === 0) return null;
+
+  return (
+    <div className="mt-8 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+          <Share2 className="w-5 h-5 text-[#E8632B]" />
+        </div>
+        <div>
+          <h3 className="font-bold text-gray-900">Post to Social Media</h3>
+          <p className="text-xs text-gray-500">Share this deal on your connected platforms</p>
+        </div>
+      </div>
+
+      <div className="p-5 space-y-4">
+        {result && (
+          <div className={`p-3 rounded-lg text-sm flex items-center justify-between ${result.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+            <span>{result.text}</span>
+            <button onClick={() => setResult(null)} className="ml-2 hover:opacity-70"><X className="w-4 h-4" /></button>
+          </div>
+        )}
+
+        {/* Platform selection */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Select platforms</span>
+            <button onClick={selectAll} className="text-xs text-[#E8632B] hover:text-orange-700 font-medium">Select All</button>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {SOCIAL_PLATFORMS.map(p => {
+              const isConnected = connectedSet.has(p.key);
+              const isSelected = selectedPlatforms.has(p.key);
+              return (
+                <button
+                  key={p.key}
+                  onClick={() => isConnected && togglePlatform(p.key)}
+                  disabled={!isConnected}
+                  className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2.5 ${
+                    !isConnected
+                      ? 'border-gray-100 bg-gray-50 opacity-50 cursor-not-allowed'
+                      : isSelected
+                        ? `${p.border} ${p.bg} ring-2 ${p.ring} ring-offset-1`
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                  }`}
+                >
+                  <span className={isConnected ? p.color : 'text-gray-300'}>{p.icon}</span>
+                  <div className="text-left">
+                    <span className="text-sm font-medium text-gray-900 block leading-tight">{p.label}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {isConnected ? (isSelected ? 'Selected' : 'Connected') : 'Not connected'}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Preview section — Platform Mockups */}
+        {preview && (
+          <div className="space-y-4 pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Preview</span>
+            </div>
+
+            <div className="space-y-4">
+              {/* Facebook Mockup */}
+              {selectedPlatforms.has('facebook') && (
+                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                  <div className="flex items-center gap-2.5 p-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {preview.vendor?.business_name?.charAt(0) || 'S'}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</p>
+                      <p className="text-[11px] text-gray-500">Sponsored · <Globe className="w-3 h-3 inline" /></p>
+                    </div>
+                  </div>
+                  <div className="px-3 pb-2">
+                    {editingPlatform === 'facebook' ? (
+                      <textarea
+                        value={editedCaptions.facebook || ''}
+                        onChange={e => setEditedCaptions(prev => ({ ...prev, facebook: e.target.value }))}
+                        rows={4}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900 whitespace-pre-line line-clamp-4">{editedCaptions.facebook || ''}</p>
+                    )}
+                    <button onClick={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                      {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
+                    </button>
+                  </div>
+                  {preview.image_url && (
+                    <div className="aspect-video bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="px-3 py-2 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
+                    <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
+                    <span className="flex items-center gap-1"><MessageCircle className="w-3.5 h-3.5" /> Comment</span>
+                    <span className="flex items-center gap-1"><Share2 className="w-3.5 h-3.5" /> Share</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Instagram Mockup */}
+              {selectedPlatforms.has('instagram') && (
+                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto">
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 p-[2px] flex-shrink-0">
+                        <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-[10px] font-bold text-gray-900">
+                          {preview.vendor?.business_name?.charAt(0) || 'S'}
+                        </div>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</p>
+                    </div>
+                    <span className="text-gray-400 tracking-widest font-bold">···</span>
+                  </div>
+                  {preview.image_url && (
+                    <div className="aspect-square bg-gray-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview.image_url} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between px-3 py-2.5">
+                    <div className="flex items-center gap-4">
+                      <Heart className="w-5 h-5 text-gray-800" />
+                      <MessageCircle className="w-5 h-5 text-gray-800" />
+                      <Send className="w-5 h-5 text-gray-800" />
+                    </div>
+                    <Bookmark className="w-5 h-5 text-gray-800" />
+                  </div>
+                  <div className="px-3 pb-3">
+                    {editingPlatform === 'instagram' ? (
+                      <textarea
+                        value={editedCaptions.instagram || ''}
+                        onChange={e => setEditedCaptions(prev => ({ ...prev, instagram: e.target.value }))}
+                        rows={4}
+                        className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-900">
+                        <span className="font-semibold">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>{' '}
+                        <span className="whitespace-pre-line line-clamp-3">{editedCaptions.instagram || ''}</span>
+                      </p>
+                    )}
+                    <button onClick={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                      {editingPlatform === 'instagram' ? 'Done' : 'Edit caption'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* X/Twitter Mockup */}
+              {selectedPlatforms.has('twitter') && (
+                <div className="border border-gray-300 rounded-lg bg-white overflow-hidden max-w-md mx-auto p-3">
+                  <div className="flex gap-2.5">
+                    <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      {preview.vendor?.business_name?.charAt(0) || 'S'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-sm font-bold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</span>
+                        <span className="text-sm text-gray-500 truncate">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                      </div>
+                      {editingPlatform === 'twitter' ? (
+                        <textarea
+                          value={editedCaptions.twitter || ''}
+                          onChange={e => setEditedCaptions(prev => ({ ...prev, twitter: e.target.value }))}
+                          rows={3}
+                          className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none mt-1"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 whitespace-pre-line mt-1 line-clamp-3">{editedCaptions.twitter || ''}</p>
+                      )}
+                      <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
+                        {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
+                      </button>
+                      {preview.image_url && (
+                        <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={preview.image_url} alt="" className="w-full aspect-video object-cover" />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mt-2 text-gray-400">
+                        <MessageCircle className="w-4 h-4" />
+                        <RotateCcw className="w-4 h-4" />
+                        <Heart className="w-4 h-4" />
+                        <Share2 className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TikTok simple preview */}
+              {selectedPlatforms.has('tiktok') && (
+                <div className="border border-gray-300 rounded-lg bg-black overflow-hidden max-w-md mx-auto">
+                  {preview.image_url && (
+                    <div className="aspect-[9/16] max-h-[300px] bg-gray-900 relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview.image_url} alt="" className="w-full h-full object-cover opacity-80" />
+                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
+                        </div>
+                        {editingPlatform === 'tiktok' ? (
+                          <textarea
+                            value={editedCaptions.tiktok || ''}
+                            onChange={e => setEditedCaptions(prev => ({ ...prev, tiktok: e.target.value }))}
+                            rows={3}
+                            className="w-full bg-white/20 text-white rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-[#E8632B] resize-none placeholder-white/50"
+                          />
+                        ) : (
+                          <p className="text-white text-xs line-clamp-2">{editedCaptions.tiktok || ''}</p>
+                        )}
+                        <button onClick={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')} className="text-xs text-orange-400 mt-1 font-medium">
+                          {editingPlatform === 'tiktok' ? 'Done' : 'Edit caption'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Action buttons — stacked vertically on mobile */}
+        <div className="space-y-2 pt-3">
+          <button
+            onClick={generatePreview}
+            disabled={loadingPreview || selectedPlatforms.size === 0}
+            className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            {loadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            {preview ? 'Refresh Preview' : 'Preview'}
+          </button>
+          <button
+            onClick={handlePost}
+            disabled={posting || scheduling || selectedPlatforms.size === 0}
+            className="w-full px-4 py-2.5 bg-[#E8632B] text-white rounded-xl text-sm font-medium hover:bg-orange-700 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-orange-500/25"
+          >
+            {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            Post Now
+          </button>
+
+          {/* Schedule row */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex gap-2 flex-1">
+              <input
+                type="date"
+                value={scheduleDate}
+                onChange={e => setScheduleDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+              />
+              <input
+                type="time"
+                value={scheduleTime}
+                onChange={e => setScheduleTime(e.target.value)}
+                className="w-[100px] border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#E8632B] focus:border-transparent"
+              />
+            </div>
+            <button
+              onClick={() => handleScheduleOrDraft('schedule')}
+              disabled={scheduling || posting || !scheduleDate || selectedPlatforms.size === 0}
+              className="px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            >
+              {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+              Schedule
+            </button>
+          </div>
+
+          <button
+            onClick={() => handleScheduleOrDraft('draft')}
+            disabled={scheduling || posting || selectedPlatforms.size === 0}
+            className="w-full px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-50 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            Save Draft
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

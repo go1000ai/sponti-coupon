@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL('/auth/login?redirect=/vendor/settings', request.url));
+    return NextResponse.redirect(new URL('/auth/login?redirect=/vendor/social', request.url));
   }
 
   const isBrand = request.nextUrl.searchParams.get('brand') === 'true';
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
     if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=not_admin', request.url));
+      return NextResponse.redirect(new URL('/vendor/social?social_error=not_admin', request.url));
     }
   } else {
     const { data: profile } = await supabase
@@ -34,13 +34,13 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
     if (profile?.role !== 'vendor') {
-      return NextResponse.redirect(new URL('/vendor/settings?social_error=not_vendor', request.url));
+      return NextResponse.redirect(new URL('/vendor/social?social_error=not_vendor', request.url));
     }
   }
 
   const clientId = process.env.TWITTER_CLIENT_ID;
   if (!clientId) {
-    return NextResponse.redirect(new URL('/vendor/settings?social_error=not_configured', request.url));
+    return NextResponse.redirect(new URL('/vendor/social?social_error=not_configured', request.url));
   }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').trim();
