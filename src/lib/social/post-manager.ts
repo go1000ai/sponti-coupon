@@ -11,11 +11,16 @@ import type { DealForSocialPost, PlatformCaptions, SocialConnection, SocialPostR
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 
+interface PostDealOptions {
+  customCaptions?: Record<string, string>;
+  postIds?: string[];
+}
+
 /**
  * Main entry point: post a newly created deal to all connected social accounts.
- * Called by /api/social/auto-post after deal creation.
+ * Called by /api/social/auto-post after deal creation or from schedule (post_now).
  */
-export async function postDealToSocial(dealId: string, vendorId: string): Promise<void> {
+export async function postDealToSocial(dealId: string, vendorId: string, options?: PostDealOptions): Promise<void> {
   const supabase = await createServiceRoleClient();
 
   // 1. Fetch deal with vendor info
@@ -84,12 +89,34 @@ export async function postDealToSocial(dealId: string, vendorId: string): Promis
     },
   };
 
-  // 5. Generate platform-specific captions
-  const captions = await generateCaptions(dealForPost);
+  // 5. Generate platform-specific captions (or use custom ones from schedule UI)
+  let captions: PlatformCaptions;
+  if (options?.customCaptions && Object.keys(options.customCaptions).length > 0) {
+    captions = {
+      facebook: options.customCaptions.facebook || '',
+      instagram: options.customCaptions.instagram || '',
+      twitter: options.customCaptions.twitter || '',
+      tiktok: options.customCaptions.tiktok || '',
+    };
+  } else {
+    captions = await generateCaptions(dealForPost);
+  }
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
 
-  // Use the deal's actual uploaded image for social posts
-  const imageUrl = deal.image_url || '';
+  // If we have existing pending post records (from schedule UI), fetch their media info
+  let imageUrl = deal.image_url || '';
+  let videoUrl: string | undefined;
+  if (options?.postIds?.length) {
+    const { data: pendingPosts } = await supabase
+      .from('social_posts')
+      .select('image_url, video_url')
+      .in('id', options.postIds)
+      .limit(1);
+    if (pendingPosts?.[0]) {
+      if (pendingPosts[0].image_url) imageUrl = pendingPosts[0].image_url;
+      if (pendingPosts[0].video_url) videoUrl = pendingPosts[0].video_url;
+    }
+  }
 
   // 6. Post to each connection in parallel with error isolation
   const results = await Promise.allSettled(
@@ -112,11 +139,21 @@ export async function postDealToSocial(dealId: string, vendorId: string): Promis
         ? applyAdDisclosure(captions)
         : captions;
 
-      return postToConnection(conn, validToken, captionsForConn, imageUrl, claimUrl);
+      return postToConnection(conn, validToken, captionsForConn, imageUrl, claimUrl, videoUrl);
     })
   );
 
-  // 7. Log all results to social_posts table
+  // 7. Log results — update existing pending records if available, otherwise insert new ones
+  // Build a map of connection_id → pending post_id from options.postIds
+  const pendingPostMap = new Map<string, string>();
+  if (options?.postIds?.length) {
+    const { data: pendingRows } = await supabase
+      .from('social_posts')
+      .select('id, connection_id')
+      .in('id', options.postIds);
+    pendingRows?.forEach(r => pendingPostMap.set(r.connection_id, r.id));
+  }
+
   for (let i = 0; i < connections.length; i++) {
     const conn = connections[i];
     const settled = results[i];
@@ -130,21 +167,35 @@ export async function postDealToSocial(dealId: string, vendorId: string): Promis
         };
 
     const caption = captions[conn.platform as keyof typeof captions] || '';
+    const existingPostId = pendingPostMap.get(conn.id);
 
-    await supabase.from('social_posts').insert({
-      deal_id: dealId,
-      connection_id: conn.id,
-      platform: conn.platform,
-      account_type: conn.is_brand_account ? 'brand' : 'vendor',
-      caption,
-      image_url: imageUrl,
-      claim_url: claimUrl,
-      status: result.success ? 'posted' : 'failed',
-      platform_post_id: result.platformPostId || null,
-      platform_post_url: result.platformPostUrl || null,
-      error_message: result.error || null,
-      posted_at: result.success ? new Date().toISOString() : null,
-    });
+    if (existingPostId) {
+      // Update the existing pending record created by schedule endpoint
+      await supabase.from('social_posts').update({
+        status: result.success ? 'posted' : 'failed',
+        platform_post_id: result.platformPostId || null,
+        platform_post_url: result.platformPostUrl || null,
+        error_message: result.error || null,
+        posted_at: result.success ? new Date().toISOString() : null,
+      }).eq('id', existingPostId);
+    } else {
+      // No pending record — insert a new one (auto-post from deal creation)
+      await supabase.from('social_posts').insert({
+        deal_id: dealId,
+        connection_id: conn.id,
+        platform: conn.platform,
+        account_type: conn.is_brand_account ? 'brand' : 'vendor',
+        caption,
+        image_url: imageUrl,
+        video_url: videoUrl || null,
+        claim_url: claimUrl,
+        status: result.success ? 'posted' : 'failed',
+        platform_post_id: result.platformPostId || null,
+        platform_post_url: result.platformPostUrl || null,
+        error_message: result.error || null,
+        posted_at: result.success ? new Date().toISOString() : null,
+      });
+    }
 
     // Update connection's last_posted_at or last_error
     if (result.success) {

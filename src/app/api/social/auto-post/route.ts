@@ -21,14 +21,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { deal_id, vendor_id } = body;
+    const { deal_id, vendor_id, custom_captions, post_ids } = body;
 
     if (!deal_id || !vendor_id) {
       return NextResponse.json({ error: 'Missing deal_id or vendor_id' }, { status: 400 });
     }
 
     // Run social posting — errors are caught internally and logged to social_posts table
-    await postDealToSocial(deal_id, vendor_id);
+    await postDealToSocial(deal_id, vendor_id, { customCaptions: custom_captions, postIds: post_ids });
 
     return NextResponse.json({ success: true });
   } catch (err) {
