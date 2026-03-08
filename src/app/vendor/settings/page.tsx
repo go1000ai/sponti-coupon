@@ -8,7 +8,7 @@ import {
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
   ExternalLink, AlertTriangle, Info, Navigation, RotateCcw, Play,
-  Share2, CheckCircle, Unplug,
+  Share2, CheckCircle, Unplug, ChevronRight,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -148,6 +148,8 @@ export default function VendorSettingsPage() {
   const [socialConnections, setSocialConnections] = useState<SocialConnectionItem[]>([]);
   const [connectionsLoading, setConnectionsLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [fbPagePicker, setFbPagePicker] = useState<{ connectionId: string; pages: { id: string; name: string }[] } | null>(null);
+  const [selectingPage, setSelectingPage] = useState(false);
 
   // Guided Tour settings
   const [tourAutoStart, setTourAutoStart] = useState(() => {
@@ -255,6 +257,17 @@ export default function VendorSettingsPage() {
       setMessage({ type: 'error', text: t('vendor.settings.socialConnectionFailed', { error: params.get('social_error') || '' }) });
       window.history.replaceState({}, '', window.location.pathname);
     }
+    // Facebook multi-page picker
+    const fbPickPage = params.get('fb_pick_page');
+    const fbPagesParam = params.get('fb_pages');
+    if (fbPickPage && fbPagesParam) {
+      const pages = fbPagesParam.split(',').map(p => {
+        const [id, ...nameParts] = p.split(':');
+        return { id, name: decodeURIComponent(nameParts.join(':')) };
+      });
+      setFbPagePicker({ connectionId: fbPickPage, pages });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, [user]);
 
   const disconnectSocial = async (connectionId: string) => {
@@ -273,6 +286,34 @@ export default function VendorSettingsPage() {
       setMessage({ type: 'error', text: t('vendor.settings.disconnectFailed') });
     }
     setDisconnecting(null);
+  };
+
+  const selectFbPage = async (pageId: string) => {
+    if (!fbPagePicker) return;
+    setSelectingPage(true);
+    try {
+      const res = await fetch('/api/social/connect/facebook/select-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connectionId: fbPagePicker.connectionId, pageId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: 'success', text: `Facebook connected to ${data.pageName}` });
+        setFbPagePicker(null);
+        // Refresh connections
+        const connRes = await fetch('/api/social/connections');
+        if (connRes.ok) {
+          const connData = await connRes.json();
+          setSocialConnections(connData.vendor || []);
+        }
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to select page' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Failed to select page' });
+    }
+    setSelectingPage(false);
   };
 
   const toggleSection = (section: SettingsSection) => {
@@ -1136,6 +1177,42 @@ export default function VendorSettingsPage() {
             )}
           </div>
         </GatedSection>
+
+        {/* Facebook Page Picker Modal */}
+        {fbPagePicker && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Select a Facebook Page</h3>
+              <p className="text-sm text-gray-600 mb-4">You manage multiple Facebook Pages. Choose which one to connect:</p>
+              <div className="space-y-2">
+                {fbPagePicker.pages.map(page => (
+                  <button
+                    key={page.id}
+                    onClick={() => selectFbPage(page.id)}
+                    disabled={selectingPage}
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-[#E8632B] hover:bg-[#E8632B]/5 transition-colors text-left"
+                  >
+                    <div>
+                      <span className="font-medium text-gray-900">{page.name}</span>
+                      <span className="text-xs text-gray-500 block">ID: {page.id}</span>
+                    </div>
+                    {selectingPage ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setFbPagePicker(null)}
+                className="mt-4 w-full text-sm text-gray-500 hover:text-gray-700"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ===== BUSINESS HOURS ===== */}
         <div className="card mb-4 overflow-hidden">
