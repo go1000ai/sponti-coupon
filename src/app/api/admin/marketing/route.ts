@@ -48,6 +48,7 @@ export async function PATCH(request: NextRequest) {
   const allowedFields = [
     'caption_facebook', 'caption_instagram', 'hashtags', 'image_url',
     'scheduled_for', 'status', 'admin_notes', 'platforms',
+    'content_type', 'target_audience',
   ];
 
   const safeUpdates: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -88,4 +89,47 @@ export async function PATCH(request: NextRequest) {
   }
 
   return NextResponse.json({ item: data });
+}
+
+// DELETE /api/admin/marketing — Delete a queue item (only non-posted items)
+export async function DELETE(request: NextRequest) {
+  const admin = await verifyAdmin();
+  if (!admin) return forbiddenResponse();
+
+  const { id } = await request.json();
+
+  if (!id) {
+    return NextResponse.json({ error: 'Item ID required' }, { status: 400 });
+  }
+
+  const supabase = await createServiceRoleClient();
+
+  // Only allow deleting items that haven't been posted
+  const { data: item } = await supabase
+    .from('marketing_content_queue')
+    .select('status')
+    .eq('id', id)
+    .single();
+
+  if (!item) {
+    return NextResponse.json({ error: 'Item not found' }, { status: 404 });
+  }
+
+  if (item.status === 'posted' || item.status === 'posting') {
+    return NextResponse.json(
+      { error: 'Cannot delete a posted or currently posting item. Archive it instead.' },
+      { status: 400 }
+    );
+  }
+
+  const { error } = await supabase
+    .from('marketing_content_queue')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }

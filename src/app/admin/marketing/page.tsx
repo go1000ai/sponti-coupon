@@ -6,7 +6,8 @@ import {
   Sparkles, CheckCircle2, XCircle, Clock, Send,
   RefreshCw, Loader2, Edit3, PenLine, ChevronDown, ChevronUp, ImageIcon,
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
-  Facebook, Instagram,
+  Facebook, Instagram, Calendar as CalendarIcon, Eye, EyeOff, ArrowRight,
+  Trash2, Archive, Copy,
 } from 'lucide-react';
 
 interface QueueItem {
@@ -70,6 +71,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   posted: { label: 'Posted', color: 'bg-green-100 text-green-700' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
   failed: { label: 'Failed', color: 'bg-red-100 text-red-700' },
+  archived: { label: 'Archived', color: 'bg-gray-200 text-gray-500' },
 };
 
 export default function AdminMarketingPage() {
@@ -79,7 +81,7 @@ export default function AdminMarketingPage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'queue' | 'history' | 'agent'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'history' | 'agent' | 'calendar'>('queue');
   const [selectedItem, setSelectedItem] = useState<QueueItem | null>(null);
   const [editCaption, setEditCaption] = useState({ facebook: '', instagram: '' });
   const [scheduleTime, setScheduleTime] = useState('');
@@ -90,6 +92,39 @@ export default function AdminMarketingPage() {
   const [createImageUrl, setCreateImageUrl] = useState('');
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [avaSuggestions, setAvaSuggestions] = useState<{type: string; idea: string; why: string; hook: string}[]>([]);
+  const [avaLoading, setAvaLoading] = useState(false);
+  const [avaLoaded, setAvaLoaded] = useState(false);
+  const [avaVisible, setAvaVisible] = useState(true);
+
+  const fetchAvaSuggestions = useCallback(async () => {
+    setAvaLoading(true);
+    try {
+      const res = await fetch('/api/admin/marketing/ava-suggest');
+      const data = await res.json();
+      if (data.suggestions) setAvaSuggestions(data.suggestions);
+    } catch { /* ignore */ }
+    setAvaLoading(false);
+    setAvaLoaded(true);
+  }, []);
+
+  const AVA_TYPE_MAP: Record<string, string> = {
+    hook: 'brand_awareness',
+    engagement: 'engagement',
+    social_proof: 'testimonial',
+    urgency: 'brand_awareness',
+    educational: 'local_tip',
+    behind_scenes: 'brand_awareness',
+  };
+
+  const AVA_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+    hook: { label: 'Hook', color: 'bg-emerald-100 text-emerald-700' },
+    engagement: { label: 'Engagement', color: 'bg-green-100 text-green-700' },
+    social_proof: { label: 'Social Proof', color: 'bg-teal-100 text-teal-700' },
+    urgency: { label: 'Urgency', color: 'bg-amber-100 text-amber-700' },
+    educational: { label: 'Educational', color: 'bg-cyan-100 text-cyan-700' },
+    behind_scenes: { label: 'Behind the Scenes', color: 'bg-lime-100 text-lime-700' },
+  };
 
   const handleCreatePost = async () => {
     if (!createInstructions.trim()) return;
@@ -140,6 +175,10 @@ export default function AdminMarketingPage() {
     fetchItems();
     fetchRuns();
   }, [fetchItems, fetchRuns]);
+
+  useEffect(() => {
+    if (!avaLoaded) fetchAvaSuggestions();
+  }, [avaLoaded, fetchAvaSuggestions]);
 
   const handleGenerate = async (runType = 'manual') => {
     setGenerating(true);
@@ -205,6 +244,71 @@ export default function AdminMarketingPage() {
     setActionLoading(null);
   };
 
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this post? This cannot be undone.')) return;
+    setActionLoading(id);
+    const res = await fetch('/api/admin/marketing', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      setSelectedItem(null);
+    }
+    await fetchItems();
+    setActionLoading(null);
+  };
+
+  const handleArchive = async (id: string) => {
+    setActionLoading(id);
+    await fetch('/api/admin/marketing', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status: 'archived' }),
+    });
+    setSelectedItem(null);
+    await fetchItems();
+    setActionLoading(null);
+  };
+
+  const handleReschedule = async (id: string) => {
+    if (!scheduleTime) return;
+    setActionLoading(id);
+    await fetch('/api/admin/marketing', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, scheduled_for: new Date(scheduleTime).toISOString(), status: 'scheduled' }),
+    });
+    setSelectedItem(null);
+    setScheduleTime('');
+    await fetchItems();
+    setActionLoading(null);
+  };
+
+  const handleDuplicate = async (item: QueueItem) => {
+    setCreating(true);
+    const res = await fetch('/api/admin/marketing/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instructions: `Rewrite this post with a fresh angle:\n\nFacebook: ${item.caption_facebook}\n\nInstagram: ${item.caption_instagram}`,
+        content_type: item.content_type,
+        image_url: item.image_url || undefined,
+      }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+    } else {
+      setSelectedItem(null);
+      await fetchItems();
+    }
+    setCreating(false);
+  };
+
   const openPreview = (item: QueueItem) => {
     setSelectedItem(item);
     setEditCaption({
@@ -236,6 +340,97 @@ export default function AdminMarketingPage() {
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {generating ? 'Generating...' : 'Generate Content'}
         </button>
+      </div>
+
+      {/* Ava's Suggestions Section */}
+      <div className="mb-6">
+        <button
+          onClick={() => setAvaVisible(!avaVisible)}
+          className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl hover:border-emerald-300 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-600 rounded-lg p-2">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-900">Ava&apos;s Marketing Suggestions</p>
+              <p className="text-xs text-gray-500">AI-powered post ideas tailored for today</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); fetchAvaSuggestions(); }}
+              className="p-1.5 rounded-lg hover:bg-emerald-100 transition-colors"
+              title="Refresh suggestions"
+            >
+              <RefreshCw className={`w-4 h-4 text-emerald-600 ${avaLoading ? 'animate-spin' : ''}`} />
+            </button>
+            {avaVisible ? <EyeOff className="w-5 h-5 text-gray-400" /> : <Eye className="w-5 h-5 text-gray-400" />}
+          </div>
+        </button>
+
+        {avaVisible && (
+          <div className="mt-2">
+            {avaLoading && !avaSuggestions.length ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-20 mb-3" />
+                    <div className="h-3 bg-gray-100 rounded w-full mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-3/4 mb-3" />
+                    <div className="h-3 bg-gray-50 rounded w-full mb-2" />
+                    <div className="h-8 bg-emerald-50 rounded w-28 mt-3" />
+                  </div>
+                ))}
+              </div>
+            ) : avaSuggestions.length === 0 ? (
+              <div className="text-center py-8 bg-white border border-gray-200 rounded-xl">
+                <Sparkles className="w-8 h-8 text-emerald-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No suggestions loaded yet</p>
+                <button
+                  onClick={fetchAvaSuggestions}
+                  className="mt-2 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {avaSuggestions.map((s, idx) => {
+                  const typeLabel = AVA_TYPE_LABELS[s.type] || { label: s.type, color: 'bg-gray-100 text-gray-600' };
+                  return (
+                    <div key={idx} className="bg-white border border-emerald-100 rounded-xl p-4 hover:border-emerald-300 hover:shadow-sm transition-all">
+                      <div className="flex items-start justify-between mb-2">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeLabel.color}`}>
+                          {typeLabel.label}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800 font-medium mb-2">{s.idea}</p>
+                      <div className="bg-emerald-50 rounded-lg p-2.5 mb-2">
+                        <p className="text-xs text-emerald-700 font-medium mb-0.5">Hook:</p>
+                        <p className="text-sm text-emerald-900 italic">&ldquo;{s.hook}&rdquo;</p>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-3">
+                        <span className="font-medium text-gray-600">Why this works:</span> {s.why}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setCreateInstructions(s.idea + '\n\nHook/opening line: ' + s.hook);
+                          setCreateContentType(AVA_TYPE_MAP[s.type] || 'brand_awareness');
+                          setShowCreate(true);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700 transition-colors"
+                      >
+                        <ArrowRight className="w-3 h-3" />
+                        Create this post
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Create Post Section */}
@@ -336,15 +531,16 @@ export default function AdminMarketingPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
-        {(['queue', 'history', 'agent'] as const).map(tab => (
+        {(['queue', 'history', 'agent', 'calendar'] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${
               activeTab === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab === 'queue' ? 'Content Queue' : tab === 'history' ? 'Post History' : 'Agent Runs'}
+            {tab === 'calendar' && <CalendarIcon className="w-3.5 h-3.5" />}
+            {tab === 'queue' ? 'Content Queue' : tab === 'history' ? 'Post History' : tab === 'agent' ? 'Agent Runs' : 'Calendar'}
           </button>
         ))}
       </div>
@@ -354,7 +550,7 @@ export default function AdminMarketingPage() {
         <>
           {/* Status Filter */}
           <div className="flex gap-2 mb-4 flex-wrap">
-            {['', 'draft', 'approved', 'scheduled', 'posted', 'rejected', 'failed'].map(s => (
+            {['', 'draft', 'approved', 'scheduled', 'posted', 'rejected', 'failed', 'archived'].map(s => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
@@ -544,6 +740,86 @@ export default function AdminMarketingPage() {
         </div>
       )}
 
+      {/* Calendar Tab */}
+      {activeTab === 'calendar' && (
+        <div>
+          {/* Unscheduled drafts */}
+          {items.filter(i => !i.scheduled_for && ['draft', 'approved'].includes(i.status)).length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Unscheduled Posts</h3>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {items.filter(i => !i.scheduled_for && ['draft', 'approved'].includes(i.status)).map(item => (
+                  <div
+                    key={item.id}
+                    onClick={() => openPreview(item)}
+                    className="flex-shrink-0 w-48 p-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-all"
+                  >
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${CONTENT_TYPE_CONFIG[item.content_type]?.color || 'bg-gray-100 text-gray-600'}`}>
+                      {CONTENT_TYPE_CONFIG[item.content_type]?.label || item.content_type}
+                    </span>
+                    <p className="text-xs text-gray-600 mt-1.5 line-clamp-2">{item.caption_facebook?.substring(0, 80) || 'No caption'}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Week calendar grid */}
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 14 }, (_, i) => {
+              const date = new Date();
+              date.setDate(date.getDate() - date.getDay() + 1 + i);
+              const dateStr = date.toISOString().slice(0, 10);
+              const isToday = new Date().toISOString().slice(0, 10) === dateStr;
+              const dayPosts = items.filter(item =>
+                item.scheduled_for && item.scheduled_for.slice(0, 10) === dateStr
+              );
+              const postedPosts = items.filter(item =>
+                item.posted_at && item.posted_at.slice(0, 10) === dateStr && item.status === 'posted'
+              );
+              const allDayPosts = [...dayPosts, ...postedPosts.filter(p => !dayPosts.find(d => d.id === p.id))];
+
+              return (
+                <div
+                  key={dateStr}
+                  className={`min-h-[120px] rounded-lg border p-2 ${
+                    isToday ? 'border-emerald-400 bg-emerald-50/50' : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`text-xs font-medium ${isToday ? 'text-emerald-700' : 'text-gray-500'}`}>
+                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
+                    <span className={`text-xs ${isToday ? 'bg-emerald-600 text-white px-1.5 py-0.5 rounded-full' : 'text-gray-400'}`}>
+                      {date.getDate()}
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    {allDayPosts.map(post => {
+                      const statusCfg = STATUS_CONFIG[post.status] || STATUS_CONFIG.draft;
+                      return (
+                        <div
+                          key={post.id}
+                          onClick={() => openPreview(post)}
+                          className="p-1.5 rounded border border-gray-100 bg-white cursor-pointer hover:shadow-sm transition-shadow"
+                        >
+                          <div className="flex items-center gap-1">
+                            {post.platforms.includes('facebook') && <Facebook className="w-2.5 h-2.5 text-blue-600" />}
+                            {post.platforms.includes('instagram') && <Instagram className="w-2.5 h-2.5 text-pink-500" />}
+                            <span className={`text-[10px] px-1 py-0.5 rounded ${statusCfg.color}`}>{statusCfg.label}</span>
+                          </div>
+                          <p className="text-[10px] text-gray-600 line-clamp-2 mt-0.5">{post.caption_facebook?.substring(0, 50) || ''}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Preview/Edit Modal */}
       {selectedItem && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedItem(null)}>
@@ -614,15 +890,59 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
-              {/* Schedule time (for approval) */}
-              {['draft', 'approved'].includes(selectedItem.status) && (
+              {/* Schedule / Reschedule */}
+              {['draft', 'approved', 'scheduled'].includes(selectedItem.status) && (
                 <div className="mb-4">
-                  <label className="text-sm font-medium text-gray-700 mb-1 block">Schedule for (optional)</label>
+                  <label className="text-sm font-medium text-gray-700 mb-1 block">
+                    {selectedItem.scheduled_for ? 'Reschedule' : 'Schedule for (optional)'}
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="datetime-local"
+                      value={scheduleTime}
+                      onChange={e => setScheduleTime(e.target.value)}
+                      className="border rounded-lg px-3 py-2 text-sm flex-1"
+                    />
+                    {selectedItem.scheduled_for && scheduleTime && (
+                      <button
+                        onClick={() => handleReschedule(selectedItem.id)}
+                        disabled={actionLoading === selectedItem.id}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                      >
+                        <Clock className="w-3.5 h-3.5" /> Reschedule
+                      </button>
+                    )}
+                  </div>
+                  {selectedItem.scheduled_for && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      Currently scheduled: {formatDate(selectedItem.scheduled_for)}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Image URL */}
+              {selectedItem.status !== 'posted' && (
+                <div className="mb-4">
+                  <label className="text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                    <ImageIcon className="w-3.5 h-3.5" /> Image URL
+                  </label>
                   <input
-                    type="datetime-local"
-                    value={scheduleTime}
-                    onChange={e => setScheduleTime(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
+                    type="url"
+                    defaultValue={selectedItem.image_url || ''}
+                    onBlur={async (e) => {
+                      const newUrl = e.target.value;
+                      if (newUrl !== (selectedItem.image_url || '')) {
+                        await fetch('/api/admin/marketing', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: selectedItem.id, image_url: newUrl || null }),
+                        });
+                        await fetchItems();
+                      }
+                    }}
+                    placeholder="https://..."
+                    className="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
                   />
                 </div>
               )}
@@ -634,8 +954,9 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
+              {/* Primary Actions */}
+              <div className="flex flex-wrap gap-2 pt-4 border-t">
+                {/* Save edits */}
                 {(editCaption.facebook !== selectedItem.caption_facebook || editCaption.instagram !== selectedItem.caption_instagram) && selectedItem.status !== 'posted' && (
                   <button
                     onClick={() => handleSaveEdit(selectedItem.id)}
@@ -645,6 +966,8 @@ export default function AdminMarketingPage() {
                     <Edit3 className="w-3.5 h-3.5" /> Save Edits
                   </button>
                 )}
+
+                {/* Approve & Reject (drafts) */}
                 {selectedItem.status === 'draft' && (
                   <>
                     <button
@@ -664,18 +987,22 @@ export default function AdminMarketingPage() {
                     </button>
                   </>
                 )}
+
+                {/* Post Now */}
                 {['draft', 'approved', 'scheduled'].includes(selectedItem.status) && (
                   <button
                     onClick={() => handlePostNow(selectedItem.id)}
                     disabled={actionLoading === selectedItem.id}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600 ml-auto"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600"
                   >
                     {actionLoading === selectedItem.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                     Post Now
                   </button>
                 )}
+
+                {/* View links for posted items */}
                 {selectedItem.status === 'posted' && (
-                  <div className="flex gap-2 ml-auto">
+                  <>
                     {selectedItem.facebook_post_url && (
                       <a href={selectedItem.facebook_post_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
                         <Facebook className="w-3.5 h-3.5" /> View on Facebook
@@ -686,7 +1013,45 @@ export default function AdminMarketingPage() {
                         <Instagram className="w-3.5 h-3.5" /> View on Instagram
                       </a>
                     )}
-                  </div>
+                  </>
+                )}
+
+                {/* Spacer to push secondary actions right */}
+                <div className="flex-1" />
+
+                {/* Duplicate */}
+                <button
+                  onClick={() => handleDuplicate(selectedItem)}
+                  disabled={creating}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 border border-gray-200"
+                  title="Duplicate with AI rewrite"
+                >
+                  {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+                  Duplicate
+                </button>
+
+                {/* Archive */}
+                {selectedItem.status !== 'archived' && (
+                  <button
+                    onClick={() => handleArchive(selectedItem.id)}
+                    disabled={actionLoading === selectedItem.id}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 border border-gray-200"
+                    title="Archive this post"
+                  >
+                    <Archive className="w-3.5 h-3.5" /> Archive
+                  </button>
+                )}
+
+                {/* Delete */}
+                {selectedItem.status !== 'posted' && selectedItem.status !== 'posting' && (
+                  <button
+                    onClick={() => handleDelete(selectedItem.id)}
+                    disabled={actionLoading === selectedItem.id}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 border border-red-200"
+                    title="Delete permanently"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                  </button>
                 )}
               </div>
             </div>

@@ -15,7 +15,8 @@ export type MarketingContentStatus =
   | 'posting'
   | 'posted'
   | 'rejected'
-  | 'failed';
+  | 'failed'
+  | 'archived';
 
 export type MarketingRunType = 'morning' | 'afternoon' | 'evening' | 'manual';
 
