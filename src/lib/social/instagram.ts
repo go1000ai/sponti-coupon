@@ -114,9 +114,20 @@ export async function postToInstagram(
     }
 
     const postId = publishData.id;
-    const postUrl = videoUrl
-      ? `https://www.instagram.com/reel/${postId}/`
-      : `https://www.instagram.com/p/${postId}/`;
+
+    // Fetch the actual permalink from the Graph API — numeric IDs don't work in Instagram URLs
+    let postUrl = `https://www.instagram.com/sponticoupon/`;
+    try {
+      const permalinkRes = await fetch(
+        `${META_GRAPH_URL}/${postId}?fields=permalink&access_token=${accessToken}`
+      );
+      const permalinkData = await permalinkRes.json();
+      if (permalinkData.permalink) {
+        postUrl = permalinkData.permalink;
+      }
+    } catch {
+      // Non-critical — fall back to profile URL
+    }
 
     return {
       platform: 'instagram',
