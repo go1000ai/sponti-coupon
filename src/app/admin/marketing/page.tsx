@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import {
   Sparkles, CheckCircle2, XCircle, Clock, Send,
-  RefreshCw, Loader2, Edit3,
+  RefreshCw, Loader2, Edit3, PenLine, ChevronDown, ChevronUp, ImageIcon,
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
   Facebook, Instagram,
 } from 'lucide-react';
@@ -84,6 +84,41 @@ export default function AdminMarketingPage() {
   const [editCaption, setEditCaption] = useState({ facebook: '', instagram: '' });
   const [scheduleTime, setScheduleTime] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [createInstructions, setCreateInstructions] = useState('');
+  const [createContentType, setCreateContentType] = useState('brand_awareness');
+  const [createImageUrl, setCreateImageUrl] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  const handleCreatePost = async () => {
+    if (!createInstructions.trim()) return;
+    setCreating(true);
+    setCreateError('');
+    try {
+      const res = await fetch('/api/admin/marketing/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instructions: createInstructions,
+          content_type: createContentType,
+          image_url: createImageUrl || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setCreateError(data.error);
+      } else {
+        setCreateInstructions('');
+        setCreateImageUrl('');
+        setShowCreate(false);
+        await fetchItems();
+      }
+    } catch {
+      setCreateError('Failed to create post');
+    }
+    setCreating(false);
+  };
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -201,6 +236,102 @@ export default function AdminMarketingPage() {
           {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
           {generating ? 'Generating...' : 'Generate Content'}
         </button>
+      </div>
+
+      {/* Create Post Section */}
+      <div className="mb-6">
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="w-full flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-xl hover:border-orange-300 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="bg-[#E8632B] rounded-lg p-2">
+              <PenLine className="w-5 h-5 text-white" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-900">Create a Post</p>
+              <p className="text-xs text-gray-500">Tell the AI exactly what you want to promote about SpontiCoupon</p>
+            </div>
+          </div>
+          {showCreate ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+        </button>
+
+        {showCreate && (
+          <div className="mt-2 bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+            {/* Instructions */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1.5 block">
+                What do you want to post? Be specific.
+              </label>
+              <textarea
+                value={createInstructions}
+                onChange={(e) => setCreateInstructions(e.target.value)}
+                rows={4}
+                placeholder={'Examples:\n• "Announce our Founders 20 special — first 20 vendors get $29/month for life. Only 7 spots left. Create urgency."\n• "Post about how SpontiCoupon helps restaurants fill empty seats during slow hours."\n• "Ask our followers what local deals they\'d love to see on SpontiCoupon. Make it engaging."'}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8632B] focus:border-[#E8632B] placeholder:text-gray-400"
+              />
+            </div>
+
+            {/* Content Type & Image */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1.5 block">Post Type</label>
+                <select
+                  value={createContentType}
+                  onChange={(e) => setCreateContentType(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8632B]"
+                >
+                  <option value="brand_awareness">Brand Awareness</option>
+                  <option value="engagement">Engagement / Question</option>
+                  <option value="vendor_spotlight">Vendor Spotlight</option>
+                  <option value="testimonial">Testimonial / Social Proof</option>
+                  <option value="local_tip">Local Tip</option>
+                  <option value="trending_topic">Trending / Seasonal</option>
+                  <option value="deal_roundup">Deal Roundup</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
+                  <ImageIcon className="w-3.5 h-3.5" /> Image URL (optional)
+                </label>
+                <input
+                  type="url"
+                  value={createImageUrl}
+                  onChange={(e) => setCreateImageUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#E8632B]"
+                />
+              </div>
+            </div>
+
+            {createError && (
+              <div className="bg-red-50 text-red-600 text-sm rounded-lg p-3">{createError}</div>
+            )}
+
+            {/* Create Button */}
+            <button
+              onClick={handleCreatePost}
+              disabled={creating || !createInstructions.trim()}
+              className="btn-primary flex items-center gap-2 w-full justify-center py-3"
+            >
+              {creating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Generating captions with AI...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  Create Post (AI will write Facebook & Instagram captions)
+                </>
+              )}
+            </button>
+
+            <p className="text-xs text-gray-400 text-center">
+              The AI will generate platform-specific captions based on your instructions. You can edit them before posting.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
