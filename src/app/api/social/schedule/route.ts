@@ -71,8 +71,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No active connections for selected platforms' }, { status: 400 });
   }
 
-  const imageUrl = customImageUrl || deal.image_url || '';
-  const videoUrl = customVideoUrl || null;
+  // Ensure media URLs are absolute — Facebook/Instagram need full public URLs
+  const rawImageUrl = customImageUrl || deal.image_url || '';
+  const imageUrl = rawImageUrl && rawImageUrl.startsWith('/') ? `${APP_URL}${rawImageUrl}` : rawImageUrl;
+  const rawVideoUrl = customVideoUrl || null;
+  const videoUrl = rawVideoUrl && rawVideoUrl.startsWith('/') ? `${APP_URL}${rawVideoUrl}` : rawVideoUrl;
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
   const now = new Date().toISOString();
 

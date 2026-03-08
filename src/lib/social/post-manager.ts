@@ -118,6 +118,10 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
     }
   }
 
+  // Ensure media URLs are absolute — Facebook/Instagram need full public URLs
+  if (imageUrl && imageUrl.startsWith('/')) imageUrl = `${APP_URL}${imageUrl}`;
+  if (videoUrl && videoUrl.startsWith('/')) videoUrl = `${APP_URL}${videoUrl}`;
+
   // 6. Post to each connection in parallel with error isolation
   const results = await Promise.allSettled(
     connections.map(async (conn: SocialConnection) => {
