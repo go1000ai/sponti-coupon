@@ -148,7 +148,39 @@ export async function GET(request: NextRequest) {
       .eq('platform', 'facebook')
       .eq('is_brand_account', state.isBrand);
 
-    // Insert fresh temp record for page picker
+    // If only 1 page, skip the picker and save directly
+    if (pages.length === 1) {
+      const page = pages[0];
+      const { error: insertError } = await supabase
+        .from('social_connections')
+        .insert({
+          vendor_id: vendorId,
+          is_brand_account: state.isBrand,
+          platform: 'facebook',
+          access_token: encrypt(page.token),
+          refresh_token: null,
+          token_expires_at: null, // Page tokens don't expire
+          platform_user_id: null,
+          platform_page_id: page.id,
+          account_name: page.name,
+          account_username: null,
+          account_avatar_url: page.avatar,
+          is_active: true,
+          last_error: null,
+          connected_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+
+      if (insertError) {
+        console.error('[FB OAuth] Insert error:', JSON.stringify(insertError));
+        return NextResponse.redirect(new URL(`${basePath}${sep}social_error=db_error`, appUrl));
+      }
+
+      console.log('[FB OAuth] Single page auto-selected:', page.name, page.id);
+      return NextResponse.redirect(new URL(`${basePath}${sep}social_connected=facebook`, appUrl));
+    }
+
+    // Multiple pages — insert temp record for page picker
     const { data: tempRecord, error: tempError } = await supabase
       .from('social_connections')
       .insert({
