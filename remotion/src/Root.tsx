@@ -8,7 +8,7 @@ export const RemotionRoot: React.FC = () => {
     <>
       <Composition
         id="ExplainerVideo"
-        component={ExplainerVideo}
+        component={ExplainerVideo as unknown as React.ComponentType<Record<string, unknown>>}
         durationInFrames={30 * 90} // ~90 seconds at 30fps
         fps={30}
         width={1920}
@@ -19,7 +19,7 @@ export const RemotionRoot: React.FC = () => {
       />
       <Composition
         id="TutorialVideo"
-        component={TutorialVideo}
+        component={TutorialVideo as unknown as React.ComponentType<Record<string, unknown>>}
         durationInFrames={30 * 120} // ~2 minutes
         fps={30}
         width={1920}

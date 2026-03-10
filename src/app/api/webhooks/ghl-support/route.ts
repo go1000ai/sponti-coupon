@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
   // Check if caller has an account (by email or phone)
   let userId: string | null = null;
-  let userEmail: string | null = caller_email?.trim() || null;
+  const userEmail: string | null = caller_email?.trim() || null;
   let detectedRole = ticketRole;
 
   if (userEmail) {
