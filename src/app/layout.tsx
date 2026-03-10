@@ -136,6 +136,7 @@ export default function RootLayout({
     sameAs: [
       "https://www.facebook.com/sponticoupon",
       "https://www.instagram.com/sponticoupon",
+      "https://x.com/SpontiCoupon",
     ],
     contactPoint: [
       {
@@ -198,6 +199,7 @@ export default function RootLayout({
     sameAs: [
       "https://www.facebook.com/sponticoupon",
       "https://www.instagram.com/sponticoupon",
+      "https://x.com/SpontiCoupon",
     ],
   };
 
