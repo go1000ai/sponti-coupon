@@ -1,8 +1,0 @@
-{
-  "components/deals/DealsMap.tsx -> ./DealsMapInner": {
-    "id": "components/deals/DealsMap.tsx -> ./DealsMapInner",
-    "files": [
-      "static/chunks/_app-pages-browser_src_components_deals_DealsMapInner_tsx.js"
-    ]
-  }
-}
