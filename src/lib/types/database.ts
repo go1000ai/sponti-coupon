@@ -92,6 +92,14 @@ export interface Vendor {
   stripe_connect_account_id: string | null;
   stripe_connect_onboarding_complete: boolean;
   stripe_connect_charges_enabled: boolean;
+  square_connect_merchant_id: string | null;
+  square_connect_location_id: string | null;
+  square_connect_onboarding_complete: boolean;
+  square_connect_charges_enabled: boolean;
+  paypal_connect_merchant_id: string | null;
+  paypal_connect_email: string | null;
+  paypal_connect_onboarding_complete: boolean;
+  paypal_connect_charges_enabled: boolean;
   average_ticket_value: number | null;
   created_at: string;
 }

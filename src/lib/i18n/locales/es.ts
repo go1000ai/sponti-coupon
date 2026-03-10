@@ -700,7 +700,7 @@ const es: Translations = {
     payDepositAmount: 'Pagar Depósito de {{amount}}',
     appointmentRequired: 'Cita Requerida',
     depositLabel: 'Depósito: {{amount}}',
-    spontiDepositNote: 'Pagado directamente al negocio. No reembolsable si no se canjea.',
+    spontiDepositNote: 'Pagado directamente al negocio. Debido a esta oferta por tiempo limitado, el depósito no es reembolsable si no se canjea a tiempo.',
     steadyDepositNote: 'Pagado directamente al negocio. Se convierte en crédito del vendedor si no se canjea.',
     dealExpiresIn: 'La oferta expira en:',
     almostSoldOut: '¡Casi agotado!',

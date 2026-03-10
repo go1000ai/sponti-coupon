@@ -1245,7 +1245,7 @@ export default function DealDetailPage() {
               </p>
               {isSponti ? (
                 <p className="text-sm text-amber-800 mt-2">
-                  The deposit of <strong>{formatCurrency(deal.deposit_amount!)}</strong> is <strong>non-refundable</strong> if not redeemed before expiration. Sponti deals are time-sensitive flash offers — act fast!
+                  Due to the extremely good deal and limited-time offer, this deal must be redeemed before it expires. If not redeemed on time, the deposit of <strong>{formatCurrency(deal.deposit_amount!)}</strong> is <strong>non-refundable</strong>. Please make sure you can visit {vendor?.business_name || 'the business'} within the deal window.
                 </p>
               ) : (
                 <p className="text-sm text-amber-800 mt-2">

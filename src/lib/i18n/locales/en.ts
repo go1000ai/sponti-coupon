@@ -702,7 +702,7 @@ const en: Translations = {
     payDepositAmount: 'Pay {{amount}} Deposit',
     appointmentRequired: 'Appointment Required',
     depositLabel: 'Deposit: {{amount}}',
-    spontiDepositNote: 'Paid directly to the business. Non-refundable if not redeemed.',
+    spontiDepositNote: 'Paid directly to the business. Due to this limited-time offer, deposit is non-refundable if not redeemed on time.',
     steadyDepositNote: 'Paid directly to the business. Converts to vendor credit if not redeemed.',
     dealExpiresIn: 'Deal expires in:',
     almostSoldOut: 'Almost sold out!',

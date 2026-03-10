@@ -91,6 +91,10 @@ export default function ScanPage() {
   const [copied, setCopied] = useState(false);
   const [stripePaid, setStripePaid] = useState(false);
   const [stripeEnabled, setStripeEnabled] = useState<boolean | null>(null); // null = loading
+  const [squareEnabled] = useState<boolean>(false); // Square on hold — account deactivated
+  const [squareOrderId, setSquareOrderId] = useState<string | null>(null);
+  const [paypalEnabled, setPaypalEnabled] = useState<boolean | null>(null);
+  const [paypalOrderId, setPaypalOrderId] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelMessage, setCancelMessage] = useState<string | null>(null);
@@ -341,7 +345,7 @@ export default function ScanPage() {
     setCancelling(false);
   };
 
-  const handleGeneratePaymentLink = async () => {
+  const handleGeneratePaymentLink = async (processor: 'stripe' | 'square' | 'paypal' = 'stripe') => {
     if (!result) return;
     setGeneratingLink(true);
     setLinkError(null);
@@ -357,12 +361,15 @@ export default function ScanPage() {
           amount,
           deal_title: result.deal?.title,
           customer_name: result.customer?.name,
+          processor,
         }),
       });
       const data = await response.json();
       if (response.ok && data.checkout_url) {
         setPaymentLink(data.checkout_url);
         setSessionId(data.session_id || null);
+        setSquareOrderId(data.order_id || null);
+        setPaypalOrderId(data.paypal_order_id || null);
       } else {
         setLinkError(data.error || 'Failed to generate payment link');
       }
@@ -387,6 +394,8 @@ export default function ScanPage() {
     setError(null);
     setPaymentLink(null);
     setSessionId(null);
+    setSquareOrderId(null);
+    setPaypalOrderId(null);
     setLinkError(null);
     setStripePaid(false);
     setShowCancelConfirm(false);
@@ -395,12 +404,17 @@ export default function ScanPage() {
     setTimeout(() => inputRefs.current[0]?.focus(), 100);
   };
 
-  // Check once on mount whether this vendor has Stripe Connect active
+  // Check once on mount whether this vendor has Stripe Connect or Square Connect active
   useEffect(() => {
     fetch('/api/stripe/connect/status')
       .then(r => r.json())
       .then(d => setStripeEnabled(d.charges_enabled === true))
       .catch(() => setStripeEnabled(false));
+    // Square on hold — account deactivated
+    fetch('/api/paypal/connect/status')
+      .then(r => r.json())
+      .then(d => setPaypalEnabled(d.charges_enabled === true))
+      .catch(() => setPaypalEnabled(false));
   }, []);
 
   // Poll Stripe every 3 seconds after link is sent to auto-confirm when customer pays
@@ -410,11 +424,12 @@ export default function ScanPage() {
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!sessionId || stripePaid || step !== 'success') return;
+    const pollId = sessionId ? `session_id=${sessionId}` : squareOrderId ? `order_id=${squareOrderId}` : paypalOrderId ? `paypal_order_id=${paypalOrderId}` : null;
+    if (!pollId || stripePaid || step !== 'success') return;
 
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/vendor/collect-balance/status?session_id=${sessionId}`);
+        const res = await fetch(`/api/vendor/collect-balance/status?${pollId}`);
         const data = await res.json();
         if (data.paid) {
           clearInterval(interval);
@@ -426,7 +441,7 @@ export default function ScanPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [sessionId, stripePaid, step, handleStripePaid]);
+  }, [sessionId, squareOrderId, paypalOrderId, stripePaid, step, handleStripePaid]);
 
   const paymentLabel = (type: string | null | undefined) =>
     type ? PAYMENT_METHOD_LABELS[type] || type : null;
@@ -786,12 +801,12 @@ export default function ScanPage() {
               )}
 
               {/* Option A & B — only shown when a balance is actually owed */}
-              {(result.remaining_balance || 0) > 0 && stripeEnabled === false ? (
+              {(result.remaining_balance || 0) > 0 && stripeEnabled === false && squareEnabled === false && paypalEnabled === false ? (
                 <div className="text-center py-2">
                   <p className="text-xs text-gray-400">
                     {t('vendor.scan.stripeNotConnected')}{' '}
-                    <a href="/vendor/settings" className="text-blue-500 hover:underline">
-                      {t('vendor.scan.setupStripeConnect')}
+                    <a href="/vendor/payments" className="text-blue-500 hover:underline">
+                      Connect Stripe, Square, or PayPal
                     </a>{' '}
                     {t('vendor.scan.toOfferCardLinks')}
                   </p>
@@ -803,21 +818,59 @@ export default function ScanPage() {
                   <p className="text-xs text-green-600 mt-1">{t('vendor.scan.customerPaidComplete')}</p>
                 </div>
               ) : (result.remaining_balance || 0) > 0 && !paymentLink ? (
-                <button
-                  onClick={handleGeneratePaymentLink}
-                  disabled={generatingLink}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-colors"
-                >
-                  {generatingLink ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.generatingLink')}
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <CreditCard className="w-4 h-4" /> {t('vendor.scan.customerPaysViaStripe')}
-                    </span>
+                <div className="space-y-2">
+                  {stripeEnabled && (
+                    <button
+                      onClick={() => handleGeneratePaymentLink('stripe')}
+                      disabled={generatingLink}
+                      className="w-full py-3 bg-[#635BFF] hover:bg-[#5851DB] text-white text-sm font-bold rounded-xl transition-colors"
+                    >
+                      {generatingLink ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.generatingLink')}
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <CreditCard className="w-4 h-4" /> {t('vendor.scan.customerPaysViaStripe')}
+                        </span>
+                      )}
+                    </button>
                   )}
-                </button>
+                  {squareEnabled && (
+                    <button
+                      onClick={() => handleGeneratePaymentLink('square')}
+                      disabled={generatingLink}
+                      className="w-full py-3 bg-[#006AFF] hover:bg-[#0057D9] text-white text-sm font-bold rounded-xl transition-colors"
+                    >
+                      {generatingLink ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.generatingLink')}
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <CreditCard className="w-4 h-4" /> Customer Pays via Square
+                        </span>
+                      )}
+                    </button>
+                  )}
+                  {paypalEnabled && (
+                    <button
+                      onClick={() => handleGeneratePaymentLink('paypal')}
+                      disabled={generatingLink}
+                      className="w-full py-3 bg-[#003087] hover:bg-[#002060] text-white text-sm font-bold rounded-xl transition-colors"
+                    >
+                      {generatingLink ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.scan.generatingLink')}
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <CreditCard className="w-4 h-4" /> Customer Pays via PayPal
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
                   <div className="flex items-center gap-2">

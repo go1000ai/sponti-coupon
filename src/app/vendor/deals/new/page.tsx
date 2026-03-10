@@ -317,6 +317,7 @@ export default function NewDealPage() {
   const [draftToast, setDraftToast] = useState(false);
   const [successToast, setSuccessToast] = useState(false);
   const [hasVariants, setHasVariants] = useState(false);
+  const [hasIntegratedPayment, setHasIntegratedPayment] = useState<boolean | null>(null);
   const [variants, setVariants] = useState<DealVariant[]>([]);
   const [editingVariant, setEditingVariant] = useState<DealVariant | null>(null);
   const [aiVariantsLoading, setAiVariantsLoading] = useState(false);
@@ -376,7 +377,7 @@ export default function NewDealPage() {
     // Fetch vendor category and name for suggested features & fine print
     supabase
       .from('vendors')
-      .select('category, business_name, website')
+      .select('category, business_name, website, stripe_connect_charges_enabled, paypal_connect_charges_enabled')
       .eq('id', vendorId)
       .single()
       .then(({ data }) => {
@@ -386,6 +387,7 @@ export default function NewDealPage() {
           if (isAdmin) setAdminVendorName(data.business_name);
         }
         if (data?.website) setVendorWebsite(data.website);
+        setHasIntegratedPayment(!!(data?.stripe_connect_charges_enabled || data?.paypal_connect_charges_enabled));
       });
 
     // Fetch drafts
@@ -888,6 +890,13 @@ export default function NewDealPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Sponti deals require an integrated payment processor for deposit collection
+    if (dealType === 'sponti_coupon' && !hasIntegratedPayment && !isAdmin) {
+      setError('Sponti deals require Stripe or PayPal to be connected for deposit collection. Go to Get Paid to connect a payment processor.');
+      return;
+    }
+
     setLoading(true);
 
     let startDate: Date;
@@ -1300,6 +1309,20 @@ export default function NewDealPage() {
           <p className="text-xs sm:text-sm text-gray-500">Sponti deal up to 24 hours. Requires deposit. Set your own discount — Ava can help!</p>
         </button>
       </div>
+
+      {/* Sponti requires Stripe or PayPal for deposit collection */}
+      {dealType === 'sponti_coupon' && hasIntegratedPayment === false && !isAdmin && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-red-700">Payment processor required</p>
+            <p className="text-sm text-red-600 mt-1">
+              Sponti deals require a deposit to protect your limited-time offer from no-shows. Please connect <strong>Stripe</strong> or <strong>PayPal</strong> on your{' '}
+              <a href="/vendor/payments" className="underline font-semibold hover:text-red-800">Get Paid</a> page first.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Benchmark Info for Sponti (soft suggestion, not a blocker) */}
       {dealType === 'sponti_coupon' && regularDeal && (

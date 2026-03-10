@@ -8,10 +8,12 @@ import {
   CheckCircle2, Zap, Smartphone, ShieldCheck,
   ExternalLink,
 } from 'lucide-react';
-import { PAYMENT_PROCESSORS, PROCESSOR_LIST } from '@/lib/constants/payment-processors';
+import { PAYMENT_PROCESSORS, MANUAL_PROCESSORS } from '@/lib/constants/payment-processors';
 import type { PaymentProcessorType } from '@/lib/constants/payment-processors';
 import type { VendorPaymentMethod } from '@/lib/types/database';
 import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
+// import SquareConnectBanner from '@/components/vendor/SquareConnectBanner'; // Square account deactivated — on hold
+import PayPalConnectBanner from '@/components/vendor/PayPalConnectBanner';
 import { useLanguage } from '@/lib/i18n';
 
 // Square-icon logos vs wide wordmark logos need different aspect ratios
@@ -60,7 +62,7 @@ export default function VendorPaymentsPage() {
 
   // Add form state
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newProcessorType, setNewProcessorType] = useState<PaymentProcessorType>('stripe');
+  const [newProcessorType, setNewProcessorType] = useState<PaymentProcessorType>('venmo');
   const [newPaymentLink, setNewPaymentLink] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newQrCodeImage, setNewQrCodeImage] = useState<File | null>(null);
@@ -273,24 +275,27 @@ export default function VendorPaymentsPage() {
         </div>
       </div>
 
-      {/* Stripe Connect Banner */}
+      {/* Payment Processor Connect Banners */}
       <StripeConnectBanner />
+      {/* <SquareConnectBanner /> Square account deactivated — on hold */}
+      <PayPalConnectBanner />
 
-      {/* How You Get Paid — 3 Cards */}
+      {/* How You Get Paid — 2 Cards */}
       <div className="mb-8">
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">{t('vendor.payments.howYouGetPaid')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Automated */}
           <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
             <div className="flex items-center gap-2 mb-3">
               <Zap className="w-5 h-5 text-[#635BFF]" />
-              <h3 className="font-semibold text-gray-900 text-sm">Automated</h3>
+              <h3 className="font-semibold text-gray-900 text-sm">Online Payments</h3>
             </div>
             <div className="flex items-center gap-3 mb-3 min-h-[40px]">
               <ProcessorLogo type="stripe" size={36} />
+              <ProcessorLogo type="paypal" size={36} />
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Customers pay through secure Stripe checkout. Money goes directly to your Stripe account instantly.
+              Connect Stripe or PayPal above to accept deposits and balance payments online. Money goes directly to your account — fully automated.
             </p>
             <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-full w-fit">
               <CheckCircle2 className="w-3 h-3" />
@@ -310,39 +315,14 @@ export default function VendorPaymentsPage() {
               <ProcessorLogo type="cashapp" size={36} />
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">
-              Let customers know you accept these payment methods at your location for the remaining balance.
+              Let customers know you accept these payment methods at your location. Add them below so they appear on your deals.
             </p>
             <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full w-fit">
               <Smartphone className="w-3 h-3" />
               In-person payment
             </div>
           </div>
-
-          {/* Payment Links */}
-          <div className="rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-2 mb-3">
-              <ExternalLink className="w-5 h-5 text-gray-500" />
-              <h3 className="font-semibold text-gray-900 text-sm">Payment Links</h3>
-            </div>
-            <div className="flex items-center gap-3 mb-3 flex-wrap min-h-[40px]">
-              <ProcessorLogo type="stripe" size={36} />
-              <ProcessorLogo type="square" size={36} />
-              <ProcessorLogo type="paypal" size={36} />
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Redirect customers to your existing checkout link on Stripe, Square, or PayPal.
-            </p>
-            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit">
-              <ExternalLink className="w-3 h-3" />
-              External checkout
-            </div>
-          </div>
         </div>
-
-        {/* Coming soon note */}
-        <p className="text-xs text-gray-400 mt-3 text-center">
-          We currently integrate with Stripe for automated checkout. More payment processors coming soon.
-        </p>
       </div>
 
       {/* Success/Error messages */}
@@ -366,15 +346,18 @@ export default function VendorPaymentsPage() {
       {showAddForm && (
         <div className="card p-6 mb-6 border-primary-200 ring-1 ring-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Plus className="w-4 h-4 text-primary-500" />
-            Add Payment Method
+            <Smartphone className="w-4 h-4 text-blue-500" />
+            Add In-Person Payment Method
           </h3>
+          <p className="text-xs text-gray-500 mb-4">
+            Let customers know which payment methods you accept at your location.
+          </p>
           <form onSubmit={handleAdd} className="space-y-4">
-            {/* Processor selector with logos */}
+            {/* Processor selector — only in-person methods */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Processor</label>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {PROCESSOR_LIST.map(([key, processor]) => (
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+              <div className="grid grid-cols-3 gap-2">
+                {MANUAL_PROCESSORS.map(([key, processor]) => (
                   <button
                     type="button"
                     key={key}
@@ -390,20 +373,12 @@ export default function VendorPaymentsPage() {
                   </button>
                 ))}
               </div>
-              {PAYMENT_PROCESSORS[newProcessorType].supportedTiers.includes('manual') && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-                  <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                  <span>{PAYMENT_PROCESSORS[newProcessorType].name} uses manual payment confirmation. Customers will send payment directly to you, and you&apos;ll confirm receipt from this page.</span>
-                </div>
-              )}
             </div>
 
-            {/* Payment link / info */}
+            {/* Payment info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {PAYMENT_PROCESSORS[newProcessorType].supportedTiers.includes('manual')
-                  ? `${PAYMENT_PROCESSORS[newProcessorType].name} Info`
-                  : `${PAYMENT_PROCESSORS[newProcessorType].name} Payment Link`}
+                {PAYMENT_PROCESSORS[newProcessorType].name} Username / Info
               </label>
               <input
                 type="text"
@@ -507,13 +482,11 @@ export default function VendorPaymentsPage() {
         <div className="card p-12 text-center">
           <div className="flex justify-center items-center gap-4 mb-5">
             <ProcessorLogo type="stripe" size={36} />
-            <ProcessorLogo type="venmo" size={36} />
-            <ProcessorLogo type="zelle" size={36} />
-            <ProcessorLogo type="cashapp" size={36} />
+            <ProcessorLogo type="paypal" size={36} />
           </div>
           <h3 className="font-semibold text-gray-700 mb-2">Set up how you get paid</h3>
           <p className="text-sm text-gray-400 mb-6 max-w-md mx-auto">
-            Connect Stripe for automated payments, or add Venmo, Zelle, or Cash App so customers can pay you directly when claiming deals.
+            Connect Stripe or PayPal for automated online payments. You can also add Venmo, Zelle, or Cash App as accepted payment methods at your location.
           </p>
           <button
             onClick={() => setShowAddForm(true)}
