@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpontiCoupon Business Card</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      gap: 40px;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .instructions {
+      color: #666;
+      font-size: 14px;
+      max-width: 700px;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .card-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .card-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    /* Standard business card: 3.5" x 2" at 300dpi = 1050x600px */
+    /* Using 2x scale for screen: 700x400px display */
+    .card {
+      width: 700px;
+      height: 400px;
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      position: relative;
+    }
+
+    /* ===== FRONT ===== */
+    .card-front {
+      background: linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+      display: flex;
+      padding: 0;
+    }
+
+    .front-left {
+      flex: 1;
+      padding: 36px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .front-right {
+      width: 220px;
+      background: linear-gradient(180deg, #E8632B 0%, #c74f1f 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 20px;
+      position: relative;
+    }
+
+    .front-right::before {
+      content: '';
+      position: absolute;
+      left: -20px;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background: linear-gradient(180deg, #E8632B 0%, #c74f1f 100%);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+
+    /* Logo area */
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-img {
+      height: 140px;
+      width: auto;
+      object-fit: contain;
+      filter: brightness(1.1);
+    }
+
+    .logo-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #E8632B, #FF8C42);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 900;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.5px;
+    }
+    .logo-text span { color: #E8632B; }
+
+    .tagline {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* Personal info */
+    .person-info {
+      margin-top: 24px;
+    }
+
+    .person-name {
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: -0.3px;
+    }
+
+    .person-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #E8632B;
+      margin-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    /* Contact info */
+    .contact-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .contact-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .contact-icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E8632B;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    /* QR code side */
+    .qr-wrapper {
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .qr-wrapper canvas {
+      display: block;
+    }
+
+    .scan-text {
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      line-height: 1.4;
+    }
+
+    .scan-subtext {
+      color: rgba(255,255,255,0.8);
+      font-size: 9px;
+      text-align: center;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* ===== BACK ===== */
+    .card-back {
+      background: linear-gradient(145deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-back::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #E8632B, #FF8C42, #E8632B);
+    }
+
+    .back-logo-watermark { display: none; }
+    .back-watermark-text { display: none; }
+    .back-logo-outline-canvas { display: none; }
+
+    .back-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .back-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: white;
+    }
+    .back-title span { color: #E8632B; }
+
+    .back-subtitle {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Benefits grid */
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 20px;
+      flex: 1;
+    }
+
+    .benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .benefit-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: rgba(232, 99, 43, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .benefit-text h4 {
+      font-size: 11px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 1px;
+    }
+
+    .benefit-text p {
+      font-size: 8.5px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.3;
+    }
+
+    /* Bottom bar */
+    .back-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .footer-url {
+      font-size: 14px;
+      font-weight: 800;
+      color: #E8632B;
+      letter-spacing: -0.3px;
+    }
+
+    .footer-tagline {
+      font-size: 10px;
+      color: rgba(255,255,255,0.4);
+      font-style: italic;
+    }
+
+    /* Force backgrounds to print */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+
+    /* Print styles */
+    @media print {
+      body { background: white !important; padding: 0; margin: 0; }
+      .instructions, h1, .card-label, .print-btn { display: none !important; }
+      .card { box-shadow: none; }
+      .card-container { gap: 20px; }
+    }
+
+    .print-btn {
+      background: #E8632B;
+      color: white;
+      border: none;
+      padding: 14px 40px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s;
+    }
+    .print-btn:hover {
+      background: #c74f1f;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(232,99,43,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>SpontiCoupon Business Cards</h1>
+  <p class="instructions">
+    Standard 3.5" x 2" business card layout. Print double-sided or send to your printer.<br>
+    Click "Print / Save as PDF" to export.
+  </p>
+
+  <div class="card-container">
+
+    <!-- FRONT -->
+    <div class="card-label">Front</div>
+    <div class="card card-front">
+      <div class="front-left">
+        <div>
+          <div class="logo-area">
+            <img src="/logo.png" alt="SpontiCoupon" class="logo-img" />
+          </div>
+
+          <div class="person-info">
+            <div class="person-name">Heriberto Santiago</div>
+            <div class="person-title">Founder & CEO</div>
+          </div>
+        </div>
+
+        <div class="contact-info">
+          <div class="contact-row">
+            <div class="contact-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8632B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,4 12,13 2,4"/></svg>
+            </div>
+            hsantiago@sponticoupon.com
+          </div>
+          <div class="contact-row">
+            <div class="contact-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8632B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            (321) 335-0773
+          </div>
+          <div class="contact-row">
+            <div class="contact-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8632B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            sponticoupon.com
+          </div>
+          <div class="contact-row">
+            <div class="contact-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E8632B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            3801 Avalon Park Blvd E, Ste 200, Orlando, FL 32828
+          </div>
+        </div>
+      </div>
+
+      <div class="front-right">
+        <div class="qr-wrapper" id="qr-front"></div>
+        <div class="scan-text">Scan for Pricing<br>& Plans</div>
+        <div class="scan-subtext">sponticoupon.com/pricing</div>
+      </div>
+    </div>
+
+    <!-- BACK -->
+    <div class="card-label" style="margin-top: 20px;">Back</div>
+    <div class="card card-back">
+      <img src="/logo.png" alt="" class="back-logo-watermark" />
+      <div class="back-watermark-text">SpontiCoupon</div>
+      <canvas id="logo-outline" class="back-logo-outline-canvas"></canvas>
+      <div class="back-header">
+        <div>
+          <div class="back-title">What We Do for <span>Your Business</span></div>
+        </div>
+        <div class="back-subtitle">Vendor Benefits</div>
+      </div>
+
+      <div class="benefits-grid">
+        <div class="benefit-item">
+          <div class="benefit-icon">⚡</div>
+          <div class="benefit-text">
+            <h4>Flash & Ongoing Deals</h4>
+            <p>Sponti (24hr flash) and Steady deals bring customers to your door fast</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">💰</div>
+          <div class="benefit-text">
+            <h4>Zero Commissions</h4>
+            <p>Payments go directly to you via Stripe or PayPal. We never touch your money</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">🛡️</div>
+          <div class="benefit-text">
+            <h4>Deposit Protection</h4>
+            <p>Customer deposits protect you from no-shows on limited-time offers</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">📱</div>
+          <div class="benefit-text">
+            <h4>QR Code Redemption</h4>
+            <p>Simple scan-to-redeem. Customers show QR or 6-digit code at your location</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">📣</div>
+          <div class="benefit-text">
+            <h4>Auto Social Posting</h4>
+            <p>Your deals auto-post to Facebook, Instagram, X, and TikTok</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">📊</div>
+          <div class="benefit-text">
+            <h4>Real-Time Analytics</h4>
+            <p>Track claims, redemptions, revenue, and customer reviews from your dashboard</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">🤖</div>
+          <div class="benefit-text">
+            <h4>AI-Powered Deals</h4>
+            <p>AI creates, analyzes, and optimizes your deals — pricing, timing, descriptions, and images</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon">🎁</div>
+          <div class="benefit-text">
+            <h4>Built-In Loyalty Program</h4>
+            <p>Customers earn SpontiPoints on every deal. Reward repeat visits and build lasting loyalty</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="back-footer">
+        <div class="footer-url">sponticoupon.com</div>
+        <div class="footer-tagline">Fill empty seats. Grow your business.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+
+  <script>
+    // Generate QR code for the front
+    const qr = qrcode(0, 'M');
+    qr.addData('https://sponticoupon.com/pricing');
+    qr.make();
+
+    const canvas = document.createElement('canvas');
+    const size = 120;
+    const modules = qr.getModuleCount();
+    const cellSize = size / modules;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    // White background
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, size, size);
+
+    // QR modules in orange
+    for (let row = 0; row < modules; row++) {
+      for (let col = 0; col < modules; col++) {
+        if (qr.isDark(row, col)) {
+          ctx.fillStyle = '#E8632B';
+          const x = col * cellSize;
+          const y = row * cellSize;
+          ctx.fillRect(x, y, cellSize + 0.5, cellSize + 0.5);
+        }
+      }
+    }
+
+    document.getElementById('qr-front').appendChild(canvas);
+
+    // Generate outline version of logo for back watermark
+    const logoImg = new Image();
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = function() {
+      const w = 500;
+      const h = Math.round(logoImg.height * (w / logoImg.width));
+      const outlineCanvas = document.getElementById('logo-outline');
+      outlineCanvas.width = w;
+      outlineCanvas.height = h;
+      const octx = outlineCanvas.getContext('2d');
+
+      // Draw logo to temp canvas to get pixel data
+      const tmp = document.createElement('canvas');
+      tmp.width = w;
+      tmp.height = h;
+      const tctx = tmp.getContext('2d');
+      tctx.drawImage(logoImg, 0, 0, w, h);
+      const imgData = tctx.getImageData(0, 0, w, h);
+      const pixels = imgData.data;
+
+      // Edge detection with thickness: check wider radius for edges
+      const outData = octx.createImageData(w, h);
+      const out = outData.data;
+      const radius = 3; // thicker outline
+
+      for (let y = radius; y < h - radius; y++) {
+        for (let x = radius; x < w - radius; x++) {
+          const i = (y * w + x) * 4;
+          const a = pixels[i + 3];
+
+          // Check neighbors at radius distance
+          let maxDiff = 0;
+          for (let dy = -radius; dy <= radius; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              const ni = ((y+dy) * w + (x+dx)) * 4;
+              const na = pixels[ni + 3];
+              maxDiff = Math.max(maxDiff, Math.abs(a - na));
+            }
+          }
+
+          if (maxDiff > 50) {
+            out[i] = 255;     // R
+            out[i+1] = 255;   // G
+            out[i+2] = 255;   // B
+            out[i+3] = 50;    // A — visible but transparent
+          }
+        }
+      }
+
+      octx.putImageData(outData, 0, 0);
+    };
+    logoImg.src = '/logo.png';
+  </script>
+
+</body>
+</html>

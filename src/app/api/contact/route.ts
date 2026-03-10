@@ -9,13 +9,30 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, email, phone, businessName, locations, message, plan } = body;
+    const { name, email, phone, businessName, locations, message, plan, turnstileToken } = body;
 
     if (!name || !email || !businessName) {
       return NextResponse.json(
         { error: 'Name, email, and business name are required' },
         { status: 400 },
       );
+    }
+
+    // Verify Turnstile CAPTCHA if configured
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    if (turnstileSecret) {
+      if (!turnstileToken) {
+        return NextResponse.json({ error: 'CAPTCHA verification required' }, { status: 400 });
+      }
+      const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: turnstileSecret, response: turnstileToken }),
+      });
+      const verify = await verifyRes.json();
+      if (!verify.success) {
+        return NextResponse.json({ error: 'CAPTCHA verification failed' }, { status: 403 });
+      }
     }
 
     const supabase = await createServiceRoleClient();

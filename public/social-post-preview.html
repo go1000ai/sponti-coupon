@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpontiCoupon - Social Post Preview</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; padding: 24px; color: #1c1e21; }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 8px; color: #1c1e21; }
+  .subtitle { text-align: center; color: #65676b; margin-bottom: 32px; font-size: 15px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; max-width: 500px; } }
+
+  /* Facebook Post */
+  .fb-post { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); overflow: hidden; }
+  .fb-header { display: flex; align-items: center; padding: 12px 16px; gap: 10px; }
+  .fb-avatar { width: 40px; height: 40px; border-radius: 50%; background: #E8632B; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; flex-shrink: 0; }
+  .fb-name { font-weight: 600; font-size: 15px; color: #050505; }
+  .fb-meta { font-size: 13px; color: #65676b; }
+  .fb-caption { padding: 0 16px 12px; font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
+  .fb-caption a { color: #216fdb; text-decoration: none; }
+  .fb-image { width: 100%; aspect-ratio: 1; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+  .fb-image img { width: 100%; height: 100%; object-fit: cover; }
+  .fb-actions { display: flex; border-top: 1px solid #e4e6eb; padding: 4px 16px; }
+  .fb-action { flex: 1; text-align: center; padding: 8px 0; font-size: 15px; font-weight: 600; color: #65676b; cursor: pointer; border-radius: 4px; }
+  .fb-action:hover { background: #f0f2f5; }
+  .platform-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .fb-badge { background: #e7f3ff; color: #1877f2; }
+  .ig-badge { background: linear-gradient(135deg, #fdf2f8, #fef3e2); color: #e1306c; }
+
+  /* Instagram Post */
+  .ig-post { background: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid #dbdbdb; }
+  .ig-header { display: flex; align-items: center; padding: 12px 14px; gap: 10px; }
+  .ig-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af); padding: 2px; flex-shrink: 0; }
+  .ig-avatar-inner { width: 100%; height: 100%; border-radius: 50%; background: #E8632B; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; border: 2px solid white; }
+  .ig-name { font-weight: 600; font-size: 14px; color: #262626; }
+  .ig-image { width: 100%; aspect-ratio: 1; background: #f0f0f0; }
+  .ig-image img { width: 100%; height: 100%; object-fit: cover; }
+  .ig-actions-row { display: flex; padding: 8px 14px; gap: 16px; }
+  .ig-icon { width: 24px; height: 24px; cursor: pointer; }
+  .ig-likes { padding: 0 14px; font-weight: 600; font-size: 14px; color: #262626; }
+  .ig-caption-area { padding: 4px 14px 12px; font-size: 14px; line-height: 1.4; }
+  .ig-caption-area strong { font-weight: 600; }
+  .ig-caption-area .hashtags { color: #00376b; }
+  .ig-time { padding: 0 14px 12px; font-size: 11px; color: #8e8e8e; text-transform: uppercase; letter-spacing: 0.2px; }
+
+  /* Deal Info Banner */
+  .deal-banner { max-width: 1100px; margin: 0 auto 24px; background: linear-gradient(135deg, #E8632B, #f59e0b); border-radius: 12px; padding: 20px 28px; color: white; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .deal-banner h2 { font-size: 20px; flex: 1; min-width: 200px; }
+  .deal-stats { display: flex; gap: 16px; }
+  .deal-stat { background: rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 16px; text-align: center; }
+  .deal-stat .label { font-size: 11px; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px; }
+  .deal-stat .value { font-size: 20px; font-weight: 700; }
+
+  /* Other platforms */
+  .other-platforms { max-width: 1100px; margin: 32px auto 0; }
+  .other-platforms h3 { font-size: 18px; margin-bottom: 16px; color: #1c1e21; }
+  .platform-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .platform-cards { grid-template-columns: 1fr; } }
+  .p-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .p-card h4 { font-size: 15px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .p-card p { font-size: 14px; line-height: 1.5; color: #333; }
+  .char-count { font-size: 12px; color: #65676b; margin-top: 6px; }
+  .note { max-width: 1100px; margin: 24px auto 0; padding: 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; font-size: 14px; color: #856404; }
+</style>
+</head>
+<body>
+
+<h1>Social Post Preview</h1>
+<p class="subtitle">Auto-generated for deal: "40% Off Complete Front & Rear Brake Service" &mdash; SpontiCoupon Admin, Orlando FL</p>
+
+<!-- Deal Info Banner -->
+<div class="deal-banner">
+  <h2>40% Off Complete Front & Rear Brake Service</h2>
+  <div class="deal-stats">
+    <div class="deal-stat">
+      <div class="label">Was</div>
+      <div class="value">$450</div>
+    </div>
+    <div class="deal-stat">
+      <div class="label">Now</div>
+      <div class="value">$270</div>
+    </div>
+    <div class="deal-stat">
+      <div class="label">Save</div>
+      <div class="value">40%</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- FACEBOOK POST -->
+  <div>
+    <span class="platform-badge fb-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+      Facebook Post
+    </span>
+    <div class="fb-post">
+      <div class="fb-header">
+        <div class="fb-avatar">SC</div>
+        <div>
+          <div class="fb-name">SpontiCoupon</div>
+          <div class="fb-meta">Just now &middot; &#127758;</div>
+        </div>
+      </div>
+      <div class="fb-caption">&#128293; BRAKE SERVICE DEAL ALERT! &#128663; Save 40% on complete front & rear brake service in Orlando! Professional service with premium pads, rotor inspection & 12-month warranty. Only $270 (was $450) &#128176; Your safety is worth it! Claim now: <a href="#">sponticoupon.com/deals/288e93dc</a></div>
+      <div class="fb-image">
+        <img src="https://ypoytvqxuxpjipcyaxwg.supabase.co/storage/v1/object/public/deal-images/ff2d265f-52cb-4fcb-81c9-25bfa226dea2/1772425541646-ai-generated.png" alt="Deal image" onerror="this.parentElement.innerHTML='<div style=&quot;padding:40px;text-align:center;color:#999;font-size:14px&quot;>Deal Image<br>(AI-generated brake service image)</div>'" />
+      </div>
+      <div class="fb-actions">
+        <div class="fb-action">&#128077; Like</div>
+        <div class="fb-action">&#128172; Comment</div>
+        <div class="fb-action">&#8617; Share</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSTAGRAM POST -->
+  <div>
+    <span class="platform-badge ig-badge">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      Instagram Post
+    </span>
+    <div class="ig-post">
+      <div class="ig-header">
+        <div class="ig-avatar"><div class="ig-avatar-inner">SC</div></div>
+        <div class="ig-name">sponticoupon</div>
+      </div>
+      <div class="ig-image">
+        <img src="https://ypoytvqxuxpjipcyaxwg.supabase.co/storage/v1/object/public/deal-images/ff2d265f-52cb-4fcb-81c9-25bfa226dea2/1772425541646-ai-generated.png" alt="Deal image" onerror="this.parentElement.innerHTML='<div style=&quot;padding:40px;text-align:center;color:#999;font-size:14px&quot;>Deal Image<br>(AI-generated brake service image)</div>'" />
+      </div>
+      <div class="ig-actions-row">
+        <svg class="ig-icon" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        <svg class="ig-icon" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg class="ig-icon" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </div>
+      <div class="ig-likes">142 likes</div>
+      <div class="ig-caption-area">
+        <strong>sponticoupon</strong> &#128721; STOP! Amazing brake service deal! &#128663; 40% OFF complete front & rear service with certified techs in Orlando! Premium pads + warranty included. $270 (was $450) &#128293; Link in bio to claim! <span class="hashtags">#OrlandoDeals #BrakeService #CarMaintenance #SpontiCoupon #AutoDeals #Orlando #CarCare #SaveMoney</span>
+      </div>
+      <div class="ig-time">2 hours ago</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Twitter & TikTok -->
+<div class="other-platforms">
+  <h3>Other Platforms (Ready when API keys are configured)</h3>
+  <div class="platform-cards">
+    <div class="p-card">
+      <h4>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        X / Twitter
+      </h4>
+      <p>&#128293; Orlando drivers! 40% OFF complete brake service = $180 savings! Professional service + 12-month warranty for just $270 &#128663;&#128176; sponticoupon.com/deals/288e93dc #OrlandoDeals #BrakeService</p>
+      <div class="char-count">219 / 280 characters</div>
+    </div>
+    <div class="p-card">
+      <h4>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#000"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1v-3.47a6.15 6.15 0 0 0-.79-.05A6.33 6.33 0 0 0 3.16 15.2a6.34 6.34 0 0 0 10.86 4.43 6.34 6.34 0 0 0 1.86-4.43V8.74a8.16 8.16 0 0 0 4.77 1.53v-3.4a4.85 4.85 0 0 1-1.06-.18z"/></svg>
+        TikTok
+      </h4>
+      <p>POV: You saved $180 on brake service in Orlando &#128293; 40% off complete front & rear service with warranty! Your wallet will thank you &#128176;&#128663; #OrlandoDeals #CarTok #BrakeService #SaveMoney #SpontiCoupon</p>
+      <div class="char-count">192 characters</div>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Note:</strong> These captions were generated by Claude AI (Anthropic) using real deal data from your database. When auto-posting is live, Gemini generates the captions and the system posts them automatically when a vendor publishes a deal. Facebook &amp; Instagram are ready to go &mdash; just need a vendor to connect their accounts. Twitter/X and TikTok need API keys configured in <code>.env.local</code>.
+</div>
+
+</body>
+</html>

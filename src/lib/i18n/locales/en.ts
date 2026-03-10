@@ -1103,6 +1103,7 @@ const en: Translations = {
       needMoreHelp: 'Need more help?',
       openSupportTicket: 'Open Support Ticket',
       responseTime: 'Our team will respond within 24 hours',
+      orCallUs: 'Or call us at',
       yourTickets: 'Your Tickets',
       newSupportTicket: 'New Support Ticket',
       subject: 'Subject',
@@ -2562,6 +2563,8 @@ const en: Translations = {
     quickAnswers: 'Quick Answers',
     quickAnswersDesc: 'Check our FAQ for answers to the most common questions about pricing, features, and getting started.',
     visitFaq: 'Visit FAQ',
+    reachUs: 'Reach Us Directly',
+    available247: 'Available 24/7 — AI-powered support',
     zeroCommission: 'Zero commission. Instant payouts.',
     builtForLocal: 'Built for local businesses.',
     inquiryTypes: {

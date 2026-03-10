@@ -1101,6 +1101,7 @@ const es: Translations = {
       needMoreHelp: '¿Necesitas más ayuda?',
       openSupportTicket: 'Abrir Ticket de Soporte',
       responseTime: 'Nuestro equipo responderá dentro de 24 horas',
+      orCallUs: 'O llámanos al',
       yourTickets: 'Tus Tickets',
       newSupportTicket: 'Nuevo Ticket de Soporte',
       subject: 'Asunto',
@@ -2539,6 +2540,8 @@ const es: Translations = {
     quickAnswers: 'Respuestas Rápidas',
     quickAnswersDesc: 'Consulta nuestras preguntas frecuentes para respuestas sobre precios, características y cómo comenzar.',
     visitFaq: 'Visitar FAQ',
+    reachUs: 'Contáctanos Directamente',
+    available247: 'Disponible 24/7 — soporte con IA',
     zeroCommission: 'Cero comisión. Pagos instantáneos.',
     builtForLocal: 'Creado para negocios locales.',
     inquiryTypes: {

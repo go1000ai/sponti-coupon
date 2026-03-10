@@ -706,6 +706,10 @@ export default function VendorSupportPage() {
             Open Support Ticket
           </button>
           <p className="text-xs text-gray-400 mt-2">Our team will respond within 24 hours</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Or call us at{' '}
+            <a href="tel:+13213350773" className="text-primary-500 font-medium hover:underline">(321) 335-0773</a>
+          </p>
         </div>
       </div>
 

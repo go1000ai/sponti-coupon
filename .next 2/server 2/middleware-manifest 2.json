@@ -1,0 +1,201 @@
+{
+  "version": 3,
+  "middleware": {
+    "/": {
+      "files": [
+        "server/edge-runtime-webpack.js",
+        "server/src/middleware.js"
+      ],
+      "name": "src/middleware",
+      "page": "/",
+      "matchers": [
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*))(.json)?[\\/#\\?]?$",
+          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    }
+  },
+  "functions": {
+    "/api/auth/signout/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/auth/signout/route.js"
+      ],
+      "name": "app/api/auth/signout/route",
+      "page": "/api/auth/signout/route",
+      "matchers": [
+        {
+          "regexp": "^/api/auth/signout$",
+          "originalSource": "/api/auth/signout"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    },
+    "/api/customer/spontipoints/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/customer/spontipoints/route.js"
+      ],
+      "name": "app/api/customer/spontipoints/route",
+      "page": "/api/customer/spontipoints/route",
+      "matchers": [
+        {
+          "regexp": "^/api/customer/spontipoints$",
+          "originalSource": "/api/customer/spontipoints"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    },
+    "/api/deals/[id]/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/deals/[id]/route.js"
+      ],
+      "name": "app/api/deals/[id]/route",
+      "page": "/api/deals/[id]/route",
+      "matchers": [
+        {
+          "regexp": "^/api/deals/(?<id>[^/]+?)$",
+          "originalSource": "/api/deals/[id]"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    },
+    "/api/reviews/eligibility/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/reviews/eligibility/route.js"
+      ],
+      "name": "app/api/reviews/eligibility/route",
+      "page": "/api/reviews/eligibility/route",
+      "matchers": [
+        {
+          "regexp": "^/api/reviews/eligibility$",
+          "originalSource": "/api/reviews/eligibility"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    },
+    "/api/deals/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/deals/route.js"
+      ],
+      "name": "app/api/deals/route",
+      "page": "/api/deals/route",
+      "matchers": [
+        {
+          "regexp": "^/api/deals$",
+          "originalSource": "/api/deals"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    },
+    "/api/vendor/roi/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/870.js",
+        "server/app/api/vendor/roi/route.js"
+      ],
+      "name": "app/api/vendor/roi/route",
+      "page": "/api/vendor/roi/route",
+      "matchers": [
+        {
+          "regexp": "^/api/vendor/roi$",
+          "originalSource": "/api/vendor/roi"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Udv9GAHx-1v3QKDYQaEUi",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "70iXHa37PLfxHRLoAGg1eGXJ7yhazOHq8+I3whEYMXc=",
+        "__NEXT_PREVIEW_MODE_ID": "436cd3ead5193cf2d1dba0a792812b1a",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4932bcb5c67ed2a31dcb7f47fedee666f57897236c1768386d47efc993165def",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ecf5d2bb9f4bc2b925bbc70e4b8a13b8b40edee5378df58d1931d9e2dde15ed"
+      }
+    }
+  },
+  "sortedMiddleware": [
+    "/"
+  ]
+}

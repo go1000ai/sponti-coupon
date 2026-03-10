@@ -7,13 +7,19 @@
     "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "remotion:studio": "npx remotion studio remotion/src/index.ts",
+    "remotion:render": "npx tsx remotion/scripts/render-video.ts",
+    "heygen:generate": "npx tsx remotion/scripts/generate-heygen-clip.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.30",
     "@anthropic-ai/sdk": "^0.78.0",
     "@google/genai": "^1.42.0",
     "@headlessui/react": "^2.2.9",
+    "@marsidev/react-turnstile": "^1.4.2",
+    "@remotion/cli": "^4.0.434",
+    "@remotion/player": "^4.0.434",
     "@stripe/stripe-js": "^8.8.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
@@ -35,6 +41,7 @@
     "react-joyride": "^2.9.3",
     "react-leaflet": "^4.2.1",
     "recharts": "^3.7.0",
+    "remotion": "^4.0.434",
     "resend": "^6.9.2",
     "square": "^44.0.0",
     "stripe": "^20.3.1",
@@ -53,6 +60,7 @@
     "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

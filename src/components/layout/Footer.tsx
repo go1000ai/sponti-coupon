@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Facebook, Instagram } from 'lucide-react';
+import { Facebook, Instagram, Phone } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 
 export function Footer() {
@@ -35,7 +35,11 @@ export function Footer() {
             <p className="text-gray-400 text-sm">
               {t('footer.tagline')}
             </p>
-            <div className="flex items-center gap-3 mt-4">
+            <a href="tel:+13213350773" className="flex items-center gap-2 mt-3 text-gray-400 hover:text-white transition-colors text-sm">
+              <Phone className="w-3.5 h-3.5" />
+              (321) 335-0773
+            </a>
+            <div className="flex items-center gap-3 mt-3">
               <a
                 href="https://www.facebook.com/sponticoupon"
                 target="_blank"

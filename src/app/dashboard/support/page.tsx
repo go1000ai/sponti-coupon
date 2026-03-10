@@ -710,6 +710,10 @@ export default function CustomerSupportPage() {
             {t('customer.support.openSupportTicket')}
           </button>
           <p className="text-xs text-gray-400 mt-2">{t('customer.support.responseTime')}</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {t('customer.support.orCallUs')}{' '}
+            <a href="tel:+13213350773" className="text-primary-500 font-medium hover:underline">(321) 335-0773</a>
+          </p>
         </div>
       </div>
 

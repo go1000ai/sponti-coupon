@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  MessageSquare, Send, Loader2, Check, HelpCircle,
+  MessageSquare, Send, Loader2, Check, HelpCircle, Phone,
 } from 'lucide-react';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useLanguage } from '@/lib/i18n';
 
@@ -32,9 +33,12 @@ function ContactForm() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!turnstileToken) return;
     setSubmitting(true);
     try {
       await fetch('/api/contact', {
@@ -47,6 +51,7 @@ function ContactForm() {
           businessName: form.businessName,
           plan: form.inquiryType,
           message: form.message,
+          turnstileToken,
         }),
       });
       setSubmitted(true);
@@ -54,6 +59,8 @@ function ContactForm() {
       setSubmitted(true);
     }
     setSubmitting(false);
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
   };
 
   if (submitted) {
@@ -192,10 +199,21 @@ function ContactForm() {
           />
         </div>
 
+        {/* Turnstile CAPTCHA */}
+        {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+            onSuccess={setTurnstileToken}
+            onExpire={() => setTurnstileToken(null)}
+            options={{ theme: 'light', size: 'flexible' }}
+          />
+        )}
+
         {/* Submit */}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || (!turnstileToken && !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY)}
           className="w-full bg-gradient-to-r from-primary-500 to-orange-500 hover:from-primary-600 hover:to-orange-600 text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary-200/50 hover:shadow-xl hover:scale-[1.01] disabled:opacity-75 disabled:hover:scale-100"
         >
           {submitting ? (
@@ -274,6 +292,20 @@ export default function ContactPage() {
                 <Link href="/faq" className="bg-gradient-to-r from-primary-500 to-orange-500 text-white px-5 py-2.5 rounded-xl font-bold inline-flex items-center gap-2 shadow-lg shadow-primary-200 hover:shadow-xl transition-all hover:scale-[1.02] text-sm">
                   {t('contact.visitFaq')}
                 </Link>
+              </div>
+
+              {/* Contact Info */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-4">{t('contact.reachUs')}</h3>
+                <a href="tel:+13213350773" className="flex items-center gap-3 group">
+                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0 group-hover:bg-primary-100 transition-colors">
+                    <Phone className="w-5 h-5 text-primary-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">(321) 335-0773</p>
+                    <p className="text-xs text-gray-400">{t('contact.available247')}</p>
+                  </div>
+                </a>
               </div>
 
               {/* SpontiCoupon branding */}
