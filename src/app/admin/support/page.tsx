@@ -22,14 +22,17 @@ import {
 /* ── Types ──────────────────────────── */
 interface SupportTicket {
   id: string;
-  user_id: string;
-  user_email: string;
-  user_role: 'vendor' | 'customer';
+  user_id: string | null;
+  user_email: string | null;
+  user_role: 'vendor' | 'customer' | 'caller';
   subject: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   category: 'billing' | 'technical' | 'account' | 'general';
   ai_enabled: boolean;
+  caller_name: string | null;
+  caller_phone: string | null;
+  source: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -72,6 +75,7 @@ const ROLE_OPTIONS = [
   { value: '', label: 'All Roles' },
   { value: 'vendor', label: 'Vendor' },
   { value: 'customer', label: 'Customer' },
+  { value: 'caller', label: 'Phone Caller' },
 ];
 
 /* ── Helpers ──────────────────────────── */
@@ -434,16 +438,25 @@ export default function AdminSupportPage() {
                         </p>
                       </div>
                     </td>
-                    <td className="p-4 text-sm text-gray-500 truncate max-w-[180px]">
-                      {ticket.user_email}
+                    <td className="p-4 text-sm text-gray-500 max-w-[200px]">
+                      {ticket.source === 'ghl_phone' ? (
+                        <div>
+                          <p className="truncate font-medium text-gray-700">{ticket.caller_name || 'Unknown'}</p>
+                          <p className="text-xs text-gray-400">{ticket.caller_phone || ticket.user_email || '—'}</p>
+                        </div>
+                      ) : (
+                        <span className="truncate">{ticket.user_email}</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                         ticket.user_role === 'vendor'
                           ? 'bg-primary-50 text-primary-600'
+                          : ticket.user_role === 'caller'
+                          ? 'bg-green-50 text-green-600'
                           : 'bg-blue-50 text-blue-600'
                       }`}>
-                        {ticket.user_role === 'vendor' ? 'Vendor' : 'Customer'}
+                        {ticket.user_role === 'vendor' ? 'Vendor' : ticket.user_role === 'caller' ? 'Phone' : 'Customer'}
                       </span>
                     </td>
                     <td className="p-4">{getStatusBadge(ticket.status)}</td>
