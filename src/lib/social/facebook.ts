@@ -104,6 +104,7 @@ export async function postToFacebook(
         body: JSON.stringify({
           file_url: videoUrl,
           description: fullCaption,
+          published: true,
           access_token: accessToken,
         }),
       });
@@ -134,12 +135,14 @@ export async function postToFacebook(
     }
 
     // Image post via /{pageId}/photos
+    // published: true ensures the post appears in the Page feed (not just the Photos album)
     const res = await fetch(`${META_GRAPH_URL}/${pageId}/photos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         url: imageUrl,
         caption: fullCaption,
+        published: true,
         access_token: accessToken,
       }),
     });

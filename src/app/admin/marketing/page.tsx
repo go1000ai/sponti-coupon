@@ -112,6 +112,8 @@ export default function AdminMarketingPage() {
   const [avaLoading, setAvaLoading] = useState(false);
   const [avaLoaded, setAvaLoaded] = useState(false);
   const [avaVisible, setAvaVisible] = useState(true);
+  const [showImgToVideo, setShowImgToVideo] = useState(false);
+  const [imgToVideoPrompt, setImgToVideoPrompt] = useState('');
 
   const fetchAvaSuggestions = useCallback(async () => {
     setAvaLoading(true);
@@ -409,6 +411,99 @@ export default function AdminMarketingPage() {
   const [videoToastStatus, setVideoToastStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [videoToastMessage, setVideoToastMessage] = useState('');
 
+  const handleImageToVideo = async (item: QueueItem) => {
+    if (!item.image_url) return;
+    const prompt = imgToVideoPrompt.trim() || `Professional marketing video: smooth camera movement, engaging transitions, warm inviting atmosphere. Based on: ${item.caption_facebook?.substring(0, 150)}`;
+    setShowImgToVideo(false);
+    setImgToVideoPrompt('');
+    setImagePromptInput(prompt);
+    setMediaMode('video');
+    // Trigger video generation with the image
+    setGeneratingVideo(true);
+    setVideoToastStatus('generating');
+    setVideoToastMessage('Creating Reel from image...');
+    setVideoProgressPct(5);
+    try {
+      const payload: Record<string, string> = {
+        video_prompt: prompt,
+        aspect_ratio: '9:16',
+        image_url: item.image_url,
+      };
+      const res = await fetch('/api/vendor/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.error) {
+        setVideoToastStatus('error');
+        setVideoToastMessage(data.error);
+        setGeneratingVideo(false);
+        setTimeout(() => setVideoToastStatus('idle'), 5000);
+        return;
+      }
+      if (data.status === 'done' && data.url) {
+        await fetch('/api/admin/marketing', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.id, video_url: data.url }),
+        });
+        setVideoProgressPct(100);
+        setVideoToastStatus('done');
+        setVideoToastMessage('Reel ready!');
+        setGeneratingVideo(false);
+        await fetchItems();
+        setSelectedItem(prev => prev ? { ...prev, video_url: data.url } : null);
+        setTimeout(() => setVideoToastStatus('idle'), 4000);
+        return;
+      }
+      if (data.status === 'processing' && data.operation_name) {
+        setVideoProgressPct(10);
+        const maxAttempts = 30;
+        for (let i = 0; i < maxAttempts; i++) {
+          const pct = Math.min(90, 10 + Math.round((i / maxAttempts) * 80));
+          setVideoProgressPct(pct);
+          const elapsed = (i + 1) * 10;
+          const mins = Math.floor(elapsed / 60);
+          const secs = elapsed % 60;
+          setVideoToastMessage(`Creating Reel from image... ${mins > 0 ? `${mins}m ` : ''}${secs}s`);
+          await new Promise(r => setTimeout(r, 10000));
+          const pollRes = await fetch('/api/vendor/generate-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation_name: data.operation_name }),
+          });
+          const pollData = await pollRes.json();
+          if (pollData.error) {
+            setVideoToastStatus('error');
+            setVideoToastMessage(pollData.error);
+            setTimeout(() => setVideoToastStatus('idle'), 5000);
+            break;
+          }
+          if (pollData.status === 'done' && pollData.url) {
+            await fetch('/api/admin/marketing', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: item.id, video_url: pollData.url }),
+            });
+            setVideoProgressPct(100);
+            setVideoToastStatus('done');
+            setVideoToastMessage('Reel ready!');
+            await fetchItems();
+            setSelectedItem(prev => prev ? { ...prev, video_url: pollData.url } : null);
+            setTimeout(() => setVideoToastStatus('idle'), 4000);
+            break;
+          }
+        }
+      }
+    } catch {
+      setVideoToastStatus('error');
+      setVideoToastMessage('Failed to create video from image');
+      setTimeout(() => setVideoToastStatus('idle'), 5000);
+    }
+    setGeneratingVideo(false);
+  };
+
   const handleGenerateVideoFromModal = async (item: QueueItem) => {
     setGeneratingVideo(true);
     setVideoToastStatus('generating');
@@ -488,6 +583,7 @@ export default function AdminMarketingPage() {
             setVideoToastStatus('done');
             setVideoToastMessage('Video ready!');
             await fetchItems();
+            setSelectedItem(prev => prev ? { ...prev, video_url: pollData.url } : null);
             setTimeout(() => setVideoToastStatus('idle'), 4000);
             break;
           }
@@ -559,6 +655,8 @@ export default function AdminMarketingPage() {
     setAvaExplanation('');
     setAvaTips([]);
     setMediaMode('image');
+    setShowImgToVideo(false);
+    setImgToVideoPrompt('');
   };
 
   const formatDate = (d: string) => new Date(d).toLocaleString('en-US', {
@@ -876,7 +974,7 @@ export default function AdminMarketingPage() {
                   >
                     {/* Media thumbnail */}
                     {(item.video_url || item.image_url) ? (
-                      <div className="aspect-video bg-gray-100 relative">
+                      <div className={`${item.video_url ? 'aspect-[9/16] max-h-[200px]' : 'aspect-video'} bg-gray-100 relative`}>
                         {item.video_url ? (
                           <>
                             <video src={item.video_url} muted playsInline preload="metadata" className="w-full h-full object-cover"
@@ -1265,18 +1363,66 @@ export default function AdminMarketingPage() {
                     )}
                     <span className="text-xs text-gray-400 ml-2">{editCaption.facebook.length} chars</span>
                   </div>
-                  {/* Media — Video or Image */}
+                  {/* Media — Video (vertical Reel) or Image */}
                   {selectedItem.video_url ? (
-                    <div className="aspect-video bg-black relative">
+                    <div className="aspect-[9/16] max-h-[480px] bg-black relative mx-auto">
                       <video src={selectedItem.video_url} controls playsInline preload="metadata" className="w-full h-full object-contain" />
                       <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1">
                         <Film className="w-3 h-3" /> REEL
                       </span>
                     </div>
                   ) : selectedItem.image_url ? (
-                    <div className="aspect-video bg-gray-100">
+                    <div className="aspect-video bg-gray-100 relative group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
+                      {/* Image-to-Video overlay */}
+                      {selectedItem.status !== 'posted' && !generatingVideo && (
+                        <>
+                          {!showImgToVideo ? (
+                            <div
+                              onClick={() => setShowImgToVideo(true)}
+                              className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            >
+                              <div className="bg-white/95 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
+                                <Film className="w-5 h-5 text-emerald-600" />
+                                <span className="text-sm font-semibold text-gray-900">Create Reel from this image</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-4">
+                              <div className="bg-white rounded-xl p-4 w-full max-w-sm space-y-3" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-2">
+                                  <Film className="w-5 h-5 text-emerald-600" />
+                                  <p className="font-semibold text-gray-900 text-sm">Create Reel from Image</p>
+                                </div>
+                                <p className="text-xs text-gray-500">Describe what you want the video to do — camera movement, transitions, effects, mood.</p>
+                                <textarea
+                                  value={imgToVideoPrompt}
+                                  onChange={e => setImgToVideoPrompt(e.target.value)}
+                                  rows={3}
+                                  autoFocus
+                                  placeholder="e.g. Slowly zoom in on the food, then pan right to show the restaurant ambiance. Warm, inviting lighting with gentle motion."
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-gray-400"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { setShowImgToVideo(false); setImgToVideoPrompt(''); }}
+                                    className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleImageToVideo(selectedItem)}
+                                    className="flex-1 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-1.5"
+                                  >
+                                    <Film className="w-3.5 h-3.5" /> Generate Reel
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   ) : null}
                   {/* Actions bar */}
@@ -1312,9 +1458,57 @@ export default function AdminMarketingPage() {
                       </span>
                     </div>
                   ) : selectedItem.image_url ? (
-                    <div className="aspect-square bg-gray-100">
+                    <div className="aspect-square bg-gray-100 relative group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
+                      {/* Image-to-Video overlay */}
+                      {selectedItem.status !== 'posted' && !generatingVideo && (
+                        <>
+                          {!showImgToVideo ? (
+                            <div
+                              onClick={() => setShowImgToVideo(true)}
+                              className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            >
+                              <div className="bg-white/95 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
+                                <Film className="w-5 h-5 text-emerald-600" />
+                                <span className="text-sm font-semibold text-gray-900">Create Reel from this image</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-4">
+                              <div className="bg-white rounded-xl p-4 w-full max-w-sm space-y-3" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-2">
+                                  <Film className="w-5 h-5 text-emerald-600" />
+                                  <p className="font-semibold text-gray-900 text-sm">Create Reel from Image</p>
+                                </div>
+                                <p className="text-xs text-gray-500">Describe what you want the video to do — camera movement, transitions, effects, mood.</p>
+                                <textarea
+                                  value={imgToVideoPrompt}
+                                  onChange={e => setImgToVideoPrompt(e.target.value)}
+                                  rows={3}
+                                  autoFocus
+                                  placeholder="e.g. Slowly zoom into the product, add warm lighting, then pan to show happy customers. Energetic vibe."
+                                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 resize-none placeholder:text-gray-400"
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => { setShowImgToVideo(false); setImgToVideoPrompt(''); }}
+                                    className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleImageToVideo(selectedItem)}
+                                    className="flex-1 px-3 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 flex items-center justify-center gap-1.5"
+                                  >
+                                    <Film className="w-3.5 h-3.5" /> Generate Reel
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   ) : null}
                   {/* Action icons */}

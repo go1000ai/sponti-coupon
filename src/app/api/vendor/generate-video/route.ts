@@ -68,9 +68,9 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
-  const { image_url, video_prompt, aspect_ratio: requestedAspectRatio } = body;
-  // Default to 9:16 (vertical) for social media Reels; callers can pass '16:9' for website/deal pages
-  const aspectRatio = requestedAspectRatio === '16:9' ? '16:9' : '9:16';
+  const { image_url, video_prompt } = body;
+  // All SpontiCoupon videos are vertical 9:16 Reels — no horizontal videos
+  const aspectRatio = '9:16' as const;
 
   // Image is optional — supports both image-to-video and text-to-video
   let imageBase64: string | null = null;
