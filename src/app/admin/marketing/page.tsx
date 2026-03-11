@@ -8,7 +8,7 @@ import {
   Zap, TrendingUp, MessageSquare, MapPin, Users, Star, Megaphone,
   Facebook, Instagram, Calendar as CalendarIcon, Eye, EyeOff, ArrowRight,
   Trash2, Archive, Copy, Film, ImagePlus,
-  ThumbsUp, MessageCircle, Share2, Heart, Bookmark, Globe,
+  ThumbsUp, MessageCircle, Share2, Heart, Bookmark, Globe, X,
 } from 'lucide-react';
 
 interface QueueItem {
@@ -358,48 +358,62 @@ export default function AdminMarketingPage() {
   };
 
   const [videoProgress, setVideoProgress] = useState('');
+  const [videoProgressPct, setVideoProgressPct] = useState(0);
+  const [videoToastStatus, setVideoToastStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
+  const [videoToastMessage, setVideoToastMessage] = useState('');
 
   const handleGenerateVideoFromModal = async (item: QueueItem) => {
-    if (!item.image_url) {
-      alert('Generate an image first — video needs a source image.');
-      return;
-    }
     setGeneratingVideo(true);
-    setVideoProgress('Starting video generation...');
+    setVideoToastStatus('generating');
+    setVideoToastMessage(item.image_url ? 'Starting video generation from image...' : 'Starting text-to-video generation...');
+    setVideoProgressPct(5);
     try {
       const prompt = imagePromptInput.trim() || `Professional marketing video: smooth camera movement, engaging transitions, warm inviting atmosphere. Based on: ${item.caption_facebook?.substring(0, 150)}`;
+      const payload: Record<string, string> = {
+        video_prompt: prompt,
+        aspect_ratio: '9:16',
+      };
+      // Use image as starting frame if available, otherwise text-only
+      if (item.image_url) {
+        payload.image_url = item.image_url;
+      }
       const res = await fetch('/api/vendor/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          image_url: item.image_url,
-          video_prompt: prompt,
-          aspect_ratio: '9:16',
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
 
       if (data.error) {
-        alert(data.error);
+        setVideoToastStatus('error');
+        setVideoToastMessage(data.error);
         setGeneratingVideo(false);
-        setVideoProgress('');
+        setTimeout(() => setVideoToastStatus('idle'), 5000);
         return;
       }
 
       if (data.status === 'done' && data.url) {
-        setVideoProgress('Video ready!');
+        setVideoToastStatus('done');
+        setVideoToastMessage('Video ready!');
+        setVideoProgressPct(100);
         setGeneratingVideo(false);
         await fetchItems();
+        setTimeout(() => setVideoToastStatus('idle'), 4000);
         return;
       }
 
       if (data.status === 'processing' && data.operation_name) {
-        // Poll for completion (up to 5 minutes)
+        setVideoProgressPct(10);
+        setVideoToastMessage('AI is generating your video...');
         const operationName = data.operation_name;
         const maxAttempts = 30; // 30 x 10s = 5 min
         for (let i = 0; i < maxAttempts; i++) {
-          const pct = Math.min(90, Math.round((i / maxAttempts) * 100));
-          setVideoProgress(`Generating video... ${pct}% (${i * 10}s)`);
+          const pct = Math.min(90, 10 + Math.round((i / maxAttempts) * 80));
+          setVideoProgressPct(pct);
+          const elapsed = (i + 1) * 10;
+          const mins = Math.floor(elapsed / 60);
+          const secs = elapsed % 60;
+          setVideoToastMessage(`AI is generating your video... ${mins > 0 ? `${mins}m ` : ''}${secs}s`);
           await new Promise(r => setTimeout(r, 10000));
 
           const pollRes = await fetch('/api/vendor/generate-video', {
@@ -410,27 +424,32 @@ export default function AdminMarketingPage() {
           const pollData = await pollRes.json();
 
           if (pollData.error) {
-            alert(pollData.error);
+            setVideoToastStatus('error');
+            setVideoToastMessage(pollData.error);
+            setTimeout(() => setVideoToastStatus('idle'), 5000);
             break;
           }
 
           if (pollData.status === 'done' && pollData.url) {
-            setVideoProgress('Video ready! Refreshing...');
+            setVideoProgressPct(100);
+            setVideoToastStatus('done');
+            setVideoToastMessage('Video ready!');
             await fetchItems();
+            setTimeout(() => setVideoToastStatus('idle'), 4000);
             break;
           }
 
-          // If it returned a new operation (RAI retry), switch to polling that
           if (pollData.retried && pollData.operation_name) {
-            setVideoProgress('Retrying with different approach...');
+            setVideoToastMessage('Retrying with a different approach...');
           }
         }
       }
     } catch {
-      alert('Failed to start video generation');
+      setVideoToastStatus('error');
+      setVideoToastMessage('Failed to start video generation');
+      setTimeout(() => setVideoToastStatus('idle'), 5000);
     }
     setGeneratingVideo(false);
-    setVideoProgress('');
   };
 
   const handleAskAvaPrompt = async (item: QueueItem) => {
@@ -1341,7 +1360,7 @@ export default function AdminMarketingPage() {
                     ) : (
                       <button
                         onClick={() => handleGenerateVideoFromModal(selectedItem)}
-                        disabled={generatingVideo || !selectedItem.image_url}
+                        disabled={generatingVideo}
                         className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
@@ -1349,11 +1368,8 @@ export default function AdminMarketingPage() {
                       </button>
                     )}
                   </div>
-                  {generatingVideo && videoProgress && (
-                    <p className="text-xs text-emerald-600 font-medium animate-pulse">{videoProgress}</p>
-                  )}
                   {mediaMode === 'video' && !selectedItem.image_url && !generatingVideo && (
-                    <p className="text-xs text-emerald-600">Generate an image first to enable video creation.</p>
+                    <p className="text-xs text-emerald-600">No image found — video will be generated from text prompt only.</p>
                   )}
                   {!imagePromptInput.trim() && !generatingVideo && (
                     <p className="text-xs text-emerald-600">Ask Ava for help above, or type a prompt directly to enable generation.</p>
@@ -1528,6 +1544,53 @@ export default function AdminMarketingPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Generation Progress Toast */}
+      {videoToastStatus !== 'idle' && (
+        <div className={`fixed bottom-6 right-6 z-[60] w-80 bg-white rounded-2xl shadow-2xl border overflow-hidden transition-all duration-500 ${
+          videoToastStatus === 'done' ? 'border-green-200' : videoToastStatus === 'error' ? 'border-red-200' : 'border-primary-200'
+        }`}>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                videoToastStatus === 'done' ? 'bg-green-100' : videoToastStatus === 'error' ? 'bg-red-100' : 'bg-primary-100'
+              }`}>
+                {videoToastStatus === 'generating' && (
+                  <Loader2 className="w-5 h-5 text-primary-500 animate-spin" />
+                )}
+                {videoToastStatus === 'done' && (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                )}
+                {videoToastStatus === 'error' && (
+                  <XCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  {videoToastStatus === 'generating' && 'Generating Video'}
+                  {videoToastStatus === 'done' && 'Video Complete'}
+                  {videoToastStatus === 'error' && 'Video Failed'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{videoToastMessage}</p>
+              </div>
+              {videoToastStatus !== 'generating' && (
+                <button onClick={() => setVideoToastStatus('idle')} className="text-gray-300 hover:text-gray-500 p-1">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div className="h-1.5 bg-gray-100">
+            <div
+              className={`h-full transition-all duration-1000 ease-out rounded-r-full ${
+                videoToastStatus === 'done' ? 'bg-green-500' : videoToastStatus === 'error' ? 'bg-red-500' : 'bg-gradient-to-r from-primary-500 to-orange-400'
+              }`}
+              style={{ width: `${videoProgressPct}%` }}
+            />
           </div>
         </div>
       )}

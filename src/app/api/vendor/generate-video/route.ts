@@ -72,23 +72,23 @@ export async function POST(request: NextRequest) {
   // Default to 9:16 (vertical) for social media Reels; callers can pass '16:9' for website/deal pages
   const aspectRatio = requestedAspectRatio === '16:9' ? '16:9' : '9:16';
 
-  if (!image_url) {
-    return NextResponse.json({ error: 'An image URL is required to generate a video' }, { status: 400 });
-  }
+  // Image is optional — supports both image-to-video and text-to-video
+  let imageBase64: string | null = null;
+  let imageMimeType = 'image/png';
 
-  // Convert /media/ paths back to full Supabase storage URLs for server-side fetch
-  let resolvedImageUrl = image_url;
-  if (image_url.startsWith('/media/')) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    resolvedImageUrl = `${supabaseUrl}/storage/v1/object/public/${image_url.slice('/media/'.length)}`;
-  }
+  if (image_url) {
+    // Convert /media/ paths back to full Supabase storage URLs for server-side fetch
+    let resolvedImageUrl = image_url;
+    if (image_url.startsWith('/media/')) {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      resolvedImageUrl = `${supabaseUrl}/storage/v1/object/public/${image_url.slice('/media/'.length)}`;
+    }
 
-  // Normalize bare URLs (e.g., "Www.example.com" → "https://www.example.com")
-  if (resolvedImageUrl && !resolvedImageUrl.startsWith('http://') && !resolvedImageUrl.startsWith('https://') && !resolvedImageUrl.startsWith('/')) {
-    resolvedImageUrl = `https://${resolvedImageUrl}`;
-  }
+    // Normalize bare URLs (e.g., "Www.example.com" → "https://www.example.com")
+    if (resolvedImageUrl && !resolvedImageUrl.startsWith('http://') && !resolvedImageUrl.startsWith('https://') && !resolvedImageUrl.startsWith('/')) {
+      resolvedImageUrl = `https://${resolvedImageUrl}`;
+    }
 
-  try {
     // Fetch the deal image with retry (Supabase storage can return transient 502s)
     let imageResponse: Response | null = null;
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -97,18 +97,21 @@ export async function POST(request: NextRequest) {
       console.warn(`[VideoGen] Image fetch attempt ${attempt + 1} failed: ${imageResponse.status}`);
       if (attempt < 2) await new Promise(r => setTimeout(r, 2000));
     }
-    if (!imageResponse || !imageResponse.ok) {
-      return NextResponse.json({ error: `Failed to fetch the deal image (status ${imageResponse?.status || 'unknown'}). The image may still be processing — try again in a few seconds.` }, { status: 400 });
+    if (imageResponse && imageResponse.ok) {
+      const imageArrayBuffer = await imageResponse.arrayBuffer();
+      const imageBuffer = Buffer.from(imageArrayBuffer);
+      if (imageBuffer.length >= 1000) {
+        imageBase64 = imageBuffer.toString('base64');
+        imageMimeType = imageResponse.headers.get('content-type') || 'image/png';
+      }
     }
+  }
 
-    const imageArrayBuffer = await imageResponse.arrayBuffer();
-    const imageBuffer = Buffer.from(imageArrayBuffer);
-    if (imageBuffer.length < 1000) {
-      return NextResponse.json({ error: 'The deal image appears to be empty or corrupt. Please re-generate the image first.' }, { status: 400 });
-    }
-    const imageBase64 = imageBuffer.toString('base64');
-    const imageMimeType = imageResponse.headers.get('content-type') || 'image/png';
+  if (!image_url && !video_prompt) {
+    return NextResponse.json({ error: 'Either an image URL or a video prompt is required' }, { status: 400 });
+  }
 
+  try {
     const ai = new GoogleGenAI({ apiKey: geminiKey });
 
     const formatHint = aspectRatio === '9:16'
@@ -133,20 +136,29 @@ export async function POST(request: NextRequest) {
     }
     console.log('[VideoGen] Model pre-flight OK');
 
-    console.log('[VideoGen] Starting Veo generation for vendor:', vendorId, 'image size:', imageBuffer.length, 'bytes, mime:', imageMimeType);
-    const operation = await ai.models.generateVideos({
+    // Build generation request — with or without image
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const generateParams: any = {
       model: 'veo-3.1-generate-preview',
       prompt,
-      image: {
-        imageBytes: imageBase64,
-        mimeType: imageMimeType,
-      },
       config: {
         aspectRatio,
         numberOfVideos: 1,
         durationSeconds: 8,
       },
-    });
+    };
+
+    if (imageBase64) {
+      generateParams.image = {
+        imageBytes: imageBase64,
+        mimeType: imageMimeType,
+      };
+      console.log('[VideoGen] Starting image-to-video for vendor:', vendorId);
+    } else {
+      console.log('[VideoGen] Starting text-to-video for vendor:', vendorId);
+    }
+
+    const operation = await ai.models.generateVideos(generateParams);
 
     const operationName = operation.name;
     console.log('[VideoGen] Operation response:', JSON.stringify({
