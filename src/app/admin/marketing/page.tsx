@@ -357,7 +357,6 @@ export default function AdminMarketingPage() {
     setRegeneratingImage(false);
   };
 
-  const [videoProgress, setVideoProgress] = useState('');
   const [videoProgressPct, setVideoProgressPct] = useState(0);
   const [videoToastStatus, setVideoToastStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [videoToastMessage, setVideoToastMessage] = useState('');
@@ -1364,7 +1363,7 @@ export default function AdminMarketingPage() {
                         className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
-                        {generatingVideo ? (videoProgress || 'Generating...') : 'Generate Video'}
+                        {generatingVideo ? 'Generating...' : 'Generate Video'}
                       </button>
                     )}
                   </div>
