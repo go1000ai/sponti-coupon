@@ -19,6 +19,7 @@ interface QueueItem {
   caption_instagram: string | null;
   hashtags: string[];
   image_url: string | null;
+  video_url: string | null;
   image_prompt: string | null;
   deal_id: string | null;
   vendor_id: string | null;
@@ -96,7 +97,7 @@ export default function AdminMarketingPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [generateImage, setGenerateImage] = useState(true);
-  const [generateVideo, setGenerateVideo] = useState(false);
+  const [generateVideo, setGenerateVideo] = useState(true);
   const [previewPlatform, setPreviewPlatform] = useState<'facebook' | 'instagram'>('facebook');
   const [editingCaption, setEditingCaption] = useState(false);
   const [regeneratingImage, setRegeneratingImage] = useState(false);
@@ -165,6 +166,53 @@ export default function AdminMarketingPage() {
         setCreateImageUrl('');
         setShowCreate(false);
         await fetchItems();
+
+        // If video generation was started, poll for it
+        if (data.video_operation) {
+          setVideoToastStatus('generating');
+          setVideoToastMessage('AI is generating your video...');
+          setVideoProgressPct(10);
+
+          const maxAttempts = 30;
+          for (let i = 0; i < maxAttempts; i++) {
+            const pct = Math.min(90, 10 + Math.round((i / maxAttempts) * 80));
+            setVideoProgressPct(pct);
+            const elapsed = (i + 1) * 10;
+            const mins = Math.floor(elapsed / 60);
+            const secs = elapsed % 60;
+            setVideoToastMessage(`AI is generating your video... ${mins > 0 ? `${mins}m ` : ''}${secs}s`);
+            await new Promise(r => setTimeout(r, 10000));
+
+            const pollRes = await fetch('/api/vendor/generate-video', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ operation_name: data.video_operation }),
+            });
+            const pollData = await pollRes.json();
+
+            if (pollData.error) {
+              setVideoToastStatus('error');
+              setVideoToastMessage(pollData.error);
+              setTimeout(() => setVideoToastStatus('idle'), 5000);
+              break;
+            }
+
+            if (pollData.status === 'done' && pollData.url) {
+              // Save video URL to the marketing queue item
+              await fetch('/api/admin/marketing', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: data.item.id, video_url: pollData.url }),
+              });
+              setVideoProgressPct(100);
+              setVideoToastStatus('done');
+              setVideoToastMessage('Video ready!');
+              await fetchItems();
+              setTimeout(() => setVideoToastStatus('idle'), 4000);
+              break;
+            }
+          }
+        }
       }
     } catch {
       setCreateError('Failed to create post');
@@ -430,6 +478,12 @@ export default function AdminMarketingPage() {
           }
 
           if (pollData.status === 'done' && pollData.url) {
+            // Save video URL to the marketing queue item
+            await fetch('/api/admin/marketing', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: item.id, video_url: pollData.url }),
+            });
             setVideoProgressPct(100);
             setVideoToastStatus('done');
             setVideoToastMessage('Video ready!');
@@ -820,11 +874,25 @@ export default function AdminMarketingPage() {
                     className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
                     onClick={() => openPreview(item)}
                   >
-                    {/* Image thumbnail */}
-                    {item.image_url ? (
+                    {/* Media thumbnail */}
+                    {(item.video_url || item.image_url) ? (
                       <div className="aspect-video bg-gray-100 relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                        {item.video_url ? (
+                          <>
+                            <video src={item.video_url} muted playsInline preload="metadata" className="w-full h-full object-cover"
+                              onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                              onMouseLeave={(e) => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+                            />
+                            <div className="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <Film className="w-3 h-3" /> REEL
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.image_url!} alt="" className="w-full h-full object-cover" />
+                          </>
+                        )}
                         <div className="absolute top-2 left-2 flex gap-1">
                           {item.platforms.includes('facebook') && (
                             <div className="bg-white/90 rounded-full p-1"><Facebook className="w-3 h-3 text-blue-600" /></div>
@@ -900,11 +968,33 @@ export default function AdminMarketingPage() {
                   onClick={() => openPreview(item)}
                   className="bg-white border border-gray-200 rounded-xl overflow-hidden cursor-pointer hover:shadow-lg hover:border-gray-300 transition-all group"
                 >
-                  {/* Image thumbnail */}
-                  {item.image_url && (
-                    <div className="h-36 overflow-hidden bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  {/* Media thumbnail — video preview or image */}
+                  {(item.video_url || item.image_url) && (
+                    <div className="h-36 overflow-hidden bg-gray-100 relative">
+                      {item.video_url ? (
+                        <>
+                          <video
+                            src={item.video_url}
+                            muted
+                            playsInline
+                            preload="metadata"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onMouseEnter={(e) => (e.target as HTMLVideoElement).play().catch(() => {})}
+                            onMouseLeave={(e) => { const v = e.target as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/50 rounded-full p-2">
+                              <Film className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                          <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">REEL</span>
+                        </>
+                      ) : (
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={item.image_url!} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        </>
+                      )}
                     </div>
                   )}
                   <div className="p-3">
@@ -1175,13 +1265,20 @@ export default function AdminMarketingPage() {
                     )}
                     <span className="text-xs text-gray-400 ml-2">{editCaption.facebook.length} chars</span>
                   </div>
-                  {/* Image */}
-                  {selectedItem.image_url && (
+                  {/* Media — Video or Image */}
+                  {selectedItem.video_url ? (
+                    <div className="aspect-video bg-black relative">
+                      <video src={selectedItem.video_url} controls playsInline preload="metadata" className="w-full h-full object-contain" />
+                      <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Film className="w-3 h-3" /> REEL
+                      </span>
+                    </div>
+                  ) : selectedItem.image_url ? (
                     <div className="aspect-video bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
                     </div>
-                  )}
+                  ) : null}
                   {/* Actions bar */}
                   <div className="px-3 py-2.5 border-t border-gray-200 flex items-center justify-around text-gray-500 text-xs">
                     <span className="flex items-center gap-1"><ThumbsUp className="w-3.5 h-3.5" /> Like</span>
@@ -1206,13 +1303,20 @@ export default function AdminMarketingPage() {
                     </div>
                     <span className="text-gray-400 tracking-widest font-bold">···</span>
                   </div>
-                  {/* Image */}
-                  {selectedItem.image_url && (
+                  {/* Media — Reel or Image */}
+                  {selectedItem.video_url ? (
+                    <div className="aspect-[9/16] max-h-[500px] bg-black relative">
+                      <video src={selectedItem.video_url} controls playsInline preload="metadata" className="w-full h-full object-contain" />
+                      <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Film className="w-3 h-3" /> REEL
+                      </span>
+                    </div>
+                  ) : selectedItem.image_url ? (
                     <div className="aspect-square bg-gray-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={selectedItem.image_url} alt="" className="w-full h-full object-cover" />
                     </div>
-                  )}
+                  ) : null}
                   {/* Action icons */}
                   <div className="flex items-center justify-between px-3 py-2.5">
                     <div className="flex items-center gap-4">

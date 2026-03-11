@@ -51,6 +51,14 @@ export async function postMarketingContent(
     imageUrl = `${appUrl}${imageUrl}`;
   }
 
+  // Resolve video URL for Reel posting
+  let videoUrl = item.video_url || null;
+  if (videoUrl?.startsWith('/media/') && supabaseUrl) {
+    videoUrl = `${supabaseUrl}/storage/v1/object/public/${videoUrl.replace('/media/', '')}`;
+  } else if (videoUrl?.startsWith('/')) {
+    videoUrl = `${appUrl}${videoUrl}`;
+  }
+
   for (const conn of connections) {
     try {
       const token = await ensureValidToken(supabase, conn);
@@ -79,7 +87,7 @@ export async function postMarketingContent(
       const postImage = imageUrl || `${appUrl}/logo-og.png`;
 
       if (conn.platform === 'facebook' && conn.platform_page_id) {
-        const result = await postToFacebook(token, conn.platform_page_id, caption, postImage, claimUrl, conn.id);
+        const result = await postToFacebook(token, conn.platform_page_id, caption, postImage, claimUrl, conn.id, videoUrl || undefined);
         if (result.success) {
           results.facebook_post_id = result.platformPostId;
           results.facebook_post_url = result.platformPostUrl;
@@ -87,7 +95,7 @@ export async function postMarketingContent(
           errors.push(`Facebook: ${result.error || 'Post failed'}`);
         }
       } else if (conn.platform === 'instagram' && conn.platform_page_id) {
-        const result = await postToInstagram(token, conn.platform_page_id, caption, postImage, conn.id);
+        const result = await postToInstagram(token, conn.platform_page_id, caption, postImage, conn.id, videoUrl || undefined);
         if (result.success) {
           results.instagram_post_id = result.platformPostId;
           results.instagram_post_url = result.platformPostUrl;

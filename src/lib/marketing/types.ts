@@ -29,6 +29,7 @@ export interface MarketingContentItem {
   hashtags: string[];
   image_prompt: string | null;
   image_url: string | null;
+  video_url: string | null;
   deal_id: string | null;
   vendor_id: string | null;
   ai_reasoning: string | null;

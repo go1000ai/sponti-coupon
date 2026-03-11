@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const allowedFields = [
-    'caption_facebook', 'caption_instagram', 'hashtags', 'image_url',
+    'caption_facebook', 'caption_instagram', 'hashtags', 'image_url', 'video_url',
     'scheduled_for', 'status', 'admin_notes', 'platforms',
     'content_type', 'target_audience',
   ];
