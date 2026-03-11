@@ -9,6 +9,7 @@ import {
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useLanguage } from '@/lib/i18n';
+import { trackEvent } from '@/lib/meta-pixel';
 
 function ContactForm() {
   const searchParams = useSearchParams();
@@ -54,6 +55,7 @@ function ContactForm() {
           turnstileToken,
         }),
       });
+      trackEvent('Contact', { content_name: form.inquiryType });
       setSubmitted(true);
     } catch {
       setSubmitted(true);

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Mail, Lock, User, Phone, MapPin, Store, Building2, CheckCircle, ArrowRight, Gift, Sparkles } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { useLanguage } from '@/lib/i18n';
+import { trackEvent } from '@/lib/meta-pixel';
 
 export default function SignupPage() {
   return (
@@ -169,6 +170,13 @@ function SignupForm() {
       setLoading(false);
       return;
     }
+
+    // Meta Pixel: track signup
+    trackEvent('CompleteRegistration', {
+      content_name: accountType === 'vendor' ? 'Vendor Signup' : 'Customer Signup',
+      value: accountType === 'vendor' ? 1 : 0,
+      currency: 'USD',
+    });
 
     // Check if user session is immediately available (autoconfirm enabled)
     if (data.session) {

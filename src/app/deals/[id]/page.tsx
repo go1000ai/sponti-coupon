@@ -16,6 +16,7 @@ import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { useLanguage } from '@/lib/i18n';
 import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
+import { trackEvent } from '@/lib/meta-pixel';
 import Link from 'next/link';
 import Image from 'next/image';
 import { DealImageGallery } from '@/components/deals/DealImageGallery';
@@ -225,6 +226,14 @@ export default function DealDetailPage() {
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error); setClaiming(false); return; }
+
+      // Meta Pixel: track deal claim
+      trackEvent('Lead', {
+        content_name: deal?.title,
+        content_category: deal?.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal',
+        value: deal?.deal_price || 0,
+        currency: 'USD',
+      });
 
       // Route based on payment tier
       if (data.payment_tier === 'integrated' && data.redirect_url) {
