@@ -357,12 +357,15 @@ export default function AdminMarketingPage() {
     setRegeneratingImage(false);
   };
 
+  const [videoProgress, setVideoProgress] = useState('');
+
   const handleGenerateVideoFromModal = async (item: QueueItem) => {
     if (!item.image_url) {
       alert('Generate an image first — video needs a source image.');
       return;
     }
     setGeneratingVideo(true);
+    setVideoProgress('Starting video generation...');
     try {
       const prompt = imagePromptInput.trim() || `Professional marketing video: smooth camera movement, engaging transitions, warm inviting atmosphere. Based on: ${item.caption_facebook?.substring(0, 150)}`;
       const res = await fetch('/api/vendor/generate-video', {
@@ -375,15 +378,59 @@ export default function AdminMarketingPage() {
         }),
       });
       const data = await res.json();
-      if (data.status === 'processing') {
-        alert(`Video generation started! Operation: ${data.operation_name}\n\nThis takes 1-3 minutes. Check back shortly.`);
-      } else if (data.error) {
+
+      if (data.error) {
         alert(data.error);
+        setGeneratingVideo(false);
+        setVideoProgress('');
+        return;
+      }
+
+      if (data.status === 'done' && data.url) {
+        setVideoProgress('Video ready!');
+        setGeneratingVideo(false);
+        await fetchItems();
+        return;
+      }
+
+      if (data.status === 'processing' && data.operation_name) {
+        // Poll for completion (up to 5 minutes)
+        const operationName = data.operation_name;
+        const maxAttempts = 30; // 30 x 10s = 5 min
+        for (let i = 0; i < maxAttempts; i++) {
+          const pct = Math.min(90, Math.round((i / maxAttempts) * 100));
+          setVideoProgress(`Generating video... ${pct}% (${i * 10}s)`);
+          await new Promise(r => setTimeout(r, 10000));
+
+          const pollRes = await fetch('/api/vendor/generate-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation_name: operationName }),
+          });
+          const pollData = await pollRes.json();
+
+          if (pollData.error) {
+            alert(pollData.error);
+            break;
+          }
+
+          if (pollData.status === 'done' && pollData.url) {
+            setVideoProgress('Video ready! Refreshing...');
+            await fetchItems();
+            break;
+          }
+
+          // If it returned a new operation (RAI retry), switch to polling that
+          if (pollData.retried && pollData.operation_name) {
+            setVideoProgress('Retrying with different approach...');
+          }
+        }
       }
     } catch {
       alert('Failed to start video generation');
     }
     setGeneratingVideo(false);
+    setVideoProgress('');
   };
 
   const handleAskAvaPrompt = async (item: QueueItem) => {
@@ -1294,18 +1341,21 @@ export default function AdminMarketingPage() {
                     ) : (
                       <button
                         onClick={() => handleGenerateVideoFromModal(selectedItem)}
-                        disabled={generatingVideo || !selectedItem.image_url || !imagePromptInput.trim()}
+                        disabled={generatingVideo || !selectedItem.image_url}
                         className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {generatingVideo ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Film className="w-3.5 h-3.5" />}
-                        {generatingVideo ? 'Generating...' : 'Generate Video'}
+                        {generatingVideo ? (videoProgress || 'Generating...') : 'Generate Video'}
                       </button>
                     )}
                   </div>
-                  {mediaMode === 'video' && !selectedItem.image_url && (
+                  {generatingVideo && videoProgress && (
+                    <p className="text-xs text-emerald-600 font-medium animate-pulse">{videoProgress}</p>
+                  )}
+                  {mediaMode === 'video' && !selectedItem.image_url && !generatingVideo && (
                     <p className="text-xs text-emerald-600">Generate an image first to enable video creation.</p>
                   )}
-                  {!imagePromptInput.trim() && (
+                  {!imagePromptInput.trim() && !generatingVideo && (
                     <p className="text-xs text-emerald-600">Ask Ava for help above, or type a prompt directly to enable generation.</p>
                   )}
                 </div>
