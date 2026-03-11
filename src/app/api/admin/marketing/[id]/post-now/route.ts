@@ -19,7 +19,7 @@ export async function POST(
     .from('marketing_content_queue')
     .select('*')
     .eq('id', id)
-    .in('status', ['draft', 'approved', 'scheduled', 'failed'])
+    .in('status', ['draft', 'approved', 'scheduled', 'failed', 'posted'])
     .single();
 
   if (error || !item) {

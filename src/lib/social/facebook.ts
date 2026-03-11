@@ -134,31 +134,65 @@ export async function postToFacebook(
       };
     }
 
-    // Image post via /{pageId}/photos
-    // published: true ensures the post appears in the Page feed (not just the Photos album)
-    const res = await fetch(`${META_GRAPH_URL}/${pageId}/photos`, {
+    // Image post: two-step approach to guarantee feed visibility
+    // Step 1: Upload photo as unpublished to get media_fbid
+    const uploadRes = await fetch(`${META_GRAPH_URL}/${pageId}/photos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         url: imageUrl,
-        caption: fullCaption,
+        published: false,
+        access_token: accessToken,
+      }),
+    });
+
+    const uploadData = await uploadRes.json();
+
+    if (!uploadRes.ok || uploadData.error) {
+      return {
+        platform: 'facebook',
+        connectionId,
+        success: false,
+        error: uploadData.error?.message || `Photo upload HTTP ${uploadRes.status}`,
+      };
+    }
+
+    const photoId = uploadData.id;
+
+    // Step 2: Create a feed post with the photo attached
+    const feedRes = await fetch(`${META_GRAPH_URL}/${pageId}/feed`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: fullCaption,
+        attached_media: [{ media_fbid: photoId }],
         published: true,
         access_token: accessToken,
       }),
     });
 
-    const data = await res.json();
+    const feedData = await feedRes.json();
 
-    if (!res.ok || data.error) {
+    if (!feedRes.ok || feedData.error) {
+      // Fallback: try publishing the photo directly if feed post fails
+      await fetch(`${META_GRAPH_URL}/${photoId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          published: true,
+          access_token: accessToken,
+        }),
+      });
+
       return {
         platform: 'facebook',
         connectionId,
         success: false,
-        error: data.error?.message || `HTTP ${res.status}`,
+        error: feedData.error?.message || `Feed post HTTP ${feedRes.status}`,
       };
     }
 
-    const postId = data.id || data.post_id;
+    const postId = feedData.id || feedData.post_id;
     return {
       platform: 'facebook',
       connectionId,

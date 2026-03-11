@@ -20,6 +20,7 @@ interface QueueItem {
   hashtags: string[];
   image_url: string | null;
   video_url: string | null;
+  recurring_schedule: { frequency: string; day_of_week: number; active: boolean } | null;
   image_prompt: string | null;
   deal_id: string | null;
   vendor_id: string | null;
@@ -510,7 +511,7 @@ export default function AdminMarketingPage() {
     setVideoToastMessage(item.image_url ? 'Starting video generation from image...' : 'Starting text-to-video generation...');
     setVideoProgressPct(5);
     try {
-      const prompt = imagePromptInput.trim() || `Professional marketing video: smooth camera movement, engaging transitions, warm inviting atmosphere. Based on: ${item.caption_facebook?.substring(0, 150)}`;
+      const prompt = imagePromptInput.trim() || `Create a vertical 9:16 Reel that directly illustrates this post: "${item.caption_facebook?.substring(0, 200)}". Show the specific scene described — real setting, warm lighting, slow cinematic camera movement. Professional commercial quality.`;
       const payload: Record<string, string> = {
         video_prompt: prompt,
         aspect_ratio: '9:16',
@@ -1705,6 +1706,85 @@ export default function AdminMarketingPage() {
                 </div>
               )}
 
+              {/* Recurring Post Schedule */}
+              <div className="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                    <RefreshCw className="w-4 h-4 text-gray-500" /> Recurring Post
+                  </p>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedItem.recurring_schedule?.active || false}
+                      onChange={async (e) => {
+                        const active = e.target.checked;
+                        const schedule = selectedItem.recurring_schedule || { frequency: 'weekly', day_of_week: 2, active: false };
+                        const updated = { ...schedule, active };
+                        await fetch('/api/admin/marketing', {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id: selectedItem.id, recurring_schedule: updated }),
+                        });
+                        setSelectedItem(prev => prev ? { ...prev, recurring_schedule: updated } : null);
+                        await fetchItems();
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-300 peer-focus:ring-2 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500" />
+                  </label>
+                </div>
+                {(selectedItem.recurring_schedule?.active) && (
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 mb-1 block">Frequency</label>
+                      <select
+                        value={selectedItem.recurring_schedule?.frequency || 'weekly'}
+                        onChange={async (e) => {
+                          const schedule = { ...(selectedItem.recurring_schedule || { day_of_week: 2, active: true }), frequency: e.target.value };
+                          await fetch('/api/admin/marketing', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: selectedItem.id, recurring_schedule: schedule }),
+                          });
+                          setSelectedItem(prev => prev ? { ...prev, recurring_schedule: schedule as QueueItem['recurring_schedule'] } : null);
+                          await fetchItems();
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value="weekly">Every week</option>
+                        <option value="biweekly">Every 2 weeks</option>
+                        <option value="monthly">Every month</option>
+                      </select>
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs text-gray-500 mb-1 block">Day</label>
+                      <select
+                        value={selectedItem.recurring_schedule?.day_of_week ?? 2}
+                        onChange={async (e) => {
+                          const schedule = { ...(selectedItem.recurring_schedule || { frequency: 'weekly', active: true }), day_of_week: parseInt(e.target.value) };
+                          await fetch('/api/admin/marketing', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id: selectedItem.id, recurring_schedule: schedule }),
+                          });
+                          setSelectedItem(prev => prev ? { ...prev, recurring_schedule: schedule as QueueItem['recurring_schedule'] } : null);
+                          await fetchItems();
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value={0}>Sunday</option>
+                        <option value={1}>Monday</option>
+                        <option value={2}>Tuesday</option>
+                        <option value={3}>Wednesday</option>
+                        <option value={4}>Thursday</option>
+                        <option value={5}>Friday</option>
+                        <option value={6}>Saturday</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Image URL */}
               {selectedItem.status !== 'posted' && (
                 <div className="mb-4">
@@ -1786,9 +1866,17 @@ export default function AdminMarketingPage() {
                   </button>
                 )}
 
-                {/* View links for posted items */}
+                {/* View links + Repost for posted items */}
                 {selectedItem.status === 'posted' && (
                   <>
+                    <button
+                      onClick={() => handlePostNow(selectedItem.id)}
+                      disabled={actionLoading === selectedItem.id}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600"
+                    >
+                      {actionLoading === selectedItem.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                      Repost
+                    </button>
                     {selectedItem.facebook_post_url && (
                       <a href={selectedItem.facebook_post_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
                         <Facebook className="w-3.5 h-3.5" /> View on Facebook
