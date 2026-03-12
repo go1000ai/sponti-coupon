@@ -123,7 +123,7 @@ export async function postViaGHL(
       accountIds,
       userId,
       summary: caption,
-      ...(media.length > 0 ? { media } : {}),
+      media, // always required by GHL, even as empty array
     };
 
     // Set status — required by GHL to appear in Social Planner
