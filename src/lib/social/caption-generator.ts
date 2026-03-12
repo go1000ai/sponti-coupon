@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { DealForSocialPost, PlatformCaptions } from './types';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
@@ -6,10 +7,39 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 /**
  * Generate platform-specific social media captions using Gemini AI.
  * Falls back to templates if Gemini is unavailable.
+ *
+ * If `supabaseClient` and `dealId` are provided, the function checks
+ * `deals.cached_captions` first and returns cached captions without calling
+ * Gemini. On a cache miss the generated captions are stored back to the DB.
  */
-export async function generateCaptions(deal: DealForSocialPost, tone?: string): Promise<PlatformCaptions> {
+export async function generateCaptions(
+  deal: DealForSocialPost,
+  tone?: string,
+  supabaseClient?: SupabaseClient,
+  dealId?: string,
+): Promise<PlatformCaptions> {
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
   const discount = Math.round(deal.discount_percentage);
+
+  // --- Cache read ---
+  if (supabaseClient && dealId) {
+    const { data: cached } = await supabaseClient
+      .from('deals')
+      .select('cached_captions')
+      .eq('id', dealId)
+      .single();
+
+    if (
+      cached?.cached_captions &&
+      cached.cached_captions.facebook &&
+      cached.cached_captions.instagram &&
+      cached.cached_captions.twitter &&
+      cached.cached_captions.tiktok
+    ) {
+      console.log(`[Social Captions] Returning cached captions for deal ${dealId}`);
+      return cached.cached_captions as PlatformCaptions;
+    }
+  }
 
   try {
     const geminiKey = process.env.GEMINI_API_KEY;
@@ -71,6 +101,19 @@ Rules:
     // Enforce twitter length limit
     if (captions.twitter.length > 280) {
       captions.twitter = captions.twitter.substring(0, 277) + '...';
+    }
+
+    // --- Cache write ---
+    if (supabaseClient && dealId) {
+      const { error: cacheError } = await supabaseClient
+        .from('deals')
+        .update({ cached_captions: captions })
+        .eq('id', dealId);
+      if (cacheError) {
+        console.warn('[Social Captions] Failed to cache captions for deal', dealId, cacheError);
+      } else {
+        console.log(`[Social Captions] Cached captions for deal ${dealId}`);
+      }
     }
 
     return captions;

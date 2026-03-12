@@ -99,7 +99,7 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
       tiktok: options.customCaptions.tiktok || '',
     };
   } else {
-    captions = await generateCaptions(dealForPost);
+    captions = await generateCaptions(dealForPost, undefined, supabase, deal.id);
   }
   const claimUrl = `${APP_URL}/deals/${deal.id}`;
 
