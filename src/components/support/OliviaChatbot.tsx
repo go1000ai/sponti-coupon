@@ -101,6 +101,7 @@ interface LeadForm {
   email: string;
   phone: string;
   business_name: string;
+  sms_consent: boolean;
 }
 
 export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = 'card', pageContext, onNewChat }: OliviaChatbotProps) {
@@ -125,7 +126,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [leadSubmitting, setLeadSubmitting] = useState(false);
-  const [leadForm, setLeadForm] = useState<LeadForm>({ name: '', email: '', phone: '', business_name: '' });
+  const [leadForm, setLeadForm] = useState<LeadForm>({ name: '', email: '', phone: '', business_name: '', sms_consent: false });
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -235,6 +236,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
           phone: leadForm.phone,
           business_name: leadForm.business_name,
           source: 'olivia_chat',
+          sms_consent: leadForm.sms_consent,
         }),
       });
       setLeadCaptured(true);
@@ -320,7 +322,7 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
             <p className="text-xs font-semibold text-gray-700">Drop your info and we&apos;ll be in touch!</p>
             <input
               type="text"
-              placeholder="Your name"
+              placeholder="Name"
               value={leadForm.name}
               onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -335,7 +337,8 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
             />
             <input
               type="tel"
-              placeholder="Phone (optional)"
+              placeholder="Phone *"
+              required
               value={leadForm.phone}
               onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -347,13 +350,28 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
               onChange={e => setLeadForm(f => ({ ...f, business_name: e.target.value }))}
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
+            {/* SMS Consent — required for A2P/TCPA compliance */}
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={leadForm.sms_consent}
+                onChange={e => setLeadForm(f => ({ ...f, sms_consent: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 shrink-0"
+              />
+              <span className="text-[10px] leading-tight text-gray-500">
+                By submitting, you authorize Online Commerce Hub, LLC DBA SpontiCoupon to text/call the number above for promotional messages, possibly using automated means. Msg/data rates apply, msg frequency varies. Consent is not a condition of purchase. See{' '}
+                <a href="/terms" target="_blank" className="underline text-primary-500">terms</a> and{' '}
+                <a href="/privacy" target="_blank" className="underline text-primary-500">privacy policy</a>.
+                Text HELP for help and STOP to unsubscribe.
+              </span>
+            </label>
             <div className="flex gap-2">
               <button
                 onClick={handleLeadSubmit}
-                disabled={leadSubmitting || !leadForm.email.includes('@')}
+                disabled={leadSubmitting || !leadForm.email.includes('@') || !leadForm.phone.trim() || !leadForm.sms_consent}
                 className="flex-1 text-sm font-medium bg-primary-500 text-white rounded-lg py-2 hover:bg-primary-600 disabled:opacity-50 transition-colors"
               >
-                {leadSubmitting ? 'Sending...' : 'Send My Info'}
+                {leadSubmitting ? 'Sending...' : 'Send'}
               </button>
               <button
                 onClick={() => setShowLeadForm(false)}

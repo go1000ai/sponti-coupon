@@ -7,14 +7,14 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'lead-capture' });
   if (limited) return limited;
 
-  let body: { name?: string; email?: string; phone?: string; business_name?: string; source?: string; notes?: string };
+  let body: { name?: string; email?: string; phone?: string; business_name?: string; source?: string; notes?: string; sms_consent?: boolean };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { name, email, phone, business_name, source, notes } = body;
+  const { name, email, phone, business_name, source, notes, sms_consent } = body;
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
         source: source || 'olivia_chat',
         notes: notes?.trim() || '',
         lead_id: lead.id,
+        sms_consent: !!sms_consent,
+        sms_consent_date: sms_consent ? new Date().toISOString() : null,
         captured_at: new Date().toISOString(),
       }),
     }).then(async (res) => {

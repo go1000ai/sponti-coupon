@@ -15,6 +15,7 @@ import StripeConnectBanner from '@/components/vendor/StripeConnectBanner';
 // import SquareConnectBanner from '@/components/vendor/SquareConnectBanner'; // Square account deactivated — on hold
 import PayPalConnectBanner from '@/components/vendor/PayPalConnectBanner';
 import { useLanguage } from '@/lib/i18n';
+import { useSearchParams } from 'next/navigation';
 
 // Square-icon logos vs wide wordmark logos need different aspect ratios
 const SQUARE_LOGOS: Set<string> = new Set(['zelle', 'cashapp', 'square']);
@@ -54,11 +55,33 @@ function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?:
 
 export default function VendorPaymentsPage() {
   const { t } = useLanguage();
+  const searchParams = useSearchParams();
   const [methods, setMethods] = useState<VendorPaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Show feedback after Stripe Connect redirect
+  useEffect(() => {
+    if (searchParams.get('connect_success') === 'true') {
+      setSuccess('Stripe Connect linked successfully! You can now accept online payments.');
+      // Clean the URL
+      window.history.replaceState({}, '', '/vendor/payments');
+    }
+    const connectError = searchParams.get('connect_error');
+    if (connectError) {
+      const errorMessages: Record<string, string> = {
+        not_vendor: 'Only vendors can connect a Stripe account.',
+        link_creation_failed: 'Failed to start Stripe onboarding. Please try again.',
+        missing_params: 'Something went wrong during Stripe onboarding. Please try again.',
+        unauthorized: 'Session expired. Please log in and try again.',
+        callback_failed: 'Failed to complete Stripe connection. Please try again.',
+      };
+      setError(errorMessages[connectError] || 'Stripe connection failed. Please try again.');
+      window.history.replaceState({}, '', '/vendor/payments');
+    }
+  }, [searchParams]);
 
   // Add form state
   const [showAddForm, setShowAddForm] = useState(false);

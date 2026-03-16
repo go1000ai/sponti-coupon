@@ -435,6 +435,15 @@ export default function RootLayout({
           <Analytics />
           <SpeedInsights />
         </Providers>
+        {/* GHL Chat Widget — TEMPORARY for A2P SMS approval. Remove after approved. */}
+        {process.env.NEXT_PUBLIC_GHL_CHAT_WIDGET !== 'false' && (
+          <script
+            src="https://widgets.leadconnectorhq.com/loader.js"
+            data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
+            data-widget-id="69b7fb6e99916a25c8c8b415"
+            async
+          />
+        )}
       </body>
     </html>
   );
