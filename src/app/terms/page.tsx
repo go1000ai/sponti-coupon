@@ -350,6 +350,10 @@ export default function TermsPage() {
           <p className="text-gray-600 leading-relaxed">
             Your phone number and SMS consent data will not be sold, rented, or shared with any third parties or affiliates for marketing purposes. For complete details on how we handle your data, see our <a href="/privacy" className="text-primary-500 underline">Privacy Policy</a>.
           </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.8 Age Restriction</h3>
+          <p className="text-gray-600 leading-relaxed">
+            You must be at least 18 years of age to opt in to our SMS messaging program. By opting in, you confirm that you are 18 years of age or older. If we discover that a person under 18 has opted in, we will immediately remove them from our messaging list.
+          </p>
         </section>
 
         <section>
