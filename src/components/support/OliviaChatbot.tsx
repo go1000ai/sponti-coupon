@@ -350,9 +350,8 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
               onChange={e => setLeadForm(f => ({ ...f, business_name: e.target.value }))}
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
-            {/* SMS Consent — hidden during A2P approval (GHL widget must be only SMS opt-in).
-                Uncomment after A2P is approved and GHL widget is removed. */}
-            {/* <label className="flex items-start gap-2 cursor-pointer">
+            {/* SMS Consent — TCPA/A2P compliance */}
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={leadForm.sms_consent}
@@ -365,11 +364,11 @@ export function OliviaChatbot({ onOpenTicket, userRole = 'customer', variant = '
                 <a href="/privacy" target="_blank" className="underline text-primary-500">privacy policy</a>.
                 Text HELP for help and STOP to unsubscribe.
               </span>
-            </label> */}
+            </label>
             <div className="flex gap-2">
               <button
                 onClick={handleLeadSubmit}
-                disabled={leadSubmitting || !leadForm.email.includes('@')}
+                disabled={leadSubmitting || !leadForm.email.includes('@') || !leadForm.phone.trim() || !leadForm.sms_consent}
                 className="flex-1 text-sm font-medium bg-primary-500 text-white rounded-lg py-2 hover:bg-primary-600 disabled:opacity-50 transition-colors"
               >
                 {leadSubmitting ? 'Sending...' : 'Send'}
