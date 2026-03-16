@@ -118,8 +118,8 @@ export async function POST(request: NextRequest) {
         interval,
         ...(isFoundersEligible ? { promo: 'founders' } : {}),
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/dashboard?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/vendor/dashboard?subscription=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/pricing`,
     };
 
     const session = await getStripe().checkout.sessions.create(sessionConfig);

@@ -43,7 +43,7 @@ export async function POST() {
 
     const session = await getStripe().billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/vendor/subscription`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/vendor/subscription`,
     });
 
     return NextResponse.json({ url: session.url });

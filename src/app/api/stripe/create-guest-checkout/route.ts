@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
         flow_type: 'guest_signup',
         ...(isFoundersEligible ? { promo: 'founders' } : {}),
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/auth/complete-signup?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?subscription=canceled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/auth/complete-signup?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com'}/pricing?subscription=canceled`,
     };
 
     const session = await getStripe().checkout.sessions.create(sessionConfig);

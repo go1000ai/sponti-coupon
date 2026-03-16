@@ -22,12 +22,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No signature' }, { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not configured');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+  }
+
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      webhookSecret
     );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Webhook signature verification failed';
@@ -72,22 +78,15 @@ export async function POST(request: NextRequest) {
             ? 'active'
             : subscription.status;
 
-          const { data: existingSub } = await supabase
-            .from('subscriptions')
-            .select('id')
-            .eq('stripe_subscription_id', subscription.id)
-            .single();
-
-          if (!existingSub) {
-            await supabase.from('subscriptions').insert({
-              vendor_id: vendorId,
-              stripe_subscription_id: subscription.id,
-              tier: verifiedTier,
-              status: dbStatus,
-              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            });
-          }
+          // Upsert to prevent duplicate inserts if webhook fires twice
+          await supabase.from('subscriptions').upsert({
+            vendor_id: vendorId,
+            stripe_subscription_id: subscription.id,
+            tier: verifiedTier,
+            status: dbStatus,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          }, { onConflict: 'stripe_subscription_id', ignoreDuplicates: true });
 
           await supabase
             .from('vendors')
@@ -128,23 +127,15 @@ export async function POST(request: NextRequest) {
           ? 'active'
           : subscription.status;
 
-        // Check if subscription record already exists (avoid duplicates)
-        const { data: existingSub } = await supabase
-          .from('subscriptions')
-          .select('id')
-          .eq('stripe_subscription_id', subscription.id)
-          .single();
-
-        if (!existingSub) {
-          await supabase.from('subscriptions').insert({
-            vendor_id: vendorId,
-            stripe_subscription_id: subscription.id,
-            tier: verifiedTier,
-            status: dbStatus,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          });
-        }
+        // Upsert to prevent duplicate inserts if webhook fires twice
+        await supabase.from('subscriptions').upsert({
+          vendor_id: vendorId,
+          stripe_subscription_id: subscription.id,
+          tier: verifiedTier,
+          status: dbStatus,
+          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        }, { onConflict: 'stripe_subscription_id', ignoreDuplicates: true });
 
         await supabase
           .from('vendors')
@@ -310,7 +301,11 @@ export async function POST(request: NextRequest) {
 
       if (subscriptionId) {
         const stripeSubscription = await getStripe().subscriptions.retrieve(subscriptionId);
-        const tier = stripeSubscription.metadata?.tier;
+        // Resolve tier from metadata first, then from price ID as fallback
+        const tier = stripeSubscription.metadata?.tier
+          || (stripeSubscription.items?.data?.[0]?.price?.id
+            ? resolveTierFromPriceId(stripeSubscription.items.data[0].price.id)
+            : null);
 
         if (tier) {
           await supabase
