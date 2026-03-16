@@ -221,7 +221,34 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-gray-900">13. Contact Us</h2>
+          <h2 className="text-2xl font-bold text-gray-900">13. SMS/Text Messaging</h2>
+          <p className="text-gray-600 leading-relaxed">
+            Online Commerce Hub, LLC DBA SpontiCoupon offers an SMS/text messaging program to provide promotional messages, deal alerts, account notifications, and customer support communications.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">13.1 SMS Opt-In & Consent</h3>
+          <p className="text-gray-600 leading-relaxed">
+            By providing your mobile phone number and checking the SMS consent checkbox on our website (via our chat widget, contact form, or signup flow), you expressly consent to receive recurring automated promotional and informational text messages from Online Commerce Hub, LLC DBA SpontiCoupon. Consent is not a condition of any purchase. You may opt in by interacting with our website chat widget or submitting a form that includes SMS consent.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">13.2 Message Frequency & Rates</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Message frequency varies based on your interactions and account activity. Standard message and data rates may apply as determined by your mobile carrier. SpontiCoupon does not charge any additional fees for SMS messages.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">13.3 Opt-Out Instructions</h3>
+          <p className="text-gray-600 leading-relaxed">
+            You may opt out of receiving text messages at any time by replying <strong>STOP</strong> to any message you receive from us. After opting out, you will receive one final confirmation message. You may also contact us at support@sponticoupon.com to be removed from our SMS list. Reply <strong>HELP</strong> for assistance.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">13.4 No Sharing of SMS Data</h3>
+          <p className="text-gray-600 leading-relaxed">
+            <strong>We do not sell, rent, share, or disclose your phone number or SMS opt-in consent data with any third parties or affiliates for their own marketing purposes.</strong> Your SMS consent information is used solely by Online Commerce Hub, LLC DBA SpontiCoupon to send you the messages you have consented to receive. This includes sharing with third-party service providers that assist us in delivering text messages — these providers are contractually prohibited from using your data for any purpose other than message delivery on our behalf.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">13.5 Types of Messages</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Messages may include: promotional offers and deals, new deal alerts, account notifications, appointment and redemption reminders, customer support responses, and other informational messages related to SpontiCoupon services.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900">14. Contact Us</h2>
           <p className="text-gray-600 leading-relaxed">
             If you have any questions about this Privacy Policy, please contact us at:
           </p>

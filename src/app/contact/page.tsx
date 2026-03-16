@@ -31,6 +31,7 @@ function ContactForm() {
     businessName: '',
     inquiryType: planParam === 'enterprise' ? 'enterprise' : 'general',
     message: '',
+    smsConsent: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -80,7 +81,7 @@ function ContactForm() {
         <button
           onClick={() => {
             setSubmitted(false);
-            setForm({ name: '', email: '', phone: '', businessName: '', inquiryType: 'general', message: '' });
+            setForm({ name: '', email: '', phone: '', businessName: '', inquiryType: 'general', message: '', smsConsent: false });
           }}
           className="text-primary-500 font-semibold hover:text-primary-600 transition-colors"
         >
@@ -200,6 +201,22 @@ function ContactForm() {
             placeholder={t('contact.messagePlaceholder')}
           />
         </div>
+
+        {/* SMS Consent — TCPA/A2P compliance */}
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.smsConsent}
+            onChange={(e) => setForm(f => ({ ...f, smsConsent: e.target.checked }))}
+            className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 shrink-0"
+          />
+          <span className="text-xs leading-relaxed text-gray-500">
+            By submitting, you authorize Online Commerce Hub, LLC DBA SpontiCoupon to text/call the number above for promotional messages, possibly using automated means. Msg/data rates apply, msg frequency varies. Consent is not a condition of purchase. See{' '}
+            <Link href="/terms" className="underline text-primary-500">terms</Link> and{' '}
+            <Link href="/privacy" className="underline text-primary-500">privacy policy</Link>.
+            Text HELP for help and STOP to unsubscribe.
+          </span>
+        </label>
 
         {/* Turnstile CAPTCHA */}
         {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (

@@ -321,7 +321,39 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold text-gray-900">19. Contact Information</h2>
+          <h2 className="text-2xl font-bold text-gray-900">19. SMS/Text Messaging Program</h2>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.1 Program Description</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Online Commerce Hub, LLC DBA SpontiCoupon (&quot;SpontiCoupon,&quot; &quot;we,&quot; &quot;us&quot;) operates an SMS/text messaging program to send promotional messages, deal alerts, account notifications, redemption reminders, and customer support communications to users who have opted in. By opting in to our SMS program, you agree to receive recurring automated text messages from SpontiCoupon at the mobile number you provided.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.2 Consent & Opt-In</h3>
+          <p className="text-gray-600 leading-relaxed">
+            By checking the SMS consent checkbox on our website (via our chat widget, contact form, or account signup), you expressly consent to receive recurring automated promotional and informational text messages from SpontiCoupon. <strong>Consent is not a condition of any purchase.</strong> You do not need to consent to SMS messaging to use SpontiCoupon or make a purchase.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.3 Opt-Out Instructions</h3>
+          <p className="text-gray-600 leading-relaxed">
+            You can opt out of receiving SMS messages at any time by texting <strong>STOP</strong> to any message received from SpontiCoupon. Upon receipt, we will send you a single confirmation message to confirm your opt-out. After opting out, you will no longer receive text messages from us unless you re-subscribe. For help, text <strong>HELP</strong> to any message, or contact us at support@sponticoupon.com or (321) 335-0773.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.4 Message Frequency & Data Rates</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Message frequency varies based on your account activity, interactions, and promotional campaigns. <strong>Standard message and data rates may apply</strong> as determined by your wireless carrier. SpontiCoupon is not responsible for any fees or charges your carrier may impose for text messaging services. Check with your mobile carrier for details on your messaging plan.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.5 Carrier Liability Disclaimer</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Mobile carriers (including but not limited to T-Mobile, AT&amp;T, Verizon, and others) are not liable for delayed or undelivered messages. SpontiCoupon makes no guarantees regarding the delivery, timeliness, or accuracy of any SMS messages. Message delivery is subject to effective transmission from your wireless carrier and network availability. T-Mobile is not liable for delayed or undelivered messages.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.6 Supported Carriers</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Our SMS program is supported on most major U.S. carriers including AT&amp;T, T-Mobile, Verizon, Sprint, and others. Carriers are not responsible for the content of any messages sent through SpontiCoupon&apos;s SMS program.
+          </p>
+          <h3 className="text-lg font-semibold text-gray-800 mt-4">19.7 Privacy & No Sharing</h3>
+          <p className="text-gray-600 leading-relaxed">
+            Your phone number and SMS consent data will not be sold, rented, or shared with any third parties or affiliates for marketing purposes. For complete details on how we handle your data, see our <a href="/privacy" className="text-primary-500 underline">Privacy Policy</a>.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-2xl font-bold text-gray-900">20. Contact Information</h2>
           <p className="text-gray-600 leading-relaxed">
             If you have any questions about these Terms of Service, please contact us at:
           </p>
