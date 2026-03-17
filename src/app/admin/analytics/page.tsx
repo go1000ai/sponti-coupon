@@ -10,6 +10,8 @@ import {
   Users,
   Store,
   Trophy,
+  Globe,
+  ExternalLink,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -43,12 +45,32 @@ interface TopDeal {
   conversion_rate: number;
 }
 
+interface PageViewPoint {
+  date: string;
+  views: number;
+  unique_visitors: number;
+}
+
+interface TopPage {
+  path: string;
+  views: number;
+  unique_visitors: number;
+}
+
+interface TopReferrer {
+  source: string;
+  views: number;
+}
+
 interface AnalyticsData {
   deal_views_over_time: DealViewPoint[];
   claims_vs_redemptions: { total_claims: number; total_redemptions: number };
   customer_signups: SignupPoint[];
   vendor_signups: SignupPoint[];
   top_deals: TopDeal[];
+  page_views_over_time: PageViewPoint[];
+  top_pages: TopPage[];
+  top_referrers: TopReferrer[];
 }
 
 const RANGES = [
@@ -61,6 +83,11 @@ const RANGES = [
 function formatDateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatPath(path: string) {
+  if (path === '/') return 'Homepage';
+  return path.replace(/^\//, '').replace(/\//g, ' / ');
 }
 
 export default function AdminAnalyticsPage() {
@@ -102,6 +129,9 @@ export default function AdminAnalyticsPage() {
     { name: 'Redemptions', value: data.claims_vs_redemptions.total_redemptions },
   ];
 
+  const totalPageViews = (data.page_views_over_time || []).reduce((sum, d) => sum + d.views, 0);
+  const totalUniqueVisitors = (data.page_views_over_time || []).reduce((sum, d) => sum + d.unique_visitors, 0);
+
   return (
     <div>
       {/* Header */}
@@ -131,7 +161,25 @@ export default function AdminAnalyticsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Globe className="w-4 h-4 text-secondary-500" />
+            <span className="text-xs text-gray-500">Page Views</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">
+            {totalPageViews.toLocaleString()}
+          </p>
+        </div>
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="w-4 h-4 text-primary-500" />
+            <span className="text-xs text-gray-500">Unique Visitors</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900">
+            {totalUniqueVisitors.toLocaleString()}
+          </p>
+        </div>
         <div className="card p-4">
           <div className="flex items-center gap-2 mb-1">
             <Eye className="w-4 h-4 text-blue-500" />
@@ -167,6 +215,161 @@ export default function AdminAnalyticsPage() {
           <p className="text-2xl font-bold text-gray-900">
             {data.vendor_signups.reduce((sum, d) => sum + d.count, 0).toLocaleString()}
           </p>
+        </div>
+      </div>
+
+      {/* Website Traffic Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Traffic Over Time Chart */}
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-5 h-5 text-secondary-500" />
+            <h2 className="text-lg font-bold text-gray-900">Website Traffic</h2>
+          </div>
+          {(data.page_views_over_time || []).length === 0 ? (
+            <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
+              No traffic data yet — tracking starts now
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={data.page_views_over_time}>
+                <defs>
+                  <linearGradient id="trafficGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#29ABE2" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#29ABE2" stopOpacity={0.05} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={formatDateLabel}
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: '#9ca3af' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  labelFormatter={(label) => formatDateLabel(label as string)}
+                  contentStyle={{
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="views"
+                  name="Page Views"
+                  stroke="#29ABE2"
+                  strokeWidth={2}
+                  fill="url(#trafficGradient)"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="unique_visitors"
+                  name="Unique Visitors"
+                  stroke="#E8632B"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+          <div className="flex items-center justify-center gap-6 mt-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-secondary-500" />
+              <span className="text-sm text-gray-500">Page Views</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-primary-500" />
+              <span className="text-sm text-gray-500">Unique Visitors</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Referrers */}
+        <div className="card p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ExternalLink className="w-5 h-5 text-green-500" />
+            <h2 className="text-lg font-bold text-gray-900">Top Traffic Sources</h2>
+          </div>
+          {(data.top_referrers || []).length === 0 ? (
+            <div className="flex items-center justify-center h-[250px] text-gray-400 text-sm">
+              No referrer data yet
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.top_referrers.map((ref, index) => {
+                const maxViews = data.top_referrers[0]?.views || 1;
+                const pct = Math.round((ref.views / maxViews) * 100);
+                return (
+                  <div key={index}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-gray-700 truncate max-w-[200px]">
+                        {ref.source}
+                      </span>
+                      <span className="text-sm font-bold text-gray-900">{ref.views.toLocaleString()}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-green-400 to-green-500 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Top Pages Table */}
+      <div className="card mb-6">
+        <div className="flex items-center gap-2 p-6 border-b border-gray-100">
+          <Globe className="w-5 h-5 text-secondary-500" />
+          <h2 className="text-lg font-bold text-gray-900">Top Pages</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-100 text-left">
+                <th className="p-4 font-semibold text-sm text-gray-500">#</th>
+                <th className="p-4 font-semibold text-sm text-gray-500">Page</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Views</th>
+                <th className="p-4 font-semibold text-sm text-gray-500 text-center">Unique Visitors</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {(data.top_pages || []).length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-8 text-center text-gray-400">
+                    No page data yet
+                  </td>
+                </tr>
+              ) : (
+                data.top_pages.map((page, index) => (
+                  <tr key={index} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-4 text-sm text-gray-400 font-medium">{index + 1}</td>
+                    <td className="p-4">
+                      <span className="font-medium text-gray-900">{formatPath(page.path)}</span>
+                      <span className="text-xs text-gray-400 ml-2">{page.path}</span>
+                    </td>
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
+                      {page.views.toLocaleString()}
+                    </td>
+                    <td className="p-4 text-sm text-gray-900 font-medium text-center">
+                      {page.unique_visitors.toLocaleString()}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -253,7 +456,7 @@ export default function AdminAnalyticsPage() {
               />
               <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                 {claimsRedemptionsData.map((_entry, index) => (
-                  <Cell key={`cell-${index}`} fill={index === 0 ? '#22c55e' : '#8b5cf6'} />
+                  <Cell key={`cell-${index}`} fill={index === 0 ? '#22c55e' : '#29ABE2'} />
                 ))}
               </Bar>
             </BarChart>
@@ -266,7 +469,7 @@ export default function AdminAnalyticsPage() {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-sky-500" />
+              <div className="w-3 h-3 rounded-full bg-secondary-500" />
               <span className="text-sm text-gray-500">
                 Redemptions ({data.claims_vs_redemptions.total_redemptions.toLocaleString()})
               </span>
@@ -312,9 +515,9 @@ export default function AdminAnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke="#a855f7"
+                  stroke="#29ABE2"
                   strokeWidth={2}
-                  dot={{ fill: '#a855f7', r: 3 }}
+                  dot={{ fill: '#29ABE2', r: 3 }}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>

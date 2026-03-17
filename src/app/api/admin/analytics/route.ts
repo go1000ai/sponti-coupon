@@ -152,12 +152,66 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // ---- Website Traffic (Page Views) ----
+    let pageViewsQuery = serviceClient
+      .from('page_views')
+      .select('path, source, session_id, created_at')
+      .order('created_at', { ascending: true });
+
+    if (threshold) pageViewsQuery = pageViewsQuery.gte('created_at', threshold);
+
+    const { data: pageViewsData } = await pageViewsQuery;
+
+    // Page views over time
+    const pvByDay: Record<string, { views: number; sessions: Set<string> }> = {};
+    (pageViewsData || []).forEach((pv) => {
+      const day = new Date(pv.created_at).toISOString().split('T')[0];
+      if (!pvByDay[day]) pvByDay[day] = { views: 0, sessions: new Set() };
+      pvByDay[day].views += 1;
+      if (pv.session_id) pvByDay[day].sessions.add(pv.session_id);
+    });
+
+    const page_views_over_time = Object.entries(pvByDay).map(([date, d]) => ({
+      date,
+      views: d.views,
+      unique_visitors: d.sessions.size,
+    }));
+
+    // Top pages
+    const pvByPath: Record<string, { views: number; sessions: Set<string> }> = {};
+    (pageViewsData || []).forEach((pv) => {
+      if (!pvByPath[pv.path]) pvByPath[pv.path] = { views: 0, sessions: new Set() };
+      pvByPath[pv.path].views += 1;
+      if (pv.session_id) pvByPath[pv.path].sessions.add(pv.session_id);
+    });
+
+    const top_pages = Object.entries(pvByPath)
+      .map(([path, d]) => ({ path, views: d.views, unique_visitors: d.sessions.size }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    // Top referrers
+    const pvBySource: Record<string, number> = {};
+    (pageViewsData || []).forEach((pv) => {
+      if (pv.source) {
+        pvBySource[pv.source] = (pvBySource[pv.source] || 0) + 1;
+      }
+    });
+
+    const top_referrers = Object.entries(pvBySource)
+      .map(([source, views]) => ({ source, views }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
     return NextResponse.json({
       deal_views_over_time,
       claims_vs_redemptions,
       customer_signups,
       vendor_signups,
       top_deals,
+      page_views_over_time,
+      top_pages,
+      top_referrers,
     });
   } catch (error) {
     console.error('[GET /api/admin/analytics] Error:', error);

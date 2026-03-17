@@ -10,6 +10,7 @@ import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Providers } from "@/components/Providers";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 const inter = Inter({ subsets: ["latin"] });
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas" });
@@ -432,18 +433,10 @@ export default function RootLayout({
           <InactivityGuard />
           <ServiceWorkerRegistration />
           <CookieConsentBanner />
+          <PageViewTracker />
           <Analytics />
           <SpeedInsights />
         </Providers>
-        {/* GHL Chat Widget — TEMPORARY for A2P SMS approval. Remove after approved. */}
-        {process.env.NEXT_PUBLIC_GHL_CHAT_WIDGET !== 'false' && (
-          <script
-            src="https://widgets.leadconnectorhq.com/loader.js"
-            data-resources-url="https://widgets.leadconnectorhq.com/chat-widget/loader.js"
-            data-widget-id="69b7fb6e99916a25c8c8b415"
-            async
-          />
-        )}
       </body>
     </html>
   );
