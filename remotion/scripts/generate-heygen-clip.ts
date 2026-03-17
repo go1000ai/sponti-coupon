@@ -33,7 +33,7 @@ What makes us different? Simple. Other platforms take a cut of every sale. We do
 
 Deposits on Sponti deals also protect you from no-shows. If someone claims your deal but doesn't show up, you keep the deposit. Your time is valuable.
 
-Ready to turn those empty seats into paying customers? Visit sponticoupon dot com and get started today. Your first deal could be live in five minutes.`;
+Ready to attract more customers and grow your revenue? Visit sponticoupon dot com and get started today. Your first deal could be live in five minutes.`;
 
 const TUTORIAL_SCRIPT = `Welcome to SpontiCoupon! I'm going to walk you through your vendor dashboard so you can start creating deals right away.
 
@@ -47,7 +47,7 @@ Step four — scanning and redeeming. When the customer arrives at your business
 
 Step five — tracking your results. Your dashboard shows everything — active deals, total claims, redemptions, revenue, and customer reviews. Use these insights to fine-tune your offers and keep customers coming back.
 
-That's it! Five simple steps. If you need help, our support team is always here. Now go create your first deal and start filling those seats!`;
+That's it! Five simple steps. If you need help, our support team is always here. Now go create your first deal and start growing your business!`;
 
 // --- HeyGen API ---
 

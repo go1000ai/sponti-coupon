@@ -10,67 +10,280 @@ import {
   OffthreadVideo,
   staticFile,
 } from 'remotion';
-import { AnimatedText } from '../components/AnimatedText';
-import { BrandLogo } from '../components/BrandLogo';
-import { DealCard } from '../components/DealCard';
-import { FeaturePoint } from '../components/FeaturePoint';
 import { SceneTransition } from '../components/SceneTransition';
 
 interface ExplainerVideoProps {
   avatarVideoUrl: string;
 }
 
-// --- Scene Components ---
+// ── Vertical 9:16 layout (1080×1920) for social media reels ──────────────────
 
-const IntroScene: React.FC = () => {
+// ── Brand Logo (compact vertical version) ────────────────────────────────────
+const VerticalLogo: React.FC<{ startFrame: number }> = ({ startFrame }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Subtle background pulse
-  const pulse = Math.sin(frame * 0.03) * 0.02 + 1;
+  const scale = spring({
+    frame: frame - startFrame,
+    fps,
+    config: { damping: 10, stiffness: 80 },
+  });
+
+  if (frame < startFrame) return null;
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        opacity: scale,
+        transform: `scale(${scale})`,
+      }}
+    >
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #E8632B, #FF8C42)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 6px 24px rgba(232,99,43,0.4)',
+        }}
+      >
+        <span style={{ color: '#FFF', fontSize: 26, fontWeight: '900', fontFamily: 'Inter, sans-serif' }}>S</span>
+      </div>
+      <span style={{ color: '#FFF', fontSize: 28, fontWeight: '800', fontFamily: 'Inter, sans-serif' }}>
+        Sponti<span style={{ color: '#E8632B' }}>Coupon</span>
+      </span>
+    </div>
+  );
+};
+
+// ── Animated Text (vertical-friendly) ────────────────────────────────────────
+const VText: React.FC<{
+  text: string;
+  startFrame: number;
+  fontSize?: number;
+  color?: string;
+  fontWeight?: string;
+  style?: React.CSSProperties;
+}> = ({ text, startFrame, fontSize = 40, color = '#FFF', fontWeight = '700', style = {} }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const progress = spring({
+    frame: frame - startFrame,
+    fps,
+    config: { damping: 12, stiffness: 100 },
+  });
+
+  const opacity = interpolate(progress, [0, 1], [0, 1]);
+  const translateY = interpolate(progress, [0, 1], [24, 0]);
+
+  if (frame < startFrame) return null;
+
+  return (
+    <div
+      style={{
+        fontSize,
+        color,
+        fontWeight,
+        fontFamily: 'Inter, sans-serif',
+        opacity,
+        transform: `translateY(${translateY}px)`,
+        ...style,
+      }}
+    >
+      {text}
+    </div>
+  );
+};
+
+// ── Checkmark feature line ──────────────────────────────────────────────────
+const CheckLine: React.FC<{ text: string; delay: number }> = ({ text, delay }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const progress = spring({
+    frame: frame - delay,
+    fps,
+    config: { damping: 12, stiffness: 100 },
+  });
+
+  if (frame < delay) return null;
+
+  const opacity = interpolate(progress, [0, 1], [0, 1]);
+  const translateX = interpolate(progress, [0, 1], [-20, 0]);
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        marginBottom: 20,
+        opacity,
+        transform: `translateX(${translateX}px)`,
+      }}
+    >
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          background: '#E8632B',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 16,
+          color: '#FFF',
+          fontWeight: '900',
+          flexShrink: 0,
+        }}
+      >
+        ✓
+      </div>
+      <span
+        style={{
+          color: '#FFFFFF',
+          fontSize: 24,
+          fontWeight: '600',
+          fontFamily: 'Inter, sans-serif',
+          lineHeight: 1.3,
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+};
+
+// ── Deal Card (vertical layout) ─────────────────────────────────────────────
+const VerticalDealCard: React.FC<{
+  title: string;
+  discount: string;
+  type: 'sponti' | 'steady';
+  startFrame: number;
+}> = ({ title, discount, type, startFrame }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const progress = spring({
+    frame: frame - startFrame,
+    fps,
+    config: { damping: 12, stiffness: 80 },
+  });
+
+  if (frame < startFrame) return null;
+
+  const opacity = interpolate(progress, [0, 1], [0, 1]);
+  const scale = interpolate(progress, [0, 1], [0.9, 1]);
+  const color = type === 'sponti' ? '#E8632B' : '#29ABE2';
+  const label = type === 'sponti' ? 'SPONTI DEAL' : 'STEADY DEAL';
+  const bgGradient =
+    type === 'sponti'
+      ? 'linear-gradient(135deg, #1a1a1a, #2a1a14)'
+      : 'linear-gradient(135deg, #1a1a1a, #142028)';
+
+  return (
+    <div
+      style={{
+        opacity,
+        transform: `scale(${scale})`,
+        width: '100%',
+        maxWidth: 420,
+      }}
+    >
+      <div
+        style={{
+          background: bgGradient,
+          borderRadius: 20,
+          border: `2px solid ${color}33`,
+          padding: 24,
+          boxShadow: `0 12px 40px ${color}22`,
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            background: color,
+            color: '#FFF',
+            fontSize: 12,
+            fontWeight: '800',
+            padding: '4px 12px',
+            borderRadius: 16,
+            fontFamily: 'Inter, sans-serif',
+            letterSpacing: '1px',
+            marginBottom: 12,
+          }}
+        >
+          {label}
+        </div>
+        <div style={{ color: '#FFF', fontSize: 20, fontWeight: '700', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>
+          {title}
+        </div>
+        <div style={{ color, fontSize: 36, fontWeight: '900', fontFamily: 'Inter, sans-serif' }}>
+          {discount}
+        </div>
+        {type === 'sponti' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, color: 'rgba(255,255,255,0.5)', fontSize: 14, fontFamily: 'Inter, sans-serif' }}>
+            <span style={{ color: '#E8632B' }}>⏱</span> Expires in 23h 45m
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ── Scene Components ────────────────────────────────────────────────────────
+
+const IntroScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const pulse = Math.sin(frame * 0.03) * 0.015 + 1;
 
   return (
     <AbsoluteFill
       style={{
-        background: 'radial-gradient(ellipse at 30% 50%, #1a1008 0%, #0a0a0a 60%, #000 100%)',
+        background: 'radial-gradient(ellipse at 50% 35%, #1a1008 0%, #0a0a0a 60%, #000 100%)',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        flexDirection: 'column',
-        gap: 40,
+        gap: 32,
+        padding: '80px 50px',
         transform: `scale(${pulse})`,
       }}
     >
-      {/* Decorative glow */}
       <div
         style={{
           position: 'absolute',
-          width: 600,
-          height: 600,
+          width: 400,
+          height: 400,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(232,99,43,0.15) 0%, transparent 70%)',
           top: '20%',
-          left: '30%',
         }}
       />
 
-      <BrandLogo startFrame={10} size={140} />
+      <VerticalLogo startFrame={8} />
 
-      <AnimatedText
-        text="The Smartest Way to Fill Empty Seats"
-        startFrame={30}
-        fontSize={52}
-        color="#FFFFFF"
+      <VText
+        text="The Smartest Way to Grow Your Business"
+        startFrame={25}
+        fontSize={44}
         fontWeight="800"
-        style={{ textAlign: 'center', maxWidth: 900, lineHeight: 1.2 }}
+        style={{ textAlign: 'center', lineHeight: 1.2, maxWidth: 500 }}
       />
 
-      <AnimatedText
+      <VText
         text="Local deals that bring customers through your door — today."
-        startFrame={50}
-        fontSize={26}
+        startFrame={45}
+        fontSize={22}
         color="rgba(255,255,255,0.6)"
-        style={{ textAlign: 'center', maxWidth: 700 }}
+        style={{ textAlign: 'center', maxWidth: 420 }}
       />
     </AbsoluteFill>
   );
@@ -80,37 +293,36 @@ const ProblemScene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(135deg, #0a0a0a, #111)',
-        padding: 100,
+        background: 'linear-gradient(180deg, #0a0a0a, #111)',
+        padding: '120px 50px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
       }}
     >
-      <AnimatedText
-        text="The Problem"
+      <VText
+        text="THE PROBLEM"
         startFrame={5}
-        fontSize={22}
+        fontSize={16}
         color="#E8632B"
         fontWeight="800"
-        style={{ letterSpacing: 3, textTransform: 'uppercase', marginBottom: 20 }}
+        style={{ letterSpacing: 3, marginBottom: 20 }}
       />
 
-      <AnimatedText
+      <VText
         text="Empty tables. Open slots. Unsold inventory."
         startFrame={15}
-        fontSize={52}
-        color="#FFFFFF"
+        fontSize={42}
         fontWeight="800"
-        style={{ lineHeight: 1.2, marginBottom: 40, maxWidth: 800 }}
+        style={{ lineHeight: 1.2, marginBottom: 36, maxWidth: 500 }}
       />
 
-      <AnimatedText
-        text="Local businesses lose thousands every week on unfilled capacity. Traditional advertising is expensive and slow. By the time customers see your ad, the moment has passed."
+      <VText
+        text="Local businesses lose thousands every week on unfilled capacity. Traditional ads are expensive and slow. By the time customers see your ad, the moment has passed."
         startFrame={35}
-        fontSize={24}
+        fontSize={20}
         color="rgba(255,255,255,0.6)"
-        style={{ lineHeight: 1.6, maxWidth: 700 }}
+        style={{ lineHeight: 1.6, maxWidth: 460 }}
       />
     </AbsoluteFill>
   );
@@ -120,357 +332,323 @@ const SolutionScene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(135deg, #0a0a0a, #1a0e08)',
-        padding: 100,
+        background: 'linear-gradient(180deg, #0a0a0a, #1a0e08)',
+        padding: '100px 50px',
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: 'column',
+        justifyContent: 'center',
         alignItems: 'center',
+        gap: 24,
       }}
     >
-      {/* Left side: text */}
-      <div style={{ flex: 1, paddingRight: 60 }}>
-        <AnimatedText
-          text="The Solution"
-          startFrame={5}
-          fontSize={22}
-          color="#E8632B"
-          fontWeight="800"
-          style={{ letterSpacing: 3, textTransform: 'uppercase', marginBottom: 20 }}
-        />
+      <VText
+        text="THE SOLUTION"
+        startFrame={5}
+        fontSize={16}
+        color="#E8632B"
+        fontWeight="800"
+        style={{ letterSpacing: 3 }}
+      />
 
-        <AnimatedText
-          text="Two deal types. One powerful platform."
-          startFrame={15}
-          fontSize={46}
-          color="#FFFFFF"
-          fontWeight="800"
-          style={{ lineHeight: 1.2, marginBottom: 30 }}
-        />
+      <VText
+        text="Two deal types. One powerful platform."
+        startFrame={15}
+        fontSize={38}
+        fontWeight="800"
+        style={{ textAlign: 'center', lineHeight: 1.2, marginBottom: 20 }}
+      />
 
-        <AnimatedText
-          text="Sponti Deals — flash offers that expire in hours. Create urgency, fill seats now."
-          startFrame={35}
-          fontSize={22}
-          color="rgba(255,255,255,0.7)"
-          style={{ lineHeight: 1.5, marginBottom: 16 }}
-        />
+      <VerticalDealCard
+        title="50% Off All Appetizers"
+        discount="50% OFF"
+        type="sponti"
+        startFrame={30}
+      />
 
-        <AnimatedText
-          text="Steady Deals — ongoing offers for consistent foot traffic, day after day."
-          startFrame={55}
-          fontSize={22}
-          color="rgba(255,255,255,0.7)"
-          style={{ lineHeight: 1.5 }}
-        />
-      </div>
+      <VText
+        text="Flash offers that expire in hours. Create urgency, drive customers now."
+        startFrame={40}
+        fontSize={18}
+        color="rgba(255,255,255,0.6)"
+        style={{ textAlign: 'center', maxWidth: 400, marginBottom: 8 }}
+      />
 
-      {/* Right side: deal cards */}
-      <div style={{ flex: 1, position: 'relative', height: '100%' }}>
-        <DealCard
-          title="50% Off All Appetizers"
-          discount="50% OFF"
-          type="sponti"
-          startFrame={25}
-          position={{ x: 40, y: 180 }}
-        />
-        <DealCard
-          title="Buy 1 Get 1 Free Haircut"
-          discount="BOGO"
-          type="steady"
-          startFrame={45}
-          position={{ x: 80, y: 500 }}
-        />
-      </div>
+      <VerticalDealCard
+        title="Buy 1 Get 1 Free Haircut"
+        discount="BOGO"
+        type="steady"
+        startFrame={55}
+      />
+
+      <VText
+        text="Ongoing offers for consistent foot traffic, day after day."
+        startFrame={65}
+        fontSize={18}
+        color="rgba(255,255,255,0.6)"
+        style={{ textAlign: 'center', maxWidth: 400 }}
+      />
     </AbsoluteFill>
   );
 };
 
 const HowItWorksScene: React.FC = () => {
   const steps = [
-    {
-      icon: '📋',
-      title: 'Create Your Deal',
-      description: 'Set your offer, price, and time window in minutes.',
-    },
-    {
-      icon: '📱',
-      title: 'Customers Claim It',
-      description: 'They browse, claim, and pay the deposit directly to you.',
-    },
-    {
-      icon: '✅',
-      title: 'They Show Up & Redeem',
-      description: 'Scan their QR code. Collect the balance. Done.',
-    },
-    {
-      icon: '💰',
-      title: 'You Keep Every Dollar',
-      description: 'No commissions. No middleman. Payments go straight to your account.',
-    },
+    { num: '1', title: 'Create Your Deal', desc: 'Set your offer, price, and time window in minutes.' },
+    { num: '2', title: 'Customers Claim It', desc: 'They browse, claim, and pay the deposit directly to you.' },
+    { num: '3', title: 'They Show Up', desc: 'Scan their QR code. Collect the balance. Done.' },
+    { num: '4', title: 'You Keep Every Dollar', desc: 'No commissions. Payments go straight to your account.' },
   ];
+
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(135deg, #0a0a0a, #0a0a14)',
-        padding: 100,
+        background: 'linear-gradient(180deg, #0a0a0a, #0a0a14)',
+        padding: '100px 50px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
       }}
     >
-      <AnimatedText
-        text="How It Works"
+      <VText
+        text="HOW IT WORKS"
         startFrame={5}
-        fontSize={22}
+        fontSize={16}
         color="#E8632B"
         fontWeight="800"
-        style={{ letterSpacing: 3, textTransform: 'uppercase', marginBottom: 20 }}
+        style={{ letterSpacing: 3, marginBottom: 16 }}
       />
 
-      <AnimatedText
+      <VText
         text="Simple for you. Irresistible for customers."
-        startFrame={15}
-        fontSize={46}
-        color="#FFFFFF"
+        startFrame={12}
+        fontSize={36}
         fontWeight="800"
-        style={{ lineHeight: 1.2, marginBottom: 50 }}
+        style={{ lineHeight: 1.2, marginBottom: 44 }}
       />
 
-      {steps.map((step, i) => (
-        <FeaturePoint
-          key={i}
-          icon={step.icon}
-          title={step.title}
-          description={step.description}
-          startFrame={30}
-          index={i}
-        />
-      ))}
+      {steps.map((step, i) => {
+        const delay = 25 + i * 22;
+        const progress = spring({
+          frame: frame - delay,
+          fps,
+          config: { damping: 12, stiffness: 100 },
+        });
+
+        if (frame < delay) return null;
+
+        const opacity = interpolate(progress, [0, 1], [0, 1]);
+        const translateY = interpolate(progress, [0, 1], [20, 0]);
+
+        return (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 16,
+              marginBottom: 32,
+              opacity,
+              transform: `translateY(${translateY}px)`,
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: 'linear-gradient(135deg, #E8632B, #FF8C42)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 22,
+                fontWeight: '900',
+                color: '#FFF',
+                fontFamily: 'Inter, sans-serif',
+                flexShrink: 0,
+              }}
+            >
+              {step.num}
+            </div>
+            <div>
+              <div style={{ color: '#FFF', fontSize: 22, fontWeight: '700', fontFamily: 'Inter, sans-serif', marginBottom: 4 }}>
+                {step.title}
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 17, fontFamily: 'Inter, sans-serif', lineHeight: 1.4 }}>
+                {step.desc}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </AbsoluteFill>
   );
 };
 
 const DifferenceScene: React.FC = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const features = [
-    { label: 'No commissions on sales', delay: 20 },
-    { label: 'Payments go directly to you', delay: 30 },
-    { label: 'Flash deals create real urgency', delay: 40 },
-    { label: 'Deposits protect you from no-shows', delay: 50 },
-    { label: 'Works with Stripe, PayPal, and more', delay: 60 },
-  ];
-
   return (
     <AbsoluteFill
       style={{
-        background: 'linear-gradient(135deg, #0a0a0a, #140a08)',
-        padding: 100,
+        background: 'linear-gradient(180deg, #0a0a0a, #140a08)',
+        padding: '100px 50px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
       }}
     >
-      <AnimatedText
-        text="Why We're Different"
+      <VText
+        text="WHY WE'RE DIFFERENT"
         startFrame={5}
-        fontSize={22}
+        fontSize={16}
         color="#E8632B"
         fontWeight="800"
-        style={{ letterSpacing: 3, textTransform: 'uppercase', marginBottom: 20 }}
+        style={{ letterSpacing: 3, marginBottom: 16 }}
       />
 
-      <AnimatedText
+      <VText
         text="We never touch your money."
         startFrame={15}
-        fontSize={52}
-        color="#FFFFFF"
+        fontSize={42}
         fontWeight="800"
-        style={{ lineHeight: 1.2, marginBottom: 50 }}
+        style={{ lineHeight: 1.2, marginBottom: 44 }}
       />
 
-      {features.map((feat, i) => {
-        const progress = spring({
-          frame: frame - feat.delay,
-          fps,
-          config: { damping: 12, stiffness: 100 },
-        });
-        const opacity = interpolate(progress, [0, 1], [0, 1]);
-        const translateX = interpolate(progress, [0, 1], [-30, 0]);
-
-        return frame >= feat.delay ? (
-          <div
-            key={i}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              marginBottom: 24,
-              opacity,
-              transform: `translateX(${translateX}px)`,
-            }}
-          >
-            <div
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background: '#E8632B',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-                color: '#FFF',
-                fontWeight: '900',
-                flexShrink: 0,
-              }}
-            >
-              ✓
-            </div>
-            <span
-              style={{
-                color: '#FFFFFF',
-                fontSize: 28,
-                fontWeight: '600',
-                fontFamily: 'Inter, sans-serif',
-              }}
-            >
-              {feat.label}
-            </span>
-          </div>
-        ) : null;
-      })}
+      <CheckLine text="No commissions on sales" delay={25} />
+      <CheckLine text="Payments go directly to you" delay={35} />
+      <CheckLine text="Flash deals create real urgency" delay={45} />
+      <CheckLine text="Deposits protect you from no-shows" delay={55} />
+      <CheckLine text="Works with Stripe, PayPal, and more" delay={65} />
     </AbsoluteFill>
   );
 };
 
 const CTAScene: React.FC = () => {
   const frame = useCurrentFrame();
-
-  // Button pulse effect
   const pulse = Math.sin(frame * 0.08) * 4;
 
   return (
     <AbsoluteFill
       style={{
-        background: 'radial-gradient(ellipse at 50% 50%, #1a0e08 0%, #0a0a0a 60%, #000 100%)',
+        background: 'radial-gradient(ellipse at 50% 45%, #1a0e08 0%, #0a0a0a 60%, #000 100%)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 30,
+        gap: 28,
+        padding: '80px 50px',
       }}
     >
-      {/* Glow */}
       <div
         style={{
           position: 'absolute',
-          width: 800,
-          height: 800,
+          width: 500,
+          height: 500,
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(232,99,43,0.12) 0%, transparent 70%)',
         }}
       />
 
-      <BrandLogo startFrame={5} size={100} />
+      <VerticalLogo startFrame={5} />
 
-      <AnimatedText
-        text="Ready to Fill Your Empty Seats?"
-        startFrame={20}
-        fontSize={56}
-        color="#FFFFFF"
+      <VText
+        text="Ready to Grow Your Business?"
+        startFrame={18}
+        fontSize={44}
         fontWeight="800"
-        style={{ textAlign: 'center', maxWidth: 800, lineHeight: 1.2 }}
+        style={{ textAlign: 'center', lineHeight: 1.2, maxWidth: 460 }}
       />
 
-      <AnimatedText
+      <VText
         text="Join hundreds of local businesses already growing with SpontiCoupon."
-        startFrame={40}
-        fontSize={24}
+        startFrame={35}
+        fontSize={20}
         color="rgba(255,255,255,0.6)"
-        style={{ textAlign: 'center', maxWidth: 600 }}
+        style={{ textAlign: 'center', maxWidth: 400 }}
       />
 
-      {/* CTA Button */}
-      {frame >= 55 && (
+      {frame >= 50 && (
         <div
           style={{
-            marginTop: 20,
+            marginTop: 12,
             background: 'linear-gradient(135deg, #E8632B, #FF8C42)',
             color: '#FFFFFF',
-            fontSize: 28,
+            fontSize: 24,
             fontWeight: '800',
             fontFamily: 'Inter, sans-serif',
-            padding: '20px 60px',
-            borderRadius: 16,
+            padding: '18px 44px',
+            borderRadius: 14,
             boxShadow: `0 ${8 + pulse}px ${32 + pulse * 2}px rgba(232,99,43,0.5)`,
             transform: `translateY(${-pulse}px)`,
           }}
         >
-          Get Started at sponticoupon.com
+          Get Started Free
         </div>
       )}
+
+      <VText
+        text="sponticoupon.com"
+        startFrame={60}
+        fontSize={18}
+        color="rgba(255,255,255,0.5)"
+        style={{ textAlign: 'center' }}
+      />
     </AbsoluteFill>
   );
 };
 
-// --- Main Composition ---
+// ── Main Composition ────────────────────────────────────────────────────────
 
 export const ExplainerVideo: React.FC<ExplainerVideoProps> = ({ avatarVideoUrl }) => {
-  // Scene timing (in frames at 30fps)
   const SCENES = {
     intro: { start: 0, duration: 120 },        // 0-4s
     problem: { start: 120, duration: 150 },     // 4-9s
-    solution: { start: 270, duration: 210 },    // 9-16s
-    howItWorks: { start: 480, duration: 240 },  // 16-24s
-    difference: { start: 720, duration: 210 },  // 24-31s
-    cta: { start: 930, duration: 150 },         // 31-36s (extended with avatar)
+    solution: { start: 270, duration: 270 },    // 9-18s
+    howItWorks: { start: 540, duration: 270 },  // 18-27s
+    difference: { start: 810, duration: 240 },  // 27-35s
+    cta: { start: 1050, duration: 180 },        // 35-41s
   };
+
+  const totalFrames = SCENES.cta.start + SCENES.cta.duration;
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
-      {/* Scene 1: Intro */}
       <Sequence from={SCENES.intro.start} durationInFrames={SCENES.intro.duration}>
         <IntroScene />
       </Sequence>
 
-      {/* Scene 2: Problem */}
       <Sequence from={SCENES.problem.start} durationInFrames={SCENES.problem.duration}>
         <ProblemScene />
       </Sequence>
 
-      {/* Scene 3: Solution with deal cards */}
       <Sequence from={SCENES.solution.start} durationInFrames={SCENES.solution.duration}>
         <SolutionScene />
       </Sequence>
 
-      {/* Scene 4: How It Works */}
       <Sequence from={SCENES.howItWorks.start} durationInFrames={SCENES.howItWorks.duration}>
         <HowItWorksScene />
       </Sequence>
 
-      {/* Scene 5: Why We're Different */}
       <Sequence from={SCENES.difference.start} durationInFrames={SCENES.difference.duration}>
         <DifferenceScene />
       </Sequence>
 
-      {/* Scene 6: CTA */}
       <Sequence from={SCENES.cta.start} durationInFrames={SCENES.cta.duration}>
         <CTAScene />
       </Sequence>
 
-      {/* Avatar overlay — bottom right, talking throughout */}
+      {/* Avatar overlay — bottom center for vertical */}
       {avatarVideoUrl && (
-        <Sequence from={0} durationInFrames={SCENES.cta.start + SCENES.cta.duration}>
+        <Sequence from={0} durationInFrames={totalFrames}>
           <div
             style={{
               position: 'absolute',
-              bottom: 40,
-              right: 40,
-              width: 360,
-              height: 360,
+              bottom: 60,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 280,
+              height: 280,
               borderRadius: 24,
               overflow: 'hidden',
               border: '3px solid rgba(232,99,43,0.4)',
@@ -485,7 +663,7 @@ export const ExplainerVideo: React.FC<ExplainerVideoProps> = ({ avatarVideoUrl }
         </Sequence>
       )}
 
-      {/* Voiceover audio — one segment per scene */}
+      {/* Voiceover audio */}
       <Sequence from={SCENES.intro.start} durationInFrames={SCENES.intro.duration}>
         <Audio src={staticFile('audio/explainer/intro.mp3')} volume={1} />
       </Sequence>

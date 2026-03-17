@@ -10,13 +10,17 @@ import fs from 'fs';
 import path from 'path';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY!;
-const VOICE_ID = 'pNInz6obpgDQGcFmaJgB'; // Adam — professional male voice
+// Voice options:
+// Adam (male, professional): pNInz6obpgDQGcFmaJgB
+// Rachel (female, soft, warm): 21m00Tcm4TlvDq8ikWAM
+// Bella (female, soft): EXAVITQu4vr4xnSDxMaL
+const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // Rachel — soft female voice
 
 // Each segment maps to a scene in the Remotion composition
 const EXPLAINER_SEGMENTS = [
   {
     name: 'intro',
-    text: `Hey, I'm Heriberto — founder of SpontiCoupon. The smartest way to fill empty seats at your local business.`,
+    text: `Hey, I'm Heriberto — founder of SpontiCoupon. The smartest way to attract more customers to your local business.`,
   },
   {
     name: 'problem',
@@ -36,38 +40,101 @@ const EXPLAINER_SEGMENTS = [
   },
   {
     name: 'cta',
-    text: `Ready to turn those empty seats into paying customers? Visit sponticoupon dot com and get started today. Join hundreds of local businesses already growing with SpontiCoupon. Your first deal could be live in five minutes.`,
+    text: `Ready to attract more customers and grow your revenue? Visit sponticoupon dot com and get started today. Join hundreds of local businesses already growing with SpontiCoupon. Your first deal could be live in five minutes.`,
   },
 ];
 
 const TUTORIAL_SEGMENTS = [
   {
     name: 'intro',
-    text: `Welcome to SpontiCoupon! I'm going to walk you through your vendor dashboard so you can start creating deals right away.`,
+    text: `Welcome to SpontiCoupon! I'm going to walk you through everything you need to know to start creating deals, attracting customers, and growing your business.`,
   },
   {
-    name: 'step1',
-    text: `Step one — creating your first deal. From your dashboard, click Create New Deal. Choose between a Sponti deal — that's a flash offer lasting four to twenty-four hours — or a Steady deal for longer-running offers. Set your discount, add a description, upload a photo, and hit publish. It's that easy.`,
+    name: 'dashboard',
+    text: `This is your vendor dashboard — your home base. You can see all your active deals, claims, and redemptions at a glance. Create a new deal or redeem a customer right from here. Your revenue and conversion rates update in real time.`,
   },
   {
-    name: 'step2',
-    text: `Step two — setting up payments. Go to your Get Paid page. Connect Stripe or PayPal so customers can pay deposits online, directly to your account. You can also add Venmo, Zelle, or Cash App for in-person payments at your location.`,
+    name: 'from-website',
+    text: `Let me show you the fastest way to get started. Go to Import from Website and paste your website URL — that's all you need. Our AI will scrape your website, pull out your services, pricing, descriptions, and even images. It then generates ready-to-publish deals for you automatically. Just review each deal, tweak anything if needed, and publish with one click. You can go from zero to a full deal catalog in under two minutes.`,
   },
   {
-    name: 'step3',
-    text: `Step three — when a customer claims your deal, they'll pay the deposit through your connected payment processor. You'll get a notification. The money goes straight to your Stripe or PayPal account — we never hold it.`,
+    name: 'ava-ai',
+    text: `Now meet Ava — your AI deal strategist. When you create a deal from scratch, just describe your offer idea in plain English. Ava generates the title, description, terms, and discount for you. She'll even suggest the best deal type based on your goals. Need an image? Ava generates a professional deal photo automatically. Review it, adjust if you'd like, and publish. Your deal can be live in minutes.`,
   },
   {
-    name: 'step4',
-    text: `Step four — scanning and redeeming. When the customer arrives at your business, open the Scan page. They'll show you their QR code or give you their six-digit code. Enter it, verify the deal, and collect any remaining balance. Transaction complete.`,
+    name: 'deal-types',
+    text: `You have two powerful deal types. Sponti Deals are flash offers lasting four to twenty-four hours — they create urgency and drive new customers fast. Steady Deals run one to thirty days for consistent, everyday traffic. We recommend using both to maximize your reach and revenue.`,
   },
   {
-    name: 'step5',
-    text: `Step five — tracking your results. Your dashboard shows everything — active deals, total claims, redemptions, revenue, and customer reviews. Use these insights to fine-tune your offers and keep customers coming back.`,
+    name: 'payments',
+    text: `Next, set up how you get paid. Connect Stripe or PayPal so customer deposits go straight to your account. You can also add Venmo, Zelle, or Cash App for in-person payments. And the best part — zero commissions. Every dollar goes directly to you.`,
+  },
+  {
+    name: 'scan-redeem',
+    text: `When a customer arrives to redeem, open the Scan page. They'll show you their QR code or give you a six-digit code. Enter it, verify the deal, and collect any remaining balance — either in person or through a Stripe payment link. Quick, simple, and professional.`,
+  },
+  {
+    name: 'analytics',
+    text: `Your analytics dashboard is where you see what's working. Track claims, redemptions, and conversion rates in real time. See the total revenue each deal generates. Compare how your Sponti deals perform versus your Steady deals. Use these insights to identify your best-performing offers and double down on what works.`,
+  },
+  {
+    name: 'social',
+    text: `Coming soon — social media auto-posting. You'll be able to connect Facebook, Instagram, X, and TikTok directly to your account. When you publish a deal, it will automatically post to all your social channels with AI-generated captions optimized for each platform. More visibility across every channel, with zero extra work from you.`,
+  },
+  {
+    name: 'loyalty',
+    text: `Build repeat business with loyalty programs. Set up punch cards or points-based rewards. Customers are automatically enrolled when they redeem a deal — turning first-time visitors into loyal regulars.`,
   },
   {
     name: 'outro',
-    text: `That's it! Five simple steps to start growing your business. If you need help, our support team is always here. Now go create your first deal and start filling those seats!`,
+    text: `You're all set! Create your first deal and start bringing in customers today. If you need anything, our support team is always here to help. Let's grow your business together!`,
+  },
+];
+
+const ONBOARDING_SEGMENTS = [
+  {
+    name: 'intro',
+    text: `Thank you for joining SpontiCoupon — we're so excited to have you! We built this platform to help businesses like yours attract more customers, build loyalty, and grow revenue. Let me show you how to get the most out of it.`,
+  },
+  {
+    name: 'dashboard',
+    text: `This is your dashboard — everything you need in one place. You can see your active deals, claims, redemptions, and revenue at a glance. You'll also find quick actions to create a new deal or redeem a customer right from here.`,
+  },
+  {
+    name: 'from-website',
+    text: `Here's one of the most powerful features. Paste your website URL and our AI will automatically extract your services, pricing, and images — then generate ready-to-publish deals for you in seconds. No typing, no guessing. It does the work so you don't have to.`,
+  },
+  {
+    name: 'create-deal',
+    text: `You can also create deals from scratch. Just describe your deal idea, and Ava — our AI assistant — will write the title, description, discount terms, and even suggest images. You review it, make any changes you'd like, and publish. Your deal can be live in minutes.`,
+  },
+  {
+    name: 'deal-types',
+    text: `You have two deal types to work with. Sponti deals are flash offers that last four to twenty-four hours — they create urgency and drive new customers quickly. Steady deals run one to thirty days for consistent everyday business. We recommend using both to get the best results.`,
+  },
+  {
+    name: 'payments',
+    text: `Next, set up how you get paid. Connect Stripe or PayPal and customers will pay you directly — deposits go straight to your account. You can also add Venmo, Zelle, or Cash App for in-person payments. The best part? Zero commissions. Every dollar your customer pays goes to you.`,
+  },
+  {
+    name: 'scan-redeem',
+    text: `When a customer comes in to redeem, just open the Scan page. They'll show you their QR code or give you a six-digit code. Enter it, verify the deal, and collect any remaining balance. Quick, simple, and professional.`,
+  },
+  {
+    name: 'analytics',
+    text: `Your analytics dashboard shows you what's working. Track claims, redemptions, conversion rates, and revenue in real time. Use these insights to fine-tune your deals and see what brings in the most business.`,
+  },
+  {
+    name: 'social',
+    text: `Coming soon — you'll be able to connect your Facebook, Instagram, X, and TikTok accounts. When you publish a deal, it will automatically post to your social media with AI-generated captions. More exposure for your business, zero extra effort.`,
+  },
+  {
+    name: 'loyalty',
+    text: `Build lasting relationships with loyalty programs. Create a punch card like buy ten get one free, or set up a points system. Customers are automatically enrolled when they redeem, making it effortless to turn first-time visitors into loyal regulars.`,
+  },
+  {
+    name: 'outro',
+    text: `That's everything you need to get started. We're here to help you succeed — if you ever need anything, our support team is just a click away. Welcome to SpontiCoupon. Let's grow your business together!`,
   },
 ];
 
@@ -105,8 +172,8 @@ async function generateSegment(text: string, name: string, outDir: string): Prom
 async function main() {
   const type = process.argv[2];
 
-  if (!type || !['explainer', 'tutorial'].includes(type)) {
-    console.log('Usage: npx tsx remotion/scripts/generate-voiceover.ts <explainer|tutorial>');
+  if (!type || !['explainer', 'tutorial', 'onboarding'].includes(type)) {
+    console.log('Usage: npx tsx remotion/scripts/generate-voiceover.ts <explainer|tutorial|onboarding>');
     process.exit(1);
   }
 
@@ -115,7 +182,7 @@ async function main() {
     process.exit(1);
   }
 
-  const segments = type === 'explainer' ? EXPLAINER_SEGMENTS : TUTORIAL_SEGMENTS;
+  const segments = type === 'explainer' ? EXPLAINER_SEGMENTS : type === 'onboarding' ? ONBOARDING_SEGMENTS : TUTORIAL_SEGMENTS;
   const outDir = path.join(__dirname, '..', 'src', 'assets', 'audio', type);
   fs.mkdirSync(outDir, { recursive: true });
 
