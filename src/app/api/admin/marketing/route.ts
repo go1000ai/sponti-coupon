@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdmin, forbiddenResponse } from '@/lib/admin';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { postViaGHL } from '@/lib/social/ghl';
+import type { MarketingContentItem } from '@/lib/marketing/types';
 
 // GET /api/admin/marketing — Fetch marketing queue items with filtering
 export async function GET(request: NextRequest) {
@@ -86,6 +88,43 @@ export async function PATCH(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If rescheduling, push to GHL so it appears on their calendar
+  if (updates.scheduled_for && updates.status === 'scheduled' && process.env.GHL_API_KEY && data) {
+    try {
+      const item = data as unknown as MarketingContentItem;
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+      const caption = item.caption_facebook || item.caption_instagram || '';
+      let fullCaption = caption;
+      if (['deal_promotion', 'vendor_spotlight', 'deal_roundup'].includes(item.content_type)) {
+        fullCaption += '\n\n#Ad';
+      }
+      const claimUrl = item.deal_id ? `${appUrl}/deals/${item.deal_id}` : appUrl;
+      if (!fullCaption.includes('sponticoupon.com')) {
+        fullCaption += `\n\n${claimUrl}`;
+      }
+
+      let imageUrl = item.image_url || null;
+      if (imageUrl?.startsWith('/media/') && supabaseUrl) {
+        imageUrl = `${supabaseUrl}/storage/v1/object/public/${imageUrl.replace('/media/', '')}`;
+      } else if (imageUrl?.startsWith('/')) {
+        imageUrl = `${appUrl}${imageUrl}`;
+      }
+
+      let videoUrl = item.video_url || null;
+      if (videoUrl?.startsWith('/media/') && supabaseUrl) {
+        videoUrl = `${supabaseUrl}/storage/v1/object/public/${videoUrl.replace('/media/', '')}`;
+      } else if (videoUrl?.startsWith('/')) {
+        videoUrl = `${appUrl}${videoUrl}`;
+      }
+
+      await postViaGHL(fullCaption, imageUrl, videoUrl, item.platforms || ['facebook', 'instagram'], id, updates.scheduled_for);
+    } catch (err) {
+      console.error('[PATCH] GHL schedule push failed:', (err as Error).message);
+    }
   }
 
   return NextResponse.json({ item: data });
