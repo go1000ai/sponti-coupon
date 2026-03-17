@@ -269,7 +269,7 @@ export default function AdminMarketingPage() {
     await fetch(`/api/admin/marketing/${id}/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scheduled_for: scheduleTime || undefined }),
+      body: JSON.stringify({ scheduled_for: scheduleTime ? new Date(scheduleTime).toISOString() : undefined }),
     });
     setSelectedItem(null);
     setScheduleTime('');
@@ -291,7 +291,23 @@ export default function AdminMarketingPage() {
 
   const handlePostNow = async (id: string) => {
     setActionLoading(id);
-    await fetch(`/api/admin/marketing/${id}/post-now`, { method: 'POST' });
+    setPostToastStatus('posting');
+    setPostToastMessage('Publishing to Facebook & Instagram...');
+    try {
+      const res = await fetch(`/api/admin/marketing/${id}/post-now`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setPostToastStatus('done');
+        setPostToastMessage('Posted successfully!');
+      } else {
+        setPostToastStatus('error');
+        setPostToastMessage(data.errors?.join('; ') || 'Post failed');
+      }
+    } catch {
+      setPostToastStatus('error');
+      setPostToastMessage('Failed to connect');
+    }
+    setTimeout(() => setPostToastStatus('idle'), 5000);
     setSelectedItem(null);
     await fetchItems();
     setActionLoading(null);
@@ -411,6 +427,8 @@ export default function AdminMarketingPage() {
   const [videoProgressPct, setVideoProgressPct] = useState(0);
   const [videoToastStatus, setVideoToastStatus] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [videoToastMessage, setVideoToastMessage] = useState('');
+  const [postToastStatus, setPostToastStatus] = useState<'idle' | 'posting' | 'done' | 'error'>('idle');
+  const [postToastMessage, setPostToastMessage] = useState('');
 
   const handleImageToVideo = async (item: QueueItem) => {
     if (!item.image_url) return;
@@ -1928,6 +1946,38 @@ export default function AdminMarketingPage() {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post/Repost Toast */}
+      {postToastStatus !== 'idle' && (
+        <div className={`fixed bottom-6 left-6 z-[60] w-80 bg-white rounded-2xl shadow-2xl border overflow-hidden transition-all duration-500 ${
+          postToastStatus === 'done' ? 'border-green-200' : postToastStatus === 'error' ? 'border-red-200' : 'border-orange-200'
+        }`}>
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${
+                postToastStatus === 'done' ? 'bg-green-100' : postToastStatus === 'error' ? 'bg-red-100' : 'bg-orange-100'
+              }`}>
+                {postToastStatus === 'posting' && <Loader2 className="w-5 h-5 text-orange-500 animate-spin" />}
+                {postToastStatus === 'done' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                {postToastStatus === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  {postToastStatus === 'posting' && 'Publishing...'}
+                  {postToastStatus === 'done' && 'Posted!'}
+                  {postToastStatus === 'error' && 'Post Failed'}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{postToastMessage}</p>
+              </div>
+              {postToastStatus !== 'posting' && (
+                <button onClick={() => setPostToastStatus('idle')} className="text-gray-300 hover:text-gray-500 p-1">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         </div>
