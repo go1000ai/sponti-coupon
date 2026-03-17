@@ -431,7 +431,7 @@ export default function PricingPage() {
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-900">Built-In Loyalty Rewards</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Every plan includes a <span className="font-semibold">digital punch card</span> system. Customers earn points with every visit and unlock rewards automatically — keeping them coming back without you lifting a finger. No extra apps, no extra cost.
+                  Keep customers coming back with two built-in loyalty options: <span className="font-semibold">loyalty points</span> that customers earn with every purchase, or a <span className="font-semibold">digital punch card</span> where they unlock a reward after a set number of visits. You choose which works best for your business — no extra apps, no extra cost.
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0">
