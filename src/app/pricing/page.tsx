@@ -5,6 +5,7 @@ import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
   Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift, Clock,
+  Timer, CalendarDays,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -332,6 +333,94 @@ export default function PricingPage() {
               ))}
             </div>
           </ScrollReveal>
+        </div>
+      </section>
+
+      {/* ─── DEAL TYPES EXPLAINER ─── */}
+      <section className="py-16 bg-white">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal animation="fade-up">
+            <div className="text-center mb-10">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Two Ways to Attract Customers
+              </h2>
+              <p className="text-gray-500 mt-2">
+                Choose the deal type that fits your business — or use both
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Sponti Deals */}
+            <ScrollReveal animation="fade-up" delay={100}>
+              <div className="relative rounded-2xl border-2 border-primary-200 bg-gradient-to-br from-primary-50 to-orange-50 p-6 sm:p-8 h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-orange-500 flex items-center justify-center shadow-lg shadow-primary-200/50">
+                    <Timer className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Sponti Deals</h3>
+                    <p className="text-sm font-semibold text-primary-500">Flash Deals</p>
+                  </div>
+                </div>
+                <p className="text-gray-700 mb-4">
+                  Limited-time deals that last <span className="font-bold text-primary-600">4 to 24 hours</span>. Customers see a live countdown timer and act fast — creating urgency that drives immediate traffic to your business.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span>Fill slow days or empty time slots</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span>Clear excess inventory quickly</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+                    <span>Countdown timer creates urgency</span>
+                  </li>
+                </ul>
+                <div className="mt-4 inline-flex items-center gap-1.5 bg-primary-100 text-primary-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                  <Zap className="w-3 h-3" /> Best for instant foot traffic
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Steady Deals */}
+            <ScrollReveal animation="fade-up" delay={200}>
+              <div className="relative rounded-2xl border-2 border-secondary-200 bg-gradient-to-br from-sky-50 to-blue-50 p-6 sm:p-8 h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary-500 to-blue-500 flex items-center justify-center shadow-lg shadow-secondary-200/50">
+                    <CalendarDays className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">Steady Deals</h3>
+                    <p className="text-sm font-semibold text-secondary-500">Ongoing Deals</p>
+                  </div>
+                </div>
+                <p className="text-gray-700 mb-4">
+                  Deals that run for <span className="font-bold text-secondary-600">days or weeks</span>. Always visible to customers searching for deals near them — giving your business consistent exposure and a steady stream of new customers.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-secondary-500 mt-0.5 shrink-0" />
+                    <span>Promote your everyday offers</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-secondary-500 mt-0.5 shrink-0" />
+                    <span>Build repeat customer traffic</span>
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                    <Check className="w-4 h-4 text-secondary-500 mt-0.5 shrink-0" />
+                    <span>Always-on visibility in your area</span>
+                  </li>
+                </ul>
+                <div className="mt-4 inline-flex items-center gap-1.5 bg-secondary-100 text-secondary-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                  <CalendarDays className="w-3 h-3" /> Best for consistent growth
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
         </div>
       </section>
 
