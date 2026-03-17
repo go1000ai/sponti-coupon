@@ -5,11 +5,14 @@ import { postToFacebook } from '@/lib/social/facebook';
 import { postToInstagram } from '@/lib/social/instagram';
 import { postToTwitter } from '@/lib/social/twitter';
 import { postToTikTok } from '@/lib/social/tiktok';
+import { postMarketingContent } from '@/lib/marketing/poster';
+import type { MarketingContentItem } from '@/lib/marketing/types';
 import type { SocialPostResult, SocialPlatform } from '@/lib/social/types';
 
 /**
  * GET /api/cron/social-publish
  * Cron job: finds scheduled posts whose scheduled_at <= now and publishes them.
+ * Also checks marketing_content_queue for scheduled marketing posts.
  * Called by Vercel Cron or external scheduler every 1-5 minutes.
  */
 export async function GET(request: NextRequest) {
@@ -22,6 +25,37 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createServiceRoleClient();
   const now = new Date().toISOString();
+
+  // ─── Marketing Content Queue: publish scheduled items ───
+  let marketingPublished = 0;
+  let marketingFailed = 0;
+
+  const { data: scheduledMarketing } = await supabase
+    .from('marketing_content_queue')
+    .select('*')
+    .eq('status', 'scheduled')
+    .lte('scheduled_for', now)
+    .limit(20);
+
+  if (scheduledMarketing?.length) {
+    for (const item of scheduledMarketing) {
+      try {
+        const result = await postMarketingContent(supabase, item as MarketingContentItem);
+        if (result.success) {
+          marketingPublished++;
+        } else {
+          marketingFailed++;
+        }
+      } catch (err) {
+        console.error('[Cron] Marketing post failed:', (err as Error).message);
+        await supabase
+          .from('marketing_content_queue')
+          .update({ status: 'failed', error_message: (err as Error).message, updated_at: now })
+          .eq('id', item.id);
+        marketingFailed++;
+      }
+    }
+  }
 
   // Find scheduled posts ready to publish
   const { data: posts, error } = await supabase
@@ -133,5 +167,10 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ published, failed, total: posts.length });
+  return NextResponse.json({
+    published,
+    failed,
+    total: posts.length,
+    marketing: { published: marketingPublished, failed: marketingFailed },
+  });
 }
