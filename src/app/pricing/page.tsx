@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
@@ -42,18 +42,9 @@ export default function PricingPage() {
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [spotsTaken, setSpotsTaken] = useState(0);
   const { t } = useLanguage();
 
-  // Fetch real founder spots count from DB
-  useEffect(() => {
-    fetch('/api/founders')
-      .then((r) => r.json())
-      .then((data) => setSpotsTaken(data.spots_taken || 0))
-      .catch(() => {});
-  }, []);
-
-  const FOUNDERS_LAUNCH = { ...FOUNDERS_LAUNCH_STATIC, spotsTaken };
+  const FOUNDERS_LAUNCH = FOUNDERS_LAUNCH_STATIC;
 
   /* ─────── Translated Plan Config ─────── */
   const PLANS = useMemo(() => [
@@ -225,9 +216,9 @@ export default function PricingPage() {
                 </span>
                 <span className="hidden sm:block w-px h-5 bg-white/30" />
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                  <Clock className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
                   <span className="text-xs font-bold text-amber-300">
-                    {t('pricing.spotsLeft', { spots: String(FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken) })}
+                    Limited founding vendor spots remaining — don&apos;t miss out!
                   </span>
                 </div>
               </div>
@@ -508,11 +499,8 @@ export default function PricingPage() {
                   discount: String(FOUNDERS_LAUNCH.founderDiscount),
                 })}
               </p>
-              <p className="text-sm text-gray-400 mt-2">
-                {t('pricing.foundersLaunchRemaining', {
-                  remaining: String(FOUNDERS_LAUNCH.totalSpots - FOUNDERS_LAUNCH.spotsTaken),
-                  total: String(FOUNDERS_LAUNCH.totalSpots),
-                })}
+              <p className="text-sm text-amber-400 mt-2 font-semibold">
+                ⏳ Spots are filling up fast — secure your founding vendor pricing today!
               </p>
             </div>
           )}
