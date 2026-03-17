@@ -5,7 +5,7 @@ import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
   Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift, Clock,
-  Timer, CalendarDays,
+  Timer, CalendarDays, Stamp,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -421,6 +421,24 @@ export default function PricingPage() {
               </div>
             </ScrollReveal>
           </div>
+
+          {/* Loyalty Rewards Callout */}
+          <ScrollReveal animation="fade-up" delay={300}>
+            <div className="mt-8 rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-200/50 shrink-0">
+                <Stamp className="w-7 h-7 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Built-In Loyalty Rewards</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Every plan includes a <span className="font-semibold">digital punch card</span> system. Customers earn points with every visit and unlock rewards automatically — keeping them coming back without you lifting a finger. No extra apps, no extra cost.
+                </p>
+              </div>
+              <div className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-bold px-3 py-1.5 rounded-full whitespace-nowrap shrink-0">
+                <Check className="w-3 h-3" /> Included in Pro+
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
