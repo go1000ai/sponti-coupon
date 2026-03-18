@@ -20,27 +20,27 @@ const VOICE_ID = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // R
 const EXPLAINER_SEGMENTS = [
   {
     name: 'intro',
-    text: `Hey, I'm Heriberto — founder of SpontiCoupon. The smartest way to attract more customers to your local business.`,
+    text: `Welcome to SpontiCoupon — the easiest way to attract new customers, build loyalty, and grow your local business.`,
   },
   {
     name: 'problem',
-    text: `Let me ask you something. How many times this week did your business have empty tables, open chairs, or unsold slots? Every empty seat is money left on the table. Traditional advertising is expensive and slow. By the time customers see your ad, the moment has passed.`,
+    text: `You want more customers walking through your door — and you want them coming back. But creating deals and running promotions takes time. And most platforms take a cut of every sale. There has to be a better way.`,
   },
   {
     name: 'solution',
-    text: `That's exactly why I built SpontiCoupon. You get two powerful deal types. Sponti Deals are flash offers that expire in hours — perfect for filling today's empty spots and creating real urgency. Steady Deals are ongoing offers that bring consistent foot traffic, day after day.`,
+    text: `With SpontiCoupon, you can create a professional deal in under five minutes. Just paste your website URL and our AI extracts your services, pricing, and images — then generates ready-to-publish deals for you. Or describe your offer to Ava, our AI assistant, and she writes everything — title, description, terms, and even generates an image. You review, publish, and you're live.`,
   },
   {
     name: 'how-it-works',
-    text: `Here's how it works. You create a deal in minutes — set your offer, price, and time window. Customers in your area see your deal, claim it, and pay the deposit directly to your account through Stripe or PayPal. When they show up, you scan their QR code, collect any remaining balance, and you're done.`,
+    text: `You get two powerful deal types. Sponti Deals are flash offers that last hours — perfect for creating urgency and attracting new customers fast. Steady Deals run for days, bringing consistent traffic. Customers claim your deal, show up, and you verify them with a quick QR scan. Simple, fast, and professional.`,
   },
   {
     name: 'difference',
-    text: `What makes us different? Simple. We never touch your money. Zero commissions. Zero middleman fees. Your customers pay you directly. Deposits on Sponti deals protect you from no-shows. And we work with Stripe, PayPal, Venmo, Zelle, and Cash App.`,
+    text: `Here's what makes us different. Zero commissions — you keep one hundred percent of every dollar. Plus, built-in loyalty programs that keep customers coming back. Set up a punch card or points system, and customers are automatically enrolled when they redeem. First-time visitors become loyal regulars — without you lifting a finger.`,
   },
   {
     name: 'cta',
-    text: `Ready to attract more customers and grow your revenue? Visit sponticoupon dot com and get started today. Join hundreds of local businesses already growing with SpontiCoupon. Your first deal could be live in five minutes.`,
+    text: `More customers. More loyalty. More revenue. Your first deal could be live in five minutes. Visit sponticoupon dot com and get started today.`,
   },
 ];
 

@@ -10,7 +10,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="ExplainerVideo"
         component={ExplainerVideo as unknown as React.ComponentType<Record<string, unknown>>}
-        durationInFrames={30 * 90} // ~90 seconds at 30fps
+        durationInFrames={30 * 116} // ~116 seconds — matched to Rachel voiceover audio
         fps={30}
         width={1080}
         height={1920}
