@@ -56,11 +56,6 @@ function useNavItems(): NavItem[] {
       icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
-      label: 'Tutorial',
-      href: '/vendor/tutorial',
-      icon: <Play className="w-5 h-5" />,
-    },
-    {
       label: t('vendor.sidebar.groupDeals'),
       href: '/vendor/deals',
       icon: <Tag className="w-5 h-5" />,
@@ -108,6 +103,7 @@ function useNavItems(): NavItem[] {
     },
     { label: t('vendor.sidebar.settings'), href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
     { label: t('vendor.sidebar.support'), href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
+    { label: 'Tutorial', href: '/vendor/tutorial', icon: <Play className="w-5 h-5" /> },
   ];
 }
 
