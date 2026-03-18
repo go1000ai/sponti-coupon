@@ -28,6 +28,7 @@ import {
   ArrowLeftRight,
   ShoppingBag,
   Share2,
+  Play,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
@@ -53,6 +54,11 @@ function useNavItems(): NavItem[] {
       label: t('vendor.sidebar.dashboard'),
       href: '/vendor/dashboard',
       icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      label: 'Tutorial',
+      href: '/vendor/tutorial',
+      icon: <Play className="w-5 h-5" />,
     },
     {
       label: t('vendor.sidebar.groupDeals'),

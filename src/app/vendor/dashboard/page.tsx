@@ -11,7 +11,7 @@ import {
   Plus, Tag, Users, QrCode, TrendingUp,
   ArrowRight, Clock, Sparkles, DollarSign, BarChart3,
   Zap, ArrowUpRight, CheckCircle2, XCircle, Loader2,
-  Hash, Star, Play, GraduationCap,
+  Hash, Star,
 } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
 import { ROIDashboard } from '@/components/vendor/ROIDashboard';
@@ -487,7 +487,7 @@ function VendorDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div data-tour="vendor-actions" className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div data-tour="vendor-actions" className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Link href="/vendor/analytics" className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card animate-fade-up" style={{ animationDelay: '700ms' }}>
           <div className="bg-gradient-to-br from-blue-500 to-sky-600 rounded-xl p-3 text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
             <BarChart3 className="w-5 h-5" />
@@ -511,16 +511,6 @@ function VendorDashboard() {
           <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
 
-        <button onClick={() => setShowTutorial(true)} className="card p-5 flex items-center gap-4 hover:shadow-lg transition-all group tilt-card animate-fade-up text-left" style={{ animationDelay: '820ms' }}>
-          <div className="bg-gradient-to-br from-primary-500 to-orange-400 rounded-xl p-3 text-white shadow-lg shadow-primary-200 group-hover:scale-110 transition-transform">
-            <Play className="w-5 h-5" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 group-hover:text-primary-500 transition-colors">Watch Tutorial</h3>
-            <p className="text-xs text-gray-500">Learn how to use the platform</p>
-          </div>
-          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
-        </button>
 
         {spontiDeals.length > 0 ? (
           <div className="card p-5 bg-gradient-to-r from-primary-50 to-orange-50 border border-primary-100 animate-fade-up" style={{ animationDelay: '860ms' }}>
