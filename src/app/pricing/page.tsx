@@ -505,6 +505,21 @@ export default function PricingPage() {
             </div>
           )}
 
+          {/* Demo Video */}
+          <div id="plans" className="max-w-3xl mx-auto mb-12">
+            <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                poster="/videos/demo-thumb.jpg"
+                className="w-full"
+              >
+                <source src="/videos/demo-video.mp4" type="video/mp4" />
+              </video>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
             {PLANS.map((plan) => {
               const tier = SUBSCRIPTION_TIERS[plan.key];

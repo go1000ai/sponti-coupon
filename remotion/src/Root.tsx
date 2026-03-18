@@ -3,6 +3,7 @@ import { Composition } from 'remotion';
 import { ExplainerVideo } from './compositions/ExplainerVideo';
 import { TutorialVideo } from './compositions/TutorialVideo';
 import { OnboardingVideo } from './compositions/OnboardingVideo';
+import { DemoVideo } from './compositions/DemoVideo';
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -33,6 +34,14 @@ export const RemotionRoot: React.FC = () => {
         id="OnboardingVideo"
         component={OnboardingVideo as unknown as React.ComponentType<Record<string, unknown>>}
         durationInFrames={30 * 74} // ~74 seconds — quick action-oriented onboarding
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="DemoVideo"
+        component={DemoVideo as unknown as React.ComponentType<Record<string, unknown>>}
+        durationInFrames={30 * 206} // ~206 seconds — synced sales demo (steady deals section removed from loyalty)
         fps={30}
         width={1920}
         height={1080}
