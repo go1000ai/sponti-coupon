@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, RotateCcw, Clock, Zap, GraduationCap } from 'lucide-react';
+import { Play, RotateCcw, Clock, GraduationCap } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
 
 export default function TutorialPage() {
@@ -31,13 +31,17 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('onboarding')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="bg-gradient-to-br from-primary-500 to-orange-400 p-8 flex flex-col items-center justify-center gap-4 min-h-[200px]">
-            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Zap className="w-8 h-8 text-white" />
-            </div>
-            <div className="flex items-center gap-2 text-white/80 text-sm">
-              <Clock className="w-4 h-4" />
-              1:14
+          <div className="relative min-h-[200px] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/videos/onboarding-thumb.jpg" alt="Quick Start" className="w-full h-full object-cover absolute inset-0" />
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play className="w-8 h-8 text-white ml-1" />
+              </div>
+              <div className="flex items-center gap-2 text-white/80 text-sm">
+                <Clock className="w-4 h-4" />
+                1:14
+              </div>
             </div>
           </div>
           <div className="p-5">
@@ -51,13 +55,17 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('tutorial')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-8 flex flex-col items-center justify-center gap-4 min-h-[200px]">
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Play className="w-8 h-8 text-white" />
-            </div>
-            <div className="flex items-center gap-2 text-white/60 text-sm">
-              <Clock className="w-4 h-4" />
-              3:50
+          <div className="relative min-h-[200px] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/videos/tutorial-thumb.jpg" alt="Full Tutorial" className="w-full h-full object-cover absolute inset-0" />
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play className="w-8 h-8 text-white ml-1" />
+              </div>
+              <div className="flex items-center gap-2 text-white/80 text-sm">
+                <Clock className="w-4 h-4" />
+                3:50
+              </div>
             </div>
           </div>
           <div className="p-5">
