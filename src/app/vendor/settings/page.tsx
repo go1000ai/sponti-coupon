@@ -7,7 +7,7 @@ import {
   Settings, Save, Loader2, Building2, Globe, Clock, Bell,
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
-  ExternalLink, AlertTriangle, Info, Navigation, RotateCcw, Play,
+  ExternalLink, AlertTriangle, Info,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -132,11 +132,6 @@ export default function VendorSettingsPage() {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
 
-  // Guided Tour settings
-  const [tourAutoStart, setTourAutoStart] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return localStorage.getItem('sponti_tour_auto_start') !== 'false';
-  });
 
   useEffect(() => {
     if (!user) return;
@@ -1127,88 +1122,6 @@ export default function VendorSettingsPage() {
           )}
         </div>
 
-        {/* ===== GUIDED TOUR ===== */}
-        <div className="card mb-6 overflow-hidden">
-          <button
-            type="button"
-            onClick={() => toggleSection('tour')}
-            className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <Navigation className="w-5 h-5 text-primary-500" />
-              <div className="text-left">
-                <h2 className="text-lg font-bold text-gray-900">{t('vendor.settings.guidedTour')}</h2>
-                <p className="text-xs text-gray-400 mt-0.5">{t('vendor.settings.tourSubtitle')}</p>
-              </div>
-            </div>
-            {expandedSection === 'tour' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
-          </button>
-
-          {expandedSection === 'tour' && (
-            <div className="px-6 pb-6 space-y-5 border-t border-gray-100 pt-4">
-              {/* Auto-start toggle */}
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={tourAutoStart}
-                  onChange={(e) => {
-                    setTourAutoStart(e.target.checked);
-                    localStorage.setItem('sponti_tour_auto_start', String(e.target.checked));
-                    if (!e.target.checked) {
-                      // Mark tours as done so they don't auto-start
-                      localStorage.setItem('sponti_tour_vendor_dashboard_done', 'true');
-                    } else {
-                      // Remove the done flag so tour can auto-start next login
-                      localStorage.removeItem('sponti_tour_vendor_dashboard_done');
-                    }
-                  }}
-                  className="w-5 h-5 mt-0.5 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                />
-                <div>
-                  <p className="text-sm font-medium text-gray-700">{t('vendor.settings.autoStartTour')}</p>
-                  <p className="text-xs text-gray-400">{t('vendor.settings.autoStartTourDesc')}</p>
-                </div>
-              </label>
-
-              {/* Restart tour button */}
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">{t('vendor.settings.restartTour')}</p>
-                <p className="text-xs text-gray-400 mb-3">{t('vendor.settings.restartTourDesc')}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.removeItem('sponti_tour_vendor_dashboard_done');
-                    setMessage({ type: 'success', text: t('vendor.settings.tourWillStart') });
-                    window.location.href = '/vendor/dashboard';
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-primary-500 to-orange-400 rounded-xl hover:from-primary-600 hover:to-orange-500 transition-all shadow-sm"
-                >
-                  <Play className="w-4 h-4" />
-                  {t('vendor.settings.startTourNow')}
-                </button>
-              </div>
-
-              {/* Reset all tours */}
-              <div className="pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Clear all tour-related localStorage keys
-                    const keys = Object.keys(localStorage).filter(k => k.startsWith('sponti_tour_'));
-                    keys.forEach(k => localStorage.removeItem(k));
-                    localStorage.setItem('sponti_tour_auto_start', 'true');
-                    setTourAutoStart(true);
-                    setMessage({ type: 'success', text: t('vendor.settings.allToursReset') });
-                  }}
-                  className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-primary-500 transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  {t('vendor.settings.resetAllTours')}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Save Button */}
         <div className="flex justify-end sticky bottom-4">
