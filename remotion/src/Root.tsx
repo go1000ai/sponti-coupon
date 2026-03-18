@@ -32,7 +32,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="OnboardingVideo"
         component={OnboardingVideo as unknown as React.ComponentType<Record<string, unknown>>}
-        durationInFrames={30 * 199} // ~199 seconds — matched to voiceover audio lengths
+        durationInFrames={30 * 74} // ~74 seconds — quick action-oriented onboarding
         fps={30}
         width={1920}
         height={1080}

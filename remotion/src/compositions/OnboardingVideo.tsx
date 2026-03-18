@@ -12,8 +12,51 @@ import {
 } from 'remotion';
 import { SceneTransition } from '../components/SceneTransition';
 
+// ── Persistent Logo Watermark ────────────────────────────────────────────────
+const LogoWatermark: React.FC = () => {
+  const frame = useCurrentFrame();
+  const opacity = interpolate(frame, [0, 20], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+
+  return (
+    <div style={{ position: 'absolute', top: 24, left: 28, zIndex: 30, opacity, padding: '6px 10px', background: 'rgba(0,0,0,0.35)', borderRadius: 10 }}>
+      <Img src={staticFile('images/logo.png')} style={{ height: 50, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.6))' }} />
+    </div>
+  );
+};
+
+// ── Step Number Badge ────────────────────────────────────────────────────────
+const StepBadge: React.FC<{ num: number; startFrame: number }> = ({ num, startFrame }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const scale = spring({ frame: frame - startFrame, fps, config: { damping: 10, stiffness: 100 } });
+  if (frame < startFrame) return null;
+
+  return (
+    <div
+      style={{
+        width: 64,
+        height: 64,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #E8632B, #FF8C42)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 30,
+        fontWeight: '900',
+        color: '#FFF',
+        fontFamily: 'Inter, sans-serif',
+        boxShadow: '0 4px 20px rgba(232,99,43,0.5)',
+        transform: `scale(${scale})`,
+        opacity: scale,
+      }}
+    >
+      {num}
+    </div>
+  );
+};
+
 // ── Bottom Info Bar ────────────────────────────────────────────────────────────
-// Clean bottom bar with step label, title, and subtitle over a dark gradient
 const InfoBar: React.FC<{
   step?: string;
   title: string;
@@ -22,76 +65,24 @@ const InfoBar: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const slideUp = spring({
-    frame: frame - 5,
-    fps,
-    config: { damping: 14, stiffness: 100 },
-  });
-
+  const slideUp = spring({ frame: frame - 5, fps, config: { damping: 14, stiffness: 100 } });
   const barY = interpolate(slideUp, [0, 1], [120, 0]);
-  const textOpacity = interpolate(frame, [12, 22], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const textOpacity = interpolate(frame, [12, 22], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        transform: `translateY(${barY}px)`,
-        zIndex: 20,
-      }}
-    >
-      {/* Gradient backdrop */}
-      <div
-        style={{
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.95))',
-          padding: '50px 60px 40px',
-        }}
-      >
+    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, transform: `translateY(${barY}px)`, zIndex: 20 }}>
+      <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.85) 30%, rgba(0,0,0,0.95))', padding: '50px 60px 40px' }}>
         {step && (
-          <div
-            style={{
-              fontSize: 15,
-              fontWeight: '800',
-              color: '#E8632B',
-              fontFamily: 'Inter, sans-serif',
-              letterSpacing: 3,
-              textTransform: 'uppercase',
-              marginBottom: 8,
-              opacity: textOpacity,
-            }}
-          >
-            {step}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, opacity: textOpacity }}>
+            <div style={{ fontSize: 15, fontWeight: '800', color: '#E8632B', fontFamily: 'Inter, sans-serif', letterSpacing: 3, textTransform: 'uppercase' }}>
+              {step}
+            </div>
           </div>
         )}
-        <div
-          style={{
-            fontSize: 36,
-            fontWeight: '800',
-            color: '#FFFFFF',
-            fontFamily: 'Inter, sans-serif',
-            lineHeight: 1.2,
-            marginBottom: 8,
-            opacity: textOpacity,
-          }}
-        >
+        <div style={{ fontSize: 36, fontWeight: '800', color: '#FFFFFF', fontFamily: 'Inter, sans-serif', lineHeight: 1.2, marginBottom: 8, opacity: textOpacity }}>
           {title}
         </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: '400',
-            color: 'rgba(255,255,255,0.75)',
-            fontFamily: 'Inter, sans-serif',
-            lineHeight: 1.5,
-            maxWidth: 800,
-            opacity: textOpacity,
-          }}
-        >
+        <div style={{ fontSize: 18, fontWeight: '400', color: 'rgba(255,255,255,0.75)', fontFamily: 'Inter, sans-serif', lineHeight: 1.5, maxWidth: 900, opacity: textOpacity }}>
           {subtitle}
         </div>
       </div>
@@ -99,168 +90,124 @@ const InfoBar: React.FC<{
   );
 };
 
-// ── Screenshot Scene ───────────────────────────────────────────────────────────
-const ScreenshotScene: React.FC<{
+// ── Screenshot Scene with Step Badge ─────────────────────────────────────────
+const ActionScene: React.FC<{
   screenshot: string;
-  step?: string;
+  stepNum: number;
+  step: string;
   title: string;
   subtitle: string;
-}> = ({ screenshot, step, title, subtitle }) => {
+  panDirection?: 'left' | 'right' | 'up' | 'down';
+}> = ({ screenshot, stepNum, step, title, subtitle, panDirection = 'left' }) => {
   const frame = useCurrentFrame();
 
-  // Subtle slow zoom
-  const zoom = interpolate(frame, [0, 300], [1, 1.04], {
-    extrapolateRight: 'clamp',
-  });
+  const zoom = interpolate(frame, [0, 600], [1.05, 1.12], { extrapolateRight: 'clamp' });
+  const panAmount = interpolate(frame, [0, 600], [0, 20], { extrapolateRight: 'clamp' });
+  const panX = panDirection === 'left' ? -panAmount : panDirection === 'right' ? panAmount : 0;
+  const panY = panDirection === 'up' ? -panAmount : panDirection === 'down' ? panAmount : 0;
 
   return (
     <AbsoluteFill>
-      {/* Screenshot background with slow zoom */}
-      <div
-        style={{
-          position: 'absolute',
-          width: '100%',
-          height: '100%',
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top center',
-        }}
-      >
-        <Img
-          src={staticFile(`screenshots/${screenshot}`)}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
+      <div style={{ position: 'absolute', width: '100%', height: '100%', transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`, transformOrigin: 'center center' }}>
+        <Img src={staticFile(`screenshots/${screenshot}`)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
 
-      {/* Subtle top vignette for depth */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 120,
-          background: 'linear-gradient(rgba(0,0,0,0.3), transparent)',
-        }}
-      />
+      {/* Top vignette */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 120, background: 'linear-gradient(rgba(0,0,0,0.3), transparent)' }} />
 
-      {/* Info bar at bottom */}
+      {/* Step badge - top right */}
+      <div style={{ position: 'absolute', top: 24, right: 28, zIndex: 25 }}>
+        <StepBadge num={stepNum} startFrame={3} />
+      </div>
+
       <InfoBar step={step} title={title} subtitle={subtitle} />
     </AbsoluteFill>
   );
 };
 
-// ── Intro/Outro Scene ──────────────────────────────────────────────────────────
-const BrandScene: React.FC<{
-  title: string;
-  subtitle: string;
-  showLogo?: boolean;
-}> = ({ title, subtitle, showLogo = true }) => {
+// ── Welcome Scene ────────────────────────────────────────────────────────────
+const WelcomeScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const logoScale = spring({
-    frame: frame - 8,
-    fps,
-    config: { damping: 10, stiffness: 80 },
-  });
+  const images = [
+    'images/happy-vendor-restaurant.png',
+    'images/customer-phone-deal.png',
+  ];
 
-  const titleOpacity = interpolate(frame, [18, 30], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const cycleDuration = 120;
+  const imageIndex = Math.floor(frame / cycleDuration) % images.length;
+  const progress = (frame % cycleDuration) / cycleDuration;
+  const zoom = interpolate(progress, [0, 1], [1, 1.06]);
 
-  const titleY = interpolate(frame, [18, 30], [20, 0], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
-
-  const subOpacity = interpolate(frame, [35, 48], [0, 1], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  });
+  const logoScale = spring({ frame: frame - 5, fps, config: { damping: 10, stiffness: 80 } });
+  const titleOpacity = interpolate(frame, [15, 28], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const subOpacity = interpolate(frame, [32, 45], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const arrowOpacity = interpolate(frame, [50, 60], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const arrowBounce = Math.sin(frame * 0.1) * 6;
 
   return (
-    <AbsoluteFill
-      style={{
-        background: 'radial-gradient(ellipse at 40% 45%, #1a1008 0%, #0a0a0a 55%, #000 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 20,
-      }}
-    >
-      {/* Decorative glow */}
-      <div
-        style={{
-          position: 'absolute',
-          width: 500,
-          height: 500,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(232,99,43,0.12) 0%, transparent 70%)',
-          top: '25%',
-          left: '35%',
-        }}
-      />
-
-      {showLogo && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 14,
-            opacity: logoScale,
-            transform: `scale(${logoScale})`,
-          }}
-        >
-          <div
-            style={{
-              width: 70,
-              height: 70,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #E8632B, #FF8C42)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 6px 24px rgba(232,99,43,0.4)',
-            }}
-          >
-            <span style={{ color: '#FFF', fontSize: 32, fontWeight: '900', fontFamily: 'Inter, sans-serif' }}>S</span>
-          </div>
-          <span style={{ color: '#FFF', fontSize: 36, fontWeight: '800', fontFamily: 'Inter, sans-serif' }}>
-            Sponti<span style={{ color: '#E8632B' }}>Coupon</span>
-          </span>
-        </div>
-      )}
-
-      <div
-        style={{
-          fontSize: 44,
-          fontWeight: '800',
-          color: '#FFFFFF',
-          fontFamily: 'Inter, sans-serif',
-          textAlign: 'center',
-          maxWidth: 800,
-          lineHeight: 1.2,
-          opacity: titleOpacity,
-          transform: `translateY(${titleY}px)`,
-          marginTop: 16,
-        }}
-      >
-        {title}
+    <AbsoluteFill>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', transform: `scale(${zoom})` }}>
+        <Img src={staticFile(images[imageIndex])} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
       </div>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', background: 'linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 40%, rgba(0,0,0,0.7) 100%)' }} />
 
-      <div
-        style={{
-          fontSize: 22,
-          color: 'rgba(255,255,255,0.6)',
-          fontFamily: 'Inter, sans-serif',
-          textAlign: 'center',
-          maxWidth: 600,
-          opacity: subOpacity,
-        }}
-      >
-        {subtitle}
+      <div style={{ position: 'absolute', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div style={{ opacity: logoScale, transform: `scale(${logoScale})` }}>
+          <Img src={staticFile('images/logo.png')} style={{ height: 120, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))' }} />
+        </div>
+
+        <div style={{ fontSize: 46, fontWeight: '800', color: '#FFF', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 800, lineHeight: 1.2, opacity: titleOpacity, textShadow: '0 3px 16px rgba(0,0,0,0.6)', marginTop: 12 }}>
+          Welcome! Let's Get You Started
+        </div>
+
+        <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.9)', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 600, opacity: subOpacity, textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+          3 quick steps to your first live deal
+        </div>
+
+        {/* Animated down arrow */}
+        <div style={{ opacity: arrowOpacity, transform: `translateY(${arrowBounce}px)`, marginTop: 20, fontSize: 36, color: '#E8632B' }}>
+          ▼
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ── Done Scene ───────────────────────────────────────────────────────────────
+const DoneScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const zoom = interpolate(frame, [0, 400], [1, 1.06], { extrapolateRight: 'clamp' });
+  const logoScale = spring({ frame: frame - 5, fps, config: { damping: 10, stiffness: 80 } });
+  const titleOpacity = interpolate(frame, [15, 28], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const subOpacity = interpolate(frame, [30, 42], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+  const urlOpacity = interpolate(frame, [45, 55], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+
+  return (
+    <AbsoluteFill>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', transform: `scale(${zoom})` }}>
+        <Img src={staticFile('images/busy-local-shop.png')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+      <div style={{ position: 'absolute', width: '100%', height: '100%', background: 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.55), rgba(0,0,0,0.8))' }} />
+
+      <div style={{ position: 'absolute', width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+        <div style={{ opacity: logoScale, transform: `scale(${logoScale})` }}>
+          <Img src={staticFile('images/logo.png')} style={{ height: 90, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))' }} />
+        </div>
+
+        <div style={{ fontSize: 46, fontWeight: '800', color: '#FFF', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 700, lineHeight: 1.2, opacity: titleOpacity, textShadow: '0 3px 16px rgba(0,0,0,0.6)', marginTop: 8 }}>
+          That's It — You're Live!
+        </div>
+
+        <div style={{ fontSize: 22, color: 'rgba(255,255,255,0.85)', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 500, opacity: subOpacity, textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
+          Customers can now find and claim your deals. Watch your dashboard for results.
+        </div>
+
+        <div style={{ fontSize: 28, fontWeight: '700', color: '#E8632B', fontFamily: 'Inter, sans-serif', opacity: urlOpacity, textShadow: '0 2px 8px rgba(0,0,0,0.5)', marginTop: 8 }}>
+          sponticoupon.com
+        </div>
       </div>
     </AbsoluteFill>
   );
@@ -271,19 +218,13 @@ const BrandScene: React.FC<{
 export const OnboardingVideo: React.FC = () => {
   const FPS = 30;
 
-  // Scene durations matched to voiceover audio length + 1s buffer
+  // Scene durations matched to voiceover audio + 2s buffer
   const scenes = [
-    { key: 'intro', seconds: 15 },
-    { key: 'dashboard', seconds: 17 },
-    { key: 'fromWebsite', seconds: 19 },
-    { key: 'createDeal', seconds: 21 },
-    { key: 'dealTypes', seconds: 22 },
-    { key: 'payments', seconds: 24 },
-    { key: 'scanRedeem', seconds: 16 },
-    { key: 'analytics', seconds: 14 },
-    { key: 'social', seconds: 18 },
-    { key: 'loyalty', seconds: 18 },
-    { key: 'outro', seconds: 15 },
+    { key: 'welcome', seconds: 7 },      // audio: 4.6s
+    { key: 'step1', seconds: 23 },       // audio: 20.4s
+    { key: 'step2', seconds: 17 },       // audio: 14.9s
+    { key: 'step3', seconds: 18 },       // audio: 15.4s
+    { key: 'done', seconds: 9 },         // audio: 6.3s
   ];
 
   let currentFrame = 0;
@@ -294,151 +235,80 @@ export const OnboardingVideo: React.FC = () => {
     currentFrame += duration;
   }
 
+  // Total: ~74 seconds
+
   return (
     <AbsoluteFill style={{ backgroundColor: '#000' }}>
 
-      {/* ── Intro ─────────────────────────────────────────────── */}
-      <Sequence from={SCENES.intro.start} durationInFrames={SCENES.intro.duration}>
-        <BrandScene
-          title="Thank You for Joining SpontiCoupon!"
-          subtitle="Here's how to maximize the platform and grow your business"
-        />
+      {/* ── Welcome ────────────────────────────────────────────── */}
+      <Sequence from={SCENES.welcome.start} durationInFrames={SCENES.welcome.duration}>
+        <WelcomeScene />
       </Sequence>
 
-      {/* ── Dashboard ─────────────────────────────────────────── */}
-      <Sequence from={SCENES.dashboard.start} durationInFrames={SCENES.dashboard.duration}>
-        <ScreenshotScene
-          screenshot="vendor-dashboard.png"
-          step="Your Dashboard"
-          title="Everything You Need in One Place"
-          subtitle="Track your active deals, claims, redemptions, and revenue. Create deals and redeem customers directly from here."
-        />
-      </Sequence>
-
-      {/* ── Import from Website (moved up — key feature) ──────── */}
-      <Sequence from={SCENES.fromWebsite.start} durationInFrames={SCENES.fromWebsite.duration}>
-        <ScreenshotScene
+      {/* ── Step 1: Import from your website ───────────────────── */}
+      <Sequence from={SCENES.step1.start} durationInFrames={SCENES.step1.duration}>
+        <ActionScene
           screenshot="from-website.png"
-          step="Import from Your Website"
-          title="Let AI Build Your Deals for You"
-          subtitle="Paste your website URL and our AI will extract your services, pricing, and images — then generate ready-to-publish deals in seconds. No typing needed."
+          stepNum={1}
+          step="Do This First"
+          title="Import Deals from Your Website"
+          subtitle="Paste your URL — Ava extracts your services, pricing, and images. Review the generated deals, tweak if needed, and publish. You'll have a full deal catalog in under 2 minutes."
+          panDirection="down"
         />
       </Sequence>
 
-      {/* ── Create a Deal ─────────────────────────────────────── */}
-      <Sequence from={SCENES.createDeal.start} durationInFrames={SCENES.createDeal.duration}>
-        <ScreenshotScene
-          screenshot="create-deal.png"
-          step="Create a Deal"
-          title="AI Writes Your Content, You Publish"
-          subtitle="Describe your deal idea and Ava generates the title, description, discount, terms, and image. You review, adjust if needed, and publish. Your deal is live in minutes."
-        />
-      </Sequence>
-
-      {/* ── Deal Types ────────────────────────────────────────── */}
-      <Sequence from={SCENES.dealTypes.start} durationInFrames={SCENES.dealTypes.duration}>
-        <ScreenshotScene
-          screenshot="deal-type-selection.png"
-          step="Two Ways to Attract Customers"
-          title="Sponti Deals & Steady Deals"
-          subtitle="Sponti deals are flash offers (4-24 hours) that create urgency and drive new customers fast. Steady deals run 1-30 days for consistent business. Use both to grow."
-        />
-      </Sequence>
-
-      {/* ── Payments ──────────────────────────────────────────── */}
-      <Sequence from={SCENES.payments.start} durationInFrames={SCENES.payments.duration}>
-        <ScreenshotScene
+      {/* ── Step 2: Set up payments ────────────────────────────── */}
+      <Sequence from={SCENES.step2.start} durationInFrames={SCENES.step2.duration}>
+        <ActionScene
           screenshot="payments.png"
-          step="Get Paid Directly"
-          title="100% of Every Dollar Goes to You"
-          subtitle="Connect Stripe or PayPal for online deposits. Add Venmo, Zelle, or Cash App for in-person. Zero commissions — we never touch your money."
+          stepNum={2}
+          step="Connect Your Payments"
+          title="So Customers Can Pay You Directly"
+          subtitle="Go to your Get Paid page and connect your payment method. Deposits go straight to you — zero commissions, zero middleman."
+          panDirection="right"
         />
       </Sequence>
 
-      {/* ── Scan & Redeem ─────────────────────────────────────── */}
-      <Sequence from={SCENES.scanRedeem.start} durationInFrames={SCENES.scanRedeem.duration}>
-        <ScreenshotScene
-          screenshot="scan-redeem.png"
-          step="Redeem Customers"
-          title="Scan QR Code or Enter 6-Digit Code"
-          subtitle="When a customer arrives, verify their deal in seconds. Collect any remaining balance in person or through a Stripe payment link."
+      {/* ── Step 3: Publish your first deal ─────────────────────── */}
+      <Sequence from={SCENES.step3.start} durationInFrames={SCENES.step3.duration}>
+        <ActionScene
+          screenshot="create-deal.png"
+          stepNum={3}
+          step="Go Live"
+          title="Publish Your First Deal"
+          subtitle="Pick Sponti for a flash offer or Steady for ongoing. Hit publish — customers in your area can now find and claim it."
+          panDirection="up"
         />
       </Sequence>
 
-      {/* ── Analytics ─────────────────────────────────────────── */}
-      <Sequence from={SCENES.analytics.start} durationInFrames={SCENES.analytics.duration}>
-        <ScreenshotScene
-          screenshot="analytics.png"
-          step="Track Your Growth"
-          title="Real-Time Analytics & Insights"
-          subtitle="See what's working — claims, redemptions, conversion rate, and revenue. Compare deal types and optimize your strategy with data."
-        />
+      {/* ── Done ───────────────────────────────────────────────── */}
+      <Sequence from={SCENES.done.start} durationInFrames={SCENES.done.duration}>
+        <DoneScene />
       </Sequence>
 
-      {/* ── Social ────────────────────────────────────────────── */}
-      <Sequence from={SCENES.social.start} durationInFrames={SCENES.social.duration}>
-        <ScreenshotScene
-          screenshot="social.png"
-          step="Coming Soon"
-          title="Social Media Auto-Posting"
-          subtitle="Connect Facebook, Instagram, X, and TikTok. When you publish a deal, it automatically posts with AI-generated captions. More visibility, zero extra work."
-        />
+      {/* ── Logo Watermark ─────────────────────────────────────── */}
+      <Sequence from={0} durationInFrames={currentFrame}>
+        <LogoWatermark />
       </Sequence>
 
-      {/* ── Loyalty ───────────────────────────────────────────── */}
-      <Sequence from={SCENES.loyalty.start} durationInFrames={SCENES.loyalty.duration}>
-        <ScreenshotScene
-          screenshot="loyalty.png"
-          step="Build Repeat Business"
-          title="Loyalty Programs That Work"
-          subtitle="Set up punch cards or points-based rewards. Customers are automatically enrolled when they redeem. Turn first-time visitors into loyal regulars."
-        />
+      {/* ── Voiceover Audio ────────────────────────────────────── */}
+      <Sequence from={SCENES.welcome.start} durationInFrames={SCENES.welcome.duration}>
+        <Audio src={staticFile('audio/onboarding/welcome.mp3')} volume={1} />
+      </Sequence>
+      <Sequence from={SCENES.step1.start} durationInFrames={SCENES.step1.duration}>
+        <Audio src={staticFile('audio/onboarding/step1.mp3')} volume={1} />
+      </Sequence>
+      <Sequence from={SCENES.step2.start} durationInFrames={SCENES.step2.duration}>
+        <Audio src={staticFile('audio/onboarding/step2.mp3')} volume={1} />
+      </Sequence>
+      <Sequence from={SCENES.step3.start} durationInFrames={SCENES.step3.duration}>
+        <Audio src={staticFile('audio/onboarding/step3.mp3')} volume={1} />
+      </Sequence>
+      <Sequence from={SCENES.done.start} durationInFrames={SCENES.done.duration}>
+        <Audio src={staticFile('audio/onboarding/done.mp3')} volume={1} />
       </Sequence>
 
-      {/* ── Outro ─────────────────────────────────────────────── */}
-      <Sequence from={SCENES.outro.start} durationInFrames={SCENES.outro.duration}>
-        <BrandScene
-          title="You're Ready to Grow"
-          subtitle="Zero commissions. More customers. More loyalty. More revenue."
-        />
-      </Sequence>
-
-      {/* ── Voiceover Audio ──────────────────────────────────── */}
-      <Sequence from={SCENES.intro.start} durationInFrames={SCENES.intro.duration}>
-        <Audio src={staticFile('audio/onboarding/intro.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.dashboard.start} durationInFrames={SCENES.dashboard.duration}>
-        <Audio src={staticFile('audio/onboarding/dashboard.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.fromWebsite.start} durationInFrames={SCENES.fromWebsite.duration}>
-        <Audio src={staticFile('audio/onboarding/from-website.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.createDeal.start} durationInFrames={SCENES.createDeal.duration}>
-        <Audio src={staticFile('audio/onboarding/create-deal.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.dealTypes.start} durationInFrames={SCENES.dealTypes.duration}>
-        <Audio src={staticFile('audio/onboarding/deal-types.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.payments.start} durationInFrames={SCENES.payments.duration}>
-        <Audio src={staticFile('audio/onboarding/payments.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.scanRedeem.start} durationInFrames={SCENES.scanRedeem.duration}>
-        <Audio src={staticFile('audio/onboarding/scan-redeem.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.analytics.start} durationInFrames={SCENES.analytics.duration}>
-        <Audio src={staticFile('audio/onboarding/analytics.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.social.start} durationInFrames={SCENES.social.duration}>
-        <Audio src={staticFile('audio/onboarding/social.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.loyalty.start} durationInFrames={SCENES.loyalty.duration}>
-        <Audio src={staticFile('audio/onboarding/loyalty.mp3')} volume={1} />
-      </Sequence>
-      <Sequence from={SCENES.outro.start} durationInFrames={SCENES.outro.duration}>
-        <Audio src={staticFile('audio/onboarding/outro.mp3')} volume={1} />
-      </Sequence>
-
-      {/* ── Scene Transitions ─────────────────────────────────── */}
+      {/* ── Scene Transitions ──────────────────────────────────── */}
       {Object.values(SCENES)
         .slice(1)
         .map((scene, i) => (
