@@ -79,7 +79,7 @@ export default function StripeConnectBanner() {
                 </span>
               </h3>
               <p className="text-sm text-gray-500 mt-0.5">
-                Account: <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{status.account_id}</code>
+                Account: <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{status.account_id ? `${status.account_id.slice(0, 8)}••••••` : '—'}</code>
               </p>
               <div className="flex items-center gap-4 mt-2 text-xs">
                 <span className={`flex items-center gap-1 ${status.charges_enabled ? 'text-green-600' : 'text-amber-600'}`}>
