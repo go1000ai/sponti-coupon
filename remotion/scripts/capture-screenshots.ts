@@ -58,7 +58,7 @@ const PAGES_TO_CAPTURE: Array<{
     beforeCapture: async (page: Page) => {
       // Scroll to the deal type selector section using XPath-style text search
       await page.evaluate(() => {
-        const allElements = document.querySelectorAll('*');
+        const allElements = Array.from(document.querySelectorAll('*'));
         for (const el of allElements) {
           const text = el.textContent?.trim() || '';
           if (text === 'Deal Type' || text === 'Sponti Coupon' || text === 'Steady Deal') {
