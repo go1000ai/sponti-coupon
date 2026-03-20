@@ -403,7 +403,7 @@ const CTAScene: React.FC = () => {
         <div style={{ opacity: logoScale, transform: `scale(${logoScale})` }}>
           <Img src={staticFile('images/logo.png')} style={{ height: 85, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))' }} />
         </div>
-        <div style={{ fontSize: 48, fontWeight: '800', color: '#FFF', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 750, lineHeight: 1.1, opacity: t1, textShadow: '0 3px 16px rgba(0,0,0,0.6)' }}>
+        <div style={{ fontSize: 48, fontWeight: '800', color: '#FFF', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 950, lineHeight: 1.1, opacity: t1, textShadow: '0 3px 16px rgba(0,0,0,0.6)', whiteSpace: 'nowrap' }}>
           They Take 20-50%. <span style={{ color: '#22C55E' }}>We Take Zero.</span>
         </div>
         <div style={{ fontSize: 24, color: 'rgba(255,255,255,0.9)', fontFamily: 'Inter, sans-serif', textAlign: 'center', maxWidth: 550, opacity: t2, textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
