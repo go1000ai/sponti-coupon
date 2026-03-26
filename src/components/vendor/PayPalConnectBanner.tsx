@@ -121,13 +121,10 @@ export default function PayPalConnectBanner() {
             Connect your PayPal Business account for <span className="font-medium text-[#003087]">automated payments</span>.
             Customers pay through a secure PayPal checkout. Payments go directly to your account.
           </p>
-          <a
-            href="/api/paypal/connect/authorize"
-            className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-[#003087] hover:bg-[#002060] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#003087]/20"
-          >
-            <Image src="/logos/paypal.svg" alt="PayPal" width={48} height={20} className="brightness-0 invert" />
-            Connect
-          </a>
+          <div className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-gray-300 text-gray-500 text-sm font-semibold rounded-xl cursor-not-allowed">
+            <Image src="/logos/paypal.svg" alt="PayPal" width={48} height={20} className="opacity-40" />
+            Coming Soon
+          </div>
         </div>
       </div>
     </div>
