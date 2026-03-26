@@ -273,7 +273,10 @@ export default function VendorPaymentsPage() {
           </p>
         </div>
         <button
-          onClick={() => setShowAddForm(true)}
+          onClick={() => {
+            setShowAddForm(true);
+            setTimeout(() => document.getElementById('add-method-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+          }}
           className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -367,7 +370,7 @@ export default function VendorPaymentsPage() {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="card p-6 mb-6 border-primary-200 ring-1 ring-primary-100">
+        <div id="add-method-form" className="card p-6 mb-6 border-primary-200 ring-1 ring-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-blue-500" />
             Add In-Person Payment Method
