@@ -123,8 +123,6 @@ export default function PayPalConnectBanner() {
           </p>
           <a
             href="/api/paypal/connect/authorize"
-            target="_blank"
-            rel="noopener noreferrer"
             className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-[#003087] hover:bg-[#002060] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#003087]/20"
           >
             <Image src="/logos/paypal.svg" alt="PayPal" width={48} height={20} className="brightness-0 invert" />
