@@ -430,7 +430,7 @@ export default function DealDetailPage() {
           </div>
 
           {/* ===== RIGHT: Deal Info Panel (sticky) ===== */}
-          <div className="lg:sticky lg:top-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 space-y-4 animate-fade-up min-w-0 overflow-hidden">
+          <div className="lg:sticky lg:top-4 bg-white rounded-2xl shadow-lg border border-gray-200 p-5 sm:p-6 space-y-4 animate-fade-up min-w-0">
             {/* Badges row */}
             <div className="flex items-center flex-wrap gap-2 mb-3">
                 <DealTypeBadge type={deal.deal_type} size="lg" />
@@ -545,79 +545,6 @@ export default function DealDetailPage() {
                 </div>
               )}
 
-              {/* Claims progress */}
-              {effectiveMaxClaims && (
-                <div>
-                  <div className="flex justify-between text-sm text-gray-500 mb-1.5">
-                    <span>{t('dealDetail.claimedCount', { count: String(effectiveClaimsCount) })}</span>
-                    <span className="font-medium">{t('dealDetail.left', { count: String(effectiveMaxClaims - effectiveClaimsCount) })}</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2.5">
-                    <div
-                      className={`h-2.5 rounded-full transition-all ${
-                        (effectiveClaimsCount / effectiveMaxClaims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
-                      }`}
-                      style={{ width: `${Math.min((effectiveClaimsCount / effectiveMaxClaims) * 100, 100)}%` }}
-                    />
-                  </div>
-                  {(effectiveClaimsCount / effectiveMaxClaims) > 0.8 && (
-                    <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
-                      <Zap className="w-3 h-3" /> {t('dealDetail.almostSoldOut')}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Claim Button */}
-              {!isExpired && !isSoldOut && deal.status === 'active' && (
-                isOwnDeal ? (
-                  <div className="w-full text-lg py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
-                    {t('dealDetail.thisIsYourDeal')}
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleClaim}
-                    disabled={claiming}
-                    className={`w-full text-lg py-4 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg ${
-                      isSponti || hasDeposit
-                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 shadow-primary-500/25'
-                        : 'bg-gradient-to-r from-secondary-500 to-secondary-600 hover:from-secondary-600 hover:to-secondary-700 shadow-secondary-500/25'
-                    }`}
-                  >
-                    {claiming ? t('dealDetail.processing') : hasDeposit ? t('dealDetail.claimDealDeposit', { amount: formatCurrency(effectiveDeposit!) }) : t('dealDetail.claimThisDeal')}
-                  </button>
-                )
-              )}
-
-              {isExpired && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealHasExpired')}</div>
-              )}
-              {isSoldOut && (
-                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealIsSoldOut')}</div>
-              )}
-
-              {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200">{error}</div>
-              )}
-
-              {/* Trust signals — competitive advantage over Groupon */}
-              <div className="flex items-center flex-wrap gap-x-4 gap-y-2 pt-2 border-t border-gray-100">
-                <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.verifiedBusiness')}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.directPayments')}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                  <Shield className="w-3.5 h-3.5 text-green-500" /> {t('dealDetail.secureQrCode')}
-                </span>
-                {deal.claims_count > 0 && (
-                  <span className="flex items-center gap-1.5 text-xs text-gray-500">
-                    <Users className="w-3.5 h-3.5 text-blue-500" /> {t('dealDetail.claimedCount', { count: String(deal.claims_count) })}
-                  </span>
-                )}
-              </div>
-
               {/* Payment logos */}
               {(hasStripeConnect || paymentMethods.length > 0) && (
                 <button
@@ -645,6 +572,92 @@ export default function DealDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ===== Action Bar — same width as the grid above ===== */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 mt-4">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-5">
+          <div className="grid lg:grid-cols-2 gap-4 lg:gap-8 items-center">
+            {/* Left: Trust signals + claims */}
+            <div className="w-full">
+              <div className="flex items-center flex-wrap gap-x-6 gap-y-3">
+                <span className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className="w-9 h-9 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center">
+                    <Shield className="w-4.5 h-4.5 text-green-500" />
+                  </div>
+                  <span className="font-semibold">{t('dealDetail.verifiedBusiness')}</span>
+                </span>
+                <span className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className="w-9 h-9 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center">
+                    <Shield className="w-4.5 h-4.5 text-green-500" />
+                  </div>
+                  <span className="font-semibold">{t('dealDetail.secureQrCode')}</span>
+                </span>
+                <span className="flex items-center gap-2 text-sm text-gray-700">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
+                    <MapPin className="w-4.5 h-4.5 text-[#E8632B]" />
+                  </div>
+                  <span className="font-semibold">Pay at Business</span>
+                </span>
+              </div>
+
+              {/* Claims progress bar */}
+              {effectiveMaxClaims && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>{t('dealDetail.claimedCount', { count: String(effectiveClaimsCount) })}</span>
+                    <span className="font-medium">{t('dealDetail.left', { count: String(effectiveMaxClaims - effectiveClaimsCount) })}</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all ${
+                        (effectiveClaimsCount / effectiveMaxClaims) > 0.8 ? 'bg-red-500' : 'bg-primary-500'
+                      }`}
+                      style={{ width: `${Math.min((effectiveClaimsCount / effectiveMaxClaims) * 100, 100)}%` }}
+                    />
+                  </div>
+                  {(effectiveClaimsCount / effectiveMaxClaims) > 0.8 && (
+                    <p className="text-xs text-red-500 font-medium mt-1 flex items-center gap-1">
+                      <Zap className="w-3 h-3" /> {t('dealDetail.almostSoldOut')}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: CTA Button — aligned under right column */}
+            <div className="w-full flex justify-center">
+              {error && (
+                <div className="bg-red-50 text-red-600 text-xs p-2 rounded-lg border border-red-200 mb-2">{error}</div>
+              )}
+              {!isExpired && !isSoldOut && deal.status === 'active' && (
+                isOwnDeal ? (
+                  <div className="w-full text-base py-4 rounded-xl font-bold text-center text-secondary-400 bg-secondary-100">
+                    {t('dealDetail.thisIsYourDeal')}
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleClaim}
+                    disabled={claiming}
+                    className={`w-full lg:w-64 text-lg py-4 px-8 rounded-xl font-bold text-white transition-all disabled:opacity-50 shadow-lg hover:scale-[1.02] ${
+                      isSponti || hasDeposit
+                        ? 'bg-gradient-to-r from-[#E8632B] to-[#FF8C42] shadow-[#E8632B]/25 hover:shadow-xl hover:shadow-[#E8632B]/35'
+                        : 'bg-gradient-to-r from-secondary-500 to-secondary-600 shadow-secondary-500/25 hover:shadow-xl hover:shadow-secondary-500/35'
+                    }`}
+                  >
+                    {claiming ? t('dealDetail.processing') : hasDeposit ? t('dealDetail.claimDealDeposit', { amount: formatCurrency(effectiveDeposit!) }) : t('dealDetail.claimThisDeal')}
+                  </button>
+                )
+              )}
+              {isExpired && (
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealHasExpired')}</div>
+              )}
+              {isSoldOut && (
+                <div className="bg-gray-100 text-gray-500 text-center py-4 rounded-xl font-semibold">{t('dealDetail.dealIsSoldOut')}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* ===== TABS & MORE DEALS ===== */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -807,14 +820,32 @@ export default function DealDetailPage() {
                       </div>
                     )}
 
-                    {/* Empty state */}
+                    {/* Pay at location */}
                     {!hasStripeConnect && paymentMethods.length === 0 && (
-                      <div className="text-center py-8">
-                        <div className="w-12 h-12 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
-                          <Shield className="w-6 h-6 text-gray-300" />
+                      <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 rounded-2xl p-5">
+                        <div className="flex items-start gap-4">
+                          <div className="w-11 h-11 shrink-0 bg-gradient-to-br from-[#E8632B] to-[#FF8C42] rounded-xl flex items-center justify-center shadow-md shadow-orange-200">
+                            <MapPin className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-sm">Claim Your Deal, Pay at the Location</h4>
+                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">Claim this deal online, then pay directly at the business when you visit. No prepayment required.</p>
+                            <div className="flex flex-wrap items-center gap-3 mt-3">
+                              <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white rounded-full px-2.5 py-1 border border-gray-100">
+                                <Check className="w-3 h-3 text-green-500" />
+                                Claim online
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white rounded-full px-2.5 py-1 border border-gray-100">
+                                <Check className="w-3 h-3 text-green-500" />
+                                Show your code
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 bg-white rounded-full px-2.5 py-1 border border-gray-100">
+                                <Check className="w-3 h-3 text-green-500" />
+                                Pay at business
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-400">{t('dealDetail.paymentNotConfigured')}</p>
-                        <p className="text-xs text-gray-300 mt-1">{t('dealDetail.contactForPayment')}</p>
                       </div>
                     )}
                   </div>

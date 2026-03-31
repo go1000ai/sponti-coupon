@@ -98,6 +98,7 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
   }
 
   const current = allMedia[activeIndex];
+  const hasMultiple = allMedia.length > 1;
 
   const goNext = () => setActiveIndex(i => (i + 1) % allMedia.length);
   const goPrev = () => setActiveIndex(i => (i - 1 + allMedia.length) % allMedia.length);
@@ -116,21 +117,13 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
     touchStartX.current = null;
   };
 
-  if (allMedia.length === 1 && allMedia[0].type === 'image') {
-    return (
-      <div className="relative aspect-[4/3] max-h-[500px]">
-        <SafeImage src={allMedia[0].url} alt={title} fill className="object-cover" priority />
-      </div>
-    );
-  }
-
   return (
     <div>
       {/* Main media view */}
       <div
         className="relative aspect-[4/3] max-h-[500px] group"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={hasMultiple ? handleTouchStart : undefined}
+        onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
       >
         {current.type === 'image' ? (
           <SafeImage
@@ -168,18 +161,18 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
           </div>
         )}
 
-        {/* Navigation arrows */}
-        {allMedia.length > 1 && (
+        {/* Navigation arrows — visible on hover */}
+        {hasMultiple && (
           <>
             <button
               onClick={goPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
+              className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg z-10"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={goNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg"
+              className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 backdrop-blur-sm text-white rounded-full p-2.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 shadow-lg z-10"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -187,62 +180,66 @@ export function DealImageGallery({ mainImage, images, videoUrls = [], title, fal
         )}
 
         {/* Counter badge */}
-        {allMedia.length > 1 && (
-          <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium">
+        {hasMultiple && (
+          <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full font-medium z-10">
             {activeIndex + 1} / {allMedia.length}
           </div>
         )}
 
         {/* Video badge */}
         {current.type === 'video' && (
-          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1">
+          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 z-10">
             <Play className="w-3 h-3" fill="white" /> VIDEO
           </div>
         )}
-      </div>
 
-      {/* Thumbnails row */}
-      {allMedia.length > 1 && (
-        <div className="flex gap-2 px-4 sm:px-6 py-3 overflow-x-auto bg-white border-b border-gray-100">
-          {allMedia.map((media, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveIndex(i)}
-              className={`relative w-16 h-16 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
-                i === activeIndex ? 'border-primary-500 ring-1 ring-primary-300 scale-105' : 'border-gray-200 opacity-60 hover:opacity-100'
-              }`}
-            >
-              {media.type === 'image' ? (
-                <SafeImage src={media.url} alt={`${title} thumbnail ${i + 1}`} fill className="object-cover" />
-              ) : media.thumbnail ? (
-                <>
-                  <SafeImage src={media.thumbnail} alt="Video thumbnail" fill className="object-cover" />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <Play className="w-4 h-4 text-white" fill="white" />
-                  </div>
-                </>
-              ) : media.url.match(/\.(mp4|webm|ogg)(\?|$)/i) || media.url.includes('supabase') ? (
-                <>
-                  <video
-                    src={`${media.url}#t=0.5`}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    muted
-                    playsInline
-                    preload="metadata"
-                  />
-                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                    <Play className="w-4 h-4 text-white" fill="white" />
-                  </div>
-                </>
-              ) : (
-                <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                  <Play className="w-4 h-4 text-white" fill="white" />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+        {/* Thumbnails overlay — shown on hover at the bottom of the image */}
+        {hasMultiple && (
+          <div className="absolute bottom-0 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+            <div className="bg-gradient-to-t from-black/60 to-transparent pt-8 pb-3 px-3">
+              <div className="flex gap-2 justify-center overflow-x-auto scrollbar-hide">
+                {allMedia.map((media, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveIndex(i)}
+                    className={`relative w-14 h-14 rounded-lg overflow-hidden shrink-0 border-2 transition-all ${
+                      i === activeIndex ? 'border-white ring-1 ring-white/50 scale-105' : 'border-white/30 opacity-70 hover:opacity-100 hover:border-white/60'
+                    }`}
+                  >
+                    {media.type === 'image' ? (
+                      <SafeImage src={media.url} alt={`${title} thumbnail ${i + 1}`} fill className="object-cover" />
+                    ) : media.thumbnail ? (
+                      <>
+                        <SafeImage src={media.thumbnail} alt="Video thumbnail" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Play className="w-3.5 h-3.5 text-white" fill="white" />
+                        </div>
+                      </>
+                    ) : media.url.match(/\.(mp4|webm|ogg)(\?|$)/i) || media.url.includes('supabase') ? (
+                      <>
+                        <video
+                          src={`${media.url}#t=0.5`}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          muted
+                          playsInline
+                          preload="metadata"
+                        />
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <Play className="w-3.5 h-3.5 text-white" fill="white" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-gray-800 flex items-center justify-center">
+                        <Play className="w-3.5 h-3.5 text-white" fill="white" />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Video Modal */}
       {showVideoModal && current.type === 'video' && (
