@@ -19,7 +19,6 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [vendorLogoUrl, setVendorLogoUrl] = useState<string | null>(null);
   const [promoExpiresAt, setPromoExpiresAt] = useState<string | null>(null);
-  const [hasStripeSubscription, setHasStripeSubscription] = useState(false);
 
   // Scroll to top on every route change
   useEffect(() => {
@@ -38,14 +37,13 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     supabase
       .from('vendors')
-      .select('business_name, logo_url, promo_expires_at, stripe_customer_id')
+      .select('business_name, logo_url, promo_expires_at')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.business_name) setVendorName(data.business_name);
         if (data?.logo_url) setVendorLogoUrl(data.logo_url);
         if (data?.promo_expires_at) setPromoExpiresAt(data.promo_expires_at);
-        if (data?.stripe_customer_id) setHasStripeSubscription(true);
       });
   }, [user]);
 
