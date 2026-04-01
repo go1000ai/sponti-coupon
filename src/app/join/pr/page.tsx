@@ -153,12 +153,26 @@ export default function PuertoRicoJoinPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800">
       {/* Language Toggle */}
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
         <button
-          onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-sm font-medium transition-colors backdrop-blur-sm"
+          onClick={() => setLang('en')}
+          className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
+            lang === 'en'
+              ? 'bg-white text-gray-900'
+              : 'bg-white/10 text-white/70 hover:bg-white/20'
+          }`}
         >
-          🌐 {lang === 'en' ? 'ES' : 'EN'}
+          EN
+        </button>
+        <button
+          onClick={() => setLang('es')}
+          className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
+            lang === 'es'
+              ? 'bg-white text-gray-900'
+              : 'bg-white/10 text-white/70 hover:bg-white/20'
+          }`}
+        >
+          ES
         </button>
       </div>
 
