@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import {
-  MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield, Users,
+  MapPin, Clock, Tag, AlertTriangle, ArrowLeft, Store, Shield,
   Star, MessageSquare, Send, Loader2, CheckCircle2, Globe, Phone, Mail,
   ExternalLink, ChevronRight, Sparkles, Zap, Info,
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music,

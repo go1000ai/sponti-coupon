@@ -88,7 +88,6 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   // Paywall: block access unless subscription is active/trialing, promo is active, or just completed
   const hasActiveSubscription = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
   const promoActive = promoExpiresAt && new Date(promoExpiresAt) > new Date();
-  const promoExpired = promoExpiresAt && new Date(promoExpiresAt) <= new Date() && !hasStripeSubscription;
   if (!hasActiveSubscription && !promoActive && !isSubscriptionSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
