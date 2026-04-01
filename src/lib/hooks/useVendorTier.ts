@@ -9,6 +9,7 @@ import type { SubscriptionTier, SubscriptionStatus, TierFeature } from '@/lib/ty
 interface VendorTierState {
   tier: SubscriptionTier | null;
   status: SubscriptionStatus | null;
+  promoExpiresAt: string | null;
   loading: boolean;
 }
 
@@ -17,6 +18,7 @@ export function useVendorTier() {
   const [state, setState] = useState<VendorTierState>({
     tier: null,
     status: null,
+    promoExpiresAt: null,
     loading: true,
   });
   const supabaseRef = useRef(createClient());
@@ -26,7 +28,7 @@ export function useVendorTier() {
     if (authLoading) return;
 
     if (!user || role !== 'vendor') {
-      setState({ tier: null, status: null, loading: false });
+      setState({ tier: null, status: null, promoExpiresAt: null, loading: false });
       return;
     }
 
@@ -36,7 +38,7 @@ export function useVendorTier() {
       try {
         const { data } = await supabaseRef.current
           .from('vendors')
-          .select('subscription_tier, subscription_status')
+          .select('subscription_tier, subscription_status, promo_expires_at')
           .eq('id', user.id)
           .single();
 
@@ -44,12 +46,13 @@ export function useVendorTier() {
           setState({
             tier: (data?.subscription_tier as SubscriptionTier) || 'starter',
             status: (data?.subscription_status as SubscriptionStatus) || null,
+            promoExpiresAt: data?.promo_expires_at || null,
             loading: false,
           });
         }
       } catch {
         if (!cancelled) {
-          setState({ tier: 'starter', status: null, loading: false });
+          setState({ tier: 'starter', status: null, promoExpiresAt: null, loading: false });
         }
       }
     };

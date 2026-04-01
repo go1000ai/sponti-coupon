@@ -34,6 +34,13 @@ export async function GET(request: Request) {
         .single();
 
       if (!existingProfile) {
+        // Check for promo signup (e.g., Puerto Rico launch)
+        const promoCode = searchParams.get('promo') || meta.promo || '';
+        const VALID_PROMOS: Record<string, { tier: string; freeMonths: number }> = {
+          PUERTORICO6: { tier: 'pro', freeMonths: 6 },
+        };
+        const promoConfig = VALID_PROMOS[promoCode.toUpperCase()];
+
         // Create user profile
         await adminClient.from('user_profiles').insert({
           id: userId,
@@ -50,7 +57,16 @@ export async function GET(request: Request) {
           const category = searchParams.get('category') || meta.category || null;
           const businessType = searchParams.get('businessType') || meta.business_type || 'physical';
 
-          const vendorTz = meta.timezone || 'America/New_York';
+          const vendorTz = meta.timezone || (state === 'PR' ? 'America/Puerto_Rico' : 'America/New_York');
+
+          // Calculate promo expiry if applicable
+          let promoExpiresAt: string | null = null;
+          if (promoConfig) {
+            const expiry = new Date();
+            expiry.setMonth(expiry.getMonth() + promoConfig.freeMonths);
+            promoExpiresAt = expiry.toISOString();
+          }
+
           await adminClient.from('vendors').insert({
             id: userId,
             business_name: businessName,
@@ -63,8 +79,9 @@ export async function GET(request: Request) {
             category,
             business_type: businessType,
             timezone: vendorTz,
-            subscription_tier: 'starter',
-            subscription_status: 'incomplete',
+            subscription_tier: promoConfig ? promoConfig.tier : 'starter',
+            subscription_status: promoConfig ? 'active' : 'incomplete',
+            ...(promoConfig ? { promo_code: promoCode.toUpperCase(), promo_expires_at: promoExpiresAt } : {}),
           });
         } else {
           const firstName = searchParams.get('firstName') || meta.first_name || null;
@@ -93,14 +110,18 @@ export async function GET(request: Request) {
       if (accountType === 'vendor') {
         const plan = searchParams.get('plan') || meta.plan || null;
         const interval = searchParams.get('interval') || meta.interval || 'month';
-        const promo = searchParams.get('promo') || meta.promo || '';
 
-        console.log('[AUTH CALLBACK] Vendor redirect — Plan:', plan, 'Interval:', interval, 'Promo:', promo);
+        console.log('[AUTH CALLBACK] Vendor redirect — Plan:', plan, 'Interval:', interval, 'Promo:', promoCode);
+
+        // Promo vendors go straight to dashboard (no payment needed)
+        if (promoConfig) {
+          return NextResponse.redirect(`${origin}/vendor/dashboard?welcome=true`);
+        }
 
         if (plan && plan !== 'starter') {
           // Redirect to the subscribe page which handles Stripe checkout client-side
           const subscribeParams = new URLSearchParams({ plan, interval });
-          if (promo) subscribeParams.set('promo', promo);
+          if (promoCode) subscribeParams.set('promo', promoCode);
           return NextResponse.redirect(
             `${origin}/subscribe?${subscribeParams.toString()}`
           );

@@ -8,6 +8,7 @@ import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { createClient } from '@/lib/supabase/client';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { Ban, CreditCard } from 'lucide-react';
+import { PromoCountdownBanner } from '@/components/vendor/PromoCountdownBanner';
 
 function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, role, loading, signOut, isAlsoCustomer, switchRole, becomeCustomer } = useAuth();
@@ -17,6 +18,8 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [vendorLogoUrl, setVendorLogoUrl] = useState<string | null>(null);
+  const [promoExpiresAt, setPromoExpiresAt] = useState<string | null>(null);
+  const [hasStripeSubscription, setHasStripeSubscription] = useState(false);
 
   // Scroll to top on every route change
   useEffect(() => {
@@ -35,16 +38,14 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     supabase
       .from('vendors')
-      .select('business_name, logo_url')
+      .select('business_name, logo_url, promo_expires_at, stripe_customer_id')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
-        if (data?.business_name) {
-          setVendorName(data.business_name);
-        }
-        if (data?.logo_url) {
-          setVendorLogoUrl(data.logo_url);
-        }
+        if (data?.business_name) setVendorName(data.business_name);
+        if (data?.logo_url) setVendorLogoUrl(data.logo_url);
+        if (data?.promo_expires_at) setPromoExpiresAt(data.promo_expires_at);
+        if (data?.stripe_customer_id) setHasStripeSubscription(true);
       });
   }, [user]);
 
@@ -84,10 +85,11 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Paywall: block access unless subscription is active/trialing or just completed
-  // Vendors with 'incomplete' (or null/unknown) status cannot access the dashboard
+  // Paywall: block access unless subscription is active/trialing, promo is active, or just completed
   const hasActiveSubscription = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-  if (!hasActiveSubscription && !isSubscriptionSuccess) {
+  const promoActive = promoExpiresAt && new Date(promoExpiresAt) > new Date();
+  const promoExpired = promoExpiresAt && new Date(promoExpiresAt) <= new Date() && !hasStripeSubscription;
+  if (!hasActiveSubscription && !promoActive && !isSubscriptionSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-6">
@@ -127,6 +129,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
       />
       <main className="lg:ml-64 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
+          {promoExpiresAt && <PromoCountdownBanner promoExpiresAt={promoExpiresAt} />}
           {children}
         </div>
       </main>
