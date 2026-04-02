@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/i18n';
 import {
   Gift, Check, Loader2, MapPin, Phone, Mail, Building2,
   ArrowRight, Star, BarChart2, Share2, Tag, Clock, Zap,
@@ -34,10 +35,9 @@ const VALUE_PROPS = [
   { icon: <Clock className="w-5 h-5" />, en: 'Flash & Steady Deals', es: 'Ofertas Flash y Permanentes' },
 ];
 
-type Lang = 'en' | 'es';
-
 export default function FreeJoinPage() {
-  const [lang, setLang] = useState<Lang>('en');
+  const { locale } = useLanguage();
+  const lang = locale === 'es' ? 'es' : 'en';
   const [form, setForm] = useState({
     businessName: '', email: '', password: '', confirmPassword: '',
     phone: '', address: '', city: '', state: '', zip: '', category: '',
@@ -152,32 +152,8 @@ export default function FreeJoinPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800">
-      {/* Language Toggle */}
-      <div className="absolute top-4 right-4 z-10 flex gap-2">
-        <button
-          onClick={() => setLang('en')}
-          className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
-            lang === 'en'
-              ? 'bg-white text-gray-900'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
-        >
-          EN
-        </button>
-        <button
-          onClick={() => setLang('es')}
-          className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors ${
-            lang === 'es'
-              ? 'bg-white text-gray-900'
-              : 'bg-white/10 text-white/70 hover:bg-white/20'
-          }`}
-        >
-          ES
-        </button>
-      </div>
-
       {/* Hero */}
-      <div className="pt-12 pb-8 px-4 text-center">
+      <div className="pt-8 pb-8 px-4 text-center">
         <Image src="/logo.png" alt="SpontiCoupon" width={200} height={60} className="mx-auto mb-6 brightness-110" />
 
         <div className="inline-flex items-center gap-2 bg-green-500/20 border border-green-500/30 rounded-full px-4 py-1.5 mb-4">
