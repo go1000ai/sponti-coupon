@@ -16,8 +16,8 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  // Hide navbar on vendor, admin, and customer dashboard pages — they have their own sidebar navigation
-  if (pathname.startsWith('/vendor') || pathname.startsWith('/admin') || pathname.startsWith('/dashboard')) {
+  // Hide navbar on vendor, admin, customer dashboard, and special landing pages
+  if (pathname.startsWith('/vendor') || pathname.startsWith('/admin') || pathname.startsWith('/dashboard') || pathname.startsWith('/join')) {
     return null;
   }
 

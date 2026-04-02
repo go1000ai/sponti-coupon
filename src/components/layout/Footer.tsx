@@ -10,8 +10,8 @@ export function Footer() {
   const pathname = usePathname();
   const { t } = useLanguage();
 
-  // Hide footer on vendor, admin, and customer dashboard pages — they have their own sidebar layouts
-  if (pathname.startsWith('/vendor') || pathname.startsWith('/admin') || pathname.startsWith('/dashboard')) {
+  // Hide footer on vendor, admin, customer dashboard, and special landing pages
+  if (pathname.startsWith('/vendor') || pathname.startsWith('/admin') || pathname.startsWith('/dashboard') || pathname.startsWith('/join')) {
     return null;
   }
 
