@@ -189,7 +189,7 @@ export default function PuertoRicoJoinPage() {
 
         <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 leading-tight">
           {t(`${FREE_MONTHS} Months`, `${FREE_MONTHS} Meses`)}{' '}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-orange-400">FREE</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-orange-400">{t('FREE', 'GRATIS')}</span>
         </h1>
         <p className="text-xl text-gray-300 font-medium mb-2">
           {t('No Credit Card Required', 'Sin Tarjeta de Crédito')}
@@ -279,7 +279,7 @@ export default function PuertoRicoJoinPage() {
                   value={form.password}
                   onChange={handleChange}
                   className="input-field"
-                  placeholder="6+ characters"
+                  placeholder={t('6+ characters', '6+ caracteres')}
                   required
                   minLength={6}
                 />
@@ -294,7 +294,7 @@ export default function PuertoRicoJoinPage() {
                   value={form.confirmPassword}
                   onChange={handleChange}
                   className="input-field"
-                  placeholder="Repeat"
+                  placeholder={t('Repeat', 'Repetir')}
                   required
                   minLength={6}
                 />
@@ -344,7 +344,7 @@ export default function PuertoRicoJoinPage() {
                 <input name="state" type="text" value={form.state} onChange={handleChange} className="input-field" placeholder="PR" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ZIP</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('ZIP', 'Código')}</label>
                 <input name="zip" type="text" value={form.zip} onChange={handleChange} className="input-field" placeholder="00901" />
               </div>
             </div>
