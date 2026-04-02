@@ -89,9 +89,11 @@ export async function GET(request: NextRequest) {
 
     let allPages = pagesData.data || [];
 
-    // Step 3b: If /me/accounts is empty, try Business API (pages managed via Business Portfolio)
+    // Step 3b: If /me/accounts is empty, try multiple fallback strategies
     if (allPages.length === 0) {
-      console.log('[FB OAuth] No pages from /me/accounts, trying Business API...');
+      console.log('[FB OAuth] No pages from /me/accounts, trying fallbacks...');
+
+      // Fallback 1: Business API (pages managed via Business Portfolio)
       try {
         const bizRes = await fetch(
           `${META_GRAPH_URL}/me/businesses?access_token=${userToken}&fields=id,name`
@@ -101,22 +103,71 @@ export async function GET(request: NextRequest) {
 
         if (bizData.data && bizData.data.length > 0) {
           for (const biz of bizData.data) {
+            // Try owned_pages
             const bizPagesRes = await fetch(
               `${META_GRAPH_URL}/${biz.id}/owned_pages?access_token=${userToken}&fields=id,name,access_token,picture`
             );
             const bizPagesData = await bizPagesRes.json();
-            console.log(`[FB OAuth] Business ${biz.name} (${biz.id}) pages:`, JSON.stringify({
-              hasData: !!bizPagesData.data,
+            console.log(`[FB OAuth] Business ${biz.name} owned_pages:`, JSON.stringify({
               count: bizPagesData.data?.length || 0,
               error: bizPagesData.error || null,
             }));
             if (bizPagesData.data) {
               allPages = [...allPages, ...bizPagesData.data];
             }
+
+            // Also try client_pages (pages where user has a role via business)
+            if (allPages.length === 0) {
+              const clientPagesRes = await fetch(
+                `${META_GRAPH_URL}/${biz.id}/client_pages?access_token=${userToken}&fields=id,name,access_token,picture`
+              );
+              const clientPagesData = await clientPagesRes.json();
+              console.log(`[FB OAuth] Business ${biz.name} client_pages:`, JSON.stringify({
+                count: clientPagesData.data?.length || 0,
+                error: clientPagesData.error || null,
+              }));
+              if (clientPagesData.data) {
+                allPages = [...allPages, ...clientPagesData.data];
+              }
+            }
           }
         }
       } catch (bizErr) {
         console.error('[FB OAuth] Business API fallback error:', bizErr);
+      }
+
+      // Fallback 2: Try /me/accounts with explicit limit and fields
+      if (allPages.length === 0) {
+        try {
+          const pagesRes2 = await fetch(
+            `${META_GRAPH_URL}/me/accounts?access_token=${userToken}&fields=id,name,access_token,picture,tasks&limit=100`
+          );
+          const pagesData2 = await pagesRes2.json();
+          console.log('[FB OAuth] Fallback /me/accounts (with limit+tasks):', JSON.stringify({
+            count: pagesData2.data?.length || 0,
+            error: pagesData2.error || null,
+          }));
+          if (pagesData2.data?.length > 0) {
+            allPages = pagesData2.data;
+          }
+        } catch { /* continue */ }
+      }
+
+      // Fallback 3: Try querying specific known page IDs if user has pages_show_list
+      if (allPages.length === 0) {
+        try {
+          const pagesRes3 = await fetch(
+            `${META_GRAPH_URL}/me?fields=accounts{id,name,access_token,picture}&access_token=${userToken}`
+          );
+          const pagesData3 = await pagesRes3.json();
+          console.log('[FB OAuth] Fallback /me?fields=accounts:', JSON.stringify({
+            count: pagesData3.accounts?.data?.length || 0,
+            error: pagesData3.error || null,
+          }));
+          if (pagesData3.accounts?.data?.length > 0) {
+            allPages = pagesData3.accounts.data;
+          }
+        } catch { /* continue */ }
       }
     }
 
