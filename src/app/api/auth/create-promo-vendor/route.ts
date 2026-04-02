@@ -3,7 +3,7 @@ import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supab
 import { notifyNewSignup } from '@/lib/email/admin-notification';
 
 const VALID_PROMOS: Record<string, { tier: string; freeMonths: number }> = {
-  PUERTORICO6: { tier: 'pro', freeMonths: 6 },
+  PUERTORICO6: { tier: 'business', freeMonths: 6 },
 };
 
 export async function POST(request: NextRequest) {

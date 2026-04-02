@@ -10,7 +10,7 @@ import {
 
 const PROMO_CODE = 'PUERTORICO6';
 const FREE_MONTHS = 6;
-const TIER_VALUE = 99;
+const TIER_VALUE = 199;
 
 const CATEGORIES = [
   { value: 'restaurant', en: 'Restaurant', es: 'Restaurante' },
@@ -27,11 +27,11 @@ const CATEGORIES = [
 
 const VALUE_PROPS = [
   { icon: <Tag className="w-5 h-5" />, en: '0% Commission — Keep 100%', es: '0% Comisión — Quédate con el 100%' },
-  { icon: <Star className="w-5 h-5" />, en: 'Up to 45 Active Deals', es: 'Hasta 45 Ofertas Activas' },
-  { icon: <BarChart2 className="w-5 h-5" />, en: 'Analytics Dashboard', es: 'Panel de Analíticas' },
+  { icon: <Star className="w-5 h-5" />, en: 'Up to 150 Active Deals', es: 'Hasta 150 Ofertas Activas' },
+  { icon: <BarChart2 className="w-5 h-5" />, en: 'Advanced Analytics', es: 'Analíticas Avanzadas' },
   { icon: <Share2 className="w-5 h-5" />, en: 'Auto Social Media Posts', es: 'Publicaciones Automáticas' },
+  { icon: <Zap className="w-5 h-5" />, en: 'AI Deal Assistant & Insights', es: 'Asistente IA y Análisis' },
   { icon: <Clock className="w-5 h-5" />, en: 'Flash & Steady Deals', es: 'Ofertas Flash y Permanentes' },
-  { icon: <Zap className="w-5 h-5" />, en: 'QR Code Redemption', es: 'Canje por Código QR' },
 ];
 
 type Lang = 'en' | 'es';
@@ -196,8 +196,8 @@ export default function FreeJoinPage() {
         </p>
         <p className="text-gray-400 text-sm max-w-md mx-auto">
           {t(
-            `Pro plan ($${TIER_VALUE}/mo value) — completely free for ${FREE_MONTHS} months. Start posting deals today.`,
-            `Plan Pro ($${TIER_VALUE}/mes de valor) — completamente gratis por ${FREE_MONTHS} meses. Comienza a publicar ofertas hoy.`,
+            `Business plan ($${TIER_VALUE}/mo value) — completely free for ${FREE_MONTHS} months. Start posting deals today.`,
+            `Plan Business ($${TIER_VALUE}/mes de valor) — completamente gratis por ${FREE_MONTHS} meses. Comienza a publicar ofertas hoy.`,
           )}
         </p>
       </div>

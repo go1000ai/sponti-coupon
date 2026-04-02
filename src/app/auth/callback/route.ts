@@ -36,7 +36,7 @@ export async function GET(request: Request) {
       // Check for promo signup (e.g., Puerto Rico launch)
       const promoCode = searchParams.get('promo') || meta.promo || '';
       const VALID_PROMOS: Record<string, { tier: string; freeMonths: number }> = {
-        PUERTORICO6: { tier: 'pro', freeMonths: 6 },
+        PUERTORICO6: { tier: 'business', freeMonths: 6 },
       };
       const promoConfig = VALID_PROMOS[promoCode.toUpperCase()] || null;
 
