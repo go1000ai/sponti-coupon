@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
       lng,
       location_estimated: locationEstimated,
       category: category || null,
-      timezone: 'America/Puerto_Rico',
+      timezone: state === 'PR' ? 'America/Puerto_Rico' : 'America/New_York',
       subscription_tier: promo.tier,
       subscription_status: 'active',
       promo_code: promoCode.toUpperCase(),
