@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpontiCoupon Flyer — FRONT</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap');
+
+    :root {
+      --orange: #E8632B;
+      --orange-light: #FEF0EA;
+      --blue: #29ABE2;
+      --amber: #F5A623;
+      --dark: #111827;
+      --text: #1f2937;
+      --body: #333333;
+      --muted: #6b7280;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .flyer-page {
+      width: 8.5in;
+      height: 12.5in;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media screen {
+      .flyer-page { box-shadow: 0 12px 40px rgba(0,0,0,0.25); }
+    }
+
+    .safe-zone {
+      position: absolute;
+      top: 0.6in;
+      left: 0.5in;
+      width: 7.5in;
+      height: 11.3in;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: var(--dark);
+      padding: 0.3in 0.35in;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0; right: 0;
+      height: 0.2in;
+      background: white;
+      clip-path: polygon(0 100%, 100% 0, 100% 100%);
+    }
+
+    .header-logo { height: 0.6in; width: auto; }
+
+    .header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 34pt;
+      color: white;
+      line-height: 1.05;
+      margin-top: 0.1in;
+    }
+
+    .header h1 .hl { color: var(--orange); }
+
+    .header .sub {
+      font-size: 14pt;
+      color: var(--blue);
+      font-weight: 600;
+      margin-top: 0.06in;
+    }
+
+    /* Promo */
+    .promo {
+      margin: 0.15in 0.15in;
+      flex-shrink: 0;
+    }
+
+    .promo-inner {
+      padding: 0.2in 0.3in;
+      background: linear-gradient(135deg, var(--orange) 0%, #d4551f 100%);
+      border-radius: 16px;
+      text-align: center;
+      border: 3px dashed rgba(255,255,255,0.35);
+    }
+
+    .promo-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14pt;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: 3px;
+    }
+
+    .promo-headline {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 48pt;
+      color: white;
+      line-height: 1;
+      margin: 0.05in 0;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .promo-details {
+      font-size: 14pt;
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+    }
+
+    .promo-es {
+      font-size: 12pt;
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.06in;
+      padding-top: 0.06in;
+      border-top: 1px solid rgba(255,255,255,0.25);
+    }
+
+    /* Comparison */
+    .comparison {
+      padding: 0.15in 0.15in 0.1in;
+      flex-shrink: 0;
+    }
+
+    .comparison-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20pt;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 0.1in;
+    }
+
+    .comparison-grid { display: flex; position: relative; gap: 0.6in; }
+
+    .vs-badge {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 0.55in; height: 0.55in;
+      background: var(--dark);
+      border: 3px solid white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16pt; color: white; z-index: 5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .comp-col { flex: 1; }
+    .comp-col.competitor { border-radius: 10px; }
+    .comp-col.sponti { border-radius: 10px; }
+
+    .comp-col-header {
+      padding: 0.08in 0.12in;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14pt; letter-spacing: 1px; text-align: center;
+    }
+
+    .comp-col.competitor .comp-col-header { background: #e5e7eb; color: var(--muted); border-radius: 10px 10px 0 0; }
+    .comp-col.sponti .comp-col-header { background: var(--orange); color: white; border-radius: 10px 10px 0 0; }
+
+    .comp-col-body { padding: 0.1in 0.15in; font-size: 13pt; line-height: 1.6; }
+    .comp-col.competitor .comp-col-body { background: var(--red-bg); border: 1px solid #fecaca; border-top: none; border-radius: 0 0 10px 10px; }
+    .comp-col.sponti .comp-col-body { background: var(--green-bg); border: 1px solid #bbf7d0; border-top: none; border-radius: 0 0 10px 10px; }
+
+    .comp-row { display: flex; justify-content: space-between; color: var(--body); }
+    .comp-row.negative .val { color: var(--red); font-weight: 700; }
+    .comp-row.positive .val { color: var(--green); font-weight: 700; }
+
+    .comp-divider { border: none; border-top: 1px dashed #d1d5db; margin: 0.04in 0; }
+
+    .comp-result { text-align: center; padding-top: 0.04in; }
+    .comp-result .amount { font-family: 'Bebas Neue', sans-serif; font-size: 36pt; line-height: 1; }
+    .comp-col.competitor .comp-result .amount { color: var(--red); text-decoration: line-through; text-decoration-thickness: 3px; }
+    .comp-col.sponti .comp-result .amount { color: var(--green); }
+    .comp-result .timing { font-size: 11pt; }
+    .comp-col.competitor .comp-result .timing { color: var(--red); font-style: italic; }
+    .comp-col.sponti .comp-result .timing { color: var(--green); font-weight: 700; }
+
+    .savings-bar {
+      margin-top: 0.1in;
+      padding: 0.08in 0;
+      background: linear-gradient(to right, var(--orange), var(--amber));
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .savings-bar span { font-size: 13pt; color: white; font-weight: 700; }
+    .savings-bar .big { font-family: 'Bebas Neue', sans-serif; font-size: 22pt; }
+
+    /* Benefits */
+    .benefits { padding: 0.1in 0.15in; flex-shrink: 0; text-align: center; }
+
+    .benefits-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18pt;
+      color: var(--dark);
+      text-align: center;
+      margin-bottom: 0.08in;
+    }
+
+    .benefits-grid { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0.06in 0.3in; text-align: left; }
+
+    .benefit-item { display: flex; align-items: center; gap: 0.08in; }
+
+    .benefit-icon {
+      width: 0.32in; height: 0.32in;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-weight: 800; font-size: 11pt; color: white;
+    }
+
+    .benefit-icon.orange { background: var(--orange); }
+    .benefit-icon.blue { background: var(--blue); }
+    .benefit-icon.green { background: var(--green); }
+    .benefit-icon.amber { background: var(--amber); }
+    .benefit-text { font-size: 13pt; color: var(--text); font-weight: 600; }
+
+    /* CTA Footer */
+    .cta-footer {
+      margin-top: auto;
+      padding: 0.12in 0.15in 0.08in;
+      text-align: center;
+    }
+
+    .cta-headline { font-family: 'Bebas Neue', sans-serif; font-size: 22pt; color: var(--dark); }
+    .cta-url { font-family: 'Bebas Neue', sans-serif; font-size: 18pt; color: var(--orange); }
+    .cta-sub { font-size: 11pt; color: var(--muted); margin-top: 2px; }
+    .cta-sub .blue { color: var(--blue); }
+
+    .footer-bar { height: 6px; background: linear-gradient(to right, var(--orange), var(--amber), var(--blue)); flex-shrink: 0; }
+
+    @media print {
+      body { background: white; }
+      .flyer-page { box-shadow: none; }
+      @page { size: 8.5in 12.5in; margin: 0; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="flyer-page">
+    <div class="safe-zone">
+
+      <div class="header">
+        <img src="../public/logo.png" alt="SpontiCoupon" class="header-logo">
+        <h1>STOP LOSING <span class="hl">50%</span> OF YOUR<br>REVENUE TO DEAL PLATFORMS</h1>
+        <div class="sub">Keep 100% &bull; Zero Commission &bull; Paid Instantly</div>
+      </div>
+
+      <div class="promo">
+        <div class="promo-inner">
+          <div class="promo-badge">LIMITED TIME &mdash; NO CREDIT CARD NEEDED</div>
+          <div class="promo-headline">3 MONTHS FREE</div>
+          <div class="promo-details">Business Plan ($199/mo value) &bull; AI Tools &bull; 150 Deals</div>
+          <div class="promo-es">Plan Business ($199/mes) &mdash; 3 meses completamente gratis</div>
+        </div>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-title">THE $100 DEAL BREAKDOWN</div>
+        <div class="comparison-grid">
+          <div class="vs-badge">VS</div>
+          <div class="comp-col competitor">
+            <div class="comp-col-header">COMPETITORS</div>
+            <div class="comp-col-body">
+              <div class="comp-row"><span>Customer pays</span><span class="val">$100</span></div>
+              <div class="comp-row negative"><span>Platform takes</span><span class="val">-$50</span></div>
+              <hr class="comp-divider">
+              <div class="comp-result">
+                <div class="amount">$50</div>
+                <div class="timing">Wait 60-90 days</div>
+              </div>
+            </div>
+          </div>
+          <div class="comp-col sponti">
+            <div class="comp-col-header">SPONTICOUPON</div>
+            <div class="comp-col-body">
+              <div class="comp-row"><span>Customer pays</span><span class="val">$100</span></div>
+              <div class="comp-row positive"><span>Commission</span><span class="val">$0</span></div>
+              <hr class="comp-divider">
+              <div class="comp-result">
+                <div class="amount">$100</div>
+                <div class="timing">Paid instantly</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="savings-bar">
+          <span>$10K/mo in sales = Save <span class="big">$4,801</span>/mo &bull; <span class="big">$57,612</span>/yr</span>
+        </div>
+      </div>
+
+      <div class="benefits">
+        <div class="benefits-title">EVERYTHING YOU NEED TO GROW</div>
+        <div class="benefits-grid">
+          <div class="benefit-item"><div class="benefit-icon orange">$0</div><div class="benefit-text">0% Commission</div></div>
+          <div class="benefit-item"><div class="benefit-icon blue">&#x21E9;</div><div class="benefit-text">Instant Payouts</div></div>
+          <div class="benefit-item"><div class="benefit-icon amber">AI</div><div class="benefit-text">AI Deal Assistant</div></div>
+          <div class="benefit-item"><div class="benefit-icon green">&#x2665;</div><div class="benefit-text">Loyalty Program</div></div>
+          <div class="benefit-item"><div class="benefit-icon blue">&#x266A;</div><div class="benefit-text">Social Auto-Post</div></div>
+          <div class="benefit-item"><div class="benefit-icon orange">&#x2713;</div><div class="benefit-text">Cancel Anytime</div></div>
+        </div>
+      </div>
+
+      <div class="cta-footer">
+        <div class="cta-headline">SIGN UP FREE AT</div>
+        <div class="cta-url">sponticoupon.com/join/free</div>
+        <div class="cta-sub">vendors@sponticoupon.com &bull; <span class="blue">fb.com/sponticoupon</span></div>
+      </div>
+
+      <div class="footer-bar"></div>
+    </div>
+  </div>
+</body>
+</html>

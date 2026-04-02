@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SpontiCoupon Vendor Flyer — 4x6 Postcard</title>
+  <title>SpontiCoupon Vendor Flyer — 4x6 Postcard (Front & Back)</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&display=swap');
 
@@ -11,13 +11,11 @@
       --orange: #E8632B;
       --orange-light: #FEF0EA;
       --blue: #29ABE2;
-      --blue-light: #E8F7FC;
       --amber: #F5A623;
       --dark: #111827;
       --text: #1f2937;
       --body: #333333;
       --muted: #6b7280;
-      --light-gray: #f3f4f6;
       --green: #16a34a;
       --green-bg: #f0fdf4;
       --red: #dc2626;
@@ -32,6 +30,7 @@
       flex-direction: column;
       align-items: center;
       padding: 40px 20px;
+      gap: 40px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
@@ -40,10 +39,9 @@
       font-size: 14px;
       color: #e5e7eb;
       letter-spacing: 2px;
-      margin-bottom: 10px;
+      margin-bottom: -30px;
     }
 
-    /* ============ FLYER PAGE ============ */
     .flyer-page {
       width: 4.25in;
       height: 6.25in;
@@ -54,516 +52,376 @@
     }
 
     @media screen {
-      .flyer-page {
-        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-        border-radius: 4px;
-      }
-    }
-
-    .bleed-guide {
-      position: absolute;
-      top: 0.125in;
-      left: 0.125in;
-      right: 0.125in;
-      bottom: 0.125in;
-      border: 1px dashed rgba(255,255,255,0.15);
-      pointer-events: none;
-      z-index: 20;
+      .flyer-page { box-shadow: 0 12px 40px rgba(0,0,0,0.3); border-radius: 4px; }
     }
 
     .safe-zone {
       position: absolute;
-      top: 0.125in;
-      left: 0.125in;
-      width: 4in;
-      height: 6in;
+      top: 0.4in;
+      left: 0.25in;
+      width: 3.75in;
+      height: 5.45in;
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
-    /* ============ SECTION 1: HEADER — TALL & BOLD ============ */
+    /* ============ FRONT SIDE ============ */
+
     .header {
       background: var(--dark);
-      padding: 0.14in 0.16in 0.18in;
+      padding: 0.12in 0.16in 0.14in;
       flex-shrink: 0;
       position: relative;
     }
 
-    /* Diagonal bottom edge */
     .header::after {
       content: '';
       position: absolute;
       bottom: -1px;
-      left: 0;
-      right: 0;
-      height: 0.12in;
+      left: 0; right: 0;
+      height: 0.1in;
       background: white;
       clip-path: polygon(0 100%, 100% 0, 100% 100%);
     }
 
-    .header-row {
-      display: flex;
-      align-items: center;
-      gap: 0.08in;
-      margin-bottom: 0.06in;
-    }
-
-    .header-logo {
-      height: 0.3in;
-      width: auto;
-      flex-shrink: 0;
-    }
-
-    .header-brand {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 8pt;
-      color: rgba(255,255,255,0.5);
-      letter-spacing: 2px;
-    }
+    .header-logo { height: 0.28in; width: auto; }
 
     .header h1 {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 17pt;
+      font-size: 16pt;
       color: white;
       line-height: 1;
-      letter-spacing: 0.5px;
+      margin-top: 0.04in;
     }
 
-    .header h1 .highlight {
-      color: var(--orange);
-    }
+    .header h1 .hl { color: var(--orange); }
+    .header .sub { font-size: 6.5pt; color: var(--blue); font-weight: 600; margin-top: 0.02in; }
 
-    .header .sub {
-      font-size: 7pt;
-      color: var(--blue);
-      font-weight: 600;
-      margin-top: 0.03in;
-    }
-
-    /* ============ SECTION 2: ROI COMPARISON ============ */
-    .comparison {
-      padding: 0.12in 0.14in 0.08in;
-      flex-shrink: 0;
-    }
-
-    .comparison-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 10pt;
-      color: var(--dark);
-      text-align: center;
-      margin-bottom: 0.06in;
-      letter-spacing: 0.5px;
-    }
-
-    .comparison-grid {
-      display: flex;
-      gap: 0;
-      position: relative;
-    }
-
-    /* VS circle */
-    .vs-badge {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: 0.28in;
-      height: 0.28in;
-      background: var(--dark);
-      border: 2px solid white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 8pt;
-      color: white;
-      z-index: 5;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-
-    .comp-col {
-      flex: 1;
-      overflow: hidden;
-    }
-
-    .comp-col.competitor {
-      border-radius: 6px 0 0 6px;
-    }
-    .comp-col.sponti {
-      border-radius: 0 6px 6px 0;
-    }
-
-    .comp-col-header {
-      padding: 0.04in 0.06in;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 7.5pt;
-      letter-spacing: 0.5px;
-      text-align: center;
-    }
-
-    .comp-col.competitor .comp-col-header {
-      background: #e5e7eb;
-      color: var(--muted);
-    }
-
-    .comp-col.sponti .comp-col-header {
-      background: var(--orange);
-      color: white;
-    }
-
-    .comp-col-body {
-      padding: 0.05in 0.08in;
-      font-size: 6.5pt;
-      line-height: 1.5;
-    }
-
-    .comp-col.competitor .comp-col-body {
-      background: var(--red-bg);
-      border: 1px solid #fecaca;
-      border-top: none;
-      border-right: none;
-    }
-
-    .comp-col.sponti .comp-col-body {
-      background: var(--green-bg);
-      border: 1px solid #bbf7d0;
-      border-top: none;
-      border-left: none;
-    }
-
-    .comp-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--body);
-    }
-
-    .comp-row.negative .val { color: var(--red); font-weight: 700; }
-    .comp-row.positive .val { color: var(--green); font-weight: 700; }
-
-    .comp-divider {
-      border: none;
-      border-top: 1px dashed #d1d5db;
-      margin: 0.02in 0;
-    }
-
-    .comp-result {
-      text-align: center;
-      padding-top: 0.02in;
-    }
-
-    .comp-result .amount {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 18pt;
-      line-height: 1;
-    }
-
-    .comp-col.competitor .comp-result .amount {
-      color: var(--red);
-      text-decoration: line-through;
-      text-decoration-thickness: 2px;
-    }
-
-    .comp-col.sponti .comp-result .amount {
-      color: var(--green);
-    }
-
-    .comp-result .timing {
-      font-size: 5.5pt;
-      margin-top: 1px;
-    }
-
-    .comp-col.competitor .comp-result .timing {
-      color: var(--red);
-      font-style: italic;
-    }
-
-    .comp-col.sponti .comp-result .timing {
-      color: var(--green);
-      font-weight: 700;
-    }
-
-    .savings-bar {
-      margin-top: 0.06in;
-      padding: 0.035in 0;
-      background: linear-gradient(to right, var(--orange), var(--amber));
-      border-radius: 4px;
-      text-align: center;
-    }
-
-    .savings-bar span {
-      font-size: 7pt;
-      color: white;
-      font-weight: 700;
-    }
-
-    .savings-bar .big {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 11pt;
-    }
-
-    /* ============ SECTION 3: BENEFITS ============ */
-    .benefits {
-      padding: 0.06in 0.14in 0.05in;
-      flex-shrink: 0;
-    }
-
-    .benefits-title {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 9pt;
-      color: var(--dark);
-      text-align: center;
-      margin-bottom: 0.04in;
-      letter-spacing: 0.5px;
-    }
-
-    .benefits-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.025in 0.08in;
-    }
-
-    .benefit-item {
-      display: flex;
-      align-items: center;
-      gap: 0.05in;
-    }
-
-    .benefit-icon {
-      width: 0.17in;
-      height: 0.17in;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-weight: 800;
-      font-size: 6pt;
-      color: white;
-    }
-
-    .benefit-icon.orange { background: var(--orange); }
-    .benefit-icon.blue { background: var(--blue); }
-    .benefit-icon.green { background: var(--green); }
-    .benefit-icon.amber { background: var(--amber); }
-
-    .benefit-text {
-      font-size: 6.5pt;
-      color: var(--text);
-      font-weight: 600;
-      line-height: 1.2;
-    }
-
-    /* ============ SECTION 4: FOUNDERS PROMO — COUPON STYLE ============ */
+    /* Promo banner */
     .promo {
-      margin: 0.04in 0.14in;
-      position: relative;
+      margin: 0.06in 0.12in;
       flex-shrink: 0;
     }
 
     .promo-inner {
-      padding: 0.07in 0.12in;
+      padding: 0.08in 0.12in;
       background: linear-gradient(135deg, var(--orange) 0%, #d4551f 100%);
-      border-radius: 6px;
+      border-radius: 8px;
       text-align: center;
       border: 2px dashed rgba(255,255,255,0.35);
     }
 
     .promo-badge {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 8pt;
+      font-size: 7.5pt;
       color: rgba(255,255,255,0.85);
       letter-spacing: 2px;
-      margin-bottom: 0.01in;
     }
 
     .promo-headline {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 15pt;
+      font-size: 22pt;
       color: white;
       line-height: 1;
-      margin-bottom: 0.02in;
+      margin: 0.02in 0;
       text-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
 
     .promo-details {
+      font-size: 7pt;
+      color: rgba(255,255,255,0.95);
+      font-weight: 700;
+    }
+
+    .promo-es {
       font-size: 6.5pt;
-      color: rgba(255,255,255,0.9);
-      font-weight: 600;
-    }
-
-    .promo-breakdown {
-      margin-top: 0.03in;
-      padding-top: 0.03in;
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.02in;
+      padding-top: 0.02in;
       border-top: 1px solid rgba(255,255,255,0.25);
-      font-size: 6pt;
-      color: rgba(255,255,255,0.8);
     }
 
-    /* ============ SECTION 5: HOW IT WORKS ============ */
-    .how-it-works {
-      padding: 0.05in 0.14in;
-      flex-shrink: 0;
-    }
+    /* Comparison */
+    .comparison { padding: 0.06in 0.12in 0.04in; flex-shrink: 0; }
 
-    .hiw-title {
+    .comparison-title {
       font-family: 'Bebas Neue', sans-serif;
       font-size: 9pt;
       color: var(--dark);
       text-align: center;
       margin-bottom: 0.04in;
-      letter-spacing: 0.5px;
     }
 
-    .hiw-steps {
-      display: flex;
-      align-items: center;
-      gap: 0.04in;
+    .comparison-grid { display: flex; position: relative; }
+
+    .vs-badge {
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 0.26in; height: 0.26in;
+      background: var(--dark);
+      border: 2px solid white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 7pt; color: white; z-index: 5;
     }
 
-    .hiw-step {
-      flex: 1;
+    .comp-col { flex: 1; }
+    .comp-col.competitor { border-radius: 5px 0 0 5px; }
+    .comp-col.sponti { border-radius: 0 5px 5px 0; }
+
+    .comp-col-header {
+      padding: 0.03in 0.06in;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 7pt; letter-spacing: 0.5px; text-align: center;
+    }
+
+    .comp-col.competitor .comp-col-header { background: #e5e7eb; color: var(--muted); }
+    .comp-col.sponti .comp-col-header { background: var(--orange); color: white; }
+
+    .comp-col-body { padding: 0.04in 0.06in; font-size: 6pt; line-height: 1.5; }
+    .comp-col.competitor .comp-col-body { background: var(--red-bg); border: 1px solid #fecaca; border-top: none; border-right: none; }
+    .comp-col.sponti .comp-col-body { background: var(--green-bg); border: 1px solid #bbf7d0; border-top: none; border-left: none; }
+
+    .comp-row { display: flex; justify-content: space-between; color: var(--body); }
+    .comp-row.negative .val { color: var(--red); font-weight: 700; }
+    .comp-row.positive .val { color: var(--green); font-weight: 700; }
+
+    .comp-divider { border: none; border-top: 1px dashed #d1d5db; margin: 0.01in 0; }
+
+    .comp-result { text-align: center; padding-top: 0.01in; }
+    .comp-result .amount { font-family: 'Bebas Neue', sans-serif; font-size: 16pt; line-height: 1; }
+    .comp-col.competitor .comp-result .amount { color: var(--red); text-decoration: line-through; text-decoration-thickness: 2px; }
+    .comp-col.sponti .comp-result .amount { color: var(--green); }
+    .comp-result .timing { font-size: 5pt; }
+    .comp-col.competitor .comp-result .timing { color: var(--red); font-style: italic; }
+    .comp-col.sponti .comp-result .timing { color: var(--green); font-weight: 700; }
+
+    .savings-bar {
+      margin-top: 0.04in;
+      padding: 0.03in 0;
+      background: linear-gradient(to right, var(--orange), var(--amber));
+      border-radius: 4px;
       text-align: center;
     }
 
-    .hiw-num {
-      width: 0.2in;
-      height: 0.2in;
-      background: var(--dark);
-      color: white;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 9pt;
-      margin-bottom: 0.02in;
-    }
+    .savings-bar span { font-size: 6.5pt; color: white; font-weight: 700; }
+    .savings-bar .big { font-family: 'Bebas Neue', sans-serif; font-size: 10pt; }
 
-    .hiw-text {
-      font-size: 6pt;
-      color: var(--text);
-      font-weight: 600;
-      line-height: 1.25;
-    }
+    /* Benefits */
+    .benefits { padding: 0.04in 0.12in; flex-shrink: 0; text-align: center; }
+    .benefits-title { font-family: 'Bebas Neue', sans-serif; font-size: 8pt; color: var(--dark); text-align: center; margin-bottom: 0.03in; }
+    .benefits-grid { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 0.02in 0.06in; text-align: left; }
+    .benefit-item { display: flex; align-items: center; gap: 0.04in; }
+    .benefit-icon { width: 0.15in; height: 0.15in; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 800; font-size: 5.5pt; color: white; }
+    .benefit-icon.orange { background: var(--orange); }
+    .benefit-icon.blue { background: var(--blue); }
+    .benefit-icon.green { background: var(--green); }
+    .benefit-icon.amber { background: var(--amber); }
+    .benefit-text { font-size: 6pt; color: var(--text); font-weight: 600; }
 
-    .hiw-arrow {
-      font-size: 10pt;
-      color: var(--orange);
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-
-    /* ============ SECTION 6: CTA FOOTER ============ */
+    /* CTA Footer */
     .cta-footer {
       margin-top: auto;
-      padding: 0.05in 0.14in 0;
-      display: flex;
+      padding: 0.06in 0.12in 0.04in;
+      text-align: center;
+    }
+
+    .cta-qr { width: 0.6in; height: 0.6in; border: 2px solid var(--orange); border-radius: 5px; overflow: hidden; flex-shrink: 0; }
+    .cta-qr img { width: 100%; height: 100%; display: block; }
+    .cta-info { flex: 1; }
+    .cta-info .cta-headline { font-family: 'Bebas Neue', sans-serif; font-size: 11pt; color: var(--dark); }
+    .cta-info .cta-url { font-family: 'Bebas Neue', sans-serif; font-size: 9pt; color: var(--orange); }
+    .cta-info .cta-sub { font-size: 5.5pt; color: var(--muted); margin-top: 1px; }
+    .cta-info .cta-sub .blue { color: var(--blue); }
+
+    .footer-bar { height: 4px; background: linear-gradient(to right, var(--orange), var(--amber), var(--blue)); flex-shrink: 0; }
+
+    /* ============ BACK SIDE ============ */
+
+    .back-safe {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; flex-direction: column;
       align-items: center;
-      gap: 0.1in;
+      justify-content: center;
+      padding: 0.4in 0.35in;
+      text-align: center;
     }
 
-    .cta-qr {
-      width: 0.5in;
-      height: 0.5in;
-      border: 2px solid var(--orange);
-      border-radius: 5px;
-      overflow: hidden;
-      flex-shrink: 0;
+    .back-header {
+      text-align: center;
+      margin-bottom: 0.1in;
     }
 
-    .cta-qr img {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
+    .back-logo { height: 0.45in; width: auto; margin-bottom: 0.06in; }
 
-    .cta-info {
-      flex: 1;
-    }
-
-    .cta-info .cta-headline {
+    .back-tagline {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 11pt;
+      font-size: 15pt;
       color: var(--dark);
-      letter-spacing: 0.5px;
+      line-height: 1.1;
     }
 
-    .cta-info .cta-url {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 9pt;
-      color: var(--orange);
-      letter-spacing: 0.5px;
-    }
+    .back-tagline .hl { color: var(--orange); }
 
-    .cta-contacts {
-      font-size: 6pt;
+    .back-subtitle {
+      font-size: 8pt;
       color: var(--muted);
-      margin-top: 1px;
+      margin-top: 0.03in;
     }
 
-    .cta-contacts .blue { color: var(--blue); }
+    .back-divider {
+      height: 2px;
+      background: linear-gradient(to right, transparent, var(--orange), transparent);
+      margin: 0.08in 0;
+    }
 
-    .footer-bar {
-      height: 4px;
-      background: linear-gradient(to right, var(--orange), var(--amber), var(--blue));
+    /* Feature list */
+    .feature-section { margin-bottom: 0.08in; }
+
+    .feature-section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 10pt;
+      color: var(--orange);
+      letter-spacing: 1px;
+      margin-bottom: 0.03in;
+      text-align: center;
+    }
+
+    .feature-list { list-style: none; }
+
+    .feature-list li {
+      font-size: 7pt;
+      color: var(--body);
+      padding: 0.015in 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.04in;
+      line-height: 1.35;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      color: var(--orange);
+      font-weight: 800;
+      font-size: 7pt;
       flex-shrink: 0;
-      margin-top: 0.04in;
+    }
+
+    /* Testimonial */
+    .testimonial {
+      background: var(--orange-light);
+      border: 1px solid #fddccd;
+      border-radius: 8px;
+      padding: 0.08in 0.1in;
+      margin: 0.06in 0;
+      text-align: center;
+    }
+
+    .testimonial-quote {
+      font-family: 'Instrument Serif', serif;
+      font-style: italic;
+      font-size: 8.5pt;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .testimonial-author {
+      font-size: 6.5pt;
+      color: var(--orange);
+      font-weight: 700;
+      margin-top: 0.02in;
+    }
+
+    /* Back CTA */
+    .back-cta {
+      margin-top: auto;
+      text-align: center;
+    }
+
+    .back-cta-box {
+      background: var(--dark);
+      border-radius: 8px;
+      padding: 0.1in 0.15in;
+      margin-bottom: 0.06in;
+    }
+
+    .back-cta-box .big {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14pt;
+      color: white;
+    }
+
+    .back-cta-box .big .hl { color: var(--orange); }
+
+    .back-cta-box .small {
+      font-size: 6.5pt;
+      color: rgba(255,255,255,0.7);
+      margin-top: 0.02in;
+    }
+
+    .back-contacts {
+      font-size: 6.5pt;
+      color: var(--muted);
+    }
+
+    .back-contacts a { color: var(--orange); text-decoration: none; font-weight: 600; }
+    .back-contacts .blue { color: var(--blue); }
+
+    .back-footer-bar {
+      height: 4px;
+      background: linear-gradient(to right, var(--blue), var(--amber), var(--orange));
+      margin-top: 0.08in;
     }
 
     /* ============ PRINT ============ */
     @media print {
-      body { background: white; padding: 0; margin: 0; }
+      body { background: white; padding: 0; margin: 0; gap: 0; }
       .screen-label { display: none; }
-      .bleed-guide { display: none; }
       .flyer-page { box-shadow: none; border-radius: 0; }
       @page { size: 4.25in 6.25in; margin: 0; }
-      * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
-        color-adjust: exact !important;
-      }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
     }
   </style>
 </head>
 <body>
 
-  <div class="screen-label">VENDOR FLYER — 4" x 6" POSTCARD</div>
+  <!-- ==================== FRONT SIDE ==================== -->
+  <div class="screen-label">FRONT SIDE</div>
 
   <div class="flyer-page">
-    <div class="bleed-guide"></div>
-
     <div class="safe-zone">
 
-      <!-- ===== SECTION 1: HEADER ===== -->
+      <!-- Header -->
       <div class="header">
-        <div class="header-row">
-          <img src="../public/logo.png" alt="SpontiCoupon" class="header-logo">
-        </div>
-        <h1>STOP LOSING <span class="highlight">50%</span> OF YOUR<br>REVENUE TO DEAL PLATFORMS</h1>
-        <div class="sub">Keep 100% of what you earn. Get paid instantly.</div>
+        <img src="../public/logo.png" alt="SpontiCoupon" class="header-logo">
+        <h1>STOP LOSING <span class="hl">50%</span> OF YOUR<br>REVENUE TO DEAL PLATFORMS</h1>
+        <div class="sub">Keep 100% &bull; Zero Commission &bull; Paid Instantly</div>
       </div>
 
-      <!-- ===== SECTION 2: ROI COMPARISON ===== -->
+      <!-- 3 Months Free Promo -->
+      <div class="promo">
+        <div class="promo-inner">
+          <div class="promo-badge">LIMITED TIME &mdash; NO CREDIT CARD NEEDED</div>
+          <div class="promo-headline">3 MONTHS FREE</div>
+          <div class="promo-details">Business Plan ($199/mo value) &bull; AI Tools &bull; 150 Deals</div>
+          <div class="promo-es">Plan Business ($199/mes) &mdash; 3 meses completamente gratis</div>
+        </div>
+      </div>
+
+      <!-- ROI Comparison -->
       <div class="comparison">
         <div class="comparison-title">THE $100 DEAL BREAKDOWN</div>
         <div class="comparison-grid">
           <div class="vs-badge">VS</div>
-
-          <!-- Competitor -->
           <div class="comp-col competitor">
             <div class="comp-col-header">COMPETITORS</div>
             <div class="comp-col-body">
-              <div class="comp-row">
-                <span>Customer pays</span>
-                <span class="val">$100</span>
-              </div>
-              <div class="comp-row negative">
-                <span>Platform takes</span>
-                <span class="val">-$50</span>
-              </div>
+              <div class="comp-row"><span>Customer pays</span><span class="val">$100</span></div>
+              <div class="comp-row negative"><span>Platform takes</span><span class="val">-$50</span></div>
               <hr class="comp-divider">
               <div class="comp-result">
                 <div class="amount">$50</div>
@@ -571,19 +429,11 @@
               </div>
             </div>
           </div>
-
-          <!-- SpontiCoupon -->
           <div class="comp-col sponti">
             <div class="comp-col-header">SPONTICOUPON</div>
             <div class="comp-col-body">
-              <div class="comp-row">
-                <span>Customer pays</span>
-                <span class="val">$100</span>
-              </div>
-              <div class="comp-row positive">
-                <span>Commission</span>
-                <span class="val">$0</span>
-              </div>
+              <div class="comp-row"><span>Customer pays</span><span class="val">$100</span></div>
+              <div class="comp-row positive"><span>Commission</span><span class="val">$0</span></div>
               <hr class="comp-divider">
               <div class="comp-result">
                 <div class="amount">$100</div>
@@ -591,90 +441,95 @@
               </div>
             </div>
           </div>
-
         </div>
-
         <div class="savings-bar">
           <span>$10K/mo in sales = Save <span class="big">$4,801</span>/mo &bull; <span class="big">$57,612</span>/yr</span>
         </div>
       </div>
 
-      <!-- ===== SECTION 3: BENEFITS ===== -->
+      <!-- Benefits -->
       <div class="benefits">
         <div class="benefits-title">EVERYTHING YOU NEED TO GROW</div>
         <div class="benefits-grid">
-          <div class="benefit-item">
-            <div class="benefit-icon orange">$0</div>
-            <div class="benefit-text">0% Commission</div>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-icon blue">&#x21E9;</div>
-            <div class="benefit-text">Instant Payouts</div>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-icon amber">AI</div>
-            <div class="benefit-text">AI Deal Assistant</div>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-icon green">&#x2665;</div>
-            <div class="benefit-text">Loyalty Program</div>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-icon blue">&#x266A;</div>
-            <div class="benefit-text">Social Auto-Post</div>
-          </div>
-          <div class="benefit-item">
-            <div class="benefit-icon orange">&#x2713;</div>
-            <div class="benefit-text">Cancel Anytime</div>
-          </div>
+          <div class="benefit-item"><div class="benefit-icon orange">$0</div><div class="benefit-text">0% Commission</div></div>
+          <div class="benefit-item"><div class="benefit-icon blue">&#x21E9;</div><div class="benefit-text">Instant Payouts</div></div>
+          <div class="benefit-item"><div class="benefit-icon amber">AI</div><div class="benefit-text">AI Deal Assistant</div></div>
+          <div class="benefit-item"><div class="benefit-icon green">&#x2665;</div><div class="benefit-text">Loyalty Program</div></div>
+          <div class="benefit-item"><div class="benefit-icon blue">&#x266A;</div><div class="benefit-text">Social Auto-Post</div></div>
+          <div class="benefit-item"><div class="benefit-icon orange">&#x2713;</div><div class="benefit-text">Cancel Anytime</div></div>
         </div>
       </div>
 
-      <!-- ===== SECTION 4: FOUNDERS PROMO ===== -->
-      <div class="promo">
-        <div class="promo-inner">
-          <div class="promo-badge">FOUNDERS LAUNCH &mdash; LIMITED SPOTS</div>
-          <div class="promo-headline">2 Months FREE + 20% Off Forever</div>
-          <div class="promo-details">First 200 Vendors &bull; Through April 30, 2026</div>
-          <div class="promo-breakdown">Business: $199/mo &rarr; $0 for 2 months, then $159/mo for life</div>
-        </div>
-      </div>
-
-      <!-- ===== SECTION 5: HOW IT WORKS ===== -->
-      <div class="how-it-works">
-        <div class="hiw-title">HOW IT WORKS</div>
-        <div class="hiw-steps">
-          <div class="hiw-step">
-            <div class="hiw-num">1</div>
-            <div class="hiw-text">Post your deal in minutes</div>
-          </div>
-          <div class="hiw-arrow">&rarr;</div>
-          <div class="hiw-step">
-            <div class="hiw-num">2</div>
-            <div class="hiw-text">Customers claim &amp; pay you directly</div>
-          </div>
-          <div class="hiw-arrow">&rarr;</div>
-          <div class="hiw-step">
-            <div class="hiw-num">3</div>
-            <div class="hiw-text">Scan QR code to redeem in-store</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== SECTION 6: CTA ===== -->
+      <!-- CTA Footer (no QR — QR is on back) -->
       <div class="cta-footer">
-        <div class="cta-qr">
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https%3A%2F%2Fsponticoupon.com%2Fpricing&color=E8632B" alt="Scan for pricing">
-        </div>
-        <div class="cta-info">
-          <div class="cta-headline">SCAN TO GET STARTED</div>
-          <div class="cta-url">sponticoupon.com</div>
-          <div class="cta-contacts">vendors@sponticoupon.com &bull; <span class="blue">fb.com/sponticoupon</span></div>
+        <div class="cta-info" style="text-align:center; width:100%;">
+          <div class="cta-headline">SIGN UP FREE AT</div>
+          <div class="cta-url">sponticoupon.com/join/free</div>
+          <div class="cta-sub">vendors@sponticoupon.com &bull; <span class="blue">fb.com/sponticoupon</span></div>
         </div>
       </div>
 
       <div class="footer-bar"></div>
+    </div>
+  </div>
 
+  <!-- ==================== BACK SIDE ==================== -->
+  <div class="screen-label">BACK SIDE</div>
+
+  <div class="flyer-page">
+    <div class="back-safe">
+
+      <!-- Logo + Tagline -->
+      <div class="back-header">
+        <img src="../public/logo.png" alt="SpontiCoupon" class="back-logo">
+        <div class="back-tagline">YOUR CUSTOMERS ARE <span class="hl">ALREADY</span><br>LOOKING FOR DEALS NEARBY</div>
+        <div class="back-subtitle">Be the business they find. Not the one they miss.</div>
+      </div>
+
+      <div class="back-divider"></div>
+
+      <!-- Features — compact grid -->
+      <div class="feature-section">
+        <div class="feature-section-title">WHAT YOU GET FOR FREE</div>
+        <div style="display:inline-grid; grid-template-columns:1fr 1fr; gap:0.04in 0.2in; text-align:left;">
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>150 active deals</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>AI Deal Assistant</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>Auto social posts</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>Advanced analytics</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>Loyalty programs</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>QR redemption</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>Bilingual EN/ES</strong></div>
+          <div style="font-size:7pt; color:var(--body); line-height:1.3;"><span style="color:var(--orange); font-weight:800;">&#x2713;</span> <strong>Cancel anytime</strong></div>
+        </div>
+      </div>
+
+      <!-- How it works — single line -->
+      <div style="text-align:center; font-size:7pt; color:var(--muted); padding:0.04in 0; border-top:1px solid #e5e7eb; border-bottom:1px solid #e5e7eb; margin:0.04in 0;">
+        <strong style="color:var(--dark);">Sign up free</strong> &rarr; <strong style="color:var(--dark);">Create a deal</strong> &rarr; <strong style="color:var(--dark);">Get paid directly</strong>
+      </div>
+
+      <!-- Testimonial -->
+      <div class="testimonial">
+        <div class="testimonial-quote">"We left our old provider and kept an extra $3,200/month.<br>The AI basically runs our deals for us."</div>
+        <div class="testimonial-author">&mdash; Local Restaurant Owner, Orlando</div>
+      </div>
+
+      <!-- QR Code + CTA -->
+      <div class="back-cta">
+        <div style="margin-bottom:0.05in; text-align:center;">
+          <div style="display:inline-block; border:3px solid var(--orange); border-radius:8px; overflow:hidden; width:0.9in; height:0.9in; margin-bottom:0.04in;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=https%3A%2F%2Fsponticoupon.com%2Fjoin%2Ffree&color=E8632B&format=png&qzone=2" alt="QR Code" style="width:100%; height:100%; display:block;">
+          </div>
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:13pt; color:var(--dark); letter-spacing:0.5px;">SCAN TO SIGN UP FREE</div>
+          <div style="font-family:'Bebas Neue',sans-serif; font-size:9pt; color:var(--orange);">sponticoupon.com/join/free</div>
+          <div style="font-size:6.5pt; color:var(--muted); margin-top:2px;">3 Months Free &bull; No Credit Card &bull; 3 Meses Gratis &bull; Sin Tarjeta</div>
+        </div>
+        <div class="back-contacts" style="text-align:center;">
+          vendors@sponticoupon.com &bull; <span class="blue">fb.com/sponticoupon</span>
+        </div>
+      </div>
+
+      <div class="back-footer-bar"></div>
     </div>
   </div>
 

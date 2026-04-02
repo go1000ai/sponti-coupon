@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 
 const PROMO_CODE = 'PUERTORICO6';
-const FREE_MONTHS = 6;
+const FREE_MONTHS = 3;
 const TIER_VALUE = 199;
 
 const CATEGORIES = [
