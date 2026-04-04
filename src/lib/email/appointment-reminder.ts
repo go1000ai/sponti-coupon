@@ -19,7 +19,7 @@ interface AppointmentReminderParams {
 
 export async function sendAppointmentReminderEmail(params: AppointmentReminderParams) {
   const {
-    to, recipientName, businessName, dealTitle,
+    to, businessName, dealTitle,
     appointmentDate, appointmentEnd, address, phone,
     hoursUntil, isVendorCopy, customerName,
   } = params;

@@ -20,7 +20,7 @@ interface AppointmentConfirmationParams {
 
 export async function sendAppointmentConfirmationEmail(params: AppointmentConfirmationParams) {
   const {
-    to, recipientName, businessName, dealTitle,
+    to, businessName, dealTitle,
     appointmentDate, appointmentEnd, address, phone,
     customerNotes, isVendorCopy, customerName, customerEmail,
   } = params;

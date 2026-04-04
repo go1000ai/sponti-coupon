@@ -21,7 +21,7 @@ interface SlotGeneratorInput {
  * Pure function — no database calls.
  */
 export function generateTimeSlots(input: SlotGeneratorInput): TimeSlot[] {
-  const { date, vendorAvailability, dealOverride, settings, existingAppointments, timezone } = input;
+  const { date, vendorAvailability, dealOverride, settings, existingAppointments } = input;
 
   // If vendor hasn't set availability for this day, no slots
   if (!vendorAvailability || !vendorAvailability.is_available) {
@@ -105,7 +105,7 @@ export function getDayOfWeek(date: Date): number {
 /**
  * Formats a time slot for display
  */
-export function formatSlotTime(isoString: string, timezone: string): string {
+export function formatSlotTime(isoString: string, _timezone?: string): string {
   const date = parseISO(isoString);
   return format(date, 'h:mm a');
 }

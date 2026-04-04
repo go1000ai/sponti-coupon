@@ -4,12 +4,6 @@ import { encrypt, decrypt } from '@/lib/social/crypto';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 
-interface GoogleTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-}
-
 /**
  * Get a valid Google access token for a vendor.
  * Refreshes if expired.

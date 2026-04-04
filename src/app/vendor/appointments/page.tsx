@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
 import { format, parseISO } from 'date-fns';
 import {
   Calendar, Clock, User, CheckCircle, XCircle, AlertCircle,
-  Loader2, Phone, Mail, MessageSquare, ChevronDown,
+  Loader2, Phone, MessageSquare,
 } from 'lucide-react';
 import type { Appointment, AppointmentStatus } from '@/lib/types/database';
 

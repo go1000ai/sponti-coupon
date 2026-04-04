@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { generateTimeSlots, getDayOfWeek, isWithinBookingWindow } from '@/lib/appointments/slot-generator';
-import { startOfDay, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 
 /**
  * GET /api/appointments/slots?deal_id=X&date=YYYY-MM-DD
