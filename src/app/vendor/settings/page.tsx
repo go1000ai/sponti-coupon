@@ -7,7 +7,7 @@ import {
   Settings, Save, Loader2, Building2, Globe, Clock, Bell,
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
-  ExternalLink, AlertTriangle, Info,
+  ExternalLink, AlertTriangle, Info, Calendar,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -43,7 +43,7 @@ const DEFAULT_NOTIFICATIONS: VendorNotificationPreferences = {
   email_digest: true,
 };
 
-type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour';
+type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour' | 'appointments';
 
 const DEFAULT_AUTO_RESPONSE: AutoResponseSettings = {
   enabled: false,
@@ -125,6 +125,18 @@ export default function VendorSettingsPage() {
   // AI Auto-Response settings
   const [autoResponseForm, setAutoResponseForm] = useState<AutoResponseSettings>(DEFAULT_AUTO_RESPONSE);
 
+  // Appointment settings
+  const [appointmentEnabled, setAppointmentEnabled] = useState(false);
+  const [appointmentSettings, setAppointmentSettings] = useState({
+    slot_duration_minutes: 30,
+    buffer_minutes: 10,
+    max_concurrent: 1,
+    advance_booking_days: 14,
+    min_cancel_hours: 24,
+  });
+  const [appointmentAvailability, setAppointmentAvailability] = useState<Record<number, { start_time: string; end_time: string; is_available: boolean }>>({});
+  const [savingAppointments, setSavingAppointments] = useState(false);
+
   // Custom category state
   const [isCustomCategory, setIsCustomCategory] = useState(false);
 
@@ -184,6 +196,30 @@ export default function VendorSettingsPage() {
         if (data.business_hours && Object.keys(data.business_hours).length > 0) {
           setHoursForm(data.business_hours);
         }
+        // Load appointment settings
+        if (data.appointment_settings) {
+          setAppointmentEnabled(data.appointment_settings.enabled || false);
+          setAppointmentSettings({
+            slot_duration_minutes: data.appointment_settings.slot_duration_minutes || 30,
+            buffer_minutes: data.appointment_settings.buffer_minutes || 10,
+            max_concurrent: data.appointment_settings.max_concurrent || 1,
+            advance_booking_days: data.appointment_settings.advance_booking_days || 14,
+            min_cancel_hours: data.appointment_settings.min_cancel_hours || 24,
+          });
+        }
+        // Load appointment availability
+        try {
+          const availRes = await fetch('/api/vendor/availability');
+          if (availRes.ok) {
+            const availData = await availRes.json();
+            const availMap: Record<number, { start_time: string; end_time: string; is_available: boolean }> = {};
+            for (const row of availData.availability || []) {
+              availMap[row.day_of_week] = { start_time: row.start_time, end_time: row.end_time, is_available: row.is_available };
+            }
+            setAppointmentAvailability(availMap);
+          }
+        } catch {}
+
         if (data.notification_preferences) {
           setNotifForm({
             ...DEFAULT_NOTIFICATIONS,
@@ -1122,6 +1158,207 @@ export default function VendorSettingsPage() {
           )}
         </div>
 
+
+        {/* ===== APPOINTMENTS SECTION ===== */}
+        <div className="card overflow-hidden">
+          <button type="button" onClick={() => toggleSection('appointments')} className="w-full flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary-50 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-primary-500" />
+              </div>
+              <div className="text-left">
+                <h3 className="font-semibold text-gray-900">Appointment Booking</h3>
+                <p className="text-sm text-gray-500">Set up availability for appointment-based deals</p>
+              </div>
+            </div>
+            {expandedSection === 'appointments' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+          </button>
+          {expandedSection === 'appointments' && (
+            <div className="px-5 pb-5 space-y-5 border-t border-gray-100 pt-4">
+              {/* Enable Toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900">Enable Appointments</p>
+                  <p className="text-sm text-gray-500">Allow customers to book appointment slots for your deals</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAppointmentEnabled(!appointmentEnabled)}
+                  className={`relative w-12 h-6 rounded-full transition-colors ${appointmentEnabled ? 'bg-primary-500' : 'bg-gray-300'}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${appointmentEnabled ? 'translate-x-6' : ''}`} />
+                </button>
+              </div>
+
+              {appointmentEnabled && (
+                <>
+                  {/* Slot Settings */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Slot Duration</label>
+                      <select
+                        value={appointmentSettings.slot_duration_minutes}
+                        onChange={(e) => setAppointmentSettings({ ...appointmentSettings, slot_duration_minutes: Number(e.target.value) })}
+                        className="input-field w-full"
+                      >
+                        <option value={15}>15 minutes</option>
+                        <option value={30}>30 minutes</option>
+                        <option value={45}>45 minutes</option>
+                        <option value={60}>60 minutes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Buffer Between</label>
+                      <select
+                        value={appointmentSettings.buffer_minutes}
+                        onChange={(e) => setAppointmentSettings({ ...appointmentSettings, buffer_minutes: Number(e.target.value) })}
+                        className="input-field w-full"
+                      >
+                        <option value={0}>No buffer</option>
+                        <option value={5}>5 minutes</option>
+                        <option value={10}>10 minutes</option>
+                        <option value={15}>15 minutes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Max Concurrent</label>
+                      <select
+                        value={appointmentSettings.max_concurrent}
+                        onChange={(e) => setAppointmentSettings({ ...appointmentSettings, max_concurrent: Number(e.target.value) })}
+                        className="input-field w-full"
+                      >
+                        {[1,2,3,4,5,10].map(n => <option key={n} value={n}>{n} at a time</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-1 block">Book Ahead</label>
+                      <select
+                        value={appointmentSettings.advance_booking_days}
+                        onChange={(e) => setAppointmentSettings({ ...appointmentSettings, advance_booking_days: Number(e.target.value) })}
+                        className="input-field w-full"
+                      >
+                        {[7,14,30,60,90].map(n => <option key={n} value={n}>{n} days</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Weekly Availability */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-semibold text-gray-700">Weekly Availability</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Copy from business hours
+                          const newAvail: Record<number, { start_time: string; end_time: string; is_available: boolean }> = {};
+                          const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+                          DAYS_OF_WEEK.forEach(day => {
+                            const bh = hoursForm[day];
+                            newAvail[dayMap[day]] = {
+                              start_time: bh?.open || '09:00',
+                              end_time: bh?.close || '17:00',
+                              is_available: bh ? !bh.closed : false,
+                            };
+                          });
+                          setAppointmentAvailability(newAvail);
+                        }}
+                        className="text-xs text-primary-500 hover:text-primary-600 font-medium"
+                      >
+                        Copy from Business Hours
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((dayName, idx) => {
+                        const avail = appointmentAvailability[idx] || { start_time: '09:00', end_time: '17:00', is_available: false };
+                        return (
+                          <div key={idx} className="flex items-center gap-3">
+                            <div className="w-20 text-sm font-medium text-gray-700">{dayName.slice(0, 3)}</div>
+                            <button
+                              type="button"
+                              onClick={() => setAppointmentAvailability({
+                                ...appointmentAvailability,
+                                [idx]: { ...avail, is_available: !avail.is_available },
+                              })}
+                              className={`w-10 h-5 rounded-full transition-colors ${avail.is_available ? 'bg-green-500' : 'bg-gray-300'}`}
+                            >
+                              <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform ${avail.is_available ? 'translate-x-5 ml-0.5' : 'ml-0.5'}`} />
+                            </button>
+                            {avail.is_available ? (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={avail.start_time}
+                                  onChange={(e) => setAppointmentAvailability({
+                                    ...appointmentAvailability,
+                                    [idx]: { ...avail, start_time: e.target.value },
+                                  })}
+                                  className="input-field text-xs py-1 px-2"
+                                >
+                                  {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                </select>
+                                <span className="text-gray-400 text-xs">to</span>
+                                <select
+                                  value={avail.end_time}
+                                  onChange={(e) => setAppointmentAvailability({
+                                    ...appointmentAvailability,
+                                    [idx]: { ...avail, end_time: e.target.value },
+                                  })}
+                                  className="input-field text-xs py-1 px-2"
+                                >
+                                  {TIME_OPTIONS.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                </select>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">Closed</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Save Appointment Settings */}
+                  <button
+                    type="button"
+                    disabled={savingAppointments}
+                    onClick={async () => {
+                      setSavingAppointments(true);
+                      try {
+                        const availArray = Object.entries(appointmentAvailability).map(([dow, val]) => ({
+                          day_of_week: Number(dow),
+                          start_time: val.start_time,
+                          end_time: val.end_time,
+                          is_available: val.is_available,
+                        }));
+                        const res = await fetch('/api/vendor/availability', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            settings: { ...appointmentSettings, enabled: appointmentEnabled },
+                            availability: availArray,
+                          }),
+                        });
+                        if (res.ok) {
+                          setMessage({ type: 'success', text: 'Appointment settings saved!' });
+                        } else {
+                          const data = await res.json();
+                          setMessage({ type: 'error', text: data.error || 'Failed to save' });
+                        }
+                      } catch {
+                        setMessage({ type: 'error', text: 'Failed to save appointment settings' });
+                      } finally {
+                        setSavingAppointments(false);
+                      }
+                    }}
+                    className="w-full btn-primary flex items-center justify-center gap-2"
+                  >
+                    {savingAppointments ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {savingAppointments ? 'Saving...' : 'Save Appointment Settings'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Save Button */}
         <div className="flex justify-end sticky bottom-4">

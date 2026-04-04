@@ -13,6 +13,7 @@ import {
   Navigation, Copy, Check, Calendar,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import AppointmentPicker from '@/components/appointments/AppointmentPicker';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { useLanguage } from '@/lib/i18n';
 import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
@@ -98,6 +99,8 @@ export default function DealDetailPage() {
   const [reviewComment, setReviewComment] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showAppointmentPicker, setShowAppointmentPicker] = useState(false);
+  const [selectedAppointmentTime, setSelectedAppointmentTime] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchDeal() {
@@ -211,18 +214,69 @@ export default function DealDetailPage() {
   const handleClaim = async () => {
     if (!user) { router.push(`/auth/login?redirect=/deals/${params.id}`); return; }
     if (isOwnDeal) { setError(t('dealDetail.cannotClaimOwn')); return; }
+    // If deal requires appointment and user hasn't picked a slot yet, show picker
+    if (deal?.requires_appointment && !selectedAppointmentTime) {
+      setShowAppointmentPicker(true);
+      return;
+    }
     if (deal?.deposit_amount && deal.deposit_amount > 0) { setShowDisclaimer(true); return; }
     await processClaim();
   };
 
-  const processClaim = async () => {
+  const handleAppointmentSelected = (startTime: string) => {
+    setSelectedAppointmentTime(startTime);
+    setShowAppointmentPicker(false);
+    // Now continue with the claim flow
+    if (deal?.deposit_amount && deal.deposit_amount > 0) {
+      setShowDisclaimer(true);
+    } else {
+      processClaimWithAppointment(startTime);
+    }
+  };
+
+  const processClaimWithAppointment = async (appointmentTime: string) => {
     setClaiming(true);
     setError('');
     try {
       const response = await fetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deal_id: deal?.id }),
+        body: JSON.stringify({ deal_id: deal?.id, appointment_start_time: appointmentTime }),
+      });
+      const data = await response.json();
+      if (!response.ok) { setError(data.error); setClaiming(false); return; }
+
+      trackEvent('Lead', {
+        content_name: deal?.title,
+        content_category: deal?.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal',
+        value: deal?.deal_price || 0,
+        currency: 'USD',
+      });
+
+      if (data.payment_tier === 'integrated' && data.redirect_url) {
+        window.location.href = data.redirect_url;
+        return;
+      }
+      if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+        return;
+      }
+      router.push('/dashboard/my-deals');
+    } catch { setError(t('dealDetail.failedToClaim')); }
+    setClaiming(false);
+    setShowDisclaimer(false);
+  };
+
+  const processClaim = async () => {
+    setClaiming(true);
+    setError('');
+    try {
+      const claimBody: Record<string, unknown> = { deal_id: deal?.id };
+      if (selectedAppointmentTime) claimBody.appointment_start_time = selectedAppointmentTime;
+      const response = await fetch('/api/claims', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(claimBody),
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error); setClaiming(false); return; }
@@ -1270,6 +1324,18 @@ export default function DealDetailPage() {
               </div>
             )}
       </div>
+
+      {/* ===== APPOINTMENT PICKER MODAL ===== */}
+      {showAppointmentPicker && deal && (
+        <AppointmentPicker
+          dealId={deal.id}
+          dealTitle={deal.title}
+          businessName={deal.vendor?.business_name || 'Business'}
+          advanceBookingDays={14}
+          onSelect={handleAppointmentSelected}
+          onClose={() => setShowAppointmentPicker(false)}
+        />
+      )}
 
       {/* ===== DISCLAIMER MODAL ===== */}
       {showDisclaimer && (
