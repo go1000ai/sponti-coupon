@@ -29,6 +29,7 @@ import {
   ShoppingBag,
   Share2,
   Play,
+  Calendar,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
@@ -87,6 +88,7 @@ function useNavItems(): NavItem[] {
         { label: t('vendor.sidebar.avaInsights'), href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full object-cover" /> },
         { label: t('vendor.sidebar.reviews'), href: '/vendor/reviews', icon: <MessageSquare className="w-4 h-4" /> },
         { label: t('vendor.sidebar.customers'), href: '/vendor/customers', icon: <ShoppingBag className="w-4 h-4" /> },
+        { label: 'Appointments', href: '/vendor/appointments', icon: <Calendar className="w-4 h-4" /> },
         { label: t('vendor.sidebar.locations'), href: '/vendor/locations', icon: <MapPin className="w-4 h-4" /> },
         { label: t('vendor.sidebar.team'), href: '/vendor/team', icon: <Users className="w-4 h-4" /> },
       ],

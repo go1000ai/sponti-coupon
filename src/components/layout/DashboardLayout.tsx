@@ -19,12 +19,14 @@ import {
   User,
   Headphones,
   ArrowLeftRight,
+  Calendar,
 } from 'lucide-react';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'My Coupons', href: '/dashboard/my-deals', icon: Ticket, dataTour: 'customer-nav-coupons' },
+  { label: 'Appointments', href: '/dashboard/appointments', icon: Calendar, dataTour: 'customer-nav-appointments' },
   { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift, dataTour: 'customer-nav-loyalty' },
   { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart, dataTour: 'customer-nav-foryou' },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell, dataTour: 'customer-nav-notifications' },
