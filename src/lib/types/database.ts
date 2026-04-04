@@ -101,6 +101,7 @@ export interface Vendor {
   paypal_connect_onboarding_complete: boolean;
   paypal_connect_charges_enabled: boolean;
   average_ticket_value: number | null;
+  appointment_settings: VendorAppointmentSettings;
   created_at: string;
 }
 
@@ -170,6 +171,7 @@ export interface Deal {
   highlights: string[];
   fine_print: string | null;
   requires_appointment: boolean;
+  appointment_availability_override: DealAvailabilityOverride | null;
   search_tags: string[];
   category_id: string | null;
   variants: DealVariant[];
@@ -200,6 +202,7 @@ export interface Claim {
   stripe_checkout_session_id: string | null;
   deposit_amount_paid: number | null;
   payment_reference: string | null;
+  appointment_id: string | null;
   expires_at: string;
   created_at: string;
   // Joined fields
@@ -517,6 +520,84 @@ export const TIER_ORDER: SubscriptionTier[] = ['starter', 'pro', 'business', 'en
 
 // Feature flag keys (excluding non-boolean fields)
 export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'max_team_members' | 'stripe_price_id' | 'stripe_annual_price_id'>;
+
+// Appointment Booking System
+export type AppointmentStatus = 'pending' | 'confirmed' | 'rescheduled' | 'cancelled' | 'completed' | 'no_show';
+
+export interface VendorAppointmentSettings {
+  slot_duration_minutes: number;  // 15 | 30 | 45 | 60
+  buffer_minutes: number;         // 0 | 5 | 10 | 15
+  max_concurrent: number;         // How many bookings per slot (e.g., salon with 3 chairs)
+  advance_booking_days: number;   // How far ahead customers can book (1-90)
+  min_cancel_hours: number;       // Minimum cancellation notice (1-48)
+  enabled: boolean;
+}
+
+export interface VendorAvailability {
+  id: string;
+  vendor_id: string;
+  day_of_week: number;  // 0=Sunday, 1=Monday, ..., 6=Saturday
+  start_time: string;   // "09:00"
+  end_time: string;     // "17:00"
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VendorBlockedDate {
+  id: string;
+  vendor_id: string;
+  blocked_date: string;  // "YYYY-MM-DD"
+  reason: string | null;
+  created_at: string;
+}
+
+// Per-deal availability override: keys are day_of_week (0-6)
+export type DealAvailabilityOverride = Record<string, { start: string; end: string }>;
+
+export interface Appointment {
+  id: string;
+  claim_id: string | null;
+  deal_id: string;
+  vendor_id: string;
+  customer_id: string;
+  appointment_date: string;  // "YYYY-MM-DD"
+  start_time: string;        // ISO 8601 TIMESTAMPTZ
+  end_time: string;          // ISO 8601 TIMESTAMPTZ
+  status: AppointmentStatus;
+  cancelled_by: string | null;       // 'vendor' | 'customer'
+  cancellation_reason: string | null;
+  rescheduled_from: string | null;   // appointment ID
+  google_calendar_event_id: string | null;
+  vendor_notes: string | null;
+  customer_notes: string | null;
+  reminder_24h_sent_at: string | null;
+  reminder_1h_sent_at: string | null;
+  confirmation_sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  deal?: Deal;
+  vendor?: Vendor;
+  customer?: Customer;
+  claim?: Claim;
+}
+
+export interface VendorGoogleCalendar {
+  id: string;
+  vendor_id: string;
+  google_email: string | null;
+  calendar_id: string;
+  connected_at: string;
+  updated_at: string;
+}
+
+export interface TimeSlot {
+  start: string;      // ISO 8601
+  end: string;        // ISO 8601
+  available: boolean;
+  remaining: number;  // slots left (max_concurrent - booked)
+}
 
 // Support Ticket System
 export type SupportTicketStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
