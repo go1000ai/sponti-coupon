@@ -27,7 +27,7 @@ const PLATFORMS = [
   { key: 'facebook' as const, label: 'Facebook', icon: <Facebook className="w-5 h-5" />, iconColor: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', connectUrl: '/api/social/connect/facebook/authorize', available: true },
   { key: 'instagram' as const, label: 'Instagram', icon: <Instagram className="w-5 h-5" />, iconColor: 'text-pink-500', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', connectUrl: '/api/social/connect/instagram/authorize', available: true },
   { key: 'twitter' as const, label: 'X (Twitter)', icon: <Twitter className="w-5 h-5" />, iconColor: 'text-gray-800', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', connectUrl: '/api/social/connect/twitter/authorize', available: false },
-  { key: 'tiktok' as const, label: 'TikTok', icon: <TikTokIcon className="w-5 h-5" />, iconColor: 'text-gray-800', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', connectUrl: '/api/social/connect/tiktok/authorize', available: false },
+  { key: 'tiktok' as const, label: 'TikTok', icon: <TikTokIcon className="w-5 h-5" />, iconColor: 'text-gray-800', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', connectUrl: '/api/social/connect/tiktok/authorize', available: true },
 ] as const;
 
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {

@@ -109,6 +109,7 @@ export function Footer() {
               <li><Link href="/loyalty-terms" className="hover:text-secondary-400 transition-colors">{t('footer.spontiPointsTerms')}</Link></li>
               <li><Link href="/dispute-policy" className="hover:text-secondary-400 transition-colors">{t('footer.disputePolicy')}</Link></li>
               <li><Link href="/dmca-policy" className="hover:text-secondary-400 transition-colors">{t('footer.dmca')}</Link></li>
+              <li><Link href="/law-enforcement-guidelines" className="hover:text-secondary-400 transition-colors">Law Enforcement</Link></li>
               <li><Link href="/cookies" className="hover:text-secondary-400 transition-colors">{t('footer.cookiePolicy')}</Link></li>
               <li><Link href="/privacy#do-not-sell" className="hover:text-secondary-400 transition-colors">{t('footer.doNotSell')}</Link></li>
             </ul>

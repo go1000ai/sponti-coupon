@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       </Link>
 
       <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-      <p className="text-gray-400 mb-10">Last updated: March 3, 2026</p>
+      <p className="text-gray-400 mb-10">Last updated: April 3, 2026</p>
 
       <div className="prose prose-gray max-w-none space-y-8">
         <section>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
             <li><strong>With Vendors:</strong> When you claim a deal, the Vendor receives your name and email to verify your redemption. Vendors do not receive your payment details.</li>
             <li><strong>Payment Processors:</strong> We use Stripe for payment processing. Stripe handles your payment data under their own privacy policy. We do not store credit card numbers on our servers.</li>
             <li><strong>Service Providers:</strong> We use Supabase for database hosting and Vercel for application hosting. These providers process data on our behalf under strict data processing agreements.</li>
-            <li><strong>Legal Requirements:</strong> We may disclose information if required by law, court order, or government request, or to protect the rights, property, or safety of our users or the public.</li>
+            <li><strong>Legal Requirements:</strong> We may disclose information if required by law, court order, or government request, or to protect the rights, property, or safety of our users or the public. All government and law enforcement data requests are subject to our <Link href="/law-enforcement-guidelines" className="text-primary-500 hover:underline">Law Enforcement Guidelines</Link>, which require legal review, data minimization, and documentation of every request.</li>
             <li><strong>Business Transfers:</strong> In the event of a merger, acquisition, or sale of assets, user data may be transferred as part of the transaction.</li>
           </ul>
         </section>
