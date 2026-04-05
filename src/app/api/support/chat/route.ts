@@ -384,7 +384,7 @@ COMMON APPOINTMENT QUESTIONS:
 "I need to block a day off" → You can block specific dates so no one can book those days. This feature is in your appointment settings.
 
 SOCIAL MEDIA AUTO-POSTING (Business+):
-When a deal is published, it auto-posts to connected social accounts (SpontiCoupon brand + vendor's accounts). AI generates platform-specific captions. Connect accounts at Settings > Social Connections via OAuth.
+When a deal is published, it auto-posts to connected social accounts (SpontiCoupon brand + vendor's accounts). AI generates platform-specific captions and recommends the optimal date and time to post based on platform best practices, audience engagement patterns, and conflict avoidance with other scheduled posts. The AI scheduling considers morning (9 AM), afternoon (1 PM), and evening (6 PM) windows and adjusts per platform (e.g., Instagram posts shifted slightly later). Vendors can also manually schedule posts for a specific date/time or override the AI recommendation. Connect accounts at Settings > Social Connections via OAuth.
 
 TROUBLESHOOTING SOCIAL:
 - "Post failed" → Account may have disconnected. Re-connect at Settings > Social Connections.
