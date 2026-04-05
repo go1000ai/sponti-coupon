@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 /**
  * GET /api/vendor/availability
@@ -66,30 +66,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Advance booking days must be 1-90' }, { status: 400 });
   }
 
+  const serviceClient = await createServiceRoleClient();
+
   // Update vendor appointment settings
-  const { error: settingsError } = await supabase
+  const { error: settingsError } = await serviceClient
     .from('vendors')
     .update({ appointment_settings: settings })
     .eq('id', user.id);
 
   if (settingsError) {
+    console.error('Failed to update appointment settings:', settingsError);
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
   }
 
   // Upsert availability for each day
+  // For closed days, use default times to satisfy the CHECK constraint (end_time > start_time)
   const upsertRows = availability.map((day: { day_of_week: number; start_time: string; end_time: string; is_available: boolean }) => ({
     vendor_id: user.id,
     day_of_week: day.day_of_week,
-    start_time: day.start_time,
-    end_time: day.end_time,
+    start_time: (!day.is_available || !day.start_time || day.start_time === '00:00') ? '09:00' : day.start_time,
+    end_time: (!day.is_available || !day.end_time || day.end_time === '00:00') ? '17:00' : day.end_time,
     is_available: day.is_available,
   }));
 
-  const { error: availError } = await supabase
+  const { error: availError } = await serviceClient
     .from('vendor_availability')
     .upsert(upsertRows, { onConflict: 'vendor_id,day_of_week' });
 
   if (availError) {
+    console.error('Failed to update availability:', availError);
     return NextResponse.json({ error: 'Failed to update availability' }, { status: 500 });
   }
 
