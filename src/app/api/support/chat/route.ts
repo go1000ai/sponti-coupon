@@ -119,7 +119,8 @@ VENDOR DASHBOARD FEATURES:
 - Subscription: manage plan, view billing.
 - Payment Methods: add and manage payment processors (Stripe, Square, PayPal, Venmo, Zelle, Cash App). Set a primary method for customer deposits.
 - Support: chat with Olivia (me!) or open support tickets.
-- Settings: business info, hours, social links, notifications, auto-response settings.
+- Appointments: calendar view of customer appointments. Confirm, complete, cancel, or mark no-show. Manage availability and blocked dates in Settings.
+- Settings: business info, hours, social links, notifications, auto-response settings, appointment booking setup.
 
 AI FEATURES:
 - AI Image Generation: when creating/editing a deal, click "Generate with AI" to create a professional deal image automatically. No photos needed.
@@ -137,6 +138,7 @@ CUSTOMER FEATURES:
 - Earn 25 SpontiPoints per deal redemption at any business, redeemable for platform credit.
 - Leave reviews after redeeming deals.
 - Loyalty Rewards page has two tabs: "SpontiPoints" (platform credits) and "Business Rewards" (vendor punch cards/points).
+- Appointments page to view booked appointments, cancel, and add to Google Calendar.
 - Account settings, notification preferences.
 
 PAYMENTS & PAYMENT METHODS:
@@ -320,6 +322,67 @@ Sections:
 6. Auto-Response Settings: Enable/disable, tone, delay, include negative reviews toggle.
 7. Guided Tour: Toggle auto-start on next visit.
 
+APPOINTMENT BOOKING SYSTEM:
+Vendors who offer services that require appointments (salons, spas, auto detailing, etc.) can enable the appointment booking system.
+
+HOW TO ENABLE APPOINTMENTS (vendor):
+1. Go to Settings ({{BASE_URL}}/vendor/settings).
+2. Scroll down to "Appointment Booking" section.
+3. Toggle "Enable Appointments" on.
+4. Set your preferences:
+   - Slot Duration: how long each appointment is (15, 30, 45, or 60 minutes).
+   - Buffer Between: break time between appointments (0, 5, 10, or 15 minutes).
+   - Max Concurrent: how many customers can book the same time slot (1 for solo, 2-10 for multi-chair/room businesses).
+   - Book Ahead: how far in advance customers can book (7 to 90 days).
+5. Set your weekly availability — pick which days you're available and set start/end times for each day. You can click "Copy from Business Hours" to use your existing store hours.
+6. Click "Save Appointment Settings."
+
+HOW TO CREATE AN APPOINTMENT-BASED DEAL (vendor):
+1. Create a new deal at {{BASE_URL}}/vendor/deals/new.
+2. During creation, toggle "Appointment Required" to Yes.
+3. When customers claim this deal, they'll be asked to pick a time slot before completing the claim.
+
+HOW CUSTOMERS BOOK APPOINTMENTS:
+1. Customer finds a deal marked "Appointment Required."
+2. Customer clicks "Claim."
+3. An appointment picker pops up showing available dates and time slots.
+4. Customer selects a date, picks a time, and optionally adds notes.
+5. Customer clicks "Confirm & Continue."
+6. If the deal has a deposit, they proceed to payment. If not, the claim is completed instantly.
+7. Both customer and vendor receive confirmation emails.
+8. Reminder emails are sent 24 hours and 1 hour before the appointment.
+
+MANAGING APPOINTMENTS (vendor):
+- Go to Appointments ({{BASE_URL}}/vendor/appointments) in the sidebar under Business.
+- You'll see a monthly calendar with colored dots showing appointment statuses:
+  - Green = Confirmed
+  - Yellow = Pending
+  - Blue = Completed
+  - Red = Cancelled
+- Click any day to see that day's appointments with customer details.
+- Actions: Confirm (for pending), Complete, Cancel, or mark No Show.
+
+CUSTOMER APPOINTMENTS:
+- Customers view their appointments at {{BASE_URL}}/dashboard/appointments.
+- They can cancel appointments (with minimum notice as set by the vendor).
+- They can add appointments to Google Calendar.
+
+BLOCKED DATES:
+- Vendors can block specific dates (holidays, vacations) so no appointments can be booked on those days.
+
+GOOGLE CALENDAR SYNC (optional):
+- Vendors can connect Google Calendar in Settings to automatically create calendar events for each appointment.
+
+COMMON APPOINTMENT QUESTIONS:
+
+"How do I enable appointments?" → Go to Settings, scroll to Appointment Booking, toggle it on, set your hours and preferences, and save. Then create a deal with "Appointment Required" toggled on.
+
+"Can I limit how many appointments per time slot?" → Yes! In Settings under Appointment Booking, set "Max Concurrent" to however many you can handle at once. For example, a salon with 3 chairs would set it to 3.
+
+"Customer wants to cancel" → Customers can cancel from their dashboard. You set the minimum cancellation notice (e.g., 24 hours) in your appointment settings.
+
+"I need to block a day off" → You can block specific dates so no one can book those days. This feature is in your appointment settings.
+
 SOCIAL MEDIA AUTO-POSTING (Business+):
 When a deal is published, it auto-posts to connected social accounts (SpontiCoupon brand + vendor's accounts). AI generates platform-specific captions. Connect accounts at Settings > Social Connections via OAuth.
 
@@ -329,7 +392,7 @@ TROUBLESHOOTING SOCIAL:
 - Token expired → Disconnect and re-connect the account.
 
 VENDOR SIDEBAR NAVIGATION (in order):
-Dashboard, Scan & Redeem, Analytics, Ava Insights, My Deals, Website Import, Media Library, Reviews, Loyalty Programs, Customers, Locations, Team, API Keys, Social Connections, Branding, Subscription, Get Paid, Support, Settings.
+Dashboard, Scan & Redeem, Analytics, Ava Insights, My Deals, Website Import, Media Library, Reviews, Loyalty Programs, Customers, Appointments, Locations, Team, API Keys, Social Connections, Branding, Subscription, Get Paid, Support, Settings.
 
 FEATURES BY TIER:
 - Starter: Create deals (2S+4R), QR/code redemption, basic KPI cards, email support, zero fees.
