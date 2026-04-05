@@ -205,15 +205,10 @@ export default function CustomerAppointmentsPage() {
                 {/* Actions Footer */}
                 {tab === 'upcoming' && (
                   <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-t border-gray-100">
-                    <a
-                      href={getGoogleCalendarUrl(appt)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Add to Google Calendar
-                    </a>
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400">
+                      <Calendar className="w-3 h-3" />
+                      Google Calendar — Coming Soon
+                    </span>
                     <div className="flex-1" />
                     <button
                       onClick={() => handleCancel(appt.id)}

@@ -370,8 +370,8 @@ CUSTOMER APPOINTMENTS:
 BLOCKED DATES:
 - Vendors can block specific dates (holidays, vacations) so no appointments can be booked on those days.
 
-GOOGLE CALENDAR SYNC (optional):
-- Vendors can connect Google Calendar in Settings to automatically create calendar events for each appointment.
+GOOGLE CALENDAR SYNC:
+- Google Calendar integration is coming soon. For now, vendors and customers manage all appointments directly through the SpontiCoupon calendar in the Appointments page. If a customer asks about Google Calendar, let them know it's coming soon and they can use the SpontiCoupon calendar in the meantime.
 
 COMMON APPOINTMENT QUESTIONS:
 
