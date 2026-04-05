@@ -97,7 +97,9 @@ export async function GET(request: NextRequest) {
   }
 
   // 5. Get vendor availability for this day of week
-  const dayOfWeek = getDayOfWeek(targetDate);
+  // Use noon to avoid UTC midnight timezone issues
+  const localDate = new Date(dateStr + 'T12:00:00');
+  const dayOfWeek = localDate.getDay();
 
   const { data: availability } = await supabase
     .from('vendor_availability')
