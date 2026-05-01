@@ -13,6 +13,7 @@ import {
   ExternalLink,
   AlertCircle,
   Plus,
+  Check,
 } from 'lucide-react';
 
 type BrandConnection = {
@@ -71,6 +72,12 @@ export default function AdminSocialPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
   const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [bulkPosting, setBulkPosting] = useState(false);
+  const [platformFilter, setPlatformFilter] = useState<'all' | 'facebook' | 'instagram'>('all');
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const showToast = (kind: 'ok' | 'err', msg: string) => {
     setToast({ kind, msg });
@@ -104,7 +111,7 @@ export default function AdminSocialPage() {
       const res = await fetch('/api/admin/social/post-deal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dealId }),
+        body: JSON.stringify({ dealId, platforms: platformsForFilter() }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -115,6 +122,56 @@ export default function AdminSocialPage() {
       }
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const toggleChecked = (dealId: string) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(dealId)) next.delete(dealId);
+      else next.add(dealId);
+      return next;
+    });
+  };
+
+  const toggleAllChecked = () => {
+    setCheckedIds((prev) => {
+      if (prev.size === recentDeals.length) return new Set();
+      return new Set(recentDeals.map((d) => d.id));
+    });
+  };
+
+  const clearChecked = () => setCheckedIds(new Set());
+
+  const platformsForFilter = (): string[] | undefined => {
+    if (platformFilter === 'all') return undefined;
+    return [platformFilter];
+  };
+
+  const bulkPost = async () => {
+    const ids = Array.from(checkedIds);
+    if (ids.length === 0) return;
+    setBulkPosting(true);
+    try {
+      const res = await fetch('/api/admin/social/bulk-post-deals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dealIds: ids, platforms: platformsForFilter() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast('err', data.error || 'Bulk post failed');
+        return;
+      }
+      const posted = data.posted ?? 0;
+      const failed = data.failed ?? 0;
+      const missing = data.missing ?? 0;
+      const summary = `${posted}/${ids.length} posted${failed ? ` · ${failed} failed` : ''}${missing ? ` · ${missing} missing` : ''}`;
+      showToast(failed > 0 ? 'err' : 'ok', summary);
+      setCheckedIds(new Set());
+      await refresh();
+    } finally {
+      setBulkPosting(false);
     }
   };
 
@@ -151,6 +208,25 @@ export default function AdminSocialPage() {
     ? recentPosts.filter((p) => p.deal_id === selectedDealId)
     : [];
   const selectedHasPosted = selectedDealPosts.some((p) => p.status === 'posted');
+
+  // Apply client-side filters: search (deal title or vendor name) + date range
+  const searchLower = search.trim().toLowerCase();
+  const fromTs = dateFrom ? new Date(dateFrom).getTime() : 0;
+  const toTs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : Number.MAX_SAFE_INTEGER;
+  const filteredDeals = recentDeals.filter((d) => {
+    if (searchLower) {
+      const hay = `${d.title} ${d.vendor?.business_name || ''}`.toLowerCase();
+      if (!hay.includes(searchLower)) return false;
+    }
+    const created = new Date(d.created_at).getTime();
+    if (created < fromTs || created > toTs) return false;
+    return true;
+  });
+
+  // Brand connections filtered for status pills based on platform filter
+  const visibleBrandConns = brandConnections.filter((c) =>
+    platformFilter === 'all' ? true : c.platform === platformFilter
+  );
 
   return (
     <div>
@@ -236,23 +312,114 @@ export default function AdminSocialPage() {
 
         {/* Recent deals — bento grid */}
         <section className="mb-8">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-gray-900">Recent deals</h2>
-            <p className="text-xs text-gray-500">Click a card for post details</p>
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Recent deals</h2>
+              {filteredDeals.length > 0 && (
+                <button
+                  onClick={toggleAllChecked}
+                  className="text-xs text-gray-600 hover:text-primary-600 underline-offset-2 hover:underline"
+                >
+                  {checkedIds.size === filteredDeals.length ? 'Deselect all' : 'Select all'}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gray-500">
+              {checkedIds.size > 0
+                ? `${checkedIds.size} selected`
+                : `${filteredDeals.length} deals · click for details · check for bulk post`}
+            </p>
+          </div>
+
+          {/* Filters: platform · search · date range */}
+          <div className="bg-white rounded-lg border border-gray-200 p-3 mb-3 flex flex-wrap items-center gap-3">
+            {/* Platform chips */}
+            <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-md">
+              {(['all', 'facebook', 'instagram'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPlatformFilter(p)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    platformFilter === p
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {p === 'facebook' && <Facebook className="w-3.5 h-3.5" />}
+                  {p === 'instagram' && <Instagram className="w-3.5 h-3.5" />}
+                  {p === 'all' ? 'Both' : p[0].toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+            {/* Search */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search deal title or vendor name…"
+                className="w-full px-3 py-1.5 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+            {/* Date range */}
+            <div className="flex items-center gap-2 text-sm">
+              <label className="text-gray-600">From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="px-2 py-1 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <label className="text-gray-600">to</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="px-2 py-1 text-sm rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              {(dateFrom || dateTo || search || platformFilter !== 'all') && (
+                <button
+                  onClick={() => {
+                    setSearch('');
+                    setDateFrom('');
+                    setDateTo('');
+                    setPlatformFilter('all');
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline ml-1"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
           {loading ? (
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">Loading…</div>
-          ) : recentDeals.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">No deals yet.</div>
+          ) : filteredDeals.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">
+              {recentDeals.length === 0 ? 'No deals yet.' : 'No deals match the current filter.'}
+            </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {recentDeals.map((deal) => {
+              {filteredDeals.map((deal) => {
                 const statuses = dealPostStatus[deal.id] || {};
+                const isChecked = checkedIds.has(deal.id);
                 return (
-                  <button
+                  <div
                     key={deal.id}
                     onClick={() => setSelectedDealId(deal.id)}
-                    className="group bg-white rounded-lg border border-gray-200 overflow-hidden text-left hover:border-primary-500 hover:shadow-lg transition-all flex flex-col"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedDealId(deal.id);
+                      }
+                    }}
+                    className={`group bg-white rounded-lg border overflow-hidden text-left hover:shadow-lg transition-all flex flex-col cursor-pointer ${
+                      isChecked
+                        ? 'border-primary-500 ring-2 ring-primary-500'
+                        : 'border-gray-200 hover:border-primary-500'
+                    }`}
                   >
                     <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
                       {deal.image_url && (
@@ -263,8 +430,24 @@ export default function AdminSocialPage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         />
                       )}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleChecked(deal.id);
+                        }}
+                        aria-label={isChecked ? 'Deselect deal' : 'Select deal'}
+                        aria-pressed={isChecked}
+                        className={`absolute top-2 left-2 w-6 h-6 rounded-md flex items-center justify-center shadow-sm transition-all ${
+                          isChecked
+                            ? 'bg-primary-500 text-white'
+                            : 'bg-white/90 hover:bg-white border border-gray-300 text-transparent hover:text-gray-400'
+                        }`}
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
                       <div className="absolute top-2 right-2 flex gap-1">
-                        {brandConnections.map((conn) => {
+                        {visibleBrandConns.map((conn) => {
                           const s = statuses[conn.platform];
                           const cls =
                             s === 'posted'
@@ -297,7 +480,7 @@ export default function AdminSocialPage() {
                         {deal.status}
                       </p>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -399,6 +582,37 @@ export default function AdminSocialPage() {
           </div>
         </section>
       </div>
+
+      {/* Floating bulk action bar */}
+      {checkedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white rounded-full shadow-2xl flex items-center gap-2 pl-5 pr-2 py-2">
+          <span className="text-sm font-medium">
+            {checkedIds.size} deal{checkedIds.size === 1 ? '' : 's'} selected
+          </span>
+          <span className="text-xs text-gray-400 hidden sm:inline">
+            Posting to{' '}
+            {platformFilter === 'all' ? 'Facebook + Instagram' : platformFilter === 'facebook' ? 'Facebook only' : 'Instagram only'}
+          </span>
+          <button
+            onClick={bulkPost}
+            disabled={bulkPosting}
+            className="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold disabled:opacity-60"
+          >
+            {bulkPosting ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            Post selected
+          </button>
+          <button
+            onClick={clearChecked}
+            className="ml-1 px-3 py-2 rounded-full hover:bg-gray-800 text-gray-300 text-sm"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* Deal detail modal */}
       {selectedDealId && selectedDeal && (

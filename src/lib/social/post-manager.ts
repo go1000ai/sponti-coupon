@@ -15,6 +15,8 @@ interface PostDealOptions {
   customCaptions?: Record<string, string>;
   postIds?: string[];
   brandOnly?: boolean;
+  /** If provided, only post to connections whose platform is in this list. */
+  platforms?: string[];
 }
 
 /**
@@ -69,9 +71,15 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
     .eq('is_active', true);
 
   // Drop vendor-account connections when the tier doesn't allow them.
-  const connections = (allConnections || []).filter(
-    c => c.is_brand_account || vendorTierAllowsSocial
-  );
+  // Also drop platforms not requested if the caller specified a subset.
+  const allowedPlatforms = options?.platforms && options.platforms.length > 0
+    ? new Set(options.platforms)
+    : null;
+  const connections = (allConnections || []).filter((c) => {
+    if (!c.is_brand_account && !vendorTierAllowsSocial) return false;
+    if (allowedPlatforms && !allowedPlatforms.has(c.platform)) return false;
+    return true;
+  });
 
   if (connections.length === 0) {
     console.log('[Social Post] No eligible social connections for vendor:', vendorId);

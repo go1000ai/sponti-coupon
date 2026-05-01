@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return forbiddenResponse();
 
-  let body: { dealId?: string };
+  let body: { dealId?: string; platforms?: string[] };
   try {
     body = await request.json();
   } catch {
@@ -26,6 +26,10 @@ export async function POST(request: NextRequest) {
   if (!dealId) {
     return NextResponse.json({ error: 'dealId required' }, { status: 400 });
   }
+
+  const platforms = Array.isArray(body.platforms) && body.platforms.length > 0
+    ? body.platforms.map(String)
+    : undefined;
 
   const supabase = await createServiceRoleClient();
   const { data: deal } = await supabase
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 
-  await postDealToSocial(deal.id, deal.vendor_id, { brandOnly: true });
+  await postDealToSocial(deal.id, deal.vendor_id, { brandOnly: true, platforms });
 
   return NextResponse.json({ success: true });
 }
