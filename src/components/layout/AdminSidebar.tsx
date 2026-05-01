@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -36,6 +36,7 @@ import {
   Share2,
   Target,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/lib/i18n';
@@ -56,54 +57,56 @@ function useNavGroups(): NavGroup[] {
   const { t } = useLanguage();
   return [
     {
-      label: t('admin.sidebar.main'),
+      label: t('admin.sidebar.daily'),
       items: [
         { label: t('admin.sidebar.overview'), href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
-      ],
-    },
-    {
-      label: t('admin.sidebar.marketplace'),
-      items: [
-        { label: t('admin.sidebar.vendors'), href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
-        { label: t('admin.sidebar.customers'), href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
         { label: t('admin.sidebar.deals'), href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
         { label: t('admin.sidebar.dealCalendar'), href: '/admin/deals/calendar', icon: <Calendar className="w-5 h-5" /> },
         { label: t('admin.sidebar.claims'), href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
-        { label: t('admin.sidebar.reviews'), href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
-        { label: t('admin.sidebar.locations'), href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
-        { label: t('admin.sidebar.leads'), href: '/admin/leads', icon: <Target className="w-5 h-5" /> },
-        { label: 'Prospects', href: '/admin/prospects', icon: <UsersRound className="w-5 h-5" /> },
+        { label: t('admin.sidebar.vendors'), href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
+        { label: t('admin.sidebar.customers'), href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
       ],
     },
     {
-      label: t('admin.sidebar.loyalty'),
+      label: t('admin.sidebar.growth'),
+      items: [
+        { label: t('admin.sidebar.leads'), href: '/admin/leads', icon: <Target className="w-5 h-5" /> },
+        { label: 'Prospects', href: '/admin/prospects', icon: <UsersRound className="w-5 h-5" /> },
+        { label: 'Marketing Agent', href: '/admin/marketing', icon: <Sparkles className="w-5 h-5" /> },
+        { label: t('admin.sidebar.featuredDeals'), href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.engagement'),
       items: [
         { label: t('admin.sidebar.loyaltyPrograms'), href: '/admin/loyalty', icon: <Gift className="w-5 h-5" /> },
         { label: t('admin.sidebar.spontiPoints'), href: '/admin/spontipoints', icon: <Coins className="w-5 h-5" /> },
-      ],
-    },
-    {
-      label: t('admin.sidebar.platform'),
-      items: [
-        { label: t('admin.sidebar.categories'), href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5" /> },
-        { label: t('admin.sidebar.featuredDeals'), href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
-        { label: t('admin.sidebar.subscriptions'), href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+        { label: t('admin.sidebar.reviews'), href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
         { label: t('admin.sidebar.notifications'), href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
-        { label: t('admin.sidebar.mediaLibrary'), href: '/admin/media', icon: <ImageIcon className="w-5 h-5" /> },
-        { label: t('admin.sidebar.getPaid'), href: '/admin/payment-methods', icon: <DollarSign className="w-5 h-5" /> },
-        { label: t('admin.sidebar.teams'), href: '/admin/teams', icon: <UsersRound className="w-5 h-5" /> },
-        { label: t('admin.sidebar.websiteImport'), href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
-        { label: t('admin.sidebar.aiTools'), href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
-        { label: t('admin.sidebar.knowledgeBase'), href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
-        { label: t('admin.sidebar.socialMedia'), href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
-        { label: 'Marketing Agent', href: '/admin/marketing', icon: <Sparkles className="w-5 h-5" /> },
         { label: t('admin.sidebar.support'), href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
       ],
     },
     {
-      label: t('admin.sidebar.analytics'),
+      label: t('admin.sidebar.content'),
       items: [
+        { label: t('admin.sidebar.mediaLibrary'), href: '/admin/media', icon: <ImageIcon className="w-5 h-5" /> },
+        { label: t('admin.sidebar.aiTools'), href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
+        { label: t('admin.sidebar.websiteImport'), href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
+        { label: t('admin.sidebar.knowledgeBase'), href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
+        { label: t('admin.sidebar.socialMedia'), href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.money'),
+      items: [
+        { label: t('admin.sidebar.subscriptions'), href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
+        { label: t('admin.sidebar.getPaid'), href: '/admin/payment-methods', icon: <DollarSign className="w-5 h-5" /> },
         { label: t('admin.sidebar.revenue'), href: '/admin/revenue', icon: <DollarSign className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.insights'),
+      items: [
         { label: t('admin.sidebar.analyticsPage'), href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
         { label: t('admin.sidebar.recommendations'), href: '/admin/recommendations', icon: <Heart className="w-5 h-5" /> },
       ],
@@ -111,6 +114,9 @@ function useNavGroups(): NavGroup[] {
     {
       label: t('admin.sidebar.system'),
       items: [
+        { label: t('admin.sidebar.categories'), href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5" /> },
+        { label: t('admin.sidebar.locations'), href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
+        { label: t('admin.sidebar.teams'), href: '/admin/teams', icon: <UsersRound className="w-5 h-5" /> },
         { label: t('admin.sidebar.usersAndRoles'), href: '/admin/users', icon: <UserCog className="w-5 h-5" /> },
         { label: t('admin.sidebar.apiKeys'), href: '/admin/api-keys', icon: <Key className="w-5 h-5" /> },
         { label: t('admin.sidebar.settings'), href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
@@ -129,16 +135,42 @@ interface AdminSidebarProps {
 export default function AdminSidebar({ onSignOut, userName, userEmail, userAvatar }: AdminSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
   const { t } = useLanguage();
   const navGroups = useNavGroups();
 
   const isActive = (href: string) => {
-    if (href === '/admin') return pathname === '/admin' && !window.location.search.includes('tab=');
+    if (href === '/admin') return pathname === '/admin' && (typeof window === 'undefined' || !window.location.search.includes('tab='));
     if (href.includes('?')) {
       const [path, query] = href.split('?');
-      return pathname === path && window.location.search.includes(query);
+      return pathname === path && typeof window !== 'undefined' && window.location.search.includes(query);
     }
     return pathname.startsWith(href);
+  };
+
+  // Auto-open the group containing the active route (without closing already-open groups).
+  useEffect(() => {
+    const match = navGroups.find(g => g.items.some(i => isActive(i.href)));
+    if (match) {
+      setOpenGroups(prev => {
+        if (prev.has(match.label)) return prev;
+        const next = new Set(prev);
+        next.add(match.label);
+        return next;
+      });
+    }
+    // navGroups is recomputed on every render; depending on pathname is the
+    // signal that matters here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
   };
 
   const sidebarContent = (
@@ -164,33 +196,51 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mb-4">
-            <p className="px-4 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-              {group.label}
-            </p>
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                      active
-                        ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                        : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+        {navGroups.map((group) => {
+          const open = openGroups.has(group.label);
+          const groupHasActive = group.items.some(i => isActive(i.href));
+          return (
+            <div key={group.label} className="mb-2">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                className={`w-full flex items-center justify-between px-4 py-1.5 mb-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                  groupHasActive
+                    ? 'text-primary-400'
+                    : 'text-gray-400 hover:text-gray-200'
+                }`}
+                aria-expanded={open}
+              >
+                <span>{group.label}</span>
+                <ChevronRight
+                  className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                />
+              </button>
+              {open && (
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          active
+                            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                            : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
+                        }`}
+                      >
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
       {/* User Info + Sign Out */}

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { InactivityGuard } from "@/components/auth/InactivityGuard";
 import { OliviaFloatingWidget } from "@/components/support/OliviaFloatingWidget";
 import { CookieConsentBanner } from "@/components/ui/CookieConsentBanner";
@@ -435,6 +436,7 @@ export default function RootLayout({
           <OliviaFloatingWidget />
           <InactivityGuard />
           <ServiceWorkerRegistration />
+          <InstallPrompt />
           <CookieConsentBanner />
           <PageViewTracker />
           <Analytics />

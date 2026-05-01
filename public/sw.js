@@ -1,8 +1,8 @@
-const CACHE_NAME = 'sponticoupon-v2';
+const CACHE_NAME = 'sponticoupon-v3';
 const STATIC_ASSETS = [
   '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 // Install: cache static assets

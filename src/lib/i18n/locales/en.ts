@@ -1927,6 +1927,12 @@ const en: Translations = {
     sidebar: {
       adminPortal: 'Admin Portal',
       main: 'Main',
+      daily: 'Daily',
+      growth: 'Growth',
+      engagement: 'Engagement',
+      content: 'Content',
+      money: 'Money',
+      insights: 'Insights',
       overview: 'Overview',
       marketplace: 'Marketplace',
       vendors: 'Vendors',
