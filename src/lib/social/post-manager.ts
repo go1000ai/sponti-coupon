@@ -14,6 +14,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 interface PostDealOptions {
   customCaptions?: Record<string, string>;
   postIds?: string[];
+  brandOnly?: boolean;
 }
 
 /**
@@ -49,23 +50,31 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
     return;
   }
 
-  // 2. Check if vendor tier allows social posting
+  // 2. Determine which connections are eligible
+  // Brand accounts (@sponticoupon FB/IG) ALWAYS get the post — that's SpontiCoupon
+  // promoting the deal on its own audience, regardless of vendor tier.
+  // Vendor's own connections only post if their subscription tier includes social_auto_post.
   const tier = vendor.subscription_tier as SubscriptionTier;
   const tierConfig = SUBSCRIPTION_TIERS[tier];
-  if (!tierConfig || !tierConfig.social_auto_post) {
-    console.log(`[Social Post] Tier "${tier}" does not support social auto-posting`);
-    return;
-  }
+  const vendorTierAllowsSocial = !!(tierConfig && tierConfig.social_auto_post);
 
-  // 3. Fetch all active connections (vendor's + brand accounts)
-  const { data: connections } = await supabase
+  // 3. Fetch active connections — brand-only when forced, otherwise brand + vendor.
+  const filter = options?.brandOnly
+    ? 'is_brand_account.eq.true'
+    : `vendor_id.eq.${vendorId},is_brand_account.eq.true`;
+  const { data: allConnections } = await supabase
     .from('social_connections')
     .select('*')
-    .or(`vendor_id.eq.${vendorId},is_brand_account.eq.true`)
+    .or(filter)
     .eq('is_active', true);
 
-  if (!connections || connections.length === 0) {
-    console.log('[Social Post] No active social connections for vendor:', vendorId);
+  // Drop vendor-account connections when the tier doesn't allow them.
+  const connections = (allConnections || []).filter(
+    c => c.is_brand_account || vendorTierAllowsSocial
+  );
+
+  if (connections.length === 0) {
+    console.log('[Social Post] No eligible social connections for vendor:', vendorId);
     return;
   }
 

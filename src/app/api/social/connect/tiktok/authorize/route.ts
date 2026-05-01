@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
   });
   const encodedState = Buffer.from(state).toString('base64url');
 
-  const scopes = 'user.info.basic,video.publish';
+  const scopes = 'user.info.basic,video.upload';
 
   const authUrl = `${TIKTOK_AUTH_URL}?client_key=${clientKey}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scopes)}&state=${encodedState}&response_type=code`;
 

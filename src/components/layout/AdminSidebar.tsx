@@ -95,7 +95,7 @@ function useNavGroups(): NavGroup[] {
         { label: t('admin.sidebar.websiteImport'), href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
         { label: t('admin.sidebar.aiTools'), href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
         { label: t('admin.sidebar.knowledgeBase'), href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
-        { label: t('admin.sidebar.socialMedia'), href: '/admin?tab=social', icon: <Share2 className="w-5 h-5" /> },
+        { label: t('admin.sidebar.socialMedia'), href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
         { label: 'Marketing Agent', href: '/admin/marketing', icon: <Sparkles className="w-5 h-5" /> },
         { label: t('admin.sidebar.support'), href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
       ],
