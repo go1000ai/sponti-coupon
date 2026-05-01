@@ -57,43 +57,44 @@ function useNavGroups(): NavGroup[] {
   const { t } = useLanguage();
   return [
     {
-      label: t('admin.sidebar.daily'),
+      label: t('admin.sidebar.home'),
       items: [
         { label: t('admin.sidebar.overview'), href: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
-        { label: t('admin.sidebar.deals'), href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.deals'),
+      items: [
+        { label: t('admin.sidebar.allDeals'), href: '/admin/deals', icon: <Tag className="w-5 h-5" /> },
         { label: t('admin.sidebar.dealCalendar'), href: '/admin/deals/calendar', icon: <Calendar className="w-5 h-5" /> },
+        { label: t('admin.sidebar.featuredDeals'), href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
         { label: t('admin.sidebar.claims'), href: '/admin/claims', icon: <QrCode className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.people'),
+      items: [
         { label: t('admin.sidebar.vendors'), href: '/admin/vendors', icon: <Store className="w-5 h-5" /> },
         { label: t('admin.sidebar.customers'), href: '/admin/customers', icon: <Users className="w-5 h-5" /> },
-      ],
-    },
-    {
-      label: t('admin.sidebar.growth'),
-      items: [
         { label: t('admin.sidebar.leads'), href: '/admin/leads', icon: <Target className="w-5 h-5" /> },
         { label: 'Prospects', href: '/admin/prospects', icon: <UsersRound className="w-5 h-5" /> },
-        { label: 'Marketing Agent', href: '/admin/marketing', icon: <Sparkles className="w-5 h-5" /> },
-        { label: t('admin.sidebar.featuredDeals'), href: '/admin/featured', icon: <Star className="w-5 h-5" /> },
       ],
     },
     {
-      label: t('admin.sidebar.engagement'),
+      label: t('admin.sidebar.marketing'),
+      items: [
+        { label: t('admin.sidebar.socialMedia'), href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
+        { label: 'Marketing Agent', href: '/admin/marketing', icon: <Sparkles className="w-5 h-5" /> },
+        { label: t('admin.sidebar.mediaLibrary'), href: '/admin/media', icon: <ImageIcon className="w-5 h-5" /> },
+        { label: t('admin.sidebar.reviews'), href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
+        { label: t('admin.sidebar.notifications'), href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.loyalty'),
       items: [
         { label: t('admin.sidebar.loyaltyPrograms'), href: '/admin/loyalty', icon: <Gift className="w-5 h-5" /> },
         { label: t('admin.sidebar.spontiPoints'), href: '/admin/spontipoints', icon: <Coins className="w-5 h-5" /> },
-        { label: t('admin.sidebar.reviews'), href: '/admin/reviews', icon: <MessageSquare className="w-5 h-5" /> },
-        { label: t('admin.sidebar.notifications'), href: '/admin/notifications', icon: <Bell className="w-5 h-5" /> },
-        { label: t('admin.sidebar.support'), href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
-      ],
-    },
-    {
-      label: t('admin.sidebar.content'),
-      items: [
-        { label: t('admin.sidebar.mediaLibrary'), href: '/admin/media', icon: <ImageIcon className="w-5 h-5" /> },
-        { label: t('admin.sidebar.aiTools'), href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
-        { label: t('admin.sidebar.websiteImport'), href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
-        { label: t('admin.sidebar.knowledgeBase'), href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
-        { label: t('admin.sidebar.socialMedia'), href: '/admin/social', icon: <Share2 className="w-5 h-5" /> },
       ],
     },
     {
@@ -102,24 +103,28 @@ function useNavGroups(): NavGroup[] {
         { label: t('admin.sidebar.subscriptions'), href: '/admin/subscriptions', icon: <CreditCard className="w-5 h-5" /> },
         { label: t('admin.sidebar.getPaid'), href: '/admin/payment-methods', icon: <DollarSign className="w-5 h-5" /> },
         { label: t('admin.sidebar.revenue'), href: '/admin/revenue', icon: <DollarSign className="w-5 h-5" /> },
-      ],
-    },
-    {
-      label: t('admin.sidebar.insights'),
-      items: [
         { label: t('admin.sidebar.analyticsPage'), href: '/admin/analytics', icon: <BarChart3 className="w-5 h-5" /> },
         { label: t('admin.sidebar.recommendations'), href: '/admin/recommendations', icon: <Heart className="w-5 h-5" /> },
       ],
     },
     {
-      label: t('admin.sidebar.system'),
+      label: t('admin.sidebar.tools'),
       items: [
+        { label: t('admin.sidebar.aiTools'), href: '/admin/ai-tools', icon: <Wand2 className="w-5 h-5" /> },
+        { label: t('admin.sidebar.websiteImport'), href: '/admin/website-import', icon: <Globe className="w-5 h-5" /> },
+        { label: t('admin.sidebar.knowledgeBase'), href: '/admin/knowledge-base', icon: <Brain className="w-5 h-5" /> },
+        { label: t('admin.sidebar.support'), href: '/admin/support', icon: <Headphones className="w-5 h-5" /> },
+      ],
+    },
+    {
+      label: t('admin.sidebar.setup'),
+      items: [
+        { label: t('admin.sidebar.settings'), href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
+        { label: t('admin.sidebar.usersAndRoles'), href: '/admin/users', icon: <UserCog className="w-5 h-5" /> },
+        { label: t('admin.sidebar.teams'), href: '/admin/teams', icon: <UsersRound className="w-5 h-5" /> },
         { label: t('admin.sidebar.categories'), href: '/admin/categories', icon: <Grid3X3 className="w-5 h-5" /> },
         { label: t('admin.sidebar.locations'), href: '/admin/locations', icon: <MapPin className="w-5 h-5" /> },
-        { label: t('admin.sidebar.teams'), href: '/admin/teams', icon: <UsersRound className="w-5 h-5" /> },
-        { label: t('admin.sidebar.usersAndRoles'), href: '/admin/users', icon: <UserCog className="w-5 h-5" /> },
         { label: t('admin.sidebar.apiKeys'), href: '/admin/api-keys', icon: <Key className="w-5 h-5" /> },
-        { label: t('admin.sidebar.settings'), href: '/admin/settings', icon: <Settings className="w-5 h-5" /> },
       ],
     },
   ];
