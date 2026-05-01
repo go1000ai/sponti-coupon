@@ -70,6 +70,7 @@ export default function AdminSocialPage() {
   const [recentPosts, setRecentPosts] = useState<SocialPost[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
 
   const showToast = (kind: 'ok' | 'err', msg: string) => {
     setToast({ kind, msg });
@@ -143,6 +144,13 @@ export default function AdminSocialPage() {
       dealPostStatus[post.deal_id][post.platform] = post.status;
     }
   }
+
+  // Selected deal for modal
+  const selectedDeal = selectedDealId ? recentDeals.find((d) => d.id === selectedDealId) : null;
+  const selectedDealPosts = selectedDealId
+    ? recentPosts.filter((p) => p.deal_id === selectedDealId)
+    : [];
+  const selectedHasPosted = selectedDealPosts.some((p) => p.status === 'posted');
 
   return (
     <div className="lg:ml-64 min-h-screen bg-gray-50">
@@ -226,103 +234,74 @@ export default function AdminSocialPage() {
           </div>
         </section>
 
-        {/* Recent deals */}
+        {/* Recent deals — bento grid */}
         <section className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Recent deals</h2>
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="divide-y divide-gray-100">
-              {loading ? (
-                <div className="p-8 text-center text-gray-500">Loading…</div>
-              ) : recentDeals.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">No deals yet.</div>
-              ) : (
-                recentDeals.map((deal) => {
-                  const statuses = dealPostStatus[deal.id] || {};
-                  const hasPosted = Object.values(statuses).some((s) => s === 'posted');
-                  return (
-                    <div key={deal.id} className="p-4 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded bg-gray-100 flex-shrink-0 overflow-hidden">
-                        {deal.image_url && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={deal.image_url}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{deal.title}</p>
-                        <p className="text-sm text-gray-500 truncate">
-                          {deal.vendor?.business_name || 'Unknown vendor'} ·{' '}
-                          <span className="capitalize">{deal.status}</span>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-gray-900">Recent deals</h2>
+            <p className="text-xs text-gray-500">Click a card for post details</p>
+          </div>
+          {loading ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">Loading…</div>
+          ) : recentDeals.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center text-gray-500">No deals yet.</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {recentDeals.map((deal) => {
+                const statuses = dealPostStatus[deal.id] || {};
+                return (
+                  <button
+                    key={deal.id}
+                    onClick={() => setSelectedDealId(deal.id)}
+                    className="group bg-white rounded-lg border border-gray-200 overflow-hidden text-left hover:border-primary-500 hover:shadow-lg transition-all flex flex-col"
+                  >
+                    <div className="aspect-[4/3] bg-gray-100 overflow-hidden relative">
+                      {deal.image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={deal.image_url}
+                          alt=""
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      )}
+                      <div className="absolute top-2 right-2 flex gap-1">
                         {brandConnections.map((conn) => {
                           const s = statuses[conn.platform];
-                          if (!s) {
-                            return (
-                              <span
-                                key={conn.id}
-                                title={`Not posted to ${conn.platform}`}
-                                className="w-6 h-6 rounded-full bg-gray-100 text-gray-400 flex items-center justify-center"
-                              >
-                                {PLATFORM_ICON[conn.platform]}
-                              </span>
-                            );
-                          }
-                          if (s === 'posted') {
-                            return (
-                              <span
-                                key={conn.id}
-                                title={`Posted to ${conn.platform}`}
-                                className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center"
-                              >
-                                {PLATFORM_ICON[conn.platform]}
-                              </span>
-                            );
-                          }
-                          if (s === 'failed') {
-                            return (
-                              <span
-                                key={conn.id}
-                                title={`Failed on ${conn.platform}`}
-                                className="w-6 h-6 rounded-full bg-red-100 text-red-700 flex items-center justify-center"
-                              >
-                                {PLATFORM_ICON[conn.platform]}
-                              </span>
-                            );
-                          }
+                          const cls =
+                            s === 'posted'
+                              ? 'bg-green-500 text-white'
+                              : s === 'failed'
+                              ? 'bg-red-500 text-white'
+                              : !s
+                              ? 'bg-white/80 text-gray-400'
+                              : 'bg-yellow-500 text-white';
                           return (
                             <span
                               key={conn.id}
-                              title={`${s} on ${conn.platform}`}
-                              className="w-6 h-6 rounded-full bg-yellow-100 text-yellow-700 flex items-center justify-center"
+                              title={s ? `${s} on ${conn.platform}` : `Not posted to ${conn.platform}`}
+                              className={`w-6 h-6 rounded-full flex items-center justify-center shadow-sm ${cls}`}
                             >
-                              <Clock className="w-3 h-3" />
+                              {PLATFORM_ICON[conn.platform]}
                             </span>
                           );
                         })}
-                        <button
-                          onClick={() => postDeal(deal.id)}
-                          disabled={busyId === `deal:${deal.id}`}
-                          className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {busyId === `deal:${deal.id}` ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )}
-                          {hasPosted ? 'Re-post' : 'Post Now'}
-                        </button>
                       </div>
                     </div>
-                  );
-                })
-              )}
+                    <div className="p-3 flex-1 flex flex-col">
+                      <p className="font-semibold text-sm text-gray-900 line-clamp-2 leading-snug">
+                        {deal.title}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate mt-1">
+                        {deal.vendor?.business_name || 'Unknown vendor'}
+                      </p>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-1">
+                        {deal.status}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          )}
         </section>
 
         {/* Recent posts */}
@@ -420,6 +399,113 @@ export default function AdminSocialPage() {
           </div>
         </section>
       </div>
+
+      {/* Deal detail modal */}
+      {selectedDealId && selectedDeal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => setSelectedDealId(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="aspect-[16/9] bg-gray-100 overflow-hidden relative">
+              {selectedDeal.image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedDeal.image_url} alt="" className="w-full h-full object-cover" />
+              )}
+              <button
+                onClick={() => setSelectedDealId(null)}
+                aria-label="Close"
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 hover:bg-white flex items-center justify-center shadow-md"
+              >
+                <XCircle className="w-5 h-5 text-gray-700" />
+              </button>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-gray-900">{selectedDeal.title}</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {selectedDeal.vendor?.business_name || 'Unknown vendor'} ·{' '}
+                <span className="capitalize">{selectedDeal.status}</span>
+              </p>
+
+              <div className="mt-5 space-y-2">
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">Post status by platform</h4>
+                {brandConnections.map((conn) => {
+                  const post = selectedDealPosts.find((p) => p.platform === conn.platform);
+                  return (
+                    <div
+                      key={conn.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          {PLATFORM_ICON[conn.platform]}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm capitalize text-gray-900">
+                            {conn.account_name || PLATFORM_LABEL[conn.platform] || conn.platform}
+                          </p>
+                          {!post && <p className="text-xs text-gray-500">Never posted</p>}
+                          {post && post.status === 'posted' && (
+                            <p className="text-xs text-green-700 inline-flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Posted {post.posted_at && new Date(post.posted_at).toLocaleString()}
+                            </p>
+                          )}
+                          {post && post.status === 'failed' && (
+                            <p className="text-xs text-red-700 inline-flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Failed
+                              {post.error_message ? ' — ' + post.error_message : ''}
+                            </p>
+                          )}
+                          {post && post.status !== 'posted' && post.status !== 'failed' && (
+                            <p className="text-xs text-yellow-700 inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {post.status}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {post && post.platform_post_url && (
+                          <a
+                            href={post.platform_post_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700"
+                          >
+                            View <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                        {post && post.status === 'failed' && (
+                          <button
+                            onClick={() => retryPost(post.id)}
+                            disabled={busyId === `post:${post.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200 text-sm text-gray-700 disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${busyId === `post:${post.id}` ? 'animate-spin' : ''}`} />
+                            Retry
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={() => postDeal(selectedDeal.id)}
+                disabled={busyId === `deal:${selectedDeal.id}`}
+                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary-500 text-white font-semibold hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send className={`w-5 h-5 ${busyId === `deal:${selectedDeal.id}` ? 'animate-pulse' : ''}`} />
+                {selectedHasPosted ? 'Re-post to all brand accounts' : 'Post to all brand accounts'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
