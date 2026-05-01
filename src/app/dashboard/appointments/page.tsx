@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { format, parseISO } from 'date-fns';
 import {
   Calendar, Clock, MapPin, Phone, Store, Loader2,
-  CheckCircle, XCircle, AlertCircle, ExternalLink,
+  CheckCircle, XCircle, AlertCircle,
 } from 'lucide-react';
 import type { Appointment, AppointmentStatus } from '@/lib/types/database';
 
@@ -72,16 +72,6 @@ export default function CustomerAppointmentsPage() {
     }
   }
 
-  // Generate Google Calendar URL for "Add to Calendar"
-  function getGoogleCalendarUrl(appt: Appointment) {
-    const deal = appt.deal as { title: string } | undefined;
-    const vendor = appt.vendor as { business_name: string; address: string; city: string; state: string } | undefined;
-    const title = encodeURIComponent(`${deal?.title || 'Appointment'} — ${vendor?.business_name || ''}`);
-    const startISO = parseISO(appt.start_time).toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-    const endISO = parseISO(appt.end_time).toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-    const location = vendor ? encodeURIComponent([vendor.address, vendor.city, vendor.state].filter(Boolean).join(', ')) : '';
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startISO}/${endISO}&location=${location}&sf=true`;
-  }
 
   if (!user) return null;
 

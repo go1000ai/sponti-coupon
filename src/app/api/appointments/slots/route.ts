@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { generateTimeSlots, getDayOfWeek, isWithinBookingWindow } from '@/lib/appointments/slot-generator';
+import { generateTimeSlots, isWithinBookingWindow } from '@/lib/appointments/slot-generator';
 import { parseISO } from 'date-fns';
 
 /**

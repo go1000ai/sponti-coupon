@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, startOfDay, isSameDay, isSameMonth } from 'date-fns';
+import { format, parseISO, addMonths, subMonths, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import {
   Calendar, Clock, User, CheckCircle, XCircle, AlertCircle,
   Loader2, Phone, MessageSquare, ChevronLeft, ChevronRight,
@@ -87,7 +87,6 @@ export default function VendorAppointmentsPage() {
   const monthAppointments = appointments.filter(a => isSameMonth(parseISO(a.start_time), currentMonth));
   const confirmedCount = monthAppointments.filter(a => a.status === 'confirmed').length;
   const pendingCount = monthAppointments.filter(a => a.status === 'pending').length;
-  const completedCount = monthAppointments.filter(a => a.status === 'completed').length;
 
   return (
     <div className="max-w-6xl mx-auto">

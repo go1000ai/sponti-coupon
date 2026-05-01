@@ -106,6 +106,7 @@ export function getDayOfWeek(date: Date): number {
  * Formats a time slot for display
  */
 export function formatSlotTime(isoString: string, _timezone?: string): string {
+  void _timezone; // reserved for future timezone-aware formatting
   const date = parseISO(isoString);
   return format(date, 'h:mm a');
 }
