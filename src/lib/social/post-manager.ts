@@ -7,6 +7,7 @@ import { postToFacebook } from './facebook';
 import { postToInstagram } from './instagram';
 import { postToTwitter } from './twitter';
 import { postToTikTok } from './tiktok';
+import { postViaGHL } from './ghl';
 import type { DealForSocialPost, PlatformCaptions, SocialConnection, SocialPostResult, SocialPlatform } from './types';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
@@ -142,9 +143,12 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
   // 6. Post to each connection in parallel with error isolation
   const results = await Promise.allSettled(
     connections.map(async (conn: SocialConnection) => {
-      // Ensure token is valid (refresh if needed)
-      const validToken = await ensureValidToken(supabase, conn);
-      if (!validToken) {
+      // Brand-account Instagram posts go through GHL using a Private
+      // Integration Token (env var), so the per-connection access_token
+      // doesn't matter and we shouldn't fail on a stale one.
+      const skipTokenCheck = conn.is_brand_account && conn.platform === 'instagram';
+      const validToken = skipTokenCheck ? '' : await ensureValidToken(supabase, conn);
+      if (!skipTokenCheck && !validToken) {
         return {
           platform: conn.platform as SocialPlatform,
           connectionId: conn.id,
@@ -261,7 +265,31 @@ async function postToConnection(
         videoUrl
       );
 
-    case 'instagram':
+    case 'instagram': {
+      // Brand-account Instagram posts route through GHL because Meta does not
+      // grant Standard Access for instagram_content_publish — direct Meta
+      // calls return error (#10) until App Review is approved. GHL has its
+      // own approved Meta app and a Private Integration Token that lets us
+      // post to our own connected Instagram via their Social Planner.
+      if (conn.is_brand_account) {
+        const ghlResults = await postViaGHL(
+          caption,
+          imageUrl || null,
+          videoUrl || null,
+          ['instagram'],
+          conn.id
+        );
+        const r = ghlResults[0] || {
+          platform: 'instagram' as SocialPlatform,
+          connectionId: conn.id,
+          success: false,
+          error: 'GHL returned no result',
+        };
+        // Force platform to 'instagram' since GHL falls back to 'facebook' on errors
+        return { ...r, platform: 'instagram' as SocialPlatform };
+      }
+      // Vendor-account path stays on direct Meta API (will work for vendors
+      // once their own Meta app/scopes are sorted, separate problem).
       return postToInstagram(
         accessToken,
         conn.platform_page_id || '',
@@ -270,6 +298,7 @@ async function postToConnection(
         conn.id,
         videoUrl
       );
+    }
 
     case 'twitter':
       return postToTwitter(
