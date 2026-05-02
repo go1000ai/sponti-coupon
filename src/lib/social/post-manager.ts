@@ -164,7 +164,7 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
         ? applyAdDisclosure(captions)
         : captions;
 
-      return postToConnection(conn, validToken, captionsForConn, imageUrl, claimUrl, videoUrl);
+      return postToConnection(conn, validToken || '', captionsForConn, imageUrl, claimUrl, videoUrl);
     })
   );
 
