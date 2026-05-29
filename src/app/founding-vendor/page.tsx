@@ -218,7 +218,9 @@ export default function FoundingVendorPage() {
   // ─── Main page ────────────────────────────────────────────────────────
   return (
     <div className="relative overflow-hidden">
-      <AnimatedBackground bgRef={blobsRef} />
+      <div ref={blobsRef} className="absolute inset-0 -z-10 will-change-transform">
+        <BgInner />
+      </div>
 
       {/* Scarcity ticker */}
       <div className="relative bg-gray-900 text-white py-2.5 text-center text-sm overflow-hidden">
@@ -500,11 +502,9 @@ export default function FoundingVendorPage() {
 
 // ── Sub-components ──────────────────────────────────────────────────────
 
-const AnimatedBackground = ({ bgRef }: { bgRef?: React.RefObject<HTMLDivElement | null> } = {}) => {
-  const localRef = useRef<HTMLDivElement>(null);
-  const ref = bgRef || localRef;
+function BgInner() {
   return (
-    <div ref={ref} className="absolute inset-0 -z-10 will-change-transform">
+    <>
       <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-50 to-rose-50" />
       <div className="absolute -top-32 -left-32 w-[28rem] h-[28rem] bg-primary-300 rounded-full blur-3xl opacity-40 animate-blob" />
       <div className="absolute top-1/3 -right-40 w-[32rem] h-[32rem] bg-amber-300 rounded-full blur-3xl opacity-35 animate-blob-delay-2" />
@@ -521,6 +521,14 @@ const AnimatedBackground = ({ bgRef }: { bgRef?: React.RefObject<HTMLDivElement 
         .animate-blob-delay-3 { animation: blob 20s ease-in-out infinite; animation-delay: -8s; }
         .animate-blob-delay-4 { animation: blob 26s ease-in-out infinite; animation-delay: -12s; }
       `}</style>
+    </>
+  );
+}
+
+const AnimatedBackground = () => {
+  return (
+    <div className="absolute inset-0 -z-10">
+      <BgInner />
     </div>
   );
 };
