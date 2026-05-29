@@ -444,17 +444,26 @@ export async function POST(request: NextRequest) {
       deal.slug = slug;
     }
 
-    // Fire-and-forget: trigger social media auto-posting for active deals
+    // Fire-and-forget: trigger social media auto-posting for active deals.
+    // Log loudly if the shared secret is missing — otherwise every new deal silently fails
+    // to auto-post and nobody notices until weeks later.
     if (deal && deal.status === 'active') {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      fetch(`${appUrl}/api/social/auto-post`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-social-post-secret': process.env.SOCIAL_POST_INTERNAL_SECRET || '',
-        },
-        body: JSON.stringify({ deal_id: deal.id, vendor_id: vendorId }),
-      }).catch(() => {}); // Social posting should never block deal creation
+      const internalSecret = process.env.SOCIAL_POST_INTERNAL_SECRET;
+      if (!internalSecret) {
+        console.error('[deals POST] SOCIAL_POST_INTERNAL_SECRET is not configured — skipping auto-post for deal', deal.id);
+      } else {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        fetch(`${appUrl}/api/social/auto-post`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-social-post-secret': internalSecret,
+          },
+          body: JSON.stringify({ deal_id: deal.id, vendor_id: vendorId }),
+        }).catch((err) => {
+          console.error('[deals POST] Auto-post trigger failed for deal', deal.id, err);
+        }); // Social posting should never block deal creation
+      }
     }
 
     // Fire-and-forget: notify admin of new deal

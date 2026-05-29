@@ -45,6 +45,10 @@ export async function GET(request: NextRequest) {
   const errors: string[] = [];
 
   // ── 3-day reminders ──
+  // Filter to the 1–3 day expiration window AT THE QUERY LEVEL (not just post-filter) so the
+  // LIMIT 50 budget is spent on claims that actually need a 3-day reminder. Otherwise once
+  // unredeemed claims exceed 50, we burn the budget on far-future expiries and miss real ones.
+  const oneDayFromNowIso = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString();
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: claims3d, error: err3d } = await serviceClient
@@ -52,11 +56,13 @@ export async function GET(request: NextRequest) {
     .select(`
       id,
       customer_id,
-      deal:deals(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
+      deal:deals!inner(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
       customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
     .is('expiration_reminder_3d_sent_at', null)
+    .gt('deal.expires_at', oneDayFromNowIso)
+    .lte('deal.expires_at', threeDaysFromNow)
     .limit(MAX_EMAILS_PER_CYCLE);
 
   if (err3d) {
@@ -144,18 +150,23 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 1-day reminders ──
+  // Same fix as 3-day: filter the expiration window at the SQL level so LIMIT spends its
+  // budget on claims that actually expire in the next 24 hours.
   const oneDayFromNow = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString();
+  const nowIso = now.toISOString();
 
   const { data: claims1d, error: err1d } = await serviceClient
     .from('claims')
     .select(`
       id,
       customer_id,
-      deal:deals(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
+      deal:deals!inner(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
       customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
     .is('expiration_reminder_1d_sent_at', null)
+    .gt('deal.expires_at', nowIso)
+    .lte('deal.expires_at', oneDayFromNow)
     .limit(MAX_EMAILS_PER_CYCLE);
 
   if (err1d) {

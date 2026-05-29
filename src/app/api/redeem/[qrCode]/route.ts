@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimitDb } from '@/lib/rate-limit';
 
 // POST /api/redeem/[qrCode] - Vendor redeems via QR code or 6-digit code
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
 ) {
-  // 20 redemptions per 15 minutes per IP
-  const limited = rateLimit(request, { maxRequests: 20, windowMs: 15 * 60 * 1000 });
+  // 20 redemptions per 15 minutes per IP (cross-instance via Postgres)
+  const limited = await rateLimitDb(request, { maxRequests: 20, windowMs: 15 * 60 * 1000 });
   if (limited) return limited;
 
   const { qrCode } = await params;
@@ -158,26 +158,27 @@ export async function POST(
 
     if (programs && programs.length > 0) {
       for (const program of programs) {
-        // Find or create loyalty card for this customer+program
-        let { data: card } = await serviceClient
+        // Find or create loyalty card for this customer+program.
+        // Use upsert on the (customer_id, program_id) unique constraint (migration 013) so
+        // two concurrent redemptions can't both insert and trip a 23505. ignoreDuplicates
+        // makes the upsert a no-op when the row already exists; we then re-read to get it.
+        await serviceClient
+          .from('loyalty_cards')
+          .upsert(
+            {
+              program_id: program.id,
+              customer_id: claim.customer_id,
+              vendor_id: user.id,
+            },
+            { onConflict: 'customer_id,program_id', ignoreDuplicates: true }
+          );
+
+        const { data: card } = await serviceClient
           .from('loyalty_cards')
           .select('*')
           .eq('customer_id', claim.customer_id)
           .eq('program_id', program.id)
           .single();
-
-        if (!card) {
-          const { data: newCard } = await serviceClient
-            .from('loyalty_cards')
-            .insert({
-              program_id: program.id,
-              customer_id: claim.customer_id,
-              vendor_id: user.id,
-            })
-            .select()
-            .single();
-          card = newCard;
-        }
 
         if (card) {
           if (program.program_type === 'punch_card') {
@@ -319,19 +320,32 @@ export async function POST(
   });
 }
 
-// GET /api/redeem/[qrCode] - Check QR code or 6-digit code status (for customer view)
+// GET /api/redeem/[qrCode] - Check QR code or 6-digit code status.
+// Authorized callers: the vendor who owns the deal, OR the customer who owns the claim.
+// PII (customer name/email) is returned only to those parties — never to unauthenticated visitors.
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ qrCode: string }> }
 ) {
+  // Rate-limit to blunt code-enumeration scrapers (cross-instance via Postgres).
+  const limited = await rateLimitDb(request, { maxRequests: 30, windowMs: 15 * 60 * 1000 });
+  if (limited) return limited;
+
   const { qrCode } = await params;
   const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // Support both QR UUID and 6-digit code lookup
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const is6Digit = /^\d{6}$/.test(qrCode.trim());
   const column = is6Digit ? 'redemption_code' : 'qr_code';
 
-  const { data: claim } = await supabase
+  // Use service-role for the lookup so we can compare ownership ourselves;
+  // RLS would otherwise return null for the cross-side viewer.
+  const serviceClient = await createServiceRoleClient();
+  const { data: claim } = await serviceClient
     .from('claims')
     .select('*, deal:deals(id, title, deal_price, original_price, discount_percentage, deposit_amount, expires_at, deal_type, vendor_id, vendor:vendors(business_name)), customer:customers(first_name, last_name, email)')
     .eq(column, is6Digit ? qrCode.trim() : qrCode)
@@ -339,6 +353,12 @@ export async function GET(
 
   if (!claim) {
     return NextResponse.json({ error: 'Invalid code', code: 'INVALID' }, { status: 404 });
+  }
+
+  const isOwningVendor = claim.deal?.vendor_id === user.id;
+  const isOwningCustomer = claim.customer_id === user.id;
+  if (!isOwningVendor && !isOwningCustomer) {
+    return NextResponse.json({ error: 'Not authorized to view this code' }, { status: 403 });
   }
 
   const depositPaid = claim.deal?.deposit_amount || 0;

@@ -25,6 +25,20 @@ export async function POST(request: NextRequest) {
   const event = JSON.parse(body);
   const supabase = await createServiceRoleClient();
 
+  // Event-level idempotency. PayPal includes an `id` on every webhook event.
+  if (event.id) {
+    const { error: dedupeError } = await supabase
+      .from('webhook_events')
+      .insert({ provider: 'paypal', event_id: event.id });
+    if (dedupeError && dedupeError.code === '23505') {
+      console.log('[PayPal Webhook] Duplicate event ignored:', event.id);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (dedupeError) {
+      console.error('[PayPal Webhook] Dedupe insert error (continuing):', dedupeError.message);
+    }
+  }
+
   switch (event.event_type) {
     case 'MERCHANT.ONBOARDING.COMPLETED': {
       // Vendor completed PayPal onboarding

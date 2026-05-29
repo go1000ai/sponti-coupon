@@ -34,6 +34,21 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createServiceRoleClient();
 
+  // Idempotency: insert a (provider, event_id) row. If it already exists (23505), Stripe is
+  // redelivering an event we've already processed — return 200 without re-running side effects.
+  const { error: dedupeError } = await supabase
+    .from('webhook_events')
+    .insert({ provider: 'stripe_connect', event_id: event.id });
+  if (dedupeError && dedupeError.code === '23505') {
+    console.log('[Stripe Connect Webhook] Duplicate event ignored:', event.id);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  // If the insert failed for a non-dedupe reason, log it and continue — failing closed here
+  // would just cause Stripe to retry forever.
+  if (dedupeError) {
+    console.error('[Stripe Connect Webhook] Dedupe insert error (continuing):', dedupeError.message);
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;

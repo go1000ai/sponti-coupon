@@ -13,29 +13,19 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(new URL('/auth/login?redirect=/vendor/social', request.url));
+    return NextResponse.redirect(new URL('/auth/login?redirect=/admin?tab=social', request.url));
   }
 
-  const isBrand = request.nextUrl.searchParams.get('brand') === 'true';
+  // Phase 1: brand-only. Admin-only OAuth that always creates a brand connection.
+  const isBrand = true;
 
-  if (isBrand) {
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    if (profile?.role !== 'admin') {
-      return NextResponse.redirect(new URL('/vendor/social?social_error=not_admin', request.url));
-    }
-  } else {
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    if (profile?.role !== 'vendor') {
-      return NextResponse.redirect(new URL('/vendor/social?social_error=not_vendor', request.url));
-    }
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (profile?.role !== 'admin') {
+    return NextResponse.redirect(new URL('/vendor/social?social_error=admin_only', request.url));
   }
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY;

@@ -66,6 +66,13 @@ export async function GET(request: NextRequest) {
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.retrieve(sessionId);
 
+  // Ownership check — the metadata.vendor_id is set when we create the Checkout Session in
+  // /api/vendor/collect-balance. Without this check, any vendor who learns a session_id can
+  // see another vendor's payment status.
+  if (session.metadata?.vendor_id && session.metadata.vendor_id !== user.id) {
+    return NextResponse.json({ error: 'Not your session' }, { status: 403 });
+  }
+
   const paid = session.payment_status === 'paid';
   return NextResponse.json({ paid, payment_status: session.payment_status });
 }

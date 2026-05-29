@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { decrypt } from '@/lib/social/crypto';
+import { verifyAdmin } from '@/lib/admin';
 
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
 
@@ -34,14 +35,15 @@ export async function DELETE(
     return NextResponse.json({ error: 'Post not found' }, { status: 404 });
   }
 
-  // Verify the post belongs to this vendor's deals
+  // Verify the post belongs to this vendor's deals — or the caller is an admin moderating.
   const { data: deal } = await serviceClient
     .from('deals')
     .select('vendor_id')
     .eq('id', post.deal_id)
     .single();
 
-  if (!deal || deal.vendor_id !== user.id) {
+  const isAdmin = !!(await verifyAdmin());
+  if (!deal || (deal.vendor_id !== user.id && !isAdmin)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -49,19 +51,22 @@ export async function DELETE(
   let platformDeleted = false;
   if (post.status === 'posted' && post.platform_post_id && (post.platform === 'facebook' || post.platform === 'instagram')) {
     try {
-      // Find the connection to get the access token
-      const vendorId = post.account_type === 'brand' ? null : user.id;
-
-      const query = serviceClient
+      // Find the connection to get the access token.
+      // For brand-account posts, look up the brand connection (vendor_id null OR is_brand_account=true).
+      // For per-vendor posts, look up THIS deal's vendor connection (deal.vendor_id, not the caller —
+      // an admin moderating someone else's post must still use the original vendor's token).
+      let query = serviceClient
         .from('social_connections')
         .select('access_token')
         .eq('platform', post.platform)
         .eq('is_active', true);
 
-      if (vendorId) {
-        query.eq('vendor_id', vendorId);
+      if (post.account_type === 'brand') {
+        // CRITICAL: reassign — Supabase builders return new instances; dropping the return
+        // value silently drops the filter and we'd grab any active connection.
+        query = query.eq('is_brand_account', true);
       } else {
-        query.eq('is_brand_account', true);
+        query = query.eq('vendor_id', deal.vendor_id);
       }
 
       const { data: connection } = await query.limit(1).single();

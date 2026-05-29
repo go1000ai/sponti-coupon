@@ -174,8 +174,10 @@ export async function postToFacebook(
     const feedData = await feedRes.json();
 
     if (!feedRes.ok || feedData.error) {
-      // Fallback: try publishing the photo directly if feed post fails
-      await fetch(`${META_GRAPH_URL}/${photoId}`, {
+      // Fallback: publish the photo directly if the feed post failed. If THAT succeeds,
+      // we have a real post on the page and should report success — not a false failure
+      // that prompts the vendor to retry and create a duplicate.
+      const fallbackRes = await fetch(`${META_GRAPH_URL}/${photoId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -183,6 +185,17 @@ export async function postToFacebook(
           access_token: accessToken,
         }),
       });
+      const fallbackData = await fallbackRes.json().catch(() => ({} as { error?: { message?: string } }));
+
+      if (fallbackRes.ok && !fallbackData.error) {
+        return {
+          platform: 'facebook',
+          connectionId,
+          success: true,
+          platformPostId: photoId,
+          platformPostUrl: `https://www.facebook.com/${photoId}`,
+        };
+      }
 
       return {
         platform: 'facebook',

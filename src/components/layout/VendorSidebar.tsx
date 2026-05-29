@@ -20,7 +20,6 @@ import {
   MessageSquare,
   MapPin,
   Users,
-  Key,
   Palette,
   Gift,
   ImagePlus,
@@ -100,7 +99,9 @@ function useNavItems(): NavItem[] {
       children: [
         { label: t('vendor.sidebar.subscription'), href: '/vendor/subscription', icon: <CreditCard className="w-4 h-4" /> },
         { label: t('vendor.sidebar.getPaid'), href: '/vendor/payments', icon: <DollarSign className="w-4 h-4" /> },
-        { label: t('vendor.sidebar.api'), href: '/vendor/api', icon: <Key className="w-4 h-4" /> },
+        // API access hidden from sidebar — not relevant for non-technical vendors.
+        // The /vendor/api page still exists; an admin can hand out a key directly to
+        // enterprise vendors who explicitly request one.
       ],
     },
     { label: t('vendor.sidebar.settings'), href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },

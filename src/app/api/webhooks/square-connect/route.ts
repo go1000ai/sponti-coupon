@@ -36,6 +36,20 @@ export async function POST(request: NextRequest) {
   const event = JSON.parse(body);
   const supabase = await createServiceRoleClient();
 
+  // Event-level idempotency. Square sends `event_id` on every webhook delivery.
+  if (event.event_id) {
+    const { error: dedupeError } = await supabase
+      .from('webhook_events')
+      .insert({ provider: 'square', event_id: event.event_id });
+    if (dedupeError && dedupeError.code === '23505') {
+      console.log('[Square Webhook] Duplicate event ignored:', event.event_id);
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (dedupeError) {
+      console.error('[Square Webhook] Dedupe insert error (continuing):', dedupeError.message);
+    }
+  }
+
   switch (event.type) {
     case 'payment.updated': {
       const payment = event.data?.object?.payment;

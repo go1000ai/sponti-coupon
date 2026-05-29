@@ -72,7 +72,6 @@ interface VendorEditData {
   secondary_color: string;
   accent_color: string;
   custom_logo_url: string;
-  hide_sponticoupon_branding: boolean;
   social_links: {
     instagram: string;
     facebook: string;
@@ -158,7 +157,6 @@ export default function AdminVendorsPage() {
     secondary_color: '',
     accent_color: '',
     custom_logo_url: '',
-    hide_sponticoupon_branding: false,
     social_links: { ...DEFAULT_SOCIAL_LINKS },
     business_hours: { ...DEFAULT_BUSINESS_HOURS },
   });
@@ -336,7 +334,6 @@ export default function AdminVendorsPage() {
       secondary_color: (vendorAny.secondary_color as string) || '',
       accent_color: (vendorAny.accent_color as string) || '',
       custom_logo_url: (vendorAny.custom_logo_url as string) || '',
-      hide_sponticoupon_branding: (vendorAny.hide_sponticoupon_branding as boolean) || false,
       social_links: {
         instagram: vendorSocial.instagram || '',
         facebook: vendorSocial.facebook || '',
@@ -397,13 +394,6 @@ export default function AdminVendorsPage() {
             updates[key] = newValue;
           }
         }
-      }
-
-      // Boolean field
-      const currentBranding =
-        (selectedVendor as unknown as Record<string, unknown>).hide_sponticoupon_branding ?? false;
-      if (editForm.hide_sponticoupon_branding !== currentBranding) {
-        updates.hide_sponticoupon_branding = editForm.hide_sponticoupon_branding;
       }
 
       // JSON fields — always send full objects if they differ
@@ -1145,23 +1135,6 @@ export default function AdminVendorsPage() {
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="hide_branding"
-                  checked={editForm.hide_sponticoupon_branding}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      hide_sponticoupon_branding: e.target.checked,
-                    }))
-                  }
-                  className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
-                />
-                <label htmlFor="hide_branding" className="text-sm font-medium text-gray-700">
-                  Hide SpontiCoupon branding
-                </label>
-              </div>
             </div>
           )}
 

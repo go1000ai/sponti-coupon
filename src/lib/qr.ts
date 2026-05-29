@@ -16,9 +16,13 @@ export function generateRedemptionCode(): string {
 }
 
 /**
- * Generate a 6-digit redemption code that is guaranteed unique in the DB.
- * Retries up to 10 times on collision (unique constraint violation).
- * Pass any Supabase client (server, service-role, etc.).
+ * Generate a 6-digit redemption code that PROBABLY does not collide. Soft check only —
+ * because the read happens before the caller's INSERT, two concurrent requests can still
+ * pick the same code and one will hit Postgres' 23505 unique-constraint error.
+ *
+ * Callers that insert a `claims` row should use {@link withUniqueRedemptionCode} to retry
+ * on 23505. This function alone is fine for low-frequency webhook paths where concurrent
+ * collisions are negligible.
  */
 export async function generateUniqueRedemptionCode(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,8 +36,37 @@ export async function generateUniqueRedemptionCode(
       .eq('redemption_code', code);
     if ((count ?? 1) === 0) return code;
   }
-  // Extremely unlikely — fall back to a random UUID suffix to guarantee uniqueness
-  return Math.floor(100000 + Math.random() * 900000).toString() + Date.now().toString().slice(-4);
+  // Fall back to a fresh random 6-digit code — keeps the format invariant for downstream
+  // regex checks (`^\d{6}$`). The DB unique index is the real authority.
+  return generateRedemptionCode();
+}
+
+/**
+ * Run an insert that requires a unique redemption code, retrying on the race where two
+ * concurrent requests pick the same code. The action receives a freshly-generated code
+ * and should perform the insert; if it throws/returns a 23505 error, we generate a new
+ * code and retry (up to `maxAttempts`).
+ *
+ * Returns the action's result on success, or throws the last error if all attempts collide.
+ */
+export async function withUniqueRedemptionCode<T>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabaseClient: { from: (table: string) => any },
+  action: (code: string) => Promise<{ data: T | null; error: { code?: string; message?: string } | null }>,
+  maxAttempts = 5
+): Promise<{ data: T | null; error: { code?: string; message?: string } | null }> {
+  let lastError: { code?: string; message?: string } | null = null;
+  for (let i = 0; i < maxAttempts; i++) {
+    const code = await generateUniqueRedemptionCode(supabaseClient);
+    const result = await action(code);
+    if (!result.error) return result;
+    if (result.error.code === '23505' && (result.error.message || '').includes('redemption_code')) {
+      lastError = result.error;
+      continue;
+    }
+    return result;
+  }
+  return { data: null, error: lastError ?? { code: '23505', message: 'redemption_code collision exhausted retries' } };
 }
 
 export function getRedemptionUrl(qrCodeId: string): string {

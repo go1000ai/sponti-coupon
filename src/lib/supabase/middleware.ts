@@ -64,9 +64,9 @@ export async function updateSession(request: NextRequest) {
     if (lastActivityStr) {
       const lastActivity = parseInt(lastActivityStr, 10);
       if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
-        // Session expired due to inactivity — sign out and redirect
-        await supabase.auth.signOut();
-
+        // Session expired due to inactivity. Build a fresh redirect response and bind a
+        // dedicated Supabase client that writes its sign-out cookie clears onto IT — the
+        // outer `response` is about to be discarded.
         const isProtected = protectedPrefixes.some(p => path.startsWith(p));
         const redirectUrl = new URL('/auth/login', request.url);
         if (isProtected && path.startsWith('/') && !path.startsWith('//') && !path.includes('://')) {
@@ -75,7 +75,25 @@ export async function updateSession(request: NextRequest) {
         redirectUrl.searchParams.set('reason', 'inactivity');
 
         const expiredResponse = NextResponse.redirect(redirectUrl);
-        // Clear the activity cookie
+
+        const signoutClient = createServerClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          {
+            cookies: {
+              getAll() {
+                return request.cookies.getAll();
+              },
+              setAll(cookiesToSet) {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  expiredResponse.cookies.set(name, value, options),
+                );
+              },
+            },
+          }
+        );
+        await signoutClient.auth.signOut();
+
         expiredResponse.cookies.delete(ACTIVITY_COOKIE);
         return expiredResponse;
       }

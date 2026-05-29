@@ -53,14 +53,17 @@ export async function postToInstagram(
 
     const creationId = containerData.id;
 
-    // Wait for container processing — videos take longer than images
-    const waitTime = videoUrl ? 15000 : 3000;
+    // Wait for container processing. Total budget kept well under Vercel's 60s function
+    // timeout so a synchronous schedule-now call doesn't 504. Worst case for video:
+    // 5s initial + 10 polls × 3s = 35s. If processing takes longer than that, return an
+    // INSTAGRAM_VIDEO_PROCESSING result — the caller can persist this and retry the
+    // publish via the social-publish cron rather than holding the request open.
+    const waitTime = videoUrl ? 5000 : 3000;
     await new Promise(resolve => setTimeout(resolve, waitTime));
 
-    // For videos, poll the container status (up to 60 seconds)
     if (videoUrl) {
       let ready = false;
-      for (let attempt = 0; attempt < 12; attempt++) {
+      for (let attempt = 0; attempt < 10; attempt++) {
         const statusRes = await fetch(
           `${META_GRAPH_URL}/${creationId}?fields=status_code&access_token=${accessToken}`
         );
@@ -78,8 +81,7 @@ export async function postToInstagram(
             error: 'Video processing failed on Instagram',
           };
         }
-        // Still processing — wait 5 more seconds
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
       }
 
       if (!ready) {
@@ -87,7 +89,9 @@ export async function postToInstagram(
           platform: 'instagram',
           connectionId,
           success: false,
-          error: 'Video processing timed out (60s)',
+          error: 'Video still processing on Instagram (>35s) — will be retried later',
+          // creationId is returned so a retry can publish without re-uploading.
+          platformPostId: creationId,
         };
       }
     }

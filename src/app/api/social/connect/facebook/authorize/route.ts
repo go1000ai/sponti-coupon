@@ -12,9 +12,12 @@ export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const isBrand = request.nextUrl.searchParams.get('brand') === 'true';
-  const errorRedirect = isBrand ? '/admin?tab=social' : '/vendor/social';
-  const sep = isBrand ? '&' : '?';
+  // Phase 1: brand-only. Direct Meta OAuth is admin-only and ALWAYS creates a brand
+  // connection. The legacy `?brand=true` query is ignored — there is no longer a
+  // vendor-self-connect path.
+  const isBrand = true;
+  const errorRedirect = '/admin?tab=social';
+  const sep = '&';
 
   if (!user) {
     return NextResponse.redirect(new URL(`/auth/login?redirect=${encodeURIComponent(errorRedirect)}`, request.url));
@@ -26,12 +29,8 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (isBrand && profile?.role !== 'admin') {
-    return NextResponse.redirect(new URL(`${errorRedirect}${sep}social_error=not_admin`, request.url));
-  }
-
-  if (!isBrand && profile?.role !== 'vendor' && profile?.role !== 'admin') {
-    return NextResponse.redirect(new URL(`${errorRedirect}${sep}social_error=not_vendor`, request.url));
+  if (profile?.role !== 'admin') {
+    return NextResponse.redirect(new URL(`/vendor/social?social_error=admin_only`, request.url));
   }
 
   const appId = process.env.META_APP_ID;

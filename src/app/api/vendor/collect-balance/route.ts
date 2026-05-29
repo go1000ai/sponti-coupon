@@ -29,13 +29,41 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Only vendors can use this endpoint' }, { status: 403 });
   }
 
-  const { redemption_id, amount, deal_title, customer_name, processor = 'stripe' } = await request.json();
+  const { redemption_id, processor = 'stripe' } = await request.json();
 
+  if (!redemption_id) {
+    return NextResponse.json({ error: 'redemption_id is required' }, { status: 400 });
+  }
+
+  const serviceClient = await createServiceRoleClient();
+
+  // Look up the redemption server-side. Never trust amount/title/customer from the body —
+  // a malicious vendor could otherwise charge any redemption to themselves at any amount.
+  const { data: redemption, error: redemptionError } = await serviceClient
+    .from('redemptions')
+    .select('id, vendor_id, remaining_balance, deal:deals(title), customer:customers(first_name, last_name)')
+    .eq('id', redemption_id)
+    .single();
+
+  if (redemptionError || !redemption) {
+    return NextResponse.json({ error: 'Redemption not found' }, { status: 404 });
+  }
+
+  if (redemption.vendor_id !== user.id) {
+    return NextResponse.json({ error: 'This redemption is not yours' }, { status: 403 });
+  }
+
+  const amount = Number(redemption.remaining_balance || 0);
   if (!amount || amount <= 0) {
     return NextResponse.json({ error: 'No balance to collect' }, { status: 400 });
   }
 
-  const serviceClient = await createServiceRoleClient();
+  const dealRel = Array.isArray(redemption.deal) ? redemption.deal[0] : redemption.deal;
+  const customerRel = Array.isArray(redemption.customer) ? redemption.customer[0] : redemption.customer;
+  const deal_title = dealRel?.title || null;
+  const customer_name = customerRel
+    ? `${customerRel.first_name || ''} ${customerRel.last_name || ''}`.trim() || null
+    : null;
 
   // --- PayPal branch ---
   if (processor === 'paypal') {

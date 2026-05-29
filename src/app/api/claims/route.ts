@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
-import { generateUniqueRedemptionCode } from '@/lib/qr';
+import { withUniqueRedemptionCode } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimitDb } from '@/lib/rate-limit';
 import { assignPromoCode, getAvailableCodeCount } from '@/lib/promo-codes';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // POST /api/claims - Create a new claim on a deal
 export async function POST(request: NextRequest) {
-  // 10 claims per 15 minutes per IP
-  const limited = rateLimit(request, { maxRequests: 10, windowMs: 15 * 60 * 1000 });
+  // 10 claims per 15 minutes per IP (cross-instance via Postgres)
+  const limited = await rateLimitDb(request, { maxRequests: 10, windowMs: 15 * 60 * 1000 });
   if (limited) return limited;
 
   const supabase = await createServerSupabaseClient();
@@ -114,27 +114,57 @@ export async function POST(request: NextRequest) {
   // ── No deposit required — instant QR + redemption code (or promo code for online) ──
   if (!deal.deposit_amount || deal.deposit_amount <= 0) {
     const qrCode = isOnlineDeal ? null : uuidv4();
-    const redemptionCode = isOnlineDeal ? null : await generateUniqueRedemptionCode(supabase);
-    const { data: claim, error: claimError } = await supabase
-      .from('claims')
-      .insert({
-        deal_id,
-        customer_id: user.id,
-        session_token: sessionToken,
-        deposit_confirmed: true,
-        deposit_confirmed_at: new Date().toISOString(),
-        qr_code: qrCode,
-        qr_code_url: qrCode ? `${APP_URL}/redeem/${qrCode}` : null,
-        redemption_code: redemptionCode,
-        expires_at: claimExpiresAt,
-        payment_tier: null,
-        payment_method_type: null,
-      })
-      .select()
-      .single();
 
-    if (claimError) {
-      return NextResponse.json({ error: claimError.message }, { status: 500 });
+    // Retry on 23505 if two concurrent claims happen to pick the same 6-digit code.
+    let claim: { id: string; redemption_code: string | null; qr_code: string | null } | null = null;
+    let claimError: { code?: string; message?: string } | null = null;
+
+    if (isOnlineDeal) {
+      const res = await supabase
+        .from('claims')
+        .insert({
+          deal_id,
+          customer_id: user.id,
+          session_token: sessionToken,
+          deposit_confirmed: true,
+          deposit_confirmed_at: new Date().toISOString(),
+          qr_code: null,
+          qr_code_url: null,
+          redemption_code: null,
+          expires_at: claimExpiresAt,
+          payment_tier: null,
+          payment_method_type: null,
+        })
+        .select()
+        .single();
+      claim = res.data;
+      claimError = res.error;
+    } else {
+      const res = await withUniqueRedemptionCode(supabase, async (redemptionCode) =>
+        supabase
+          .from('claims')
+          .insert({
+            deal_id,
+            customer_id: user.id,
+            session_token: sessionToken,
+            deposit_confirmed: true,
+            deposit_confirmed_at: new Date().toISOString(),
+            qr_code: qrCode,
+            qr_code_url: qrCode ? `${APP_URL}/redeem/${qrCode}` : null,
+            redemption_code: redemptionCode,
+            expires_at: claimExpiresAt,
+            payment_tier: null,
+            payment_method_type: null,
+          })
+          .select()
+          .single()
+      );
+      claim = res.data;
+      claimError = res.error;
+    }
+
+    if (claimError || !claim) {
+      return NextResponse.json({ error: claimError?.message || 'Failed to create claim' }, { status: 500 });
     }
 
     // Assign promo code for online deals

@@ -123,8 +123,31 @@ export function useAuth() {
 
       resolvedRef.current = true;
       if (profile) {
+        // Try to grab the real Supabase User so JWT claims (aud, user_metadata,
+        // app_metadata, etc.) are present for downstream consumers. Race it against a
+        // short timeout — if getSession() is itself stuck, fall back to a synthetic
+        // User with the minimum fields the type requires.
+        let realUser: User | null = null;
+        try {
+          realUser = await Promise.race<User | null>([
+            supabase.auth.getSession().then(({ data }) => data.session?.user ?? null),
+            new Promise<User | null>((resolve) => setTimeout(() => resolve(null), 500)),
+          ]);
+        } catch { /* ignore, fall through to synthetic */ }
+
+        const syntheticUser: User = {
+          id: profile.id,
+          email: profile.email,
+          aud: 'authenticated',
+          app_metadata: {},
+          user_metadata: {},
+          created_at: '',
+          // Cast: we only fill what the partial path needs; consumers shouldn't depend on
+          // the rest in the synthetic case (see _isSynthetic flag below).
+        } as unknown as User;
+
         setState({
-          user: { id: profile.id, email: profile.email } as User,
+          user: realUser ?? syntheticUser,
           role: profile.role,
           activeRole: profile.active_role,
           isAlsoCustomer: profile.is_also_customer,

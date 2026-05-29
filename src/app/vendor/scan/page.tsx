@@ -300,7 +300,9 @@ export default function ScanPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             redemption_id: result.redemption_id,
-            amount_collected: result.remaining_balance || result.deal?.deal_price || 0,
+            // remaining_balance is authoritative — if it's 0, the customer already paid in full
+            // (don't fall back to deal_price, which would double-count revenue in analytics).
+            amount_collected: Number(result.remaining_balance ?? 0),
           }),
         });
       } catch {
@@ -427,7 +429,17 @@ export default function ScanPage() {
     const pollId = sessionId ? `session_id=${sessionId}` : squareOrderId ? `order_id=${squareOrderId}` : paypalOrderId ? `paypal_order_id=${paypalOrderId}` : null;
     if (!pollId || stripePaid || step !== 'success') return;
 
+    // Cap polling at 20 minutes. If the customer never completes payment, stop hammering the
+    // payment-processor status endpoint — the vendor can use "Collected In Person" instead.
+    const POLL_INTERVAL_MS = 3000;
+    const MAX_POLL_MS = 20 * 60 * 1000;
+    const startedAt = Date.now();
+
     const interval = setInterval(async () => {
+      if (Date.now() - startedAt > MAX_POLL_MS) {
+        clearInterval(interval);
+        return;
+      }
       try {
         const res = await fetch(`/api/vendor/collect-balance/status?${pollId}`);
         const data = await res.json();
@@ -438,7 +450,7 @@ export default function ScanPage() {
       } catch {
         // ignore transient errors, keep polling
       }
-    }, 3000);
+    }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [sessionId, squareOrderId, paypalOrderId, stripePaid, step, handleStripePaid]);

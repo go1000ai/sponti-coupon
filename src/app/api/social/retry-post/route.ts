@@ -138,18 +138,22 @@ export async function POST(request: NextRequest) {
           connection.id
         );
         break;
-      case 'tiktok':
-        if (!post.image_url) {
+      case 'tiktok': {
+        // Match post-manager.ts — accept either an image OR a video URL. Without this,
+        // failed video posts could never be retried (they have no image_url).
+        const tiktokMedia = post.image_url || post.video_url;
+        if (!tiktokMedia) {
           result = {
             platform: 'tiktok',
             connectionId: connection.id,
             success: false,
-            error: 'No image available for TikTok post',
+            error: 'No image or video available for TikTok post',
           };
         } else {
-          result = await postToTikTok(validToken, post.caption || '', post.image_url, connection.id);
+          result = await postToTikTok(validToken, post.caption || '', tiktokMedia, connection.id);
         }
         break;
+      }
       default:
         result = {
           platform: post.platform,

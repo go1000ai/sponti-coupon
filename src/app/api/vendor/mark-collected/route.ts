@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 
 // POST /api/vendor/mark-collected
 // Vendor marks that they collected the remaining balance from the customer
@@ -17,8 +17,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing redemption_id' }, { status: 400 });
   }
 
-  // Verify this redemption belongs to the vendor
-  const { data: redemption } = await supabase
+  // Use service role for both verification AND the update. The redemption row was created
+  // by the redeem flow under service role, and RLS on `redemptions` restricts writes to the
+  // owning customer — a vendor-context update would silently no-op.
+  const serviceClient = await createServiceRoleClient();
+
+  const { data: redemption } = await serviceClient
     .from('redemptions')
     .select('id, vendor_id, collection_completed')
     .eq('id', redemption_id)
@@ -36,17 +40,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Already marked as collected' }, { status: 400 });
   }
 
-  const { error: updateError } = await supabase
+  // Conditional update + select to confirm a row actually changed. Guards against the
+  // unlikely race where two clicks land at the same time.
+  const { data: updated, error: updateError } = await serviceClient
     .from('redemptions')
     .update({
       collection_completed: true,
       collection_completed_at: new Date().toISOString(),
       amount_collected: amount_collected || null,
     })
-    .eq('id', redemption_id);
+    .eq('id', redemption_id)
+    .eq('collection_completed', false)
+    .select('id')
+    .single();
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  if (updateError || !updated) {
+    return NextResponse.json({ error: updateError?.message || 'Failed to mark as collected' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

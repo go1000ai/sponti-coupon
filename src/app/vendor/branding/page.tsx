@@ -18,7 +18,6 @@ const DEFAULT_BRANDING: VendorBranding = {
   accent_color: '#22C55E',
   custom_logo_url: '',
   custom_domain: '',
-  hide_sponticoupon_branding: false,
 };
 
 export default function BrandingPage() {
@@ -415,31 +414,6 @@ export default function BrandingPage() {
             className="input-field"
             placeholder="deals.yourbusiness.com"
           />
-        </div>
-
-        {/* Hide SpontiCoupon Branding */}
-        <div className="card p-6">
-          <label className="flex items-center justify-between cursor-pointer">
-            <div>
-              <h3 className="font-bold text-gray-900">Hide SpontiCoupon Branding</h3>
-              <p className="text-sm text-gray-500 mt-0.5">Remove &quot;Powered by SpontiCoupon&quot; from your deal pages</p>
-            </div>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={form.hide_sponticoupon_branding || false}
-                onChange={e => setForm(prev => ({ ...prev, hide_sponticoupon_branding: e.target.checked }))}
-                className="sr-only"
-              />
-              <div className={`w-11 h-6 rounded-full transition-colors ${
-                form.hide_sponticoupon_branding ? 'bg-primary-500' : 'bg-gray-300'
-              }`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform mt-0.5 ${
-                  form.hide_sponticoupon_branding ? 'translate-x-[22px]' : 'translate-x-0.5'
-                }`} />
-              </div>
-            </div>
-          </label>
         </div>
 
         {/* Save Button */}

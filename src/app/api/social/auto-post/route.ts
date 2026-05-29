@@ -11,11 +11,16 @@ import { postDealToSocial } from '@/lib/social/post-manager';
  * Posts the new deal to all connected social media accounts.
  */
 export async function POST(request: NextRequest) {
-  // Validate internal call via shared secret
+  // Validate internal call via shared secret. Log loudly if the secret is missing in env —
+  // otherwise auto-posting silently fails for every deal and nobody notices.
   const secret = request.headers.get('x-social-post-secret');
   const expectedSecret = process.env.SOCIAL_POST_INTERNAL_SECRET;
 
-  if (!expectedSecret || secret !== expectedSecret) {
+  if (!expectedSecret) {
+    console.error('[Social Auto-Post] SOCIAL_POST_INTERNAL_SECRET is not configured — auto-posting is disabled. Set this env var.');
+    return NextResponse.json({ error: 'Auto-posting not configured', code: 'NO_INTERNAL_SECRET' }, { status: 500 });
+  }
+  if (secret !== expectedSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -27,8 +32,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing deal_id or vendor_id' }, { status: 400 });
     }
 
-    // Run social posting — errors are caught internally and logged to social_posts table
-    await postDealToSocial(deal_id, vendor_id, { customCaptions: custom_captions, postIds: post_ids });
+    // Phase 1: brand-only. All deal posts go to @sponticoupon's own FB/IG, NOT to any
+    // per-vendor connections. Vendors no longer connect their own accounts directly via
+    // Meta OAuth (admin-only). When we later route to vendor accounts via GHL, this lock
+    // can be lifted on a per-vendor basis.
+    await postDealToSocial(deal_id, vendor_id, {
+      customCaptions: custom_captions,
+      postIds: post_ids,
+      brandOnly: true,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

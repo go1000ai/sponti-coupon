@@ -34,17 +34,16 @@ export async function GET() {
     .eq('is_active', true)
     .order('platform');
 
-  // If admin, also fetch brand connections
-  let brandConnections: typeof vendorConnections = [];
-  if (profile.role === 'admin') {
-    const { data: brands } = await serviceClient
-      .from('social_connections')
-      .select('id, vendor_id, is_brand_account, platform, platform_user_id, platform_page_id, account_name, account_username, account_avatar_url, is_active, last_posted_at, last_error, connected_at, updated_at')
-      .eq('is_brand_account', true)
-      .eq('is_active', true)
-      .order('platform');
-    brandConnections = brands || [];
-  }
+  // Brand connections: visible to both admin AND vendor.
+  // Vendors need to know which brand platforms exist so the Preview/Schedule UI knows what
+  // their deals will post to (Phase 1 = brand-only routing).
+  const { data: brands } = await serviceClient
+    .from('social_connections')
+    .select('id, vendor_id, is_brand_account, platform, platform_user_id, platform_page_id, account_name, account_username, account_avatar_url, is_active, last_posted_at, last_error, connected_at, updated_at')
+    .eq('is_brand_account', true)
+    .eq('is_active', true)
+    .order('platform');
+  const brandConnections = brands || [];
 
   return NextResponse.json({
     vendor: vendorConnections || [],

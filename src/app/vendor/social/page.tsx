@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Share2, Facebook, Instagram, Twitter, ExternalLink,
   CheckCircle, XCircle, Loader2, RotateCcw, BarChart3,
-  Clock, ArrowRight, AlertCircle, Unplug, X, Eye,
+  Clock, ArrowRight, AlertCircle, X, Eye,
   CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
   Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
   Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List, Search, Archive,
@@ -23,11 +23,14 @@ const TikTokIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const PLATFORMS = [
-  { key: 'facebook' as const, label: 'Facebook', icon: <Facebook className="w-5 h-5" />, iconColor: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', connectUrl: '/api/social/connect/facebook/authorize', available: true },
-  { key: 'instagram' as const, label: 'Instagram', icon: <Instagram className="w-5 h-5" />, iconColor: 'text-pink-500', bgColor: 'bg-pink-50', borderColor: 'border-pink-200', connectUrl: '/api/social/connect/instagram/authorize', available: true },
-  { key: 'twitter' as const, label: 'X (Twitter)', icon: <Twitter className="w-5 h-5" />, iconColor: 'text-gray-800', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', connectUrl: '/api/social/connect/twitter/authorize', available: false },
-  { key: 'tiktok' as const, label: 'TikTok', icon: <TikTokIcon className="w-5 h-5" />, iconColor: 'text-gray-800', bgColor: 'bg-gray-50', borderColor: 'border-gray-200', connectUrl: '/api/social/connect/tiktok/authorize', available: false },
+// Platform list kept for reference / future re-enablement. Per-vendor connect UI was
+// removed in Phase 1 — deals now route to @sponticoupon's brand accounts only.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _PLATFORMS_FOR_FUTURE_USE = [
+  { key: 'facebook' as const, label: 'Facebook', available: true },
+  { key: 'instagram' as const, label: 'Instagram', available: true },
+  { key: 'twitter' as const, label: 'X (Twitter)', available: false },
+  { key: 'tiktok' as const, label: 'TikTok', available: false },
 ] as const;
 
 const PLATFORM_ICONS: Record<string, React.ReactNode> = {
@@ -151,7 +154,6 @@ export default function VendorSocialPage() {
   // Connections
   const [connections, setConnections] = useState<SocialConnectionItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [fbPagePicker, setFbPagePicker] = useState<{ connectionId: string; pages: { id: string; name: string }[] } | null>(null);
   const [selectingPage, setSelectingPage] = useState(false);
@@ -282,7 +284,10 @@ export default function VendorSocialPage() {
 
         if (connRes.ok) {
           const connData = await connRes.json();
-          setConnections(connData.vendor || []);
+          // Phase 1: vendors don't connect their own accounts. Use brand connections so the
+          // Preview/Schedule UI knows which platforms their deals will post to (@sponticoupon
+          // FB/IG). The API never returns tokens — only metadata.
+          setConnections(connData.brand || []);
         }
 
         if (postsRes.ok) {
@@ -428,25 +433,8 @@ export default function VendorSocialPage() {
     }
   };
 
-  const disconnectSocial = async (connectionId: string, platform: string) => {
-    if (!confirm(`Disconnect ${platform}? Future deals won't auto-post to this account.`)) return;
-    setDisconnecting(connectionId);
-    try {
-      const res = await fetch('/api/social/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connection_id: connectionId }),
-      });
-      if (res.ok) {
-        setConnections(prev => prev.filter(c => c.id !== connectionId));
-        setMessage({ type: 'success', text: `${platform} disconnected.` });
-      } else {
-        setMessage({ type: 'error', text: 'Failed to disconnect. Try again.' });
-      }
-    } finally {
-      setDisconnecting(null);
-    }
-  };
+  // (Phase 1) Disconnect removed — vendors don't own social connections.
+  // Brand-account disconnect lives in /admin/social.
 
   const selectFbPage = async (pageId: string) => {
     if (!fbPagePicker) return;
@@ -463,7 +451,10 @@ export default function VendorSocialPage() {
         const connRes = await fetch('/api/social/connections');
         if (connRes.ok) {
           const connData = await connRes.json();
-          setConnections(connData.vendor || []);
+          // Phase 1: vendors don't connect their own accounts. Use brand connections so the
+          // Preview/Schedule UI knows which platforms their deals will post to (@sponticoupon
+          // FB/IG). The API never returns tokens — only metadata.
+          setConnections(connData.brand || []);
         }
       } else {
         const data = await res.json();
@@ -837,39 +828,52 @@ export default function VendorSocialPage() {
           </div>
         ) : (
           <>
-            {/* ── Connection Status Bar ── */}
-            <div data-tour="social-connections" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
-              {PLATFORMS.map(({ key, label, icon, iconColor, bgColor, borderColor, connectUrl, available }) => {
-                const conn = connections.find(c => c.platform === key);
-                const isConnected = !!conn;
-                return (
-                  <div key={key} className={`p-4 rounded-xl border ${isConnected ? `${borderColor} ${bgColor}` : !available ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-gray-50'} transition-all`}>
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <span className={isConnected ? iconColor : 'text-gray-400'}>{icon}</span>
-                      <span className="font-medium text-gray-900 text-sm">{label}</span>
-                    </div>
-                    {!available ? (
-                      <span className="text-xs text-gray-400 font-medium">Coming Soon</span>
-                    ) : isConnected ? (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                          <span className="text-xs text-green-600 truncate">
-                            {conn.account_username ? `@${conn.account_username}` : conn.account_name || 'Connected'}
-                          </span>
-                        </div>
-                        <button onClick={() => disconnectSocial(conn.id, label)} disabled={disconnecting === conn.id} className="text-gray-400 hover:text-red-500 transition-colors" title="Disconnect">
-                          {disconnecting === conn.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unplug className="w-3.5 h-3.5" />}
-                        </button>
-                      </div>
-                    ) : (
-                      <a href={connectUrl} className="inline-flex items-center gap-1 text-xs text-[#E8632B] hover:text-orange-700 font-medium">
-                        Connect <ArrowRight className="w-3 h-3" />
-                      </a>
-                    )}
+            {/* ── Brand-Routing Notice (Phase 1) ── */}
+            {/* Vendors no longer connect their own social accounts. All deals post to
+                @sponticoupon's Facebook and Instagram. Per-vendor accounts will be added
+                in a future phase. */}
+            <div data-tour="social-connections" className="mb-8 p-5 rounded-xl border border-[#E8632B]/20 bg-gradient-to-br from-orange-50 to-white">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#E8632B]/10 flex items-center justify-center">
+                  <Share2 className="w-5 h-5 text-[#E8632B]" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    Free promotion to the entire SpontiCoupon community
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Every deal you post here is shared with <strong>thousands of deal-hunters</strong>{' '}
+                    following @sponticoupon on Facebook and Instagram. No setup, no extra fees —
+                    your subscription includes it.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <a
+                      href="https://www.facebook.com/sponticoupon"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors"
+                    >
+                      <Facebook className="w-3.5 h-3.5" />
+                      @sponticoupon on Facebook
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
+                    <a
+                      href="https://www.instagram.com/sponticoupon"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white border border-pink-200 text-pink-700 hover:bg-pink-50 transition-colors"
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                      @sponticoupon on Instagram
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    </a>
                   </div>
-                );
-              })}
+                  <p className="text-xs text-gray-500 mt-3">
+                    <Info className="w-3 h-3 inline mr-1" />
+                    Posting to your own business accounts is coming in a future update.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* ── Preview & Schedule Section ── */}
@@ -1586,6 +1590,14 @@ export default function VendorSocialPage() {
 
                     {/* Action buttons — stacked for mobile */}
                     <div data-tour="social-actions" className="space-y-2 pt-3 border-t border-gray-100">
+                      {/* Brand-routing reminder framed as the win it actually is */}
+                      <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 text-xs text-orange-900">
+                        <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#E8632B]" />
+                        <span>
+                          Your deal will be promoted to <strong>thousands of deal-hunters</strong> following{' '}
+                          <strong>@sponticoupon</strong> across Facebook and Instagram — at no extra cost.
+                        </span>
+                      </div>
                       <button
                         onClick={() => handleAction('post_now')}
                         disabled={scheduling}

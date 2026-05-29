@@ -59,7 +59,6 @@ export interface VendorBranding {
   accent_color?: string;
   custom_logo_url?: string;
   custom_domain?: string;
-  hide_sponticoupon_branding?: boolean;
 }
 
 export interface Vendor {

@@ -24,7 +24,15 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    await supabase.auth.signOut();
+    // Use local scope — only clear cookies for THIS browser session. Global scope (the
+    // default) makes a network call to Supabase to revoke all refresh tokens; on edge that
+    // network call can hang or fail silently. We only need the cookies cleared here.
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+    if (signOutError) {
+      console.error('[/api/auth/signout] Supabase signOut error:', signOutError.message);
+      // Continue regardless — even without a successful Supabase call, we still want to
+      // clear the cookies we have on hand so the browser is logged out.
+    }
 
     const response = NextResponse.json({ success: true });
 

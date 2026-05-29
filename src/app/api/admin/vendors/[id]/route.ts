@@ -43,7 +43,6 @@ export async function PUT(
       'secondary_color',
       'accent_color',
       'custom_logo_url',
-      'hide_sponticoupon_branding',
       'lat',
       'lng',
       'average_ticket_value',

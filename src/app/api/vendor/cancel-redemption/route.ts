@@ -18,8 +18,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing redemption_id' }, { status: 400 });
   }
 
-  // Fetch redemption and verify ownership
-  const { data: redemption } = await supabase
+  const serviceClient = await createServiceRoleClient();
+
+  // Verify ownership using the service-role read (consistent with the rest of this handler).
+  const { data: redemption } = await serviceClient
     .from('redemptions')
     .select('id, vendor_id, claim_id, customer_id, collection_completed')
     .eq('id', redemption_id)
@@ -37,7 +39,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Payment already collected — cannot cancel' }, { status: 400 });
   }
 
-  const serviceClient = await createServiceRoleClient();
+  // ATOMIC: delete the redemption row with a `collection_completed = false` guard. If the
+  // Stripe Connect webhook fires between the check above and this delete, the row will already
+  // have `collection_completed = true` and the delete returns 0 rows — we bail before reversing
+  // anything. Prevents the race "customer paid, redemption record gone, claim restored".
+  const { data: deletedRows, error: deleteError } = await serviceClient
+    .from('redemptions')
+    .delete()
+    .eq('id', redemption_id)
+    .eq('collection_completed', false)
+    .select('id');
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+  if (!deletedRows || deletedRows.length === 0) {
+    return NextResponse.json({
+      error: 'Payment was just collected — cannot cancel',
+      code: 'COLLECTED_DURING_CANCEL',
+    }, { status: 409 });
+  }
 
   // 1. Reverse claim — mark as unredeemed
   await serviceClient

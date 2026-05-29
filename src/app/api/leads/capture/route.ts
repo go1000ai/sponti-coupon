@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/rate-limit';
+import { rateLimitDb } from '@/lib/rate-limit';
 
 // POST /api/leads/capture — Save prospect lead + fire GHL webhook
 export async function POST(request: NextRequest) {
-  const limited = rateLimit(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'lead-capture' });
+  // Cross-instance via Postgres — prevents bots from scattering submissions across instances.
+  const limited = await rateLimitDb(request, { maxRequests: 10, windowMs: 60 * 60 * 1000, identifier: 'lead-capture' });
   if (limited) return limited;
 
   let body: { name?: string; email?: string; phone?: string; business_name?: string; source?: string; notes?: string; sms_consent?: boolean };

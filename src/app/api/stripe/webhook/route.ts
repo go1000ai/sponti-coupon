@@ -43,6 +43,18 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createServiceRoleClient();
 
+  // Event-level idempotency — see /api/webhooks/stripe-connect for the same pattern.
+  const { error: dedupeError } = await supabase
+    .from('webhook_events')
+    .insert({ provider: 'stripe', event_id: event.id });
+  if (dedupeError && dedupeError.code === '23505') {
+    console.log('[Stripe Webhook] Duplicate event ignored:', event.id);
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+  if (dedupeError) {
+    console.error('[Stripe Webhook] Dedupe insert error (continuing):', dedupeError.message);
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;

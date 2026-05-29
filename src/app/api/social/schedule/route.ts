@@ -58,12 +58,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Get vendor's active connections for the requested platforms
+  // Phase 1: brand-only. All vendor-triggered posts route to @sponticoupon's brand FB/IG,
+  // not to any per-vendor connection. Pull brand connections only.
   const vendorId = deal.vendor_id;
   const { data: connections } = await serviceClient
     .from('social_connections')
     .select('id, platform, is_brand_account')
-    .or(`vendor_id.eq.${vendorId},is_brand_account.eq.true`)
+    .eq('is_brand_account', true)
     .eq('is_active', true)
     .in('platform', platforms);
 
@@ -107,11 +108,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
     }
 
-    // Post directly instead of fire-and-forget HTTP call (avoids silent failures)
+    // Post directly instead of fire-and-forget HTTP call (avoids silent failures).
+    // Phase 1: brand-only — see /api/social/auto-post for the same lock.
     try {
       await postDealToSocial(deal_id, vendorId, {
         customCaptions: captions,
         postIds: posts?.map(p => p.id) || [],
+        brandOnly: true,
       });
     } catch (postError) {
       console.error('[Social Schedule] Direct posting failed:', postError);
