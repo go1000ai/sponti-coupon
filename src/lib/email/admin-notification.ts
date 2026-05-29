@@ -1,7 +1,12 @@
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
-function getAdminEmail() {
-  return process.env.ADMIN_NOTIFICATION_EMAIL || 'info@Go1000.ai';
+function getAdminEmails(): string[] {
+  // Allow override via env (comma-separated list). Default: both go1000 and sponticoupon inboxes.
+  const raw = process.env.ADMIN_NOTIFICATION_EMAIL;
+  if (raw && raw.trim()) {
+    return raw.split(',').map(e => e.trim()).filter(Boolean);
+  }
+  return ['info@sponticoupon.com', 'info@go1000.ai'];
 }
 
 function getFromEmail() {
@@ -20,7 +25,7 @@ async function sendEmail(subject: string, html: string) {
     },
     body: JSON.stringify({
       from: `SpontiCoupon <${getFromEmail()}>`,
-      to: getAdminEmail(),
+      to: getAdminEmails(),
       subject,
       html,
     }),

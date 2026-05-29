@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { notifyNewSignup } from '@/lib/email/admin-notification';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -98,6 +99,18 @@ export async function GET(request: Request) {
             subscription_status: promoConfig ? 'active' : 'incomplete',
             ...(promoConfig ? { promo_code: promoCode, promo_expires_at: promoExpiresAt } : {}),
           });
+
+          // Admin notification — fire-and-forget so a Resend hiccup doesn't break signup
+          notifyNewSignup({
+            email,
+            accountType: 'vendor',
+            businessName,
+            city: city || undefined,
+            state: state || undefined,
+            subscriptionTier: promoConfig
+              ? `${promoConfig.tier} (PROMO: ${promoCode} — ${promoConfig.freeMonths}mo free)`
+              : 'starter (pending checkout)',
+          }).catch(() => {});
         } else {
           const firstName = searchParams.get('firstName') || meta.first_name || null;
           const lastName = searchParams.get('lastName') || meta.last_name || null;
@@ -118,6 +131,15 @@ export async function GET(request: Request) {
             zip,
             timezone: customerTz,
           });
+
+          // Admin notification for new customer
+          notifyNewSignup({
+            email,
+            accountType: 'customer',
+            name: [firstName, lastName].filter(Boolean).join(' ') || undefined,
+            city: city || undefined,
+            state: state || undefined,
+          }).catch(() => {});
         }
       }
 
