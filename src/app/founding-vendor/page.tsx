@@ -9,7 +9,6 @@ import {
   Tag, Megaphone, DollarSign, Zap, Clock, ArrowRight, CheckCircle2, Star,
   Flame, ShieldCheck,
 } from 'lucide-react';
-import { SpontiIcon } from '@/components/ui/SpontiIcon';
 
 const PROMO_CODE = 'FOUNDING15';
 const MAX_SPOTS = 15;
