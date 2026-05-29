@@ -40,7 +40,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-gray-900">3. Platform Description</h2>
           <p className="text-gray-600 leading-relaxed">
-            SpontiCoupon is a deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Steady Deals and Sponti Coupons (flash deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
+            SpontiCoupon is a deal marketplace that connects local businesses (&quot;Vendors&quot;) with consumers (&quot;Customers&quot;). We facilitate the listing and discovery of time-limited deals, including Steady Deals and Sponti Coupons (Sponti Deals with countdown timers). SpontiCoupon acts as a technology platform and is not a party to any transaction between Vendors and Customers.
           </p>
         </section>
 
@@ -56,7 +56,7 @@ export default function TermsPage() {
 
           <h3 className="text-lg font-semibold text-gray-900 mt-4">5.1 Sponti Deal Rules</h3>
           <p className="text-gray-600 leading-relaxed mt-1">
-            Sponti Coupons are flash deals governed by the following platform rules:
+            Sponti Coupons are Sponti Deals governed by the following platform rules:
           </p>
           <ul className="list-disc pl-5 space-y-2 mt-3 text-gray-600">
             <li>

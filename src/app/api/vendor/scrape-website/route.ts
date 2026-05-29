@@ -281,7 +281,7 @@ Return ONLY valid JSON (no markdown, no code blocks) with this structure:
 RULES:
 - Make deals SPECIFIC to the business — reference their actual products/services
 - Price deals competitively (consider the competitor data if provided)
-- Include at least one Sponti Coupon (flash deal) and one Steady Deal
+- Include at least one Sponti Coupon (Sponti Deal — countdown urgency) and one Steady Deal
 - The third deal should be the most creative/compelling option
 - For suggested_image_prompt, describe a professional photo that would showcase this specific deal
 - For recommended_images, pick the best 2-3 images from the website that could work as deal images`;

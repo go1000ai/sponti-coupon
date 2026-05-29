@@ -45,7 +45,7 @@ const EMAIL_SIGNATURE = `
         </p>
         <p style="margin:0 0 7px;font-size:13px;color:#374151;line-height:1.5;">
           <span style="color:#E8632B;font-weight:700;">✓</span>&nbsp;
-          <strong>Two deal types:</strong> Sponti (flash sales) &amp; Steady (ongoing offers)
+          <strong>Two deal types:</strong> Sponti Deals (countdown urgency) &amp; Steady Deals (ongoing offers)
         </p>
         <p style="margin:0;font-size:13px;color:#374151;line-height:1.5;">
           <span style="color:#E8632B;font-weight:700;">✓</span>&nbsp;

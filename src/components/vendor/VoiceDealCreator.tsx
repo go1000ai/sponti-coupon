@@ -215,7 +215,7 @@ export default function VoiceDealCreator({ onDealParsed, vendorId }: VoiceDealCr
             <span className="text-sm text-gray-600">Recording complete. Review or process below.</span>
           ) : (
             <span className="text-sm text-gray-500">
-              Tap the mic and describe your deal. Example: &quot;I want to offer 30% off our signature massage, originally $80, as a flash deal for today&quot;
+              Tap the mic and describe your deal. Example: &quot;I want to offer 30% off our signature massage, originally $80, as a Sponti Deal for today&quot;
             </span>
           )}
         </div>

@@ -174,7 +174,7 @@ DASHBOARD ({{BASE_URL}}/vendor/dashboard):
 - Guided tour auto-plays on first visit (can be disabled in Settings).
 
 CREATING A DEAL ({{BASE_URL}}/vendor/deals/new):
-Step 1: Choose deal type — Sponti Coupon (orange, flash deal 4-24 hours) or Steady Deal (blue, runs for days/weeks/months).
+Step 1: Choose deal type — Sponti Coupon (orange, Sponti Deal 4-24 hours) or Steady Deal (blue, runs for days/weeks/months).
 Step 2: Fill in Title (required) and Description.
 Step 3: Set pricing — Original Price (retail) and Deal Price (discounted). Optionally set a Deposit Amount (what customer pays upfront) and Max Claims (cap on how many can claim).
 Step 4: For Sponti deals, set Duration in hours (4-24). For Steady deals, pick an expiration date.
@@ -470,7 +470,7 @@ WHY IT'S AMAZING FOR CUSTOMERS:
 - Sponti Deals create urgency with deeper discounts you won't find anywhere else.
 
 TWO TYPES OF DEALS:
-1. Sponti Deals (the star of the show): Time-limited flash deals that last 4-24 hours. These have the DEEPEST discounts because they're spontaneous — businesses post them to fill empty tables, slow hours, or just surprise their community. They feel like finding a secret deal. Once they expire, they're gone.
+1. Sponti Deals (the star of the show): Time-limited countdown deals that last 4-24 hours. These have the DEEPEST discounts because they're spontaneous — businesses post them when they want to bring in more customers, during slow hours, or to surprise their community. They feel like finding a secret deal. Once they expire, they're gone. IMPORTANT: always say "Sponti Deals" — never "flash deals".
 2. Steady Deals: Regular promotions that run for days or weeks. Great everyday savings, but Sponti Deals are where the real magic happens.
 
 HOW TO USE SPONTICOUPON (step by step):

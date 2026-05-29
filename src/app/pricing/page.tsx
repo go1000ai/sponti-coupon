@@ -351,7 +351,7 @@ export default function PricingPage() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">Sponti Deals</h3>
-                    <p className="text-sm font-semibold text-primary-500">Flash Deals</p>
+                    <p className="text-sm font-semibold text-primary-500">Sponti Deals</p>
                   </div>
                 </div>
                 <p className="text-gray-700 mb-4">

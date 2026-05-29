@@ -21,7 +21,7 @@ export async function GET() {
 
 CONTEXT:
 - Today is ${dayName} ${timeOfDay}
-- SpontiCoupon helps local businesses (restaurants, salons, auto shops) attract customers with flash deals and ongoing deals
+- SpontiCoupon helps local businesses (restaurants, salons, auto shops) attract customers with Sponti Deals (countdown urgency) and Steady Deals (ongoing). Always say "Sponti Deals" — never "flash deals".
 - Vendors pay $49-$499/month; customers claim deals for free
 - Website: sponticoupon.com
 - Current campaign: Founders 20 (first 20 vendors get lifetime discount)

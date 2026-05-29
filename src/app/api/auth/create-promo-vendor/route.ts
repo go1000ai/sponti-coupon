@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { notifyNewSignup } from '@/lib/email/admin-notification';
 
-const VALID_PROMOS: Record<string, { tier: string; freeMonths: number }> = {
+const VALID_PROMOS: Record<string, { tier: string; freeMonths: number; maxUses?: number }> = {
   PUERTORICO6: { tier: 'business', freeMonths: 3 },
+  FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 15 },
 };
 
 export async function POST(request: NextRequest) {
@@ -19,12 +20,27 @@ export async function POST(request: NextRequest) {
     const { promoCode, businessName, phone, address, city, state, zip, category } = body;
 
     // Validate promo code
-    const promo = VALID_PROMOS[promoCode?.toUpperCase()];
+    const normalizedPromo = (promoCode || '').toUpperCase();
+    const promo = VALID_PROMOS[normalizedPromo];
     if (!promo) {
       return NextResponse.json({ error: 'Invalid promo code' }, { status: 400 });
     }
 
     const adminClient = await createServiceRoleClient();
+
+    // Enforce maxUses cap
+    if (promo.maxUses) {
+      const { count } = await adminClient
+        .from('vendors')
+        .select('id', { count: 'exact', head: true })
+        .eq('promo_code', normalizedPromo);
+      if ((count ?? 0) >= promo.maxUses) {
+        return NextResponse.json({
+          error: 'This founding offer is fully claimed. Please choose a plan to continue.',
+          capReached: true,
+        }, { status: 409 });
+      }
+    }
 
     // Check if profile already exists
     const { data: existing } = await adminClient
@@ -114,7 +130,7 @@ export async function POST(request: NextRequest) {
       timezone: state === 'PR' ? 'America/Puerto_Rico' : 'America/New_York',
       subscription_tier: promo.tier,
       subscription_status: 'active',
-      promo_code: promoCode.toUpperCase(),
+      promo_code: normalizedPromo,
       promo_expires_at: expiresAt.toISOString(),
     });
 
@@ -125,7 +141,7 @@ export async function POST(request: NextRequest) {
       businessName,
       city,
       state,
-      subscriptionTier: `${promo.tier} (PROMO: ${promoCode.toUpperCase()} - ${promo.freeMonths}mo free)`,
+      subscriptionTier: `${promo.tier} (PROMO: ${normalizedPromo} - ${promo.freeMonths}mo free)`,
     }).catch(() => {});
 
     return NextResponse.json({ success: true, role: 'vendor' });

@@ -130,7 +130,7 @@ For requires_appointment: Set to true for businesses that typically require appo
       const userPrompt = `Business: ${businessName}
 Category: ${category}
 Location: ${location}
-Deal Type: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours, needs deposit)' : 'Steady Deal (steady savings, 1-30 days)'}${steadyDealContext}
+Deal Type: ${isSponti ? 'Sponti Coupon (Sponti Deal, 4-24 hours, countdown urgency, needs deposit)' : 'Steady Deal (steady savings, 1-30 days)'}${steadyDealContext}
 ${prompt ? `\nVENDOR'S DEAL IDEA (THIS IS THE MOST IMPORTANT INPUT — base the title, description, pricing, and all details on this):\n"${prompt}"` : ''}
 
 Generate a specific, compelling deal based on the vendor's idea above. The description must be detailed and vivid — describe what the customer will actually experience, taste, or receive. Do NOT write generic marketing fluff.${isSponti ? ' For Sponti deals, price aggressively — these are time-limited impulse deals that should feel like an amazing, can\'t-miss opportunity.' : ''}`;

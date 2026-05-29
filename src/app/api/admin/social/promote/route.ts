@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest) {
     if (mode === 'ideas') {
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: `You are a senior social media marketing strategist for SpontiCoupon — a deal marketplace connecting local businesses with customers through flash deals (Sponti Deals) and ongoing deals (Steady Deals).
+        contents: `You are a senior social media marketing strategist for SpontiCoupon — a deal marketplace connecting local businesses with customers through Sponti Deals (countdown-timer urgency deals) and Steady Deals (ongoing).
 
 BUSINESS CONTEXT:
 - Vendors (local businesses) pay $49-$499/month subscription to list deals
@@ -80,12 +80,12 @@ Return ONLY valid JSON, no markdown fences.`,
 
     const result = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `You are a senior social media marketing strategist for SpontiCoupon — a deal marketplace connecting local businesses with customers through flash deals and ongoing deals.
+      contents: `You are a senior social media marketing strategist for SpontiCoupon — a deal marketplace connecting local businesses with customers through Sponti Deals (countdown urgency) and Steady Deals (ongoing). IMPORTANT: always say "Sponti Deals" — never "flash deals".
 
 BUSINESS CONTEXT:
 - SpontiCoupon is a subscription-based deal marketplace for local businesses
 - Vendors pay $49-$499/month to list deals; customers claim deals for free
-- Two deal types: Sponti Deals (flash, 4-24 hours, urgency) and Steady Deals (ongoing)
+- Two deal types: Sponti Deals (4-24 hours, countdown urgency) and Steady Deals (ongoing)
 - Launching in Orlando, FL — expanding to more cities
 - Website: sponticoupon.com
 - Current promotions: Founders 20 (first 20 vendors get lifetime discount), Launch Special pricing

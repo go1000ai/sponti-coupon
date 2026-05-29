@@ -160,8 +160,8 @@ const en: Translations = {
     },
     howItWorks: {
       title: 'How It Works',
-      spontiDescription: 'Sponti - Flash deals with a countdown — grab them before they expire',
-      spontiDescShort: 'Flash deals with a countdown — grab them before they expire',
+      spontiDescription: 'Sponti Deals - Countdown deals — grab them before they expire',
+      spontiDescShort: 'Countdown Sponti Deals — grab them before they expire',
       steadyDescription: 'Steady - Always-on deals you can claim anytime',
       steadyDescShort: 'Always-on deals you can claim anytime',
       step1Title: 'Discover Deals',
@@ -550,7 +550,7 @@ const en: Translations = {
     },
     vendorSignup: {
       title: 'List Your Business',
-      subtitle: 'Start posting flash deals and growing your customer base',
+      subtitle: 'Start posting Sponti Deals and growing your customer base',
       choosePlan: 'Choose Plan',
       businessInfo: 'Business Info',
       paymentSetup: 'Payment Setup',

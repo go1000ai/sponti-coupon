@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           about: 'Deal marketplace connecting local businesses with customers in Orlando, FL',
           vendor_model: 'Vendors pay $49-$499/month subscription to list deals',
           customer_model: 'Customers browse and claim deals for free, redeem via QR code',
-          deal_types: ['Sponti Deals (flash deals, 4-24 hours, urgency-driven)', 'Steady Deals (ongoing)'],
+          deal_types: ['Sponti Deals (4-24 hours, countdown-timer urgency)', 'Steady Deals (ongoing)'],
           website: 'sponticoupon.com',
           promotions: 'Founders 20 — first 20 vendors get lifetime discount',
           vendor_value: 'reach new customers, fill empty seats, boost foot traffic, affordable marketing',

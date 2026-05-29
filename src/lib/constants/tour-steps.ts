@@ -243,7 +243,7 @@ export const SOCIAL_PAGE_TOUR_STEPS: Step[] = [
     target: '[data-tour="social-tone"]',
     title: 'Step 5: Set Your Caption Tone',
     content:
-      'Pick the vibe for your captions. "Fun & playful" works great for restaurants and bars. "Professional & polished" is better for spas and services. "Urgent & exciting" drives FOMO for flash deals. The AI writes platform-specific captions in your chosen tone.',
+      'Pick the vibe for your captions. "Fun & playful" works great for restaurants and bars. "Professional & polished" is better for spas and services. "Urgent & exciting" drives FOMO for Sponti Deals. The AI writes platform-specific captions in your chosen tone.',
     placement: 'bottom',
     disableBeacon: true,
   },

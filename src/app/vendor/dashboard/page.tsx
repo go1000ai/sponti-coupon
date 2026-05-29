@@ -278,6 +278,40 @@ function VendorDashboard() {
         </div>
       </div>
 
+      {/* Founding/promo trial countdown */}
+      {vendor?.promo_code && vendor?.promo_expires_at && (() => {
+        const expiresAt = new Date(vendor.promo_expires_at);
+        const now = new Date();
+        const daysLeft = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+        if (daysLeft <= 0) return null;
+        const urgent = daysLeft <= 15;
+        return (
+          <div className={`rounded-2xl p-5 mb-8 border ${urgent ? 'bg-gradient-to-r from-primary-50 to-orange-50 border-primary-200' : 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className={`shrink-0 rounded-xl p-3 ${urgent ? 'bg-primary-500' : 'bg-emerald-500'} text-white`}>
+                <Clock className="w-6 h-6" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">
+                  Founding Vendor — {daysLeft} day{daysLeft === 1 ? '' : 's'} left in your free trial
+                </p>
+                <p className="text-xs text-gray-600 mt-0.5">
+                  Trial ends {expiresAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.
+                  {urgent ? ' Pick a plan now to keep your deals live.' : ' Enjoy full Business-plan access.'}
+                </p>
+              </div>
+              <Link
+                href="/pricing"
+                className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${urgent ? 'bg-primary-500 text-white hover:bg-primary-600 shadow-lg shadow-primary-200' : 'bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50'}`}
+              >
+                {urgent ? 'Pick a Plan' : 'View Plans'}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Stat Cards */}
       <div data-tour="vendor-stats" className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
         {statItems.map((stat, i) => (

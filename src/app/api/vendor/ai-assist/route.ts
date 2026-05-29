@@ -135,14 +135,14 @@ export async function POST(request: NextRequest) {
       userMessage += `\n\nHere is the current description (improve or rewrite it):\n${context.current_text}`;
     }
   } else if (type === 'deal_title') {
-    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (flash deal)' : 'Steady Deal'}`;
+    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (Sponti Deal — countdown urgency)' : 'Steady Deal'}`;
     if (context?.description) userMessage += `\nDeal description: ${context.description}`;
     userMessage += `\n\nWrite a catchy deal title.`;
     if (context?.current_text) {
       userMessage += `\n\nHere is the current title (improve or rewrite it):\n${context.current_text}`;
     }
   } else if (type === 'deal_description') {
-    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (flash deal)' : 'Steady Deal'}`;
+    userMessage += `\nDeal type: ${context?.deal_type === 'sponti_coupon' ? 'Sponti Coupon (Sponti Deal — countdown urgency)' : 'Steady Deal'}`;
     if (context?.title) userMessage += `\nDeal title: ${context.title}`;
     if (context?.original_price) userMessage += `\nOriginal price: $${context.original_price}`;
     if (context?.deal_price) userMessage += `\nDeal price: $${context.deal_price}`;

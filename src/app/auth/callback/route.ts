@@ -33,12 +33,25 @@ export async function GET(request: Request) {
         .eq('id', userId)
         .single();
 
-      // Check for promo signup (e.g., Puerto Rico launch)
-      const promoCode = searchParams.get('promo') || meta.promo || '';
-      const VALID_PROMOS: Record<string, { tier: string; freeMonths: number }> = {
+      // Check for promo signup (e.g., Puerto Rico launch, Founding Vendor)
+      const promoCode = (searchParams.get('promo') || meta.promo || '').toUpperCase();
+      const VALID_PROMOS: Record<string, { tier: string; freeMonths: number; maxUses?: number }> = {
         PUERTORICO6: { tier: 'business', freeMonths: 3 },
+        FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 15 },
       };
-      const promoConfig = VALID_PROMOS[promoCode.toUpperCase()] || null;
+      let promoConfig = VALID_PROMOS[promoCode] || null;
+
+      // Enforce maxUses cap (count vendors already redeeming this code)
+      if (promoConfig?.maxUses) {
+        const { count } = await adminClient
+          .from('vendors')
+          .select('id', { count: 'exact', head: true })
+          .eq('promo_code', promoCode);
+        if ((count ?? 0) >= promoConfig.maxUses) {
+          console.log(`[AUTH CALLBACK] Promo ${promoCode} cap reached (${count}/${promoConfig.maxUses}) — falling back to paid signup`);
+          promoConfig = null;
+        }
+      }
 
       if (!existingProfile) {
 
@@ -82,7 +95,7 @@ export async function GET(request: Request) {
             timezone: vendorTz,
             subscription_tier: promoConfig ? promoConfig.tier : 'starter',
             subscription_status: promoConfig ? 'active' : 'incomplete',
-            ...(promoConfig ? { promo_code: promoCode.toUpperCase(), promo_expires_at: promoExpiresAt } : {}),
+            ...(promoConfig ? { promo_code: promoCode, promo_expires_at: promoExpiresAt } : {}),
           });
         } else {
           const firstName = searchParams.get('firstName') || meta.first_name || null;

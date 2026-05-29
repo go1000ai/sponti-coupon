@@ -55,7 +55,7 @@ Deal info:
 - Title: ${deal.title}
 - Business: ${deal.vendor.business_name}${deal.vendor.city ? ` in ${deal.vendor.city}, ${deal.vendor.state}` : ''}
 - Category: ${deal.vendor.category || 'Local business'}
-- Type: ${deal.deal_type === 'sponti_coupon' ? 'Sponti Coupon (limited-time flash deal!)' : 'Steady Deal (ongoing value)'}
+- Type: ${deal.deal_type === 'sponti_coupon' ? 'Sponti Deal (limited-time, countdown urgency!)' : 'Steady Deal (ongoing value)'}
 - Price: $${deal.deal_price} (was $${deal.original_price}, ${discount}% off)
 - Description: ${deal.description || deal.title}
 - Claim link: ${claimUrl}

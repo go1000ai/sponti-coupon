@@ -180,7 +180,7 @@ Business: ${businessName}
 Category: ${category}
 Location: ${location}
 Rating: ${vendor?.avg_rating ? `${vendor.avg_rating}/5` : 'N/A'}
-Deal Type Being Created: ${isSponti ? 'Sponti Coupon (flash deal, 4-24 hours)' : 'Steady Deal (1-30 days)'}
+Deal Type Being Created: ${isSponti ? 'Sponti Coupon (Sponti Deal, 4-24 hours, countdown urgency)' : 'Steady Deal (1-30 days)'}
 Current Day/Time: ${dayOfWeek} ${timeOfDay}${dealHistoryContext}${steadyContext}${pricingContext}${statsContext}`;
 
   try {

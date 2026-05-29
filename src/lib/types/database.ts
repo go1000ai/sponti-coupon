@@ -101,6 +101,8 @@ export interface Vendor {
   paypal_connect_charges_enabled: boolean;
   average_ticket_value: number | null;
   appointment_settings: VendorAppointmentSettings;
+  promo_code: string | null;
+  promo_expires_at: string | null;
   created_at: string;
 }
 
