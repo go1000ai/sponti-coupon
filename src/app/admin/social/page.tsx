@@ -79,6 +79,13 @@ export default function AdminSocialPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Preview/edit modal state
+  const [editDealId, setEditDealId] = useState<string | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editCaption, setEditCaption] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null);
+  const [editPosting, setEditPosting] = useState(false);
+
   const showToast = (kind: 'ok' | 'err', msg: string) => {
     setToast({ kind, msg });
     setTimeout(() => setToast(null), 4000);
@@ -122,6 +129,73 @@ export default function AdminSocialPage() {
       }
     } finally {
       setBusyId(null);
+    }
+  };
+
+  // Open the preview/edit modal — fetches AI-generated caption for admin to tweak before posting
+  const openEdit = async (dealId: string) => {
+    setEditDealId(dealId);
+    setEditCaption('');
+    setEditImageUrl(null);
+    setEditLoading(true);
+    try {
+      const res = await fetch('/api/social/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deal_id: dealId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast('err', err.error || 'Failed to load preview');
+        setEditDealId(null);
+        return;
+      }
+      const data = await res.json();
+      // Prefer facebook caption as the shared default; fall back to any other
+      const caps = data.captions || {};
+      const baseline = caps.facebook || caps.instagram || caps.twitter || caps.tiktok || '';
+      setEditCaption(baseline);
+      setEditImageUrl(data.image_url || data.imageUrl || null);
+    } catch {
+      showToast('err', 'Network error loading preview');
+      setEditDealId(null);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const postEdited = async () => {
+    if (!editDealId || !editCaption.trim()) return;
+    setEditPosting(true);
+    try {
+      // Send the SAME admin-edited caption to every platform so brand-account
+      // posts read identically across FB / IG / etc. postDealToSocial overrides
+      // the auto-generated copy with these values when present.
+      const captions = {
+        facebook: editCaption,
+        instagram: editCaption,
+        twitter: editCaption,
+        tiktok: editCaption,
+      };
+      const res = await fetch('/api/admin/social/post-deal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dealId: editDealId,
+          platforms: platformsForFilter(),
+          captions,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showToast('err', err.error || 'Post failed');
+      } else {
+        showToast('ok', 'Posted with your edited caption. Refreshing…');
+        setEditDealId(null);
+        await refresh();
+      }
+    } finally {
+      setEditPosting(false);
     }
   };
 
@@ -708,14 +782,103 @@ export default function AdminSocialPage() {
                 })}
               </div>
 
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => openEdit(selectedDeal.id)}
+                  disabled={busyId === `deal:${selectedDeal.id}` || editLoading}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white border-2 border-primary-500 text-primary-600 font-semibold hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Preview &amp; Edit Caption
+                </button>
+                <button
+                  onClick={() => postDeal(selectedDeal.id)}
+                  disabled={busyId === `deal:${selectedDeal.id}`}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary-500 text-white font-semibold hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className={`w-5 h-5 ${busyId === `deal:${selectedDeal.id}` ? 'animate-pulse' : ''}`} />
+                  {selectedHasPosted ? 'Re-post (AI caption)' : 'Post Now (AI caption)'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview & Edit Caption Modal */}
+      {editDealId && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8 bg-black/50 backdrop-blur-sm"
+          onClick={() => !editPosting && setEditDealId(null)}
+        >
+          <div
+            className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-primary-500 to-orange-500 px-6 py-4 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-lg">Preview &amp; Edit Caption</h3>
+                <p className="text-xs text-white/85">Tweak the AI copy before posting to brand accounts</p>
+              </div>
               <button
-                onClick={() => postDeal(selectedDeal.id)}
-                disabled={busyId === `deal:${selectedDeal.id}`}
-                className="mt-5 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary-500 text-white font-semibold hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => !editPosting && setEditDealId(null)}
+                className="text-white/80 hover:text-white"
+                disabled={editPosting}
               >
-                <Send className={`w-5 h-5 ${busyId === `deal:${selectedDeal.id}` ? 'animate-pulse' : ''}`} />
-                {selectedHasPosted ? 'Re-post to all brand accounts' : 'Post to all brand accounts'}
+                <XCircle className="w-6 h-6" />
               </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {editLoading ? (
+                <div className="flex items-center justify-center py-10">
+                  <RefreshCw className="w-6 h-6 text-primary-500 animate-spin" />
+                  <span className="ml-3 text-sm text-gray-600">Generating preview…</span>
+                </div>
+              ) : (
+                <>
+                  {editImageUrl && (
+                    <div className="rounded-xl overflow-hidden border border-gray-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={editImageUrl} alt="Post preview" className="w-full h-48 object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                      Caption (used on all connected brand accounts)
+                    </label>
+                    <textarea
+                      value={editCaption}
+                      onChange={(e) => setEditCaption(e.target.value)}
+                      rows={8}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-mono leading-relaxed"
+                      placeholder="Edit the caption…"
+                      disabled={editPosting}
+                    />
+                    <div className="flex items-center justify-between mt-1.5 text-xs text-gray-500">
+                      <span>{editCaption.length} chars</span>
+                      <span className="italic">#Ad will be appended automatically (FTC § 255.5)</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setEditDealId(null)}
+                  disabled={editPosting}
+                  className="flex-1 px-4 py-3 rounded-lg border border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={postEdited}
+                  disabled={editPosting || editLoading || !editCaption.trim()}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-primary-500 text-white font-semibold hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send className={`w-5 h-5 ${editPosting ? 'animate-pulse' : ''}`} />
+                  {editPosting ? 'Posting…' : 'Post with This Caption'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

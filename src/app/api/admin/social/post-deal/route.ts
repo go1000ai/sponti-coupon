@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   const admin = await verifyAdmin();
   if (!admin) return forbiddenResponse();
 
-  let body: { dealId?: string; platforms?: string[] };
+  let body: { dealId?: string; platforms?: string[]; captions?: Record<string, string> };
   try {
     body = await request.json();
   } catch {
@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
     ? body.platforms.map(String)
     : undefined;
 
+  // Optional admin-edited captions per platform — passed through to postDealToSocial
+  const customCaptions = body.captions && typeof body.captions === 'object'
+    ? Object.fromEntries(
+        Object.entries(body.captions).filter(([, v]) => typeof v === 'string' && v.trim().length > 0)
+      ) as Record<string, string>
+    : undefined;
+
   const supabase = await createServiceRoleClient();
   const { data: deal } = await supabase
     .from('deals')
@@ -42,7 +49,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 
-  await postDealToSocial(deal.id, deal.vendor_id, { brandOnly: true, platforms });
+  await postDealToSocial(deal.id, deal.vendor_id, {
+    brandOnly: true,
+    platforms,
+    ...(customCaptions ? { customCaptions } : {}),
+  });
 
   return NextResponse.json({ success: true });
 }
