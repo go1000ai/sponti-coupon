@@ -35,11 +35,12 @@ export async function GET(request: Request) {
 
       // Check for promo signup (e.g., Puerto Rico launch, Founding Vendor)
       const promoCode = (searchParams.get('promo') || meta.promo || '').toUpperCase();
-      const VALID_PROMOS: Record<string, { tier: string; freeMonths: number; maxUses?: number }> = {
+      type PromoConfig = { tier: string; freeMonths: number; maxUses?: number };
+      const VALID_PROMOS: Record<string, PromoConfig> = {
         PUERTORICO6: { tier: 'business', freeMonths: 3 },
         FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 15 },
       };
-      let promoConfig = VALID_PROMOS[promoCode] || null;
+      let promoConfig: PromoConfig | null = VALID_PROMOS[promoCode] || null;
 
       // Enforce maxUses cap (count vendors already redeeming this code)
       if (promoConfig?.maxUses) {
