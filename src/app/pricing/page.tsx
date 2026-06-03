@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
-  Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift, Clock,
+  Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift,
   Timer, CalendarDays, Stamp, Flame, ShieldCheck,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
