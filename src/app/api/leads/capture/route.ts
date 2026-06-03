@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { rateLimitDb } from '@/lib/rate-limit';
+import { sendNewLeadNotification } from '@/lib/email/new-lead-notification';
 
 // POST /api/leads/capture — Save prospect lead + fire GHL webhook
 export async function POST(request: NextRequest) {
@@ -45,6 +46,19 @@ export async function POST(request: NextRequest) {
     console.error('[Lead Capture] DB error:', error.message);
     return NextResponse.json({ error: 'Failed to save lead' }, { status: 500 });
   }
+
+  // Fire email notification (fire-and-forget) — admin gets pinged on every new lead
+  sendNewLeadNotification({
+    leadId: lead.id,
+    email: email.trim().toLowerCase(),
+    name: name?.trim() || null,
+    phone: phone?.trim() || null,
+    businessName: business_name?.trim() || null,
+    source: source || 'olivia_chat',
+    notes: notes?.trim() || null,
+  }).catch((err) => {
+    console.error('[Lead Capture] Email notification failed:', err);
+  });
 
   // Fire GHL webhook (fire-and-forget)
   const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL;

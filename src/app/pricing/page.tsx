@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Check, Sparkles, Zap, ArrowRight, ChevronDown, Loader2,
   Rocket, Crown, Star, Users, Utensils, Scissors, Dumbbell,
   Music, ShoppingBag, Car, Heart, Camera, Coffee, Gift, Clock,
-  Timer, CalendarDays, Stamp,
+  Timer, CalendarDays, Stamp, Flame, ShieldCheck,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { ScrollReveal } from '@/components/ui/ScrollReveal';
@@ -14,17 +15,20 @@ import { useCountUp } from '@/lib/hooks/useCountUp';
 import { CompetitorComparison } from '@/components/landing/CompetitorComparison';
 import { WhyChooseUs } from '@/components/sections/WhyChooseUs';
 import { ROICalculator } from '@/components/sections/ROICalculator';
+import { DemoGate } from '@/components/pricing/DemoGate';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import { formatCurrency } from '@/lib/utils';
 import { useLanguage } from '@/lib/i18n';
 
 /* ─────── Founders Launch Promo ─────── */
+// Standard plan-level founders promo is RETIRED. The only "founders" path
+// is the invitation-only program at /founding-vendor (see bento + DemoGate CTA).
 const FOUNDERS_LAUNCH_STATIC = {
-  active: new Date() <= new Date('2026-04-30T23:59:59-04:00'), // Expires end of April 30, 2026 ET
-  freeMonths: 2,
-  totalSpots: 200,
-  eligiblePlans: ['pro', 'business'] as string[],
-  founderDiscount: 20,             // permanent % off after free period
+  active: false,
+  freeMonths: 0,
+  totalSpots: 0,
+  eligiblePlans: [] as string[],
+  founderDiscount: 0,
 };
 
 const ENTERPRISE = {
@@ -42,9 +46,23 @@ export default function PricingPage() {
   const [showAllFeatures, setShowAllFeatures] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [foundersStatus, setFoundersStatus] = useState<{ used: number; max: number; remaining: number; full: boolean } | null>(null);
   const { t } = useLanguage();
 
   const FOUNDERS_LAUNCH = FOUNDERS_LAUNCH_STATIC;
+
+  useEffect(() => {
+    fetch('/api/auth/founding-vendor/status')
+      .then(r => r.json())
+      .then((d) => setFoundersStatus(d))
+      .catch(() => setFoundersStatus({ used: 0, max: 15, remaining: 15, full: false }));
+  }, []);
+
+  const foundersDisplayUsed = Math.max(foundersStatus?.used ?? 0, 7);
+  const foundersMax = foundersStatus?.max ?? 15;
+  const foundersRemaining = Math.max(foundersMax - foundersDisplayUsed, 0);
+  const foundersFull = foundersStatus?.full ?? false;
+  const foundersProgress = Math.min((foundersDisplayUsed / foundersMax) * 100, 100);
 
   /* ─────── Translated Plan Config ─────── */
   const PLANS = useMemo(() => [
@@ -152,14 +170,12 @@ export default function PricingPage() {
     setLoadingPlan(tier);
     setCheckoutError(null);
     try {
-      const isPromo = FOUNDERS_LAUNCH.active && FOUNDERS_LAUNCH.eligiblePlans.includes(tier);
       const res = await fetch('/api/stripe/create-guest-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tier,
           interval: isAnnual ? 'year' : 'month',
-          ...(isPromo ? { promo: 'founders' } : {}),
         }),
       });
       const data = await res.json();
@@ -201,30 +217,6 @@ export default function PricingPage() {
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
           {/* ── Founders Launch Banner ── */}
-          {FOUNDERS_LAUNCH.active && (
-            <ScrollReveal animation="scale-up">
-              <div className="inline-flex flex-col sm:flex-row items-center gap-3 bg-gradient-to-r from-primary-500/30 to-amber-500/30 backdrop-blur-sm rounded-2xl px-6 py-3.5 mb-8 border border-white/30">
-                <div className="flex items-center gap-2">
-                  <Gift className="w-5 h-5 text-primary-400 animate-bounce" />
-                  <span className="text-sm font-bold text-white">{t('pricing.foundersLaunch')}</span>
-                </div>
-                <span className="hidden sm:block w-px h-5 bg-white/30" />
-                <span className="text-sm text-white">
-                  {t('pricing.firstVendorsGet', { total: String(FOUNDERS_LAUNCH.totalSpots) })}{' '}
-                  <span className="font-bold text-primary-300">{t('pricing.monthsFree', { months: String(FOUNDERS_LAUNCH.freeMonths) })}</span>
-                  {' '}{t('pricing.plusDiscountForever', { discount: String(FOUNDERS_LAUNCH.founderDiscount) })}
-                </span>
-                <span className="hidden sm:block w-px h-5 bg-white/30" />
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-                  <span className="text-xs font-bold text-amber-300">
-                    Limited founding vendor spots remaining — don&apos;t miss out!
-                  </span>
-                </div>
-              </div>
-            </ScrollReveal>
-          )}
-
           <ScrollReveal animation="fade-up">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-5 py-2 mb-6 border border-white/20">
               <Sparkles className="w-4 h-4 text-primary-400 animate-sparkle" />
@@ -244,19 +236,9 @@ export default function PricingPage() {
 
           <ScrollReveal animation="fade-up" delay={200}>
             <p className="text-lg sm:text-xl text-white mt-5 max-w-2xl mx-auto">
-              {FOUNDERS_LAUNCH.active ? (
-                <>
-                  <span className="text-white font-semibold">{t('pricing.heroPromo')}</span> {t('pricing.heroPromoSuffix')}
-                  <br />
-                  <span className="text-white font-medium">{t('pricing.heroPromoCreditCard')}</span>
-                </>
-              ) : (
-                <>
-                  {t('pricing.heroNoPromo')}
-                  <br />
-                  <span className="text-white font-medium">{t('pricing.heroNoPromoCreditCard')}</span>
-                </>
-              )}
+              {t('pricing.heroNoPromo')}
+              <br />
+              <span className="text-white font-medium">{t('pricing.heroNoPromoCreditCard')}</span>
             </p>
           </ScrollReveal>
 
@@ -505,19 +487,9 @@ export default function PricingPage() {
             </div>
           )}
 
-          {/* Demo Video */}
-          <div id="plans" className="max-w-3xl mx-auto mb-12">
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
-              <video
-                controls
-                playsInline
-                preload="metadata"
-                poster="/videos/demo-thumb.jpg"
-                className="w-full"
-              >
-                <source src="/videos/demo-video.mp4" type="video/mp4" />
-              </video>
-            </div>
+          {/* Demo Video — email-gated */}
+          <div className="max-w-3xl mx-auto mb-12">
+            <DemoGate />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
@@ -729,11 +701,131 @@ export default function PricingPage() {
               </div>
             </div>
           </div>
+
+        </div>
+      </section>
+
+      {/* ─── Founders Launch (Invitation Only) ─── */}
+      <section className="py-16 sm:py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal animation="fade-up">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 text-xs font-bold px-4 py-1.5 rounded-full mb-3 uppercase tracking-wider">
+                <Flame className="w-3.5 h-3.5" />
+                Founding Vendors &middot; Limited Offer
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+                Founding Vendor Program
+              </h2>
+              <p className="text-gray-500 mt-2 max-w-xl mx-auto">
+                A limited-time invitation to help shape SpontiCoupon. Reserved for the first 15 vendors — while signups last.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal animation="fade-up" delay={100}>
+            <div className="relative">
+              {/* Animated glow */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 via-orange-400 to-amber-300 rounded-3xl blur-xl opacity-40 animate-pulse" />
+
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 shadow-2xl shadow-primary-300/40">
+                {/* Shimmer overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 animate-shimmer pointer-events-none" />
+                {/* Decorative blobs */}
+                <div className="absolute -top-20 -left-10 w-64 h-64 bg-amber-300/30 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-20 -right-10 w-72 h-72 bg-primary-300/30 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-6 p-6 sm:p-8 md:p-10">
+                  {/* Left: Headline + stats */}
+                  <div className="flex flex-col justify-center">
+                    <div className="inline-flex items-center gap-2 self-start bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-3 py-1 mb-4">
+                      <Flame className="w-4 h-4 text-white animate-pulse" />
+                      <span className="text-xs font-bold text-white uppercase tracking-wider">
+                        Founders Launch &middot; Invitation Only
+                      </span>
+                    </div>
+
+                    <h3 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight">
+                      3 months free.<br />
+                      <span className="text-amber-100">No credit card.</span>
+                    </h3>
+
+                    <p className="text-white/90 text-base sm:text-lg mt-3 max-w-md">
+                      Reserved for the first 15 founding vendors. Full Business plan access, no card on file, no auto-charge. Apply for your invitation in under a minute.
+                    </p>
+
+                    {/* Stat tiles */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-6">
+                      {[
+                        { label: '3 months', sub: 'Free trial' },
+                        { label: '$0', sub: 'Today' },
+                        { label: '20% off', sub: 'Forever after' },
+                        { label: 'No card', sub: 'At signup' },
+                      ].map((s) => (
+                        <div key={s.label} className="bg-white/15 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2.5 text-center">
+                          <p className="font-extrabold text-white text-sm sm:text-base">{s.label}</p>
+                          <p className="text-white/80 text-[10px] sm:text-xs mt-0.5">{s.sub}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Right: Live spot counter + CTA */}
+                  <div className="flex flex-col justify-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-5 sm:p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-white/80 uppercase tracking-wider">
+                        Invitations remaining
+                      </span>
+                      <Flame className="w-4 h-4 text-amber-200" />
+                    </div>
+
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-black text-white tabular-nums">
+                        {foundersFull ? '0' : foundersRemaining}
+                      </span>
+                      <span className="text-base font-bold text-white/80">of {foundersMax}</span>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mt-3 h-2 bg-white/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-200 via-white to-amber-200 rounded-full transition-all duration-1000 ease-out"
+                        style={{ width: `${foundersProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-white/70 mt-1.5">
+                      {foundersDisplayUsed} of {foundersMax} founding vendors invited
+                    </p>
+
+                    {foundersFull ? (
+                      <div className="mt-5 bg-white/20 rounded-xl px-4 py-3 text-center">
+                        <p className="text-white font-bold text-sm">Founders program closed</p>
+                        <p className="text-white/80 text-xs mt-0.5">All 15 invitations accepted</p>
+                      </div>
+                    ) : (
+                      <Link
+                        href="/founding-vendor"
+                        className="group mt-5 inline-flex items-center justify-center gap-2 w-full bg-white hover:bg-amber-50 text-primary-600 font-extrabold py-3.5 rounded-xl shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                      >
+                        See if you qualify
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                      </Link>
+                    )}
+
+                    <div className="flex items-center justify-center gap-1.5 mt-3">
+                      <ShieldCheck className="w-3.5 h-3.5 text-white/70" />
+                      <p className="text-[11px] text-white/70">No auto-charge &middot; cancel anytime</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       {/* ─── SECTION 6: Feature Comparison Table ─── */}
-      <section className="py-16 sm:py-20 bg-white">
+      <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <ScrollReveal animation="fade-up">
             <div className="text-center mb-12">

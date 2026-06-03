@@ -9,6 +9,7 @@ import {
   Tag, Megaphone, DollarSign, Zap, Clock, ArrowRight, CheckCircle2, Star,
   Flame, ShieldCheck,
 } from 'lucide-react';
+import { QualificationWizard, type WizardAnswers, formatAnswersForNotes } from '@/components/founding-vendor/QualificationWizard';
 
 const PROMO_CODE = 'FOUNDING15';
 const MAX_SPOTS = 15;
@@ -45,6 +46,8 @@ export default function FoundingVendorPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [qualified, setQualified] = useState(false);
+  const [wizardAnswers, setWizardAnswers] = useState<WizardAnswers>({});
   const blobsRef = useRef<HTMLDivElement>(null);
 
   // Fetch live spot count
@@ -152,6 +155,21 @@ export default function FoundingVendorPage() {
       setLoading(false);
       return;
     }
+
+    // Fire-and-forget: also record the lead with wizard answers attached
+    // so /admin/prospects + GHL get full context, separate from the vendor account.
+    fetch('/api/leads/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.email,
+        name: form.businessName,
+        phone: form.phone,
+        business_name: form.businessName,
+        source: 'founding_vendor_wizard_qualified',
+        notes: `Qualified at /founding-vendor wizard. Answers: ${formatAnswersForNotes(wizardAnswers)}`,
+      }),
+    }).catch(() => {});
 
     if (data.session) router.push('/vendor/dashboard?welcome=true');
     else if (data.user && !data.session) setShowConfirmation(true);
@@ -329,22 +347,30 @@ export default function FoundingVendorPage() {
             </div>
           </div>
 
-          {/* ── RIGHT: form card ───────────────────────────────────────── */}
+          {/* ── RIGHT: wizard OR form card ─────────────────────────────── */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
             <div className="relative">
               {/* Glow */}
-              <div className="absolute -inset-1 bg-gradient-to-br from-primary-400 via-orange-400 to-amber-300 rounded-3xl blur-xl opacity-40 animate-pulse" />
+              <div className="absolute -inset-1 bg-gradient-to-br from-primary-400 via-orange-400 to-amber-300 rounded-3xl blur-xl opacity-40 animate-pulse pointer-events-none" />
 
+              {!qualified ? (
+                <QualificationWizard
+                  onQualified={(answers) => {
+                    setWizardAnswers(answers);
+                    setQualified(true);
+                  }}
+                />
+              ) : (
               <div className="relative bg-white rounded-3xl shadow-2xl border border-white/80 overflow-hidden">
                 {/* Gradient header */}
                 <div className="relative bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 px-6 py-5 text-white overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
                   <div className="relative flex items-center gap-3">
                     <div className="bg-white/20 backdrop-blur rounded-xl p-2">
-                      <Gift className="w-5 h-5" />
+                      <CheckCircle2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="font-extrabold text-lg leading-tight">Claim your spot</h2>
+                      <h2 className="font-extrabold text-lg leading-tight">You qualify &mdash; claim your spot</h2>
                       <p className="text-xs text-white/90">Takes under 60 seconds &middot; no payment</p>
                     </div>
                   </div>
@@ -476,12 +502,15 @@ export default function FoundingVendorPage() {
                   </p>
                 </form>
               </div>
+              )}
             </div>
 
-            <p className="text-center text-sm text-gray-500 mt-6">
-              Already have an account?{' '}
-              <Link href="/auth/login" className="text-primary-600 font-bold hover:underline">Sign in</Link>
-            </p>
+            {qualified && (
+              <p className="text-center text-sm text-gray-500 mt-6">
+                Already have an account?{' '}
+                <Link href="/auth/login" className="text-primary-600 font-bold hover:underline">Sign in</Link>
+              </p>
+            )}
           </div>
         </div>
       </div>
