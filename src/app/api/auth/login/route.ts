@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { rateLimitDb } from '@/lib/rate-limit';
+import { selfHealAccountIfNeeded } from '@/lib/auth/self-heal';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,34 +54,13 @@ export async function POST(request: NextRequest) {
 
     let role = profile?.role || null;
 
+    // Self-heal vendors/customers whose /auth/callback never created their
+    // profile + role-specific record (e.g. Supabase email template redirect
+    // bypassed our callback). Idempotent: only acts when records are missing
+    // AND user.user_metadata identifies the account type.
     if (!role) {
-      const { data: vendor } = await supabase
-        .from('vendors')
-        .select('id')
-        .eq('id', data.user.id)
-        .single();
-
-      if (vendor) {
-        role = 'vendor';
-        const { createServiceRoleClient } = await import('@/lib/supabase/server');
-        const adminClient = await createServiceRoleClient();
-        await adminClient.from('user_profiles').upsert({ id: data.user.id, role: 'vendor' });
-      }
-    }
-
-    if (!role) {
-      const { data: customer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('id', data.user.id)
-        .single();
-
-      if (customer) {
-        role = 'customer';
-        const { createServiceRoleClient } = await import('@/lib/supabase/server');
-        const adminClient = await createServiceRoleClient();
-        await adminClient.from('user_profiles').upsert({ id: data.user.id, role: 'customer' });
-      }
+      const healedRole = await selfHealAccountIfNeeded(data.user);
+      if (healedRole) role = healedRole;
     }
 
     // Update user timezone on each login (handles moves/travel)

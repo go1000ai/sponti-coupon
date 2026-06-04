@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { selfHealAccountIfNeeded } from '@/lib/auth/self-heal';
 
 export async function GET() {
   try {
@@ -22,37 +23,13 @@ export async function GET() {
     const firstName = profile?.first_name || null;
     const lastName = profile?.last_name || null;
 
-    // Fallback: check vendors table
+    // Self-heal vendors/customers whose /auth/callback never created their
+    // profile + role-specific record (e.g. Supabase email template redirect
+    // bypassed our callback). Idempotent: only acts when records are missing
+    // AND user.user_metadata identifies the account type.
     if (!role) {
-      const { data: vendor } = await supabase
-        .from('vendors')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (vendor) {
-        role = 'vendor';
-        // Auto-fix missing profile
-        const { createServiceRoleClient } = await import('@/lib/supabase/server');
-        const adminClient = await createServiceRoleClient();
-        await adminClient.from('user_profiles').upsert({ id: user.id, role: 'vendor' });
-      }
-    }
-
-    // Fallback: check customers table
-    if (!role) {
-      const { data: customer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (customer) {
-        role = 'customer';
-        const { createServiceRoleClient } = await import('@/lib/supabase/server');
-        const adminClient = await createServiceRoleClient();
-        await adminClient.from('user_profiles').upsert({ id: user.id, role: 'customer' });
-      }
+      const healedRole = await selfHealAccountIfNeeded(user);
+      if (healedRole) role = healedRole;
     }
 
     // If vendor, get subscription info too
