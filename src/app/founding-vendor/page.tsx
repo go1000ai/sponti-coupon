@@ -172,7 +172,10 @@ export default function FoundingVendorPage() {
     }).catch(() => {});
 
     if (data.session) router.push('/vendor/dashboard?welcome=true');
-    else if (data.user && !data.session) setShowConfirmation(true);
+    else if (data.user && !data.session) {
+      setShowConfirmation(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setLoading(false);
   };
 
