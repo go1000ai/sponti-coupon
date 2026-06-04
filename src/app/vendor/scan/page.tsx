@@ -71,6 +71,23 @@ interface RedemptionResult {
 
 type Step = 'input' | 'preview' | 'success' | 'collected';
 
+// html5-qrcode's stop() can throw *synchronously* (not just reject a promise)
+// when the scanner isn't actually running. A synchronous throw escapes .catch(),
+// so it bubbles up to the vendor error boundary as
+// "Cannot stop, scanner is not running or paused." Guard with try/catch and
+// swallow the async rejection too.
+function stopScanner(scanner: Html5Qrcode | null) {
+  if (!scanner) return;
+  try {
+    const result = scanner.stop();
+    if (result && typeof result.catch === 'function') {
+      result.catch(() => {});
+    }
+  } catch {
+    // Scanner wasn't running — nothing to stop.
+  }
+}
+
 export default function ScanPage() {
   const { t } = useLanguage();
   const [codeInput, setCodeInput] = useState('');
@@ -106,20 +123,20 @@ export default function ScanPage() {
   useEffect(() => {
     if (mode === 'qr' && step === 'input') {
       setCameraError(null);
+      let cancelled = false;
       // Small delay to let the DOM element render
       const timer = setTimeout(() => {
         const el = document.getElementById(scannerContainerId);
         if (!el) return;
 
         const scanner = new Html5Qrcode(scannerContainerId);
-        scannerRef.current = scanner;
 
         scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
             // QR decoded — stop scanner and auto-verify
-            scanner.stop().catch(() => {});
+            stopScanner(scanner);
             scannerRef.current = null;
             const code = extractCodeFromText(decodedText);
             setCodeInput(code);
@@ -127,7 +144,20 @@ export default function ScanPage() {
             handleVerifyCode(code);
           },
           () => { /* ignore scan failures (no QR in frame yet) */ }
-        ).catch((err: unknown) => {
+        ).then(() => {
+          // Camera is live. If the user already switched modes / left while it
+          // was still starting, stop it now; otherwise register it for cleanup.
+          // We only assign scannerRef AFTER start() resolves, so cleanup never
+          // calls stop() on a scanner that isn't running.
+          if (cancelled) {
+            stopScanner(scanner);
+          } else {
+            scannerRef.current = scanner;
+          }
+        }).catch((err: unknown) => {
+          // start() failed — the scanner never ran.
+          scannerRef.current = null;
+          if (cancelled) return;
           const msg = err instanceof Error ? err.message : String(err);
           if (msg.includes('NotAllowedError') || msg.includes('Permission')) {
             setCameraError('Camera permission denied. Please allow camera access in your browser settings.');
@@ -140,18 +170,15 @@ export default function ScanPage() {
       }, 300);
 
       return () => {
+        cancelled = true;
         clearTimeout(timer);
-        if (scannerRef.current) {
-          scannerRef.current.stop().catch(() => {});
-          scannerRef.current = null;
-        }
+        stopScanner(scannerRef.current);
+        scannerRef.current = null;
       };
     } else {
       // Stop scanner when leaving QR mode
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
+      stopScanner(scannerRef.current);
+      scannerRef.current = null;
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, step]);
@@ -159,10 +186,8 @@ export default function ScanPage() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {});
-        scannerRef.current = null;
-      }
+      stopScanner(scannerRef.current);
+      scannerRef.current = null;
     };
   }, []);
 

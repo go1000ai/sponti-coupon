@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sponticoupon-v3';
+const CACHE_NAME = 'sponticoupon-v4';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-192.png',
@@ -44,8 +44,17 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // For everything else: network-first, cache as fallback for offline only
+  // For everything else: network-first, cache as fallback for offline only.
+  // respondWith() throws "Failed to convert value to 'Response'" if it ever
+  // resolves to undefined, so always return a real Response when the cache misses.
   event.respondWith(
-    fetch(request).catch(() => caches.match(request))
+    fetch(request).catch(async () => {
+      const cached = await caches.match(request);
+      return cached || new Response('Offline', {
+        status: 503,
+        statusText: 'Offline',
+        headers: { 'Content-Type': 'text/plain' },
+      });
+    })
   );
 });
