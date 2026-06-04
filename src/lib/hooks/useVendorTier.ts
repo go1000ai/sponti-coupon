@@ -24,8 +24,14 @@ export function useVendorTier() {
   const supabaseRef = useRef(createClient());
 
   useEffect(() => {
-    // Wait for auth to finish loading before making decisions
-    if (authLoading) return;
+    // Wait for auth to finish loading before making decisions — staying in
+    // loading state during this window prevents a Starter-flash for vendors
+    // whose role is still resolving (which incorrectly hides Business-tier
+    // features like Ava AI for a brief moment after login).
+    if (authLoading) {
+      setState((s) => (s.loading ? s : { ...s, loading: true }));
+      return;
+    }
 
     if (!user || role !== 'vendor') {
       setState({ tier: null, status: null, promoExpiresAt: null, loading: false });
@@ -33,6 +39,9 @@ export function useVendorTier() {
     }
 
     let cancelled = false;
+
+    // Reset to loading whenever we kick off a fresh fetch (e.g. user changed)
+    setState((s) => (s.loading ? s : { ...s, loading: true }));
 
     const fetchTier = async () => {
       try {

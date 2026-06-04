@@ -33,6 +33,17 @@ export async function GET(
     vendor?.stripe_connect_charges_enabled
   );
 
+  // Explicit status so the customer-facing UI can distinguish silent-omit
+  // (vendor never connected) from pending-onboarding (vendor started but
+  // didn't finish). Default behavior — hide Stripe — stays the same; this
+  // lets callers optionally surface a "Vendor is wiring up payments" hint.
+  let stripeConnectStatus: 'enabled' | 'pending_onboarding' | 'not_connected' = 'not_connected';
+  if (hasStripeConnect) {
+    stripeConnectStatus = 'enabled';
+  } else if (vendor?.stripe_connect_account_id) {
+    stripeConnectStatus = 'pending_onboarding';
+  }
+
   // Fetch all active payment methods for this vendor
   const { data: methods } = await supabase
     .from('vendor_payment_methods')
@@ -44,5 +55,6 @@ export async function GET(
   return NextResponse.json({
     methods: methods || [],
     has_stripe_connect: hasStripeConnect,
+    stripe_connect_status: stripeConnectStatus,
   });
 }

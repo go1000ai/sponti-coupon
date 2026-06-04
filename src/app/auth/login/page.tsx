@@ -49,11 +49,11 @@ function LoginForm() {
 
       // Redirect based on role
       if (data.role === 'vendor') {
-        if (!data.subscription_status || data.subscription_status === 'canceled') {
-          window.location.href = '/vendor/subscription';
-        } else {
-          window.location.href = '/vendor/dashboard';
-        }
+        // Always land on dashboard. The vendor layout handles paywall/sub-required state
+        // (and Founding Vendors with valid promo_expires_at can use the dashboard even
+        // with null subscription_status). Sending freshly-self-healed vendors straight
+        // to /vendor/subscription was confusing and bypassed the layout's smarter checks.
+        window.location.href = '/vendor/dashboard';
       } else if (data.role === 'admin') {
         window.location.href = '/admin';
       } else if (data.role === 'customer') {

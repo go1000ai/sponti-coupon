@@ -85,10 +85,16 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Paywall: block access unless subscription is active/trialing, promo is active, or just completed
+  // Paywall: block access unless subscription is active/trialing, promo is active, or just completed.
+  // Founding vendors (FOUNDING15 / PUERTORICO6) bypass via the promo path even if their
+  // subscription_status got dropped somehow during a self-heal race — promo_code presence is
+  // a stronger signal than subscription_status for these cohorts.
   const hasActiveSubscription = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+  const BUSINESS_TIER_PROMOS = new Set(['FOUNDING15', 'PUERTORICO6']);
+  const isBusinessTierPromo = promoCode && BUSINESS_TIER_PROMOS.has(promoCode.toUpperCase());
   const promoActive = promoExpiresAt && new Date(promoExpiresAt) > new Date();
-  if (!hasActiveSubscription && !promoActive && !isSubscriptionSuccess) {
+  const hasFoundingAccess = isBusinessTierPromo && promoActive;
+  if (!hasActiveSubscription && !promoActive && !hasFoundingAccess && !isSubscriptionSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto px-6">
