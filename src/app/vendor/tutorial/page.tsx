@@ -5,7 +5,7 @@ import { Play, RotateCcw, Clock, GraduationCap } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
 
 export default function TutorialPage() {
-  const [activeVideo, setActiveVideo] = useState<'onboarding' | 'tutorial' | null>(null);
+  const [activeVideo, setActiveVideo] = useState<'onboarding' | 'tutorial' | 'redemption' | 'loyalty' | null>(null);
 
   const restartTour = () => {
     // Clear all Joyride tour keys so they replay
@@ -73,6 +73,54 @@ export default function TutorialPage() {
             <p className="text-sm text-gray-500">Complete walkthrough — website import, Ava AI, deal types, analytics, social posting, and loyalty programs.</p>
           </div>
         </button>
+
+        {/* Customer Payments & Redemption */}
+        <button
+          onClick={() => setActiveVideo('redemption')}
+          className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
+        >
+          <div className="relative min-h-[200px] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" className="w-full h-full object-cover absolute inset-0" />
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play className="w-8 h-8 text-white ml-1" />
+              </div>
+              <div className="flex items-center gap-2 text-white/80 text-sm">
+                <Clock className="w-4 h-4" />
+                2:56
+              </div>
+            </div>
+          </div>
+          <div className="p-5">
+            <h3 className="font-bold text-gray-900 text-lg mb-1">Customer Payments &amp; Redemption</h3>
+            <p className="text-sm text-gray-500">How customers claim and pay — full payment, a deposit, or in person — and how every dollar reaches you. SpontiCoupon never holds the money.</p>
+          </div>
+        </button>
+
+        {/* Loyalty Programs */}
+        <button
+          onClick={() => setActiveVideo('loyalty')}
+          className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
+        >
+          <div className="relative min-h-[200px] overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" className="w-full h-full object-cover absolute inset-0" />
+            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Play className="w-8 h-8 text-white ml-1" />
+              </div>
+              <div className="flex items-center gap-2 text-white/80 text-sm">
+                <Clock className="w-4 h-4" />
+                2:01
+              </div>
+            </div>
+          </div>
+          <div className="p-5">
+            <h3 className="font-bold text-gray-900 text-lg mb-1">Loyalty Programs</h3>
+            <p className="text-sm text-gray-500">Turn one-time deal-hunters into regulars with punch cards or points — built in and free on Pro &amp; Business.</p>
+          </div>
+        </button>
       </div>
 
       {/* Restart Tour */}
@@ -106,6 +154,18 @@ export default function TutorialPage() {
         src="/videos/tutorial-video.mp4"
         title="SpontiCoupon Platform Tutorial"
         open={activeVideo === 'tutorial'}
+        onClose={() => setActiveVideo(null)}
+      />
+      <VideoModal
+        src="/videos/customer-redemption-tutorial.mp4"
+        title="How Customers Pay & Redeem Deals"
+        open={activeVideo === 'redemption'}
+        onClose={() => setActiveVideo(null)}
+      />
+      <VideoModal
+        src="/videos/loyalty-program-tutorial.mp4"
+        title="Loyalty Programs — Keep Customers Coming Back"
+        open={activeVideo === 'loyalty'}
         onClose={() => setActiveVideo(null)}
       />
     </div>

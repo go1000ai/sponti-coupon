@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy singleton — instantiate at request time so the build never needs the key.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 interface SupportNotificationParams {
   ticketId: string;
@@ -18,7 +23,7 @@ export async function sendSupportNotification(params: SupportNotificationParams)
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@sponticoupon.com';
 
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: `SpontiCoupon Support <${fromEmail}>`,
       to: adminEmail,
       subject: `[Support] New Ticket: ${subject}`,

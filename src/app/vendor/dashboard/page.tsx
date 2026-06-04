@@ -11,7 +11,7 @@ import {
   Plus, Tag, Users, QrCode, TrendingUp,
   ArrowRight, Clock, Sparkles, DollarSign, BarChart3,
   Zap, ArrowUpRight, CheckCircle2, XCircle, Loader2,
-  Hash, Star,
+  Hash, Star, Play, GraduationCap,
 } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
 import { ROIDashboard } from '@/components/vendor/ROIDashboard';
@@ -77,6 +77,7 @@ function VendorDashboard() {
   // Video modals
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [learnVideo, setLearnVideo] = useState<'redemption' | 'loyalty' | null>(null);
 
   // Show onboarding video on first visit
   useEffect(() => {
@@ -570,6 +571,64 @@ function VendorDashboard() {
         )}
       </div>
 
+      {/* Learn the platform — tutorial videos */}
+      <div className="mb-8 animate-fade-up" style={{ animationDelay: '880ms' }}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-primary-500" />
+            <h2 className="text-xl font-bold text-gray-900">Learn the platform</h2>
+          </div>
+          <Link href="/vendor/tutorial" className="text-primary-500 hover:underline text-sm font-medium flex items-center gap-1 group">
+            All tutorials <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => setLearnVideo('redemption')}
+            className="card p-0 overflow-hidden hover:shadow-lg transition-all group text-left"
+          >
+            <div className="relative aspect-video overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" className="w-full h-full object-cover absolute inset-0" />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Play className="w-7 h-7 text-white ml-1" />
+                </div>
+              </div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-white/90 text-xs bg-black/40 rounded px-1.5 py-0.5">
+                <Clock className="w-3 h-3" /> 2:56
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 text-sm">Customer Payments &amp; Redemption</h3>
+              <p className="text-xs text-gray-500 mt-0.5">How customers claim, pay, and redeem — money goes straight to you.</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setLearnVideo('loyalty')}
+            className="card p-0 overflow-hidden hover:shadow-lg transition-all group text-left"
+          >
+            <div className="relative aspect-video overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" className="w-full h-full object-cover absolute inset-0" />
+              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Play className="w-7 h-7 text-white ml-1" />
+                </div>
+              </div>
+              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-white/90 text-xs bg-black/40 rounded px-1.5 py-0.5">
+                <Clock className="w-3 h-3" /> 2:01
+              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900 text-sm">Loyalty Programs</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Turn one-time visitors into regulars — free on Pro &amp; Business.</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* ROI Dashboard */}
       <div data-tour="vendor-roi" className="mb-8 animate-fade-up" style={{ animationDelay: '900ms' }}>
         <ROIDashboard />
@@ -669,6 +728,20 @@ function VendorDashboard() {
         title="SpontiCoupon Platform Tutorial"
         open={showTutorial}
         onClose={() => setShowTutorial(false)}
+      />
+
+      {/* Learn-the-platform video modals */}
+      <VideoModal
+        src="/videos/customer-redemption-tutorial.mp4"
+        title="How Customers Pay & Redeem Deals"
+        open={learnVideo === 'redemption'}
+        onClose={() => setLearnVideo(null)}
+      />
+      <VideoModal
+        src="/videos/loyalty-program-tutorial.mp4"
+        title="Loyalty Programs — Keep Customers Coming Back"
+        open={learnVideo === 'loyalty'}
+        onClose={() => setLearnVideo(null)}
       />
     </div>
   );
