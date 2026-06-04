@@ -1,6 +1,11 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy singleton — instantiate at request time so the build never needs the key.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 interface DealForEmail {
   title: string;
@@ -89,7 +94,7 @@ export async function sendDealLinkEmail(params: SendDealLinkParams) {
     </div>
   `;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `SpontiCoupon <${fromEmail}>`,
     to: callerEmail,
     subject,
