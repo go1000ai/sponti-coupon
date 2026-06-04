@@ -19,6 +19,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const [vendorName, setVendorName] = useState<string | null>(null);
   const [vendorLogoUrl, setVendorLogoUrl] = useState<string | null>(null);
   const [promoExpiresAt, setPromoExpiresAt] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState<string | null>(null);
 
   // Scroll to top on every route change
   useEffect(() => {
@@ -37,13 +38,14 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     supabase
       .from('vendors')
-      .select('business_name, logo_url, promo_expires_at')
+      .select('business_name, logo_url, promo_expires_at, promo_code')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.business_name) setVendorName(data.business_name);
         if (data?.logo_url) setVendorLogoUrl(data.logo_url);
         if (data?.promo_expires_at) setPromoExpiresAt(data.promo_expires_at);
+        if (data?.promo_code) setPromoCode(data.promo_code);
       });
   }, [user]);
 
@@ -126,7 +128,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
       />
       <main className="lg:ml-64 min-h-screen">
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
-          {promoExpiresAt && <PromoCountdownBanner promoExpiresAt={promoExpiresAt} />}
+          {promoExpiresAt && <PromoCountdownBanner promoExpiresAt={promoExpiresAt} promoCode={promoCode} />}
           {children}
         </div>
       </main>
