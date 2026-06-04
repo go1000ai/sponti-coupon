@@ -87,6 +87,7 @@ const config: Config = {
         "glow": "glow 2s ease-in-out infinite",
         "wiggle": "wiggle 0.5s ease-in-out",
         "shimmer-slide": "shimmerSlide 1.5s ease-in-out",
+        "shimmer": "shimmer 2.5s ease-in-out infinite",
         "gradient-x": "gradientX 3s ease infinite",
         "card-pop": "cardPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "sparkle": "sparkle 2s ease-in-out infinite",
