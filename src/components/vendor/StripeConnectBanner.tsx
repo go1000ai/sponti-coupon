@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle2, XCircle, Loader2, Unlink } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Unlink, ArrowRight, Info, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 
 interface ConnectStatus {
@@ -15,6 +15,7 @@ export default function StripeConnectBanner() {
   const [status, setStatus] = useState<ConnectStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [explainerOpen, setExplainerOpen] = useState(false);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -130,18 +131,87 @@ export default function StripeConnectBanner() {
           <h3 className="font-semibold text-gray-900 flex items-center gap-2">
             <Image src="/logos/stripe.svg" alt="Stripe" width={60} height={24} />
             <span className="text-gray-500 font-normal text-sm">Connect</span>
+            <span className="inline-flex items-center gap-1 bg-[#635BFF]/10 text-[#635BFF] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+              Customers pay you
+            </span>
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Connect your Stripe account for <span className="font-medium text-[#635BFF]">automated payments</span>.
-            Customers pay the exact deposit amount through a secure checkout. Payments go directly to your account.
+            Connect Stripe so <span className="font-semibold text-gray-700">customers can pay your business directly</span> when they claim deposit-required deals. Money lands in your bank account &mdash; SpontiCoupon never touches it.
           </p>
+
+          {/* Money flow visual */}
+          <div className="mt-3 flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-full">
+              Customer
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+            <span className="inline-flex items-center gap-1.5 bg-[#635BFF]/10 text-[#635BFF] font-bold px-2.5 py-1 rounded-full">
+              Stripe (your account)
+            </span>
+            <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+            <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 font-bold px-2.5 py-1 rounded-full">
+              Your bank
+            </span>
+          </div>
+
           <a
             href="/api/stripe/connect/authorize"
-            className="inline-flex items-center gap-2 mt-3 px-5 py-2.5 bg-[#635BFF] hover:bg-[#5851DB] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#635BFF]/20"
+            className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-[#635BFF] hover:bg-[#5851DB] text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-[#635BFF]/20"
           >
             <Image src="/logos/stripe.svg" alt="Stripe" width={48} height={20} className="brightness-0 invert" />
-            Connect
+            Connect to accept payments
           </a>
+
+          {/* Expandable: Why two Stripe flows? */}
+          <button
+            type="button"
+            onClick={() => setExplainerOpen(o => !o)}
+            className="inline-flex items-center gap-1.5 mt-3 ml-2 text-xs font-semibold text-gray-500 hover:text-gray-700"
+          >
+            <Info className="w-3.5 h-3.5" />
+            Wait, isn&apos;t there already a Stripe charging me for my subscription?
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${explainerOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {explainerOpen && (
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fade-in">
+              <div className="rounded-xl border border-[#635BFF]/30 bg-[#635BFF]/5 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#635BFF] flex items-center justify-center shrink-0 p-1">
+                    <Image src="/logos/stripe.svg" alt="Stripe" width={28} height={14} className="brightness-0 invert" />
+                  </div>
+                  <span className="text-[10px] font-bold text-[#635BFF] uppercase tracking-wide">This Stripe Connect</span>
+                </div>
+                <p className="text-sm font-bold text-gray-900">Customer &rarr; You</p>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Customers pay your business through Stripe&apos;s secure checkout. Money goes to <em>your</em> bank, not ours.
+                </p>
+                <p className="text-[11px] text-gray-500 mt-2">
+                  <span className="font-semibold">You keep 100%.</span> Stripe&apos;s standard processing fee applies (2.9% + 30¢, paid by you to Stripe).
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-primary-500 flex items-center justify-center shrink-0 text-white text-xs font-bold">
+                    SC
+                  </div>
+                  <span className="text-[10px] font-bold text-primary-600 uppercase tracking-wide">SpontiCoupon subscription</span>
+                </div>
+                <p className="text-sm font-bold text-gray-900">You &rarr; SpontiCoupon</p>
+                <p className="text-xs text-gray-600 mt-1 leading-relaxed">
+                  Your monthly SpontiCoupon plan fee. Managed in <a href="/vendor/subscription" className="text-primary-600 font-semibold hover:underline">Subscription settings</a>.
+                </p>
+                <p className="text-[11px] text-gray-500 mt-2">
+                  Founding vendors get the first <span className="font-semibold">90 days free</span> &mdash; no card on file.
+                </p>
+              </div>
+
+              <div className="md:col-span-2 text-[11px] text-gray-500 italic">
+                Two completely separate flows on two separate Stripe accounts. They never touch each other.
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
