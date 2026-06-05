@@ -20,6 +20,7 @@ import {
   Headphones,
   ArrowLeftRight,
   Calendar,
+  PlayCircle,
 } from 'lucide-react';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -30,6 +31,7 @@ const navItems = [
   { label: 'Appointments', href: '/dashboard/appointments', icon: Calendar, dataTour: 'customer-nav-appointments' },
   { label: 'Loyalty Rewards', href: '/dashboard/loyalty', icon: Gift, dataTour: 'customer-nav-loyalty' },
   { label: 'Deals For You', href: '/dashboard/for-you', icon: Heart, dataTour: 'customer-nav-foryou' },
+  { label: 'How It Works', href: '/dashboard/how-it-works', icon: PlayCircle, dataTour: 'customer-nav-howitworks' },
   { label: 'Notifications', href: '/dashboard/notifications', icon: Bell, dataTour: 'customer-nav-notifications' },
   { label: 'Support', href: '/dashboard/support', icon: Headphones, dataTour: 'customer-nav-support' },
   { label: 'Settings', href: '/dashboard/settings', icon: Settings, dataTour: 'customer-nav-settings' },

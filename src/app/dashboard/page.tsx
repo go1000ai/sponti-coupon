@@ -25,6 +25,7 @@ import {
 import Image from 'next/image';
 import { GuidedTour } from '@/components/ui/GuidedTour';
 import { UpcomingAppointments } from '@/components/appointments/UpcomingAppointments';
+import { HowItWorksPromoCard } from '@/components/dashboard/HowItWorksPromoCard';
 import { CUSTOMER_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import type { Claim, Deal, LoyaltyCard } from '@/lib/types/database';
 
@@ -200,6 +201,9 @@ export default function ConsumerDashboardPage() {
         </div>
         <p className="text-gray-500 mt-1">{t('customer.dashboard.overview')}</p>
       </div>
+
+      {/* First-run "How It Works" promo — dismissible, always reachable from the sidebar */}
+      <HowItWorksPromoCard />
 
       {/* Reward-ready banner — surfaces redeemable loyalty rewards up top */}
       {redeemableCount > 0 && (
