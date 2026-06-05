@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 import { sendExpirationReminderEmail } from '@/lib/email/expiration-reminder';
+import { sendAppointmentScheduleReminderEmail } from '@/lib/email/appointment-schedule-reminder';
+import { createNotifications } from '@/lib/notifications/create';
 
 const MAX_EMAILS_PER_CYCLE = 50;
 // Send reminders when it's 9 AM or 7 PM in the customer's timezone
@@ -56,7 +58,8 @@ export async function GET(request: NextRequest) {
     .select(`
       id,
       customer_id,
-      deal:deals!inner(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
+      appointment_id,
+      deal:deals!inner(id, title, expires_at, vendor_id, requires_appointment, vendor:vendors(business_name)),
       customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
@@ -77,8 +80,9 @@ export async function GET(request: NextRequest) {
           id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean; timezone: string;
         } | null;
         const deal = claim.deal as unknown as {
-          id: string; title: string; expires_at: string; vendor_id: string; vendor: { business_name: string } | null;
+          id: string; title: string; expires_at: string; vendor_id: string; requires_appointment: boolean; vendor: { business_name: string } | null;
         } | null;
+        const appointmentId = (claim as unknown as { appointment_id: string | null }).appointment_id;
 
         if (!customer?.email || !deal?.title || !deal.expires_at) continue;
 
@@ -113,26 +117,47 @@ export async function GET(request: NextRequest) {
           : customer.email.split('@')[0];
         const businessName = deal.vendor?.business_name || 'the business';
 
-        await sendExpirationReminderEmail({
-          to: customer.email,
-          customerName,
-          businessName,
-          dealTitle: deal.title,
-          expiresAt: deal.expires_at,
-          daysLeft,
-          dealUrl: `${appUrl}/dashboard/my-deals`,
-          customerId: customer.id,
-        });
+        // Branch: appointment-required deal with no booking yet → nudge to schedule.
+        // Otherwise → the standard "use your deal" reminder.
+        const needsScheduling = deal.requires_appointment && !appointmentId;
 
-        // Insert in-app notification
-        await serviceClient.from('notifications').insert({
-          customer_id: customer.id,
-          type: 'deal_expiring',
-          title: `Your deal expires in ${daysLeft} days`,
-          message: `"${deal.title}" at ${businessName} expires soon. Redeem it before it's too late!`,
-          channel: 'in_app',
-          read: false,
-        });
+        if (needsScheduling) {
+          await sendAppointmentScheduleReminderEmail({
+            to: customer.email,
+            customerName,
+            businessName,
+            dealTitle: deal.title,
+            expiresAt: deal.expires_at,
+            daysLeft,
+            scheduleUrl: `${appUrl}/dashboard/my-deals`,
+            customerId: customer.id,
+          });
+          await createNotifications([{
+            userId: customer.id,
+            type: 'appointment_needed',
+            title: `Schedule your appointment — ${daysLeft} days left`,
+            body: `"${deal.title}" at ${businessName} needs an appointment. Book it before the deal expires!`,
+            link: '/dashboard/my-deals',
+          }]);
+        } else {
+          await sendExpirationReminderEmail({
+            to: customer.email,
+            customerName,
+            businessName,
+            dealTitle: deal.title,
+            expiresAt: deal.expires_at,
+            daysLeft,
+            dealUrl: `${appUrl}/dashboard/my-deals`,
+            customerId: customer.id,
+          });
+          await createNotifications([{
+            userId: customer.id,
+            type: 'deal_expiring',
+            title: `Your deal expires in ${daysLeft} days`,
+            body: `"${deal.title}" at ${businessName} expires soon. Redeem it before it's too late!`,
+            link: '/dashboard/my-deals',
+          }]);
+        }
 
         // Mark as sent
         await serviceClient
@@ -160,7 +185,8 @@ export async function GET(request: NextRequest) {
     .select(`
       id,
       customer_id,
-      deal:deals!inner(id, title, expires_at, vendor_id, vendor:vendors(business_name)),
+      appointment_id,
+      deal:deals!inner(id, title, expires_at, vendor_id, requires_appointment, vendor:vendors(business_name)),
       customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone)
     `)
     .eq('redeemed', false)
@@ -181,8 +207,9 @@ export async function GET(request: NextRequest) {
           id: string; email: string; first_name: string | null; last_name: string | null; review_email_opt_out: boolean; timezone: string;
         } | null;
         const deal = claim.deal as unknown as {
-          id: string; title: string; expires_at: string; vendor_id: string; vendor: { business_name: string } | null;
+          id: string; title: string; expires_at: string; vendor_id: string; requires_appointment: boolean; vendor: { business_name: string } | null;
         } | null;
+        const appointmentId = (claim as unknown as { appointment_id: string | null }).appointment_id;
 
         if (!customer?.email || !deal?.title || !deal.expires_at) continue;
 
@@ -211,26 +238,46 @@ export async function GET(request: NextRequest) {
           : customer.email.split('@')[0];
         const businessName = deal.vendor?.business_name || 'the business';
 
-        await sendExpirationReminderEmail({
-          to: customer.email,
-          customerName,
-          businessName,
-          dealTitle: deal.title,
-          expiresAt: deal.expires_at,
-          daysLeft: 1,
-          dealUrl: `${appUrl}/dashboard/my-deals`,
-          customerId: customer.id,
-        });
+        const needsScheduling = deal.requires_appointment && !appointmentId;
 
-        // Insert in-app notification — urgent
-        await serviceClient.from('notifications').insert({
-          customer_id: customer.id,
-          type: 'deal_expiring',
-          title: 'Your deal expires tomorrow!',
-          message: `"${deal.title}" at ${businessName} expires tomorrow. This is your last chance to redeem it!`,
-          channel: 'in_app',
-          read: false,
-        });
+        if (needsScheduling) {
+          await sendAppointmentScheduleReminderEmail({
+            to: customer.email,
+            customerName,
+            businessName,
+            dealTitle: deal.title,
+            expiresAt: deal.expires_at,
+            daysLeft: 1,
+            scheduleUrl: `${appUrl}/dashboard/my-deals`,
+            customerId: customer.id,
+          });
+          await createNotifications([{
+            userId: customer.id,
+            type: 'appointment_needed',
+            title: 'Last chance to book your appointment!',
+            body: `"${deal.title}" at ${businessName} needs an appointment and expires tomorrow. Book it now!`,
+            link: '/dashboard/my-deals',
+          }]);
+        } else {
+          await sendExpirationReminderEmail({
+            to: customer.email,
+            customerName,
+            businessName,
+            dealTitle: deal.title,
+            expiresAt: deal.expires_at,
+            daysLeft: 1,
+            dealUrl: `${appUrl}/dashboard/my-deals`,
+            customerId: customer.id,
+          });
+          // In-app notification — urgent
+          await createNotifications([{
+            userId: customer.id,
+            type: 'deal_expiring',
+            title: 'Your deal expires tomorrow!',
+            body: `"${deal.title}" at ${businessName} expires tomorrow. This is your last chance to redeem it!`,
+            link: '/dashboard/my-deals',
+          }]);
+        }
 
         await serviceClient
           .from('claims')
