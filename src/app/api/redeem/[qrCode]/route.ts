@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { rateLimitDb } from '@/lib/rate-limit';
+import { resolveVendorContext } from '@/lib/workers/context';
 
 // POST /api/redeem/[qrCode] - Vendor redeems via QR code or 6-digit code
 export async function POST(
@@ -19,16 +20,16 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify the user is a vendor
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'vendor') {
-    return NextResponse.json({ error: 'Only vendors can redeem codes' }, { status: 403 });
+  // Resolve who is redeeming and on which vendor's behalf (owner or a worker
+  // with redeem permission). `vendorId` is the effective vendor for all checks.
+  const ctx = await resolveVendorContext();
+  if (!ctx) {
+    return NextResponse.json({ error: 'Only vendors or staff can redeem codes' }, { status: 403 });
   }
+  if (ctx.isWorker && !ctx.permissions.redeem) {
+    return NextResponse.json({ error: 'You do not have permission to redeem' }, { status: 403 });
+  }
+  const vendorId = ctx.vendorId;
 
   // Optional: attribute this redemption to a Redeem Member (kiosk PIN flow).
   let redeemMemberId: string | null = null;
@@ -71,7 +72,7 @@ export async function POST(
   }
 
   // Verify this code belongs to the vendor's deal
-  if (claim.deal?.vendor_id !== user.id) {
+  if (claim.deal?.vendor_id !== vendorId) {
     return NextResponse.json({
       error: 'This code is not for your deal',
       code: 'WRONG_VENDOR',
@@ -139,7 +140,7 @@ export async function POST(
     .insert({
       claim_id: claim.id,
       deal_id: claim.deal_id,
-      vendor_id: user.id,
+      vendor_id: vendorId,
       customer_id: claim.customer_id,
       scanned_by: user.id,
       redeem_member_id: redeemMemberId,
@@ -160,7 +161,7 @@ export async function POST(
     const { data: programs } = await serviceClient
       .from('loyalty_programs')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('vendor_id', vendorId)
       .eq('is_active', true)
       .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
 
@@ -176,7 +177,7 @@ export async function POST(
             {
               program_id: program.id,
               customer_id: claim.customer_id,
-              vendor_id: user.id,
+              vendor_id: vendorId,
             },
             { onConflict: 'customer_id,program_id', ignoreDuplicates: true }
           );
@@ -202,7 +203,7 @@ export async function POST(
             await serviceClient.from('loyalty_transactions').insert({
               card_id: card.id,
               customer_id: claim.customer_id,
-              vendor_id: user.id,
+              vendor_id: vendorId,
               redemption_id: redemptionRecord?.id || null,
               transaction_type: 'earn_punch',
               punches_amount: 1,
@@ -231,7 +232,7 @@ export async function POST(
             await serviceClient.from('loyalty_transactions').insert({
               card_id: card.id,
               customer_id: claim.customer_id,
-              vendor_id: user.id,
+              vendor_id: vendorId,
               redemption_id: redemptionRecord?.id || null,
               transaction_type: 'earn_points',
               points_amount: pointsEarned,
@@ -272,7 +273,7 @@ export async function POST(
         .from('spontipoints_ledger')
         .insert({
           user_id: claim.customer_id,
-          vendor_id: user.id,
+          vendor_id: vendorId,
           deal_id: claim.deal_id,
           redemption_id: redemptionRecord.id,
           points: SPONTI_POINTS_PER_REDEMPTION,

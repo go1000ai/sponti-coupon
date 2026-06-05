@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { resolveDealByParam } from '@/lib/deal-slug';
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 
@@ -13,11 +15,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const supabase = await createServiceRoleClient();
-    const { data: deal } = await supabase
-      .from('deals')
-      .select('*, vendor:vendors(business_name, city, state, category)')
-      .eq('id', id)
-      .single();
+    const { deal } = await resolveDealByParam(
+      supabase,
+      id,
+      '*, vendor:vendors(business_name, city, state, category)'
+    );
 
     if (!deal) {
       return {
@@ -37,17 +39,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : `Save ${discountText} at ${vendorName}${location ? ` in ${location}` : ''}. ${isSponti ? '24-hour Sponti Deal — claim before it expires!' : 'Verified local deal on SpontiCoupon.'}`;
 
     const ogImage = deal.image_url || `${BASE_URL}/og-image.png`;
+    // Always point canonical/OG at the clean slug, even if reached via UUID or an old slug.
+    const canonicalPath = deal.slug || id;
 
     return {
       title,
       description,
       alternates: {
-        canonical: `${BASE_URL}/deals/${id}`,
+        canonical: `${BASE_URL}/deals/${canonicalPath}`,
       },
       openGraph: {
         title: `${title} | SpontiCoupon`,
         description,
-        url: `${BASE_URL}/deals/${id}`,
+        url: `${BASE_URL}/deals/${canonicalPath}`,
         type: 'website',
         images: [
           {
@@ -84,16 +88,31 @@ export default async function DealDetailLayout({
 }: Props) {
   const { id } = await params;
 
-  // Fetch deal data for JSON-LD (Product/Offer schema for rich results + GEO)
-  let jsonLd = null;
+  // Resolve the deal (by UUID, current slug, or retired slug) for the redirect check + JSON-LD.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let deal: any = null;
+  let matchedOldSlug = false;
   try {
     const supabase = await createServiceRoleClient();
-    const { data: deal } = await supabase
-      .from('deals')
-      .select('*, vendor:vendors(business_name, city, state, address, zip, category, lat, lng)')
-      .eq('id', id)
-      .single();
+    const res = await resolveDealByParam(
+      supabase,
+      id,
+      '*, vendor:vendors(business_name, city, state, address, zip, category, lat, lng)'
+    );
+    deal = res.deal;
+    matchedOldSlug = res.matchedOldSlug;
+  } catch {
+    // Silently fail — page still renders without JSON-LD
+  }
 
+  // 301 a retired slug to the current clean slug (must be outside the try — redirect throws internally).
+  if (deal && matchedOldSlug && deal.slug && deal.slug !== id) {
+    permanentRedirect(`/deals/${deal.slug}`);
+  }
+
+  // Build JSON-LD (Product/Offer schema for rich results + GEO)
+  let jsonLd = null;
+  try {
     if (deal) {
       const isExpired = new Date(deal.expires_at) < new Date();
       const isSoldOut = deal.max_claims ? deal.claims_count >= deal.max_claims : false;

@@ -7,19 +7,31 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
-import { useRouter } from 'next/navigation';
-import { Plus, Tag, Pause, Play, Trash2, TrendingUp, Lock, CalendarDays, List, Globe, MapPin } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Tag, Pause, Play, Trash2, TrendingUp, Lock, Globe, MapPin } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 import { useLanguage } from '@/lib/i18n';
+import DealsNavHeader from '@/components/vendor/DealsNavHeader';
+import DraftsGrid from '@/components/vendor/DraftsGrid';
+import { isWipDraft, isScheduled } from '@/lib/deal-lifecycle';
 
 export default function VendorDealsPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { dealsPerMonth } = useVendorTier();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Deep links: ?tab=drafts (or legacy ?filter=draft) open the Drafts tab.
+  const initialTab: 'deals' | 'drafts' =
+    searchParams.get('tab') === 'drafts' || searchParams.get('filter') === 'draft'
+      ? 'drafts'
+      : 'deals';
+  const [activeTab, setActiveTab] = useState<'deals' | 'drafts'>(initialTab);
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [filter, setFilter] = useState<'all' | 'active' | 'draft' | 'expired' | 'paused'>('all');
+  const [drafts, setDrafts] = useState<Deal[]>([]);
+  const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'paused'>('all');
   const [loading, setLoading] = useState(true);
   const [dealsThisMonth, setDealsThisMonth] = useState(0);
 
@@ -29,32 +41,27 @@ export default function VendorDealsPage() {
 
     async function fetchDeals() {
       try {
-        let query = supabase
+        const { data } = await supabase
           .from('deals')
           .select('*')
           .eq('vendor_id', user!.id)
           .order('created_at', { ascending: false });
 
-        if (filter !== 'all') {
-          query = query.eq('status', filter);
-        }
+        const all = data || [];
 
-        // Also count deals created this month
+        // Work-in-progress drafts get their own tab. Everything else —
+        // active, paused, expired, and scheduled (draft + future start) —
+        // stays in the My Deals grid; scheduled deals are labeled "Scheduled".
+        setDrafts(all.filter(isWipDraft));
+
+        const published = all.filter(d => !isWipDraft(d));
+        setDeals(filter === 'all' ? published : published.filter(d => d.status === filter));
+
+        // Count all deals created this month (drafts included) for the usage meter.
         const startOfMonth = new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
-
-        const [dealsRes, countRes] = await Promise.all([
-          query,
-          supabase
-            .from('deals')
-            .select('*', { count: 'exact', head: true })
-            .eq('vendor_id', user!.id)
-            .gte('created_at', startOfMonth.toISOString()),
-        ]);
-
-        setDeals(dealsRes.data || []);
-        setDealsThisMonth(countRes.count || 0);
+        setDealsThisMonth(all.filter(d => new Date(d.created_at) >= startOfMonth).length);
       } catch (err) {
         console.error('[VendorDeals] Error fetching deals:', err);
       } finally {
@@ -64,6 +71,14 @@ export default function VendorDealsPage() {
 
     fetchDeals();
   }, [user, filter]);
+
+  const handleDeleteDraft = async (id: string) => {
+    setDeletingDraft(id);
+    const supabase = createClient();
+    await supabase.from('deals').delete().eq('id', id);
+    setDrafts(prev => prev.filter(d => d.id !== id));
+    setDeletingDraft(null);
+  };
 
   const handleStatusChange = async (dealId: string, newStatus: string) => {
     const response = await fetch(`/api/deals/${dealId}`, {
@@ -81,30 +96,17 @@ export default function VendorDealsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{t('vendor.deals.title')}</h1>
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
-              title="List View"
-            >
-              <List className="w-3.5 h-3.5" /> {t('vendor.deals.listView')}
-            </button>
-            <Link
-              href="/vendor/deals/calendar"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
-              title="Calendar View"
-            >
-              <CalendarDays className="w-3.5 h-3.5" /> {t('vendor.deals.calendarView')}
-            </Link>
-          </div>
-        </div>
-        <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> {t('vendor.deals.newDeal')}
-        </Link>
-      </div>
+      <DealsNavHeader
+        view="list"
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        draftCount={drafts.length}
+      />
 
+      {activeTab === 'drafts' ? (
+        <DraftsGrid drafts={drafts} onDelete={handleDeleteDraft} deletingId={deletingDraft} />
+      ) : (
+      <>
       {/* Deal Usage Indicator */}
       <div className="bg-gray-50 rounded-xl p-4 mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -137,7 +139,7 @@ export default function VendorDealsPage() {
 
       {/* Filters */}
       <div className="flex gap-2 mb-6">
-        {(['all', 'active', 'draft', 'expired', 'paused'] as const).map(f => (
+        {(['all', 'active', 'expired', 'paused'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -168,6 +170,9 @@ export default function VendorDealsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {deals.map(deal => {
             const isSponti = deal.deal_type === 'sponti_coupon';
+            // A 'draft'-status deal with a future start date is really a
+            // scheduled deal — label it "Scheduled", not "Draft".
+            const scheduled = isScheduled(deal);
             return (
               <div key={deal.id}
                 onClick={() => router.push(`/vendor/deals/edit?id=${deal.id}`)}
@@ -190,13 +195,13 @@ export default function VendorDealsPage() {
                     </span>
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    scheduled ? (isSponti ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700') :
                     deal.status === 'active' ? (isSponti ? 'bg-white/20 text-white' : 'bg-green-100 text-green-700') :
-                    deal.status === 'draft' ? (isSponti ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700') :
                     deal.status === 'expired' ? (isSponti ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-500') :
                     deal.status === 'paused' ? (isSponti ? 'bg-white/20 text-white' : 'bg-yellow-100 text-yellow-700') :
                     'bg-gray-200 text-gray-500'
                   }`}>
-                    {t(`vendor.deals.status.${deal.status}`) || deal.status}
+                    {scheduled ? t('vendor.calendar.scheduled') : (t(`vendor.deals.status.${deal.status}`) || deal.status)}
                   </span>
                 </div>
 
@@ -290,6 +295,8 @@ export default function VendorDealsPage() {
             );
           })}
         </div>
+      )}
+      </>
       )}
     </div>
   );

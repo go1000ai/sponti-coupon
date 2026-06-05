@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { resolveDealByParam } from '@/lib/deal-slug';
 
 export const runtime = 'edge';
 
@@ -11,17 +12,10 @@ export async function GET(
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
 
-  // Accept UUID or SEO slug
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  const column = isUUID ? 'id' : 'slug';
+  // Accept UUID, current SEO slug, or a retired slug (deals.previous_slugs)
+  const { deal } = await resolveDealByParam(supabase, id, '*, vendor:vendors(*)');
 
-  const { data: deal, error } = await supabase
-    .from('deals')
-    .select('*, vendor:vendors(*)')
-    .eq(column, id)
-    .single();
-
-  if (error || !deal) {
+  if (!deal) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 

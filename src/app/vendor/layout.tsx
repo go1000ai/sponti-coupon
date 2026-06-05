@@ -74,6 +74,13 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     }
   }, [loading, user, router]);
 
+  // Worker (staff) accounts don't get the vendor dashboard — send them to their area.
+  useEffect(() => {
+    if (!loading && role === 'worker') {
+      router.replace('/staff/redeem');
+    }
+  }, [loading, role, router]);
+
   if (loading || tierLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

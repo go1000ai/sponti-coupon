@@ -21,6 +21,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/activate-scheduled",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/refresh-square-tokens",
       "schedule": "0 4 * * *"
     },

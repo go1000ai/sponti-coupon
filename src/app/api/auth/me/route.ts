@@ -59,6 +59,26 @@ export async function GET() {
 
     const avatarUrl = user.user_metadata?.avatar_url || null;
 
+    // Worker accounts: resolve their employer vendor + granted permissions.
+    let employer_vendor_id: string | null = null;
+    let employer_business_name: string | null = null;
+    let worker_permissions: Record<string, boolean> | null = null;
+    if (role === 'worker') {
+      const service = await createServiceRoleClient();
+      const { data: member } = await service
+        .from('team_members')
+        .select('vendor_id, permissions, status, vendor:vendors(business_name)')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      if (member) {
+        employer_vendor_id = member.vendor_id as string;
+        worker_permissions = member.permissions as Record<string, boolean>;
+        const v = member.vendor as { business_name?: string } | { business_name?: string }[] | null;
+        employer_business_name = (Array.isArray(v) ? v[0]?.business_name : v?.business_name) ?? null;
+      }
+    }
+
     return NextResponse.json({
       id: user.id,
       email: user.email,
@@ -70,6 +90,9 @@ export async function GET() {
       avatar_url: avatarUrl,
       subscription_status,
       subscription_tier,
+      employer_vendor_id,
+      employer_business_name,
+      worker_permissions,
     });
   } catch (error) {
     console.error('[/api/auth/me] Error:', error);

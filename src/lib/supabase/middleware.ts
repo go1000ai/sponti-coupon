@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
 
   // Protected routes — use prefixes to catch ALL sub-routes
-  const protectedPrefixes = ['/vendor', '/admin', '/dashboard'];
+  const protectedPrefixes = ['/vendor', '/admin', '/dashboard', '/staff'];
 
   const path = request.nextUrl.pathname;
 
@@ -61,7 +61,11 @@ export async function updateSession(request: NextRequest) {
     const lastActivityStr = request.cookies.get(ACTIVITY_COOKIE)?.value;
     const now = Date.now();
 
-    if (lastActivityStr) {
+    // Redeem kiosk mode: a shared counter device must stay logged in until the
+    // owner explicitly exits, so skip the inactivity auto-logout entirely.
+    const kioskMode = request.cookies.get('sb-redeem-kiosk')?.value === '1';
+
+    if (!kioskMode && lastActivityStr) {
       const lastActivity = parseInt(lastActivityStr, 10);
       if (!isNaN(lastActivity) && now - lastActivity > INACTIVITY_TIMEOUT_MS) {
         // Session expired due to inactivity. Build a fresh redirect response and bind a

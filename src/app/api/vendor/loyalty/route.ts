@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
 
   // Accept expires_at: date string or duration preset
   let expiresAt: string | null = null;
-  if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+  if (['3_months', '6_months', '12_months', '18_months', '24_months'].includes(body.expires_at)) {
     const months = parseInt(body.expires_at);
     const d = new Date();
     d.setMonth(d.getMonth() + months);
@@ -258,7 +258,7 @@ export async function PUT(request: NextRequest) {
   if (body.expires_at !== undefined) {
     if (body.expires_at === 'never' || body.expires_at === null) {
       updates.expires_at = null;
-    } else if (['3_months', '6_months', '12_months'].includes(body.expires_at)) {
+    } else if (['3_months', '6_months', '12_months', '18_months', '24_months'].includes(body.expires_at)) {
       const months = parseInt(body.expires_at);
       const d = new Date();
       d.setMonth(d.getMonth() + months);

@@ -541,6 +541,8 @@ function ProgramModal({
                   <option value="3_months">{t('vendor.loyalty.extendThreeMonths')}</option>
                   <option value="6_months">{t('vendor.loyalty.extendSixMonths')}</option>
                   <option value="12_months">{t('vendor.loyalty.extendOneYear')}</option>
+                  <option value="18_months">{t('vendor.loyalty.extendEighteenMonths')}</option>
+                  <option value="24_months">{t('vendor.loyalty.extendTwoYears')}</option>
                 </select>
                 <p className="text-[11px] text-amber-600 mt-1.5 flex items-center gap-1"><Lock className="w-3 h-3" /> {t('vendor.loyalty.extendDurationNote')}</p>
               </div>
@@ -1233,6 +1235,8 @@ function CreateProgramModal({
               <option value="3_months">{t('vendor.loyalty.threeMonthsOption')}</option>
               <option value="6_months">{t('vendor.loyalty.sixMonthsOption')}</option>
               <option value="12_months">{t('vendor.loyalty.twelveMonthsOption')}</option>
+              <option value="18_months">{t('vendor.loyalty.eighteenMonthsOption')}</option>
+              <option value="24_months">{t('vendor.loyalty.twentyFourMonthsOption')}</option>
             </select>
             <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex gap-2 items-start">
               <Lock className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />

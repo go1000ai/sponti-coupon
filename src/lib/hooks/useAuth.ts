@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import type { UserRole } from '@/lib/types/database';
+import type { UserRole, WorkerPermissions } from '@/lib/types/database';
 
 interface AuthState {
   user: User | null;
@@ -14,6 +14,10 @@ interface AuthState {
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
+  // Worker (staff) accounts: their employer vendor + granted permissions.
+  employerVendorId: string | null;
+  employerBusinessName: string | null;
+  workerPermissions: WorkerPermissions | null;
 }
 
 /**
@@ -31,6 +35,9 @@ interface ServerProfile {
   first_name: string | null;
   last_name: string | null;
   avatar_url: string | null;
+  employer_vendor_id: string | null;
+  employer_business_name: string | null;
+  worker_permissions: WorkerPermissions | null;
 }
 
 async function fetchRoleFromServer(): Promise<ServerProfile | null> {
@@ -48,6 +55,9 @@ async function fetchRoleFromServer(): Promise<ServerProfile | null> {
       first_name: data.first_name || null,
       last_name: data.last_name || null,
       avatar_url: data.avatar_url || null,
+      employer_vendor_id: data.employer_vendor_id || null,
+      employer_business_name: data.employer_business_name || null,
+      worker_permissions: data.worker_permissions || null,
     };
   } catch {
     return null;
@@ -55,9 +65,10 @@ async function fetchRoleFromServer(): Promise<ServerProfile | null> {
 }
 
 export function useAuth() {
-  const [state, setState] = useState<AuthState>({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: true, firstName: null, lastName: null, avatarUrl: null });
+  const [state, setState] = useState<AuthState>({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: true, firstName: null, lastName: null, avatarUrl: null, employerVendorId: null, employerBusinessName: null, workerPermissions: null });
   const supabaseRef = useRef(createClient());
   const resolvedRef = useRef(false);
+  const lastUserIdRef = useRef<string | null>(null);
 
   // Allow components to update the avatar URL immediately (e.g. after upload).
   // Dispatches a custom event so ALL useAuth instances (e.g. sidebar) update too.
@@ -88,15 +99,25 @@ export function useAuth() {
 
       if (event === 'SIGNED_OUT') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        lastUserIdRef.current = null;
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null, employerVendorId: null, employerBusinessName: null, workerPermissions: null });
         return;
       }
 
       if (session?.user) {
+        // Skip redundant work: Supabase re-fires SIGNED_IN on tab focus and
+        // TOKEN_REFRESHED periodically. If we've already resolved this same user
+        // and it isn't a real profile change, do nothing — otherwise every tab
+        // refocus would re-fetch /api/auth/me and re-render the whole dashboard
+        // (the "dashboard refreshing itself" symptom).
+        if (resolvedRef.current && lastUserIdRef.current === session.user.id && event !== 'USER_UPDATED') {
+          return;
+        }
         // Use server API to get role — avoids Supabase client deadlock
         const profile = await fetchRoleFromServer();
         if (cancelled) return;
         resolvedRef.current = true;
+        lastUserIdRef.current = session.user.id;
         setState({
           user: session.user,
           role: profile?.role ?? null,
@@ -106,10 +127,13 @@ export function useAuth() {
           firstName: profile?.first_name ?? null,
           lastName: profile?.last_name ?? null,
           avatarUrl: profile?.avatar_url ?? null,
+          employerVendorId: profile?.employer_vendor_id ?? null,
+          employerBusinessName: profile?.employer_business_name ?? null,
+          workerPermissions: profile?.worker_permissions ?? null,
         });
       } else if (event === 'INITIAL_SESSION') {
         resolvedRef.current = true;
-        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null, employerVendorId: null, employerBusinessName: null, workerPermissions: null });
       }
     });
 
@@ -122,6 +146,7 @@ export function useAuth() {
       if (cancelled || resolvedRef.current) return;
 
       resolvedRef.current = true;
+      lastUserIdRef.current = profile?.id ?? null;
       if (profile) {
         // Try to grab the real Supabase User so JWT claims (aud, user_metadata,
         // app_metadata, etc.) are present for downstream consumers. Race it against a
@@ -155,9 +180,12 @@ export function useAuth() {
           firstName: profile.first_name,
           lastName: profile.last_name,
           avatarUrl: profile.avatar_url,
+          employerVendorId: profile.employer_vendor_id,
+          employerBusinessName: profile.employer_business_name,
+          workerPermissions: profile.worker_permissions,
         });
       } else {
-        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
+        setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null, employerVendorId: null, employerBusinessName: null, workerPermissions: null });
       }
     }, 2000);
 
@@ -176,7 +204,7 @@ export function useAuth() {
       // Fallback: try browser client signout
       try { await supabaseRef.current.auth.signOut(); } catch { /* ignore */ }
     }
-    setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null });
+    setState({ user: null, role: null, activeRole: null, isAlsoCustomer: false, loading: false, firstName: null, lastName: null, avatarUrl: null, employerVendorId: null, employerBusinessName: null, workerPermissions: null });
     window.location.href = '/';
   };
 
