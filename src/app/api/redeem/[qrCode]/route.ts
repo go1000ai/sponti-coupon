@@ -30,6 +30,13 @@ export async function POST(
     return NextResponse.json({ error: 'Only vendors can redeem codes' }, { status: 403 });
   }
 
+  // Optional: attribute this redemption to a Redeem Member (kiosk PIN flow).
+  let redeemMemberId: string | null = null;
+  try {
+    const body = await request.json();
+    if (body?.redeem_member_id) redeemMemberId = String(body.redeem_member_id);
+  } catch { /* no body — direct vendor redemption */ }
+
   // Find the claim by QR code UUID or 6-digit redemption code
   const is6Digit = /^\d{6}$/.test(qrCode.trim());
 
@@ -135,6 +142,7 @@ export async function POST(
       vendor_id: user.id,
       customer_id: claim.customer_id,
       scanned_by: user.id,
+      redeem_member_id: redeemMemberId,
       deposit_amount: depositPaid || null,
       payment_method_type: claim.payment_method_type || null,
       remaining_balance: remainingBalance || null,

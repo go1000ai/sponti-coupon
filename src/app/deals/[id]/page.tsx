@@ -101,6 +101,7 @@ export default function DealDetailPage() {
   const [reviewMessage, setReviewMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showAppointmentPicker, setShowAppointmentPicker] = useState(false);
   const [selectedAppointmentTime, setSelectedAppointmentTime] = useState<string | null>(null);
+  const [selectedAppointmentNotes, setSelectedAppointmentNotes] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     async function fetchDeal() {
@@ -223,60 +224,41 @@ export default function DealDetailPage() {
     await processClaim();
   };
 
-  const handleAppointmentSelected = (startTime: string) => {
+  const handleAppointmentSelected = (startTime: string, notes?: string) => {
     setSelectedAppointmentTime(startTime);
+    setSelectedAppointmentNotes(notes);
     setShowAppointmentPicker(false);
-    // Now continue with the claim flow
+    // Continue with the claim flow (pass the time/notes through so we don't race React state)
     if (deal?.deposit_amount && deal.deposit_amount > 0) {
       setShowDisclaimer(true);
     } else {
-      processClaimWithAppointment(startTime);
+      processClaim(startTime, notes);
     }
   };
 
-  const processClaimWithAppointment = async (appointmentTime: string) => {
-    setClaiming(true);
-    setError('');
-    try {
-      const response = await fetch('/api/claims', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deal_id: deal?.id, appointment_start_time: appointmentTime }),
-      });
-      const data = await response.json();
-      if (!response.ok) { setError(data.error); setClaiming(false); return; }
-
-      trackEvent('Lead', {
-        content_name: deal?.title,
-        content_category: deal?.deal_type === 'sponti_coupon' ? 'Sponti Deal' : 'Steady Deal',
-        value: deal?.deal_price || 0,
-        currency: 'USD',
-      });
-
-      if (data.payment_tier === 'integrated' && data.redirect_url) {
-        window.location.href = data.redirect_url;
-        return;
-      }
-      if (data.redirect_url) {
-        window.location.href = data.redirect_url;
-        return;
-      }
-      router.push('/dashboard/my-deals');
-    } catch { setError(t('dealDetail.failedToClaim')); }
-    setClaiming(false);
-    setShowDisclaimer(false);
+  // Customer chose to claim now and book the appointment later from their dashboard.
+  const handleScheduleLater = () => {
+    setSelectedAppointmentTime(null);
+    setSelectedAppointmentNotes(undefined);
+    setShowAppointmentPicker(false);
+    if (deal?.deposit_amount && deal.deposit_amount > 0) {
+      setShowDisclaimer(true);
+    } else {
+      processClaim();
+    }
   };
 
-  const processClaim = async () => {
+  const processClaim = async (appointmentTime?: string | null, appointmentNotes?: string) => {
     setClaiming(true);
     setError('');
+    // Fall back to stored state when not passed explicitly (e.g. deposit → disclaimer path).
+    const apptTime = appointmentTime ?? selectedAppointmentTime;
+    const apptNotes = appointmentNotes ?? selectedAppointmentNotes;
     try {
-      const claimBody: Record<string, unknown> = { deal_id: deal?.id };
-      if (selectedAppointmentTime) claimBody.appointment_start_time = selectedAppointmentTime;
       const response = await fetch('/api/claims', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(claimBody),
+        body: JSON.stringify({ deal_id: deal?.id }),
       });
       const data = await response.json();
       if (!response.ok) { setError(data.error); setClaiming(false); return; }
@@ -289,20 +271,30 @@ export default function DealDetailPage() {
         currency: 'USD',
       });
 
-      // Route based on payment tier
-      if (data.payment_tier === 'integrated' && data.redirect_url) {
-        // Stripe Connect Checkout — redirect to Stripe
-        window.location.href = data.redirect_url;
-        return;
-      }
-
+      // Deposit deals redirect to payment; the appointment is scheduled afterward
+      // from the dashboard ("Needs Appointment" prompt), once the claim is active.
       if (data.redirect_url) {
-        // Legacy static link
         window.location.href = data.redirect_url;
         return;
       }
 
-      // No deposit — instant QR
+      // No deposit — claim is active immediately. If they picked a time, book it now
+      // via the validated appointments API (links it to the new claim).
+      if (apptTime && data.claim?.id) {
+        try {
+          await fetch('/api/appointments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deal_id: deal?.id,
+              claim_id: data.claim.id,
+              start_time: apptTime,
+              customer_notes: apptNotes,
+            }),
+          });
+        } catch { /* non-fatal: customer can still schedule from the dashboard */ }
+      }
+
       router.push('/dashboard/my-deals');
     } catch { setError(t('dealDetail.failedToClaim')); }
     setClaiming(false);
@@ -1333,6 +1325,7 @@ export default function DealDetailPage() {
           businessName={deal.vendor?.business_name || 'Business'}
           advanceBookingDays={14}
           onSelect={handleAppointmentSelected}
+          onScheduleLater={handleScheduleLater}
           onClose={() => setShowAppointmentPicker(false)}
         />
       )}
@@ -1368,7 +1361,7 @@ export default function DealDetailPage() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowDisclaimer(false)} className="btn-outline flex-1">{t('dealDetail.cancelBtn')}</button>
-              <button onClick={processClaim} disabled={claiming} className="btn-primary flex-1">
+              <button onClick={() => processClaim()} disabled={claiming} className="btn-primary flex-1">
                 {claiming ? t('dealDetail.processing') : t('dealDetail.payDepositAmount', { amount: formatCurrency(deal.deposit_amount!) })}
               </button>
             </div>

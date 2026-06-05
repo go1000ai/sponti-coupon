@@ -16,13 +16,15 @@ interface AppointmentConfirmationParams {
   isVendorCopy?: boolean;
   customerName?: string;
   customerEmail?: string;
+  /** True when the appointment is newly booked and awaiting vendor confirmation. */
+  pending?: boolean;
 }
 
 export async function sendAppointmentConfirmationEmail(params: AppointmentConfirmationParams) {
   const {
     to, businessName, dealTitle,
     appointmentDate, appointmentEnd, address, phone,
-    customerNotes, isVendorCopy, customerName, customerEmail,
+    customerNotes, isVendorCopy, customerName, customerEmail, pending,
   } = params;
 
   const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@sponticoupon.com';
@@ -32,8 +34,17 @@ export async function sendAppointmentConfirmationEmail(params: AppointmentConfir
   const formattedTime = `${format(date, 'h:mm a')} — ${format(end, 'h:mm a')}`;
 
   const subject = isVendorCopy
-    ? `New Appointment: ${customerName} — ${dealTitle}`
-    : `Appointment Confirmed — ${businessName}`;
+    ? (pending ? `New Appointment Request: ${customerName} — ${dealTitle}` : `Appointment Confirmed: ${customerName} — ${dealTitle}`)
+    : (pending ? `Appointment Requested — ${businessName}` : `Appointment Confirmed — ${businessName}`);
+
+  const iconBg = pending ? '#fef3c7' : '#dcfce7';
+  const icon = pending ? '⏳' : '✓';
+  const heading = isVendorCopy
+    ? (pending ? 'New Appointment Request' : 'Appointment Confirmed')
+    : (pending ? 'Appointment Requested' : 'Appointment Confirmed!');
+  const subheading = isVendorCopy
+    ? (pending ? `${customerName} requested an appointment — confirm it from your dashboard` : `${customerName}'s appointment is confirmed`)
+    : (pending ? `We've sent your request to ${businessName}. You'll be notified once they confirm it.` : `Your appointment at ${businessName} is confirmed`);
 
   const customerSection = isVendorCopy ? `
     <tr><td style="padding:8px 0;color:#6b7280;font-size:14px;">Customer</td>
@@ -54,14 +65,14 @@ export async function sendAppointmentConfirmationEmail(params: AppointmentConfir
       </div>
       <div style="background:white;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
         <div style="text-align:center;margin-bottom:20px;">
-          <div style="width:48px;height:48px;background:#dcfce7;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;">
-            <span style="font-size:24px;">✓</span>
+          <div style="width:48px;height:48px;background:${iconBg};border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px;">
+            <span style="font-size:24px;">${icon}</span>
           </div>
           <h2 style="margin:0;font-size:20px;color:#111827;">
-            ${isVendorCopy ? 'New Appointment Booked' : 'Appointment Confirmed!'}
+            ${heading}
           </h2>
           <p style="margin:4px 0 0;color:#6b7280;font-size:14px;">
-            ${isVendorCopy ? `${customerName} has booked an appointment` : `Your appointment at ${businessName} is confirmed`}
+            ${subheading}
           </p>
         </div>
 

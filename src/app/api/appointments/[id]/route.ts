@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { notifyAppointmentEvent } from '@/lib/notifications/appointment';
 
 /**
  * GET /api/appointments/[id]
@@ -163,7 +164,16 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update appointment' }, { status: 500 });
   }
 
-  // TODO: Send notification emails (confirmation, cancellation)
+  // Notify both parties (email + in-app) on confirm/cancel.
+  if (action === 'confirm') {
+    await notifyAppointmentEvent(serviceClient, id, 'confirmed');
+  } else if (action === 'cancel') {
+    await notifyAppointmentEvent(serviceClient, id, 'cancelled', {
+      cancelledBy: isVendor ? 'vendor' : 'customer',
+      reason: reason || undefined,
+    });
+  }
+
   // TODO: Update Google Calendar event if connected
 
   return NextResponse.json({ appointment: updated });

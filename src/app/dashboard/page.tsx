@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { GuidedTour } from '@/components/ui/GuidedTour';
+import { UpcomingAppointments } from '@/components/appointments/UpcomingAppointments';
 import { CUSTOMER_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import type { Claim, Deal, LoyaltyCard } from '@/lib/types/database';
 
@@ -282,6 +283,9 @@ export default function ConsumerDashboardPage() {
           <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
         </Link>
       </div>
+
+      {/* Upcoming Appointments */}
+      <UpcomingAppointments role="customer" />
 
       {/* Loyalty Rewards Progress — wrapper always rendered for Joyride tour target */}
       <div data-tour="customer-loyalty" className="animate-fade-up" style={{ animationDelay: '600ms' }}>

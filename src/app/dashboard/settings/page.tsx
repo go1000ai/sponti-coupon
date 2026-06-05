@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useLanguage } from '@/lib/i18n';
+import { formatPhoneNumber } from '@/lib/utils';
 import { User, MapPin, Bell, Mail, Save, Check, Navigation, Play, RotateCcw } from 'lucide-react';
 import type { Customer } from '@/lib/types/database';
 
@@ -14,6 +15,7 @@ export default function DashboardSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
   const [tourAutoStart, setTourAutoStart] = useState(true);
   const [tourMessage, setTourMessage] = useState('');
   const [form, setForm] = useState({
@@ -47,7 +49,7 @@ export default function DashboardSettingsPage() {
           setForm({
             first_name: data.first_name || '',
             last_name: data.last_name || '',
-            phone: data.phone || '',
+            phone: formatPhoneNumber(data.phone || ''),
             city: data.city || '',
             state: data.state || '',
             zip: data.zip || '',
@@ -61,14 +63,50 @@ export default function DashboardSettingsPage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
+    setError('');
     const supabase = createClient();
 
-    await supabase
+    const firstName = form.first_name.trim();
+    const lastName = form.last_name.trim();
+
+    // 1. Persist profile fields + name to the customers table.
+    const { error: customerError } = await supabase
       .from('customers')
-      .update(form)
+      .update({ ...form, first_name: firstName, last_name: lastName })
       .eq('id', user.id);
 
+    // 2. Sync the canonical name in user_profiles (read by /api/auth/me → useAuth).
+    let profileSyncFailed = false;
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ first_name: firstName, last_name: lastName }),
+      });
+      if (!res.ok) profileSyncFailed = true;
+    } catch {
+      profileSyncFailed = true;
+    }
+
+    // 3. Sync the name into auth user_metadata LAST — the dashboard greeting and
+    //    sidebar read this, and this fires USER_UPDATED so the name refreshes live
+    //    across the app without a reload.
+    const { error: authError } = await supabase.auth.updateUser({
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        full_name: `${firstName} ${lastName}`.trim(),
+      },
+    });
+
     setSaving(false);
+
+    if (customerError || authError || profileSyncFailed) {
+      setError(t('customer.account.saveFailed'));
+      return;
+    }
+
+    setCustomer(prev => (prev ? { ...prev, first_name: firstName, last_name: lastName } : prev));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -117,8 +155,9 @@ export default function DashboardSettingsPage() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">{t('customer.account.phone')}</label>
           <input
+            type="tel"
             value={form.phone}
-            onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+            onChange={e => setForm(f => ({ ...f, phone: formatPhoneNumber(e.target.value) }))}
             className="input-field"
             placeholder="(555) 123-4567"
           />
@@ -248,6 +287,10 @@ export default function DashboardSettingsPage() {
             )}
           </div>
         </div>
+
+        {error && (
+          <p className="text-sm text-red-600 font-medium text-center">{error}</p>
+        )}
 
         <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">
           {saved ? <><Check className="w-4 h-4" /> {t('customer.account.saved')}</> :

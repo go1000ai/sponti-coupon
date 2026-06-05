@@ -17,6 +17,7 @@ import { VideoModal } from '@/components/vendor/VideoModal';
 import { ROIDashboard } from '@/components/vendor/ROIDashboard';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { GuidedTour } from '@/components/ui/GuidedTour';
+import { UpcomingAppointments } from '@/components/appointments/UpcomingAppointments';
 import { VENDOR_DASHBOARD_STEPS } from '@/lib/constants/tour-steps';
 import {
   AreaChart, Area, ResponsiveContainer, Tooltip, XAxis,
@@ -485,6 +486,11 @@ function VendorDashboard() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Upcoming Appointments */}
+      <div className="mb-8">
+        <UpcomingAppointments role="vendor" />
       </div>
 
       {/* Quick Actions */}

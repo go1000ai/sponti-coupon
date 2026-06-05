@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { parseISO, addMinutes, format } from 'date-fns';
+import { notifyAppointmentEvent } from '@/lib/notifications/appointment';
 
 /**
  * POST /api/appointments
@@ -120,6 +121,9 @@ export async function POST(request: NextRequest) {
       .update({ appointment_id: appointment.id })
       .eq('id', claim_id);
   }
+
+  // Notify both parties (email + in-app) that a booking was requested.
+  await notifyAppointmentEvent(serviceClient, appointment.id, 'requested');
 
   return NextResponse.json({ appointment }, { status: 201 });
 }

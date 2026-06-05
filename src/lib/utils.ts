@@ -25,6 +25,20 @@ export function formatPercentage(value: number): string {
   return `${Math.round(value)}%`;
 }
 
+/**
+ * Format a US phone number as the user types, e.g. "4075551212" → "(407) 555-1212".
+ * Strips non-digits, drops a leading country code "1", and caps at 10 digits so the
+ * input degrades gracefully while partial (e.g. "407" → "407", "40755" → "(407) 55").
+ */
+export function formatPhoneNumber(value: string): string {
+  let digits = value.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+  digits = digits.slice(0, 10);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
 export function calculateDiscount(originalPrice: number, dealPrice: number): number {
   if (originalPrice <= 0) return 0;
   return ((originalPrice - dealPrice) / originalPrice) * 100;

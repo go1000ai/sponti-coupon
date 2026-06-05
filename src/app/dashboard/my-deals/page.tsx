@@ -13,9 +13,10 @@ import {
   Copy, Check, ExternalLink, Store, CreditCard,
   X, MapPin, Tag, Shield, Phone, Globe, Mail, Send, Trash2, Loader2, AlertTriangle,
   Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target,
-  Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music, Ticket,
+  Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music, Ticket, CalendarClock,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
+import AppointmentPicker from '@/components/appointments/AppointmentPicker';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 import type { Claim, Deal, Vendor, BusinessHours } from '@/lib/types/database';
 
@@ -289,6 +290,9 @@ function DashboardMyDealsContent() {
               pending_deposit: { dot: 'bg-yellow-500', label: t('customer.myDeals.pending'), text: 'text-yellow-700', bg: 'bg-yellow-50' },
             }[status];
 
+            // Active coupon for an appointment-required deal that hasn't been booked yet.
+            const needsAppt = !!deal.requires_appointment && !claim.appointment_id && status === 'active';
+
             return (
               <button
                 key={claim.id}
@@ -305,12 +309,27 @@ function DashboardMyDealsContent() {
                     </div>
                   </div>
                 )}
+                {/* "Needs Appointment" watermark stamp */}
+                {needsAppt && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                    <div className="border-4 border-amber-500/30 rounded-lg px-3 py-1 -rotate-12">
+                      <span className="text-amber-500/40 text-2xl font-extrabold tracking-widest">NEEDS APPT</span>
+                    </div>
+                  </div>
+                )}
                 {/* Row 1: Status + Deal type */}
                 <div className="flex items-center justify-between mb-3">
+                  {needsAppt ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      {t('customer.myDeals.needsAppointment')}
+                    </span>
+                  ) : (
                   <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${statusStyles.bg} ${statusStyles.text}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${statusStyles.dot}`} />
                     {statusStyles.label}
                   </span>
+                  )}
                   {isSponti ? (
                     <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
                       <SpontiIcon className="w-3 h-3" /> Sponti
@@ -347,7 +366,12 @@ function DashboardMyDealsContent() {
 
                 {/* Row 4: Footer — countdown or date */}
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  {(status === 'active' || status === 'pending_deposit') ? (
+                  {needsAppt ? (
+                    <p className="text-xs text-amber-600 font-semibold flex items-center gap-1.5">
+                      <CalendarClock className="w-3.5 h-3.5" />
+                      {t('customer.myDeals.scheduleBy', { date: formatDate(claim.expires_at) })}
+                    </p>
+                  ) : (status === 'active' || status === 'pending_deposit') ? (
                     <InlineCountdown expiresAt={claim.expires_at} />
                   ) : status === 'redeemed' && isBalancePending ? (
                     <p className="text-xs text-amber-600 font-medium flex items-center gap-1.5">
@@ -617,6 +641,11 @@ function DetailModal({
   const [transferError, setTransferError] = useState('');
   const [transferSuccess, setTransferSuccess] = useState('');
 
+  // Appointment scheduling state
+  const [showPicker, setShowPicker] = useState(false);
+  const [booking, setBooking] = useState(false);
+  const [bookError, setBookError] = useState('');
+
   const deal = claim.deal;
 
   useEffect(() => {
@@ -668,10 +697,38 @@ function DetailModal({
     setTransferring(false);
   };
 
+  const handleBookAppointment = async (startTime: string, notes?: string) => {
+    setBooking(true);
+    setBookError('');
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          deal_id: claim.deal?.id,
+          claim_id: claim.id,
+          start_time: startTime,
+          customer_notes: notes,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setShowPicker(false);
+        onRefresh();
+      } else {
+        setBookError(data.error || t('customer.myDeals.bookingFailed'));
+      }
+    } catch {
+      setBookError(t('customer.myDeals.bookingFailed'));
+    }
+    setBooking(false);
+  };
+
   if (!deal) return null;
 
   const vendor = deal.vendor as Deal['vendor'];
   const isSponti = deal.deal_type === 'sponti_coupon';
+  const needsAppt = !!deal.requires_appointment && !claim.appointment_id && status === 'active';
   const depositAmount = deal.deposit_amount || 0;
   const hasDeposit = depositAmount > 0;
   const remainingBalance = hasDeposit ? deal.deal_price - depositAmount : 0;
@@ -691,6 +748,7 @@ function DetailModal({
   ];
 
   return (
+    <>
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto modal-backdrop bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         className="modal-content bg-white rounded-2xl w-full max-w-lg mx-4 my-4 sm:my-6 overflow-hidden shadow-2xl"
@@ -831,6 +889,27 @@ function DetailModal({
           {/* ── DETAILS TAB ── */}
           {activeTab === 'details' && (
             <div className="space-y-5">
+              {/* Needs Appointment — prompt to schedule */}
+              {needsAppt && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-5 text-center">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+                    <CalendarClock className="w-6 h-6 text-amber-500" />
+                  </div>
+                  <p className="text-sm font-bold text-amber-700">{t('customer.myDeals.appointmentNeeded')}</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    {t('customer.myDeals.scheduleByReminder', { date: fmtDateTime(claim.expires_at) })}
+                  </p>
+                  <button
+                    onClick={() => { setBookError(''); setShowPicker(true); }}
+                    className="mt-3 inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-amber-200/50"
+                  >
+                    <CalendarClock className="w-4 h-4" />
+                    {t('customer.myDeals.scheduleAppointment')}
+                  </button>
+                  {bookError && <p className="text-xs text-red-600 mt-2">{bookError}</p>}
+                </div>
+              )}
+
               {/* Description */}
               {deal.description && (
                 <p className="text-gray-600 text-sm leading-relaxed">{deal.description}</p>
@@ -1267,6 +1346,20 @@ function DetailModal({
         </div>
       </div>
     </div>
+
+    {/* Appointment scheduling picker (overlays the detail modal) */}
+    {showPicker && deal && (
+      <AppointmentPicker
+        dealId={deal.id}
+        dealTitle={deal.title}
+        businessName={vendor?.business_name || 'Business'}
+        advanceBookingDays={14}
+        confirmLabel={booking ? t('customer.myDeals.booking') : t('customer.myDeals.confirmAppointment')}
+        onSelect={handleBookAppointment}
+        onClose={() => setShowPicker(false)}
+      />
+    )}
+    </>
   );
 }
 

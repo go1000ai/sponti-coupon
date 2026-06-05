@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { Ban, CreditCard } from 'lucide-react';
 import { PromoCountdownBanner } from '@/components/vendor/PromoCountdownBanner';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { isKioskActive, KIOSK_EVENT } from '@/lib/redeem-members/kiosk';
 
 function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, role, loading, signOut, isAlsoCustomer, switchRole, becomeCustomer } = useAuth();
@@ -28,6 +30,22 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
       document.documentElement.scrollTop = 0;
     });
   }, [pathname]);
+
+  // Redeem kiosk mode: lock the device to the redeem-only screen.
+  const [kiosk, setKiosk] = useState(false);
+  useEffect(() => {
+    const sync = () => setKiosk(isKioskActive());
+    sync();
+    window.addEventListener(KIOSK_EVENT, sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener(KIOSK_EVENT, sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  useEffect(() => {
+    if (kiosk && pathname !== '/vendor/redeem') router.replace('/vendor/redeem');
+  }, [kiosk, pathname, router]);
 
   // Only allow through if subscription was just completed successfully
   const isSubscriptionSuccess = searchParams.get('subscription') === 'success';
@@ -120,6 +138,11 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Locked redeem-only kiosk: no sidebar, no nav, no notifications — just the redeem screen.
+  if (kiosk) {
+    return <div className="min-h-screen bg-gray-50">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <VendorSidebar
@@ -133,7 +156,11 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
         onBecomeCustomer={becomeCustomer}
       />
       <main className="lg:ml-64 min-h-screen">
-        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
+        {/* Top bar with notification bell */}
+        <div className="flex items-center justify-end px-4 sm:px-6 lg:px-8 py-2.5 pl-20 lg:pl-8 bg-white border-b border-gray-100">
+          <NotificationBell />
+        </div>
+        <div className="p-4 sm:p-6 lg:p-8">
           {promoExpiresAt && <PromoCountdownBanner promoExpiresAt={promoExpiresAt} promoCode={promoCode} />}
           {children}
         </div>

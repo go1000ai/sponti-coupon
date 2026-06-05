@@ -10,8 +10,12 @@ interface AppointmentPickerProps {
   dealTitle: string;
   businessName: string;
   advanceBookingDays?: number;
-  onSelect: (startTime: string) => void;
+  onSelect: (startTime: string, notes?: string) => void;
   onClose: () => void;
+  /** When provided, shows a "Schedule Later" button that lets the customer defer booking. */
+  onScheduleLater?: () => void;
+  /** Label for the confirm button (default "Confirm & Continue"). */
+  confirmLabel?: string;
 }
 
 export default function AppointmentPicker({
@@ -21,6 +25,8 @@ export default function AppointmentPicker({
   advanceBookingDays = 14,
   onSelect,
   onClose,
+  onScheduleLater,
+  confirmLabel = 'Confirm & Continue',
 }: AppointmentPickerProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(startOfDay(new Date()));
   const [slots, setSlots] = useState<TimeSlot[]>([]);
@@ -73,7 +79,7 @@ export default function AppointmentPicker({
 
   const handleConfirm = () => {
     if (!selectedSlot) return;
-    onSelect(selectedSlot.start);
+    onSelect(selectedSlot.start, customerNotes.trim() || undefined);
   };
 
   const availableSlots = slots.filter((s) => s.available);
@@ -224,31 +230,35 @@ export default function AppointmentPicker({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
-          {selectedSlot ? (
-            <div className="space-y-3">
-              <div className="bg-white rounded-xl p-3 border border-gray-200">
-                <p className="text-xs text-gray-500 uppercase font-medium">Your Appointment</p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">
-                  {format(selectedDate, 'EEEE, MMMM d, yyyy')}
-                </p>
-                <p className="text-sm text-primary-600 font-medium">
-                  {format(parseISO(selectedSlot.start), 'h:mm a')} — {format(parseISO(selectedSlot.end), 'h:mm a')}
-                </p>
-              </div>
-              <button
-                onClick={handleConfirm}
-                className="w-full bg-primary-500 hover:bg-primary-600 text-white font-semibold py-3 rounded-xl transition-colors"
-              >
-                Confirm & Continue
-              </button>
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 space-y-3">
+          {selectedSlot && (
+            <div className="bg-white rounded-xl p-3 border border-gray-200">
+              <p className="text-xs text-gray-500 uppercase font-medium">Your Appointment</p>
+              <p className="text-sm font-semibold text-gray-900 mt-1">
+                {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+              <p className="text-sm text-primary-600 font-medium">
+                {format(parseISO(selectedSlot.start), 'h:mm a')} — {format(parseISO(selectedSlot.end), 'h:mm a')}
+              </p>
             </div>
-          ) : (
+          )}
+          <button
+            onClick={handleConfirm}
+            disabled={!selectedSlot}
+            className={`w-full font-semibold py-3 rounded-xl transition-colors ${
+              selectedSlot
+                ? 'bg-primary-500 hover:bg-primary-600 text-white'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {selectedSlot ? confirmLabel : 'Select a time to continue'}
+          </button>
+          {onScheduleLater && (
             <button
-              disabled
-              className="w-full bg-gray-200 text-gray-400 font-semibold py-3 rounded-xl cursor-not-allowed"
+              onClick={onScheduleLater}
+              className="w-full text-sm font-medium text-gray-500 hover:text-gray-800 py-1.5 transition-colors"
             >
-              Select a time to continue
+              I&apos;m not ready — Schedule Later
             </button>
           )}
         </div>

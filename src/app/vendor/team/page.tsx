@@ -1,326 +1,242 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { UpgradePrompt } from '@/components/vendor/UpgradePrompt';
 import {
-  Users, Pencil, UserX, Loader2, Save, X,
-  Mail, Shield, MapPin, AlertCircle, CheckCircle2,
-  UserPlus, Crown, Star,
+  Users, Pencil, Trash2, Loader2, Save, X, KeyRound,
+  AlertCircle, CheckCircle2, UserPlus, ScanLine, ShieldCheck,
 } from 'lucide-react';
-import type { TeamMember, TeamRole, VendorLocation } from '@/lib/types/database';
-import { useLanguage } from '@/lib/i18n';
+import { startKiosk } from '@/lib/redeem-members/kiosk';
 
-interface MemberForm {
-  email: string;
+interface RedeemMember {
+  id: string;
   name: string;
-  role: TeamRole;
-  location_id: string;
+  active: boolean;
+  last_used_at: string | null;
+  created_at: string;
 }
 
-const emptyForm: MemberForm = { email: '', name: '', role: 'staff', location_id: '' };
-
-const ROLE_CONFIG: Record<TeamRole, { label: string; description: string; icon: typeof Shield; color: string }> = {
-  admin: { label: 'Admin', description: 'Full access to all features', icon: Crown, color: 'text-amber-600 bg-amber-50' },
-  manager: { label: 'Manager', description: 'Manage deals, view analytics', icon: Star, color: 'text-primary-600 bg-primary-50' },
-  staff: { label: 'Staff', description: 'Redeem deals, view dashboard', icon: Shield, color: 'text-gray-600 bg-gray-50' },
-};
-
-export default function TeamPage() {
+export default function RedeemMembersPage() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const router = useRouter();
   const { canAccess, loading: tierLoading } = useVendorTier();
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [locations, setLocations] = useState<VendorLocation[]>([]);
+  const [members, setMembers] = useState<RedeemMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [form, setForm] = useState<MemberForm>(emptyForm);
+  const [name, setName] = useState('');
+  const [pin, setPin] = useState('');
+  const [pin2, setPin2] = useState('');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const hasAccess = canAccess('team_access');
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([fetchMembers(), fetchLocations()]).then(() => setLoading(false));
+    fetchMembers().then(() => setLoading(false));
   }, [user]);
 
   async function fetchMembers() {
     try {
-      const res = await fetch('/api/vendor/team');
+      const res = await fetch('/api/vendor/redeem-members');
       const data = await res.json();
       setMembers(data.members || []);
     } catch { /* ignore */ }
   }
 
-  async function fetchLocations() {
-    try {
-      const res = await fetch('/api/vendor/locations');
-      const data = await res.json();
-      setLocations(data.locations || []);
-    } catch { /* ignore */ }
-  }
+  const resetForm = () => { setShowForm(false); setEditingId(null); setName(''); setPin(''); setPin2(''); };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const flash = (type: 'success' | 'error', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3500);
   };
 
-  const handleInvite = async () => {
-    if (!form.email || !form.name) {
-      setMessage({ type: 'error', text: 'Email and name are required.' });
-      return;
+  const handleSave = async () => {
+    if (!name.trim()) return flash('error', 'Enter a name.');
+    // PIN required when creating; optional (leave blank to keep) when editing.
+    const changingPin = pin.length > 0 || !editingId;
+    if (changingPin) {
+      if (!/^\d{4}$/.test(pin)) return flash('error', 'PIN must be exactly 4 digits.');
+      if (pin !== pin2) return flash('error', 'PINs do not match.');
     }
     setSaving(true);
-    setMessage(null);
     try {
-      const res = await fetch('/api/vendor/team', {
-        method: 'POST',
+      const res = await fetch('/api/vendor/redeem-members', {
+        method: editingId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...(editingId ? { id: editingId } : {}),
+          name: name.trim(),
+          ...(changingPin ? { pin } : {}),
+        }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: 'error', text: data.error });
-      } else {
-        setMembers(prev => [...prev, data.member]);
-        setForm(emptyForm);
-        setShowInviteForm(false);
-        setMessage({ type: 'success', text: 'Team member invited!' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to invite team member.' });
-    }
-    setSaving(false);
-  };
-
-  const handleUpdate = async () => {
-    if (!editingId) return;
-    setSaving(true);
-    setMessage(null);
-    try {
-      const res = await fetch('/api/vendor/team', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, role: form.role, location_id: form.location_id || null }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage({ type: 'error', text: data.error });
-      } else {
-        setMembers(prev => prev.map(m => m.id === editingId ? data.member : m));
-        setEditingId(null);
-        setForm(emptyForm);
-        setMessage({ type: 'success', text: 'Team member updated!' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to update team member.' });
-    }
-    setSaving(false);
-  };
-
-  const handleRevoke = async (id: string) => {
-    if (!confirm('Remove this team member? They will lose access to your account.')) return;
-    try {
-      const res = await fetch(`/api/vendor/team?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setMembers(prev => prev.map(m => m.id === id ? { ...m, status: 'revoked' as const } : m));
-        setMessage({ type: 'success', text: 'Team member removed.' });
+        flash('success', editingId ? 'Member updated.' : 'Redeem member added.');
+        resetForm();
+        fetchMembers();
+      } else {
+        flash('error', data.error || 'Could not save.');
       }
     } catch {
-      setMessage({ type: 'error', text: 'Failed to remove team member.' });
+      flash('error', 'Network error. Please try again.');
     }
+    setSaving(false);
   };
 
-  const startEdit = (member: TeamMember) => {
-    setEditingId(member.id);
-    setShowInviteForm(false);
-    setForm({
-      email: member.email,
-      name: member.name,
-      role: member.role,
-      location_id: member.location_id || '',
-    });
+  const handleDelete = async (id: string) => {
+    if (!confirm('Remove this redeem member?')) return;
+    try {
+      const res = await fetch(`/api/vendor/redeem-members?id=${id}`, { method: 'DELETE' });
+      if (res.ok) { setMembers((prev) => prev.filter((m) => m.id !== id)); flash('success', 'Member removed.'); }
+    } catch { flash('error', 'Could not remove member.'); }
   };
 
-  const cancelEdit = () => {
-    setEditingId(null);
-    setShowInviteForm(false);
-    setForm(emptyForm);
+  const startEdit = (m: RedeemMember) => {
+    setEditingId(m.id); setShowForm(true); setName(m.name); setPin(''); setPin2('');
   };
 
-  if (tierLoading || loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500" />
-      </div>
-    );
+  const startRedeemMode = () => {
+    startKiosk();
+    router.push('/vendor/redeem');
+  };
+
+  if (loading || tierLoading) {
+    return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary-500" /></div>;
   }
 
   if (!hasAccess) {
     return (
       <UpgradePrompt
         requiredTier="business"
-        featureName="Team Member Access"
-        description="Invite team members, assign roles, and manage access across your business locations."
+        featureName="Redeem Members"
+        description="Add named staff who can redeem coupons (and award loyalty) using a 4-digit PIN on your device — without access to the rest of your dashboard."
         mode="full-page"
       />
     );
   }
 
-  const activeMembers = members.filter(m => m.status !== 'revoked');
-
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <Users className="w-8 h-8 text-primary-500" />
+          <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+            <Users className="w-5 h-5 text-primary-500" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.team.title')}</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage team members and their roles</p>
+            <h1 className="text-xl font-bold text-gray-900">Redeem Members</h1>
+            <p className="text-gray-500 text-sm">Staff who can redeem coupons with a PIN — nothing else.</p>
           </div>
         </div>
-        <button
-          onClick={() => { setShowInviteForm(true); setEditingId(null); setForm(emptyForm); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" /> Invite Member
-        </button>
+        {members.some((m) => m.active) && (
+          <button
+            onClick={startRedeemMode}
+            className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary-500 to-orange-500 hover:from-primary-600 hover:to-orange-600 text-white font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-primary-200/50 transition-all"
+          >
+            <ScanLine className="w-4 h-4" /> Start Redeem Mode
+          </button>
+        )}
       </div>
 
       {message && (
-        <div className={`mb-6 p-4 rounded-lg border flex items-center gap-2 text-sm ${
-          message.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+        <div className={`mb-4 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2 ${
+          message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {message.text}
         </div>
       )}
 
-      {/* Invite / Edit Form */}
-      {(showInviteForm || editingId) && (
-        <div className="card p-6 mb-6 border-2 border-primary-200">
+      {/* How it works */}
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
+        <ShieldCheck className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+        <p className="text-sm text-blue-800">
+          Tap <span className="font-semibold">Start Redeem Mode</span> to lock this device to a redeem-only screen.
+          Staff pick their name and enter their PIN to redeem coupons (loyalty is awarded automatically).
+          Exiting requires your account password.
+        </p>
+      </div>
+
+      {/* Add / Edit form */}
+      {showForm ? (
+        <div className="card p-5 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-gray-900">{editingId ? 'Edit Member' : 'Invite Team Member'}</h3>
-            <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            <h3 className="font-bold text-gray-900">{editingId ? 'Edit Member' : 'Add Redeem Member'}</h3>
+            <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
-              <input name="name" value={form.name} onChange={handleChange} className="input-field" placeholder="John Doe" required disabled={!!editingId} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder="e.g. Maria" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-              <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field" placeholder="john@example.com" required disabled={!!editingId} />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {editingId ? 'New PIN (optional)' : '4-digit PIN'}
+                </label>
+                <input
+                  value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  inputMode="numeric" type="password" autoComplete="off"
+                  className="input-field tracking-[0.5em] text-center" placeholder="••••"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm PIN</label>
+                <input
+                  value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  inputMode="numeric" type="password" autoComplete="off"
+                  className="input-field tracking-[0.5em] text-center" placeholder="••••"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <select name="role" value={form.role} onChange={handleChange} className="input-field">
-                <option value="staff">Staff — Redeem deals, view dashboard</option>
-                <option value="manager">Manager — Manage deals, view analytics</option>
-                <option value="admin">Admin — Full access to all features</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Location (optional)</label>
-              <select name="location_id" value={form.location_id} onChange={handleChange} className="input-field">
-                <option value="">All Locations</option>
-                {locations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Role description */}
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {(Object.entries(ROLE_CONFIG) as [TeamRole, typeof ROLE_CONFIG['admin']][]).map(([key, config]) => {
-              const IconComp = config.icon;
-              return (
-                <div key={key} className={`p-3 rounded-lg border text-center ${
-                  form.role === key ? 'border-primary-300 bg-primary-50' : 'border-gray-200'
-                }`}>
-                  <IconComp className={`w-5 h-5 mx-auto mb-1 ${form.role === key ? 'text-primary-500' : 'text-gray-400'}`} />
-                  <p className="text-xs font-semibold text-gray-700">{config.label}</p>
-                  <p className="text-[10px] text-gray-400">{config.description}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-end gap-3 mt-6">
-            <button onClick={cancelEdit} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
+            {editingId && <p className="text-xs text-gray-400">Leave PIN blank to keep the current one.</p>}
             <button
-              onClick={editingId ? handleUpdate : handleInvite}
-              disabled={saving}
-              className="btn-primary flex items-center gap-2"
+              onClick={handleSave} disabled={saving}
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
-              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editingId ? <Save className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-              {editingId ? 'Update' : 'Send Invite'}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {editingId ? 'Save Changes' : 'Add Member'}
             </button>
           </div>
         </div>
+      ) : (
+        <button
+          onClick={() => { resetForm(); setShowForm(true); }}
+          className="w-full mb-6 border-2 border-dashed border-gray-200 rounded-xl py-3 text-sm font-medium text-gray-500 hover:border-primary-300 hover:text-primary-600 transition-colors inline-flex items-center justify-center gap-2"
+        >
+          <UserPlus className="w-4 h-4" /> Add Redeem Member
+        </button>
       )}
 
-      {/* Members List */}
-      {activeMembers.length === 0 && !showInviteForm ? (
-        <div className="card p-12 text-center">
-          <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-500 mb-1">No Team Members Yet</h3>
-          <p className="text-sm text-gray-400 mb-4">Invite team members to help manage your deals and locations.</p>
-          <button
-            onClick={() => { setShowInviteForm(true); setForm(emptyForm); }}
-            className="btn-primary inline-flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" /> Invite Your First Member
-          </button>
+      {/* Members list */}
+      {members.length === 0 ? (
+        <div className="card p-10 text-center">
+          <KeyRound className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 font-medium">No redeem members yet</p>
+          <p className="text-sm text-gray-400 mt-1">Add staff so they can redeem coupons with a PIN.</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {activeMembers.map((member) => {
-            const roleConfig = ROLE_CONFIG[member.role];
-            const RoleIcon = roleConfig.icon;
-            return (
-              <div key={member.id} className="card p-5 flex items-center justify-between hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-4">
-                  <div className={`rounded-xl p-3 ${roleConfig.color}`}>
-                    <RoleIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">{member.name}</h3>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        member.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {member.status === 'active' ? 'Active' : 'Pending'}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-500 flex items-center gap-1">
-                      <Mail className="w-3 h-3" /> {member.email}
-                    </p>
-                    <p className="text-xs text-gray-400 flex items-center gap-2 mt-0.5">
-                      <Shield className="w-3 h-3" /> {roleConfig.label}
-                      {member.location_id && (
-                        <span className="flex items-center gap-0.5">
-                          <MapPin className="w-3 h-3" />
-                          {locations.find(l => l.id === member.location_id)?.name || 'Unknown'}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => startEdit(member)} className="p-2 rounded-lg text-gray-400 hover:text-primary-500 hover:bg-primary-50 transition-colors">
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleRevoke(member.id)} className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors">
-                    <UserX className="w-4 h-4" />
-                  </button>
-                </div>
+        <div className="space-y-2">
+          {members.map((m) => (
+            <div key={m.id} className="card p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-primary-600">{m.name.charAt(0).toUpperCase()}</span>
               </div>
-            );
-          })}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-gray-900 truncate">{m.name}</p>
+                <p className="text-xs text-gray-400">
+                  PIN ••••{m.last_used_at ? ` · last used ${new Date(m.last_used_at).toLocaleDateString()}` : ' · never used'}
+                </p>
+              </div>
+              <button onClick={() => startEdit(m)} className="p-2 text-gray-400 hover:text-primary-500" title="Edit"><Pencil className="w-4 h-4" /></button>
+              <button onClick={() => handleDelete(m.id)} className="p-2 text-gray-400 hover:text-red-500" title="Remove"><Trash2 className="w-4 h-4" /></button>
+            </div>
+          ))}
         </div>
       )}
     </div>

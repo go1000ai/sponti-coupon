@@ -12,6 +12,7 @@ import {
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { useLanguage } from '@/lib/i18n';
+import { formatPhoneNumber } from '@/lib/utils';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
 import type { Vendor, VendorSocialLinks, BusinessHours, BusinessHoursDay, VendorNotificationPreferences, AutoResponseSettings, AutoResponseTone } from '@/lib/types/database';
 
@@ -166,7 +167,7 @@ export default function VendorSettingsPage() {
         setBusinessForm({
           business_name: data.business_name || '',
           email: data.email || '',
-          phone: data.phone || '',
+          phone: formatPhoneNumber(data.phone || ''),
           address: data.address || '',
           city: data.city || '',
           state: data.state || '',
@@ -246,7 +247,7 @@ export default function VendorSettingsPage() {
 
   const handleBusinessChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setBusinessForm(prev => ({ ...prev, [name]: value }));
+    setBusinessForm(prev => ({ ...prev, [name]: name === 'phone' ? formatPhoneNumber(value) : value }));
   };
 
   const handleSocialChange = (platform: keyof VendorSocialLinks, value: string) => {

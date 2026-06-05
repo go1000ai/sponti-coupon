@@ -22,6 +22,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 const navItems = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -209,11 +210,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content area */}
       <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
-        {/* Mobile top bar with page title */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 pl-16">
-          <h2 className="font-semibold text-gray-900 text-sm">
+        {/* Top bar with page title + notification bell */}
+        <div className="flex items-center justify-between gap-3 px-4 lg:px-8 py-3 bg-white border-b border-gray-100 pl-16 lg:pl-8">
+          <h2 className="font-semibold text-gray-900 text-sm lg:text-base">
             {allItems.find((item) => isActive(item.href))?.label || 'Dashboard'}
           </h2>
+          <NotificationBell />
         </div>
 
         {/* Page content */}
