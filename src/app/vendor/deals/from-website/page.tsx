@@ -238,7 +238,7 @@ export default function ImportFromWebsitePage() {
         // The vendor can keep saving other deals and visit Drafts when ready.
         setSavedDraftIds(prev => ({ ...prev, [idx]: true }));
         setToast('Draft saved');
-        setTimeout(() => setToast(null), 3500);
+        setTimeout(() => setToast(null), 3000);
       } else {
         const data = await res.json();
         setError(data.error || 'Failed to save draft');
@@ -344,7 +344,7 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
     <div className="max-w-5xl mx-auto">
       {/* Toast — "Draft saved" confirmation (no redirect) */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-lg animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="w-5 h-5 text-green-400" />
           <span className="text-sm font-medium">{toast}</span>
           <Link href="/vendor/deals?tab=drafts" className="text-sm font-semibold text-green-300 hover:text-green-200 underline">
