@@ -11,9 +11,10 @@ import {
   Plus, Tag, Users, QrCode, TrendingUp,
   ArrowRight, Clock, Sparkles, DollarSign, BarChart3,
   Zap, ArrowUpRight, CheckCircle2, XCircle, Loader2,
-  Hash, Star, Play, GraduationCap,
+  Hash, Star, GraduationCap,
 } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
+import { TutorialThumb } from '@/components/vendor/TutorialThumb';
 import { ROIDashboard } from '@/components/vendor/ROIDashboard';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { GuidedTour } from '@/components/ui/GuidedTour';
@@ -416,7 +417,7 @@ function VendorDashboard() {
                   <Loader2 className="w-4 h-4 animate-spin" /> {t('vendor.dashboard.redeeming')}
                 </div>
               )}
-              <Link href="/vendor/scan" className="text-xs text-primary-500 hover:underline flex items-center justify-center gap-1 mt-3">
+              <Link href="/vendor/scan?mode=qr" className="text-xs text-primary-500 hover:underline flex items-center justify-center gap-1 mt-3">
                 <QrCode className="w-3 h-3" /> {t('vendor.dashboard.orScanQR')}
               </Link>
             </>
@@ -559,18 +560,7 @@ function VendorDashboard() {
             onClick={() => setLearnVideo('redemption')}
             className="card p-0 overflow-hidden hover:shadow-lg transition-all group text-left"
           >
-            <div className="relative aspect-video overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" className="w-full h-full object-cover absolute inset-0" />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="w-7 h-7 text-white ml-1" />
-                </div>
-              </div>
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-white/90 text-xs bg-black/40 rounded px-1.5 py-0.5">
-                <Clock className="w-3 h-3" /> 2:56
-              </div>
-            </div>
+            <TutorialThumb image="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" duration="2:56" />
             <div className="p-4">
               <h3 className="font-bold text-gray-900 text-sm">Customer Payments &amp; Redemption</h3>
               <p className="text-xs text-gray-500 mt-0.5">How customers claim, pay, and redeem — money goes straight to you.</p>
@@ -581,18 +571,7 @@ function VendorDashboard() {
             onClick={() => setLearnVideo('loyalty')}
             className="card p-0 overflow-hidden hover:shadow-lg transition-all group text-left"
           >
-            <div className="relative aspect-video overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" className="w-full h-full object-cover absolute inset-0" />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="w-7 h-7 text-white ml-1" />
-                </div>
-              </div>
-              <div className="absolute bottom-2 right-2 flex items-center gap-1 text-white/90 text-xs bg-black/40 rounded px-1.5 py-0.5">
-                <Clock className="w-3 h-3" /> 2:01
-              </div>
-            </div>
+            <TutorialThumb image="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" duration="2:01" />
             <div className="p-4">
               <h3 className="font-bold text-gray-900 text-sm">Loyalty Programs</h3>
               <p className="text-xs text-gray-500 mt-0.5">Turn one-time visitors into regulars — free on Pro &amp; Business.</p>

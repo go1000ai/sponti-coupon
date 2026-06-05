@@ -1,5 +1,7 @@
 export type DealType = 'regular' | 'sponti_coupon';
 export type DealStatus = 'draft' | 'active' | 'expired' | 'paused';
+/** Auto-repost cadence for recurring deals. */
+export type RepeatInterval = 'none' | 'monthly' | 'bimonthly' | 'quarterly';
 export type NotificationType = 'new_deal' | 'deal_expiring' | 'redemption_confirmed' | 'digest';
 export type NotificationChannel = 'push' | 'email';
 export type SubscriptionTier = 'starter' | 'pro' | 'business' | 'enterprise';
@@ -193,6 +195,8 @@ export interface Deal {
   status: DealStatus;
   /** True when a 'draft' deal is actually scheduled to auto-publish at starts_at. */
   is_scheduled: boolean;
+  /** Auto-repost cadence after expiry. 'none' = one-time (default). */
+  repeat_interval: RepeatInterval;
   image_url: string | null;
   image_urls: string[];
   benchmark_deal_id: string | null;

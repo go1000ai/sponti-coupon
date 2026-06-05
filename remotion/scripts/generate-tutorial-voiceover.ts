@@ -48,13 +48,13 @@ const CUSTOMER = [
 // Customer-facing "How SpontiCoupon Works" explainer (vertical 9:16).
 // "Spontee" spelling forces the correct pronunciation in ElevenLabs.
 const HOWITWORKS = [
-  { name: 'hook', text: `Love a good deal? Spontee Coupon gets you exclusive offers from local businesses — for free. Here's how it works.` },
+  { name: 'hook', text: `Love a good deal? Spontee Coupon brings you exclusive offers from the local businesses near you. Here's how it works.` },
   { name: 'browse', text: `Open the deals page and you'll see two kinds. Sponti Coupons are flash deals — limited time, limited spots, so grab them fast. Steady Deals stick around longer. Just search by category or distance to find what's near you.` },
-  { name: 'claim', text: `Found one you like? Tap Claim Deal. Most deals are instant, and free. Some flash deals ask for a little more — either a small deposit to hold your spot, or the full price up front. Pay your deposit by card, Venmo, Zelle, or Cash App. Paying in full? That's by card. And any balance left over, you just pay at the business.` },
+  { name: 'claim', text: `Found one you like? Tap Claim Deal. How you pay depends on the deal. Sponti Coupons — the flash deals — are always paid in full, up front, with your card. Steady Deals are more flexible. Depending on the vendor, you can pay in full up front with your card, put down a deposit with your card and pay the rest when you redeem, or simply claim it now and pay when you use it. Anything you pay up front is by card — and if you leave a deposit, it's credited toward your total when you redeem.` },
   { name: 'code', text: `The moment you claim, you get your redemption code — a six-digit number, and a QR code. Find them any time under My Deals.` },
-  { name: 'redeem', text: `At the business, just show your code or QR to the staff. They scan it, it's verified instantly, and you're all set. Pay anything you still owe right there — directly to the business.` },
+  { name: 'redeem', text: `Redeem at the business, or right on the vendor's website. Just show your code or QR — they scan it, it's verified instantly, and you're all set. If you paid a deposit, it's credited toward your total, so you just pay the rest, using any payment the business accepts.` },
   { name: 'rewards', text: `The more you use Spontee Coupon, the more you earn — and there are two kinds of rewards. One is from the business itself: a punch card or points program, redeemable only at that shop. The other is Spontee Points — that's Spontee Coupon giving you money back, just for using the app. Earn points every time you redeem, turn them into credit, and spend it with any Sponti vendor. When something's ready to claim, you'll see the Reward Ready banner on your dashboard.` },
-  { name: 'outro', text: `Real deals. Local businesses. Zero cost to you. Start saving with Spontee Coupon today.` },
+  { name: 'outro', text: `Real deals, from the local businesses right near you. Start saving with Spontee Coupon today.` },
 ];
 
 const LOYALTY = [

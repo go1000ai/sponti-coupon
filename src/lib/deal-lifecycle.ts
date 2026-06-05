@@ -1,4 +1,31 @@
-import type { Deal } from '@/lib/types/database';
+import type { Deal, RepeatInterval } from '@/lib/types/database';
+
+/** Months between reposts for each recurring cadence. */
+export const REPEAT_MONTHS: Record<Exclude<RepeatInterval, 'none'>, number> = {
+  monthly: 1,
+  bimonthly: 2,
+  quarterly: 3,
+};
+
+/**
+ * Compute the next run window for a recurring deal: the next posting starts
+ * `interval` months after this run ends, and keeps the same duration. Returns
+ * null for non-recurring deals.
+ */
+export function computeNextRun(
+  startsAt: string,
+  expiresAt: string,
+  interval: RepeatInterval
+): { starts_at: string; expires_at: string } | null {
+  if (interval === 'none') return null;
+  const start = new Date(startsAt);
+  const end = new Date(expiresAt);
+  const durationMs = end.getTime() - start.getTime();
+  const nextStart = new Date(end);
+  nextStart.setMonth(nextStart.getMonth() + REPEAT_MONTHS[interval]);
+  const nextEnd = new Date(nextStart.getTime() + durationMs);
+  return { starts_at: nextStart.toISOString(), expires_at: nextEnd.toISOString() };
+}
 
 /**
  * A 'draft'-status deal means one of two very different things, told apart by the

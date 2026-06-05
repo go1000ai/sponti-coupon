@@ -76,7 +76,8 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-      {/* ── New: customer-facing "How It Works" explainer (vertical 9:16) ─────── */}
+      {/* ── New: customer-facing "How It Works" explainer ────────────────────── */}
+      {/* Vertical 9:16 for mobile */}
       <Composition
         id="CustomerHowItWorks"
         component={CustomerHowItWorks as unknown as React.ComponentType<Record<string, unknown>>}
@@ -84,6 +85,15 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
+      />
+      {/* Horizontal 16:9 for desktop — same composition, orientation-aware layout */}
+      <Composition
+        id="CustomerHowItWorksWide"
+        component={CustomerHowItWorks as unknown as React.ComponentType<Record<string, unknown>>}
+        durationInFrames={CUSTOMER_HOWITWORKS_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
       />
     </>
   );

@@ -98,7 +98,7 @@ export function buildFoundingVendorText({
     '',
     '—',
     `Unsubscribe: ${unsubscribeUrl}`,
-    'SpontiCoupon • Online Commerce Hub, LLC • Orlando, FL 32801 • (321) 335-0773',
+    'SpontiCoupon • Online Commerce Hub, LLC • 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828 • (321) 335-0773',
   ].join('\n');
 }
 
@@ -260,7 +260,7 @@ export function buildFoundingVendorHtml({
               &mdash; we&rsquo;ll never email you again.
             </p>
             <p style="margin:0 0 6px;color:#bbb;font-size:11px;line-height:1.4;">
-              SpontiCoupon &bull; Online Commerce Hub, LLC &bull; Orlando, FL 32801 &bull; (321) 335-0773
+              SpontiCoupon &bull; Online Commerce Hub, LLC &bull; 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828 &bull; (321) 335-0773
             </p>
             <p style="margin:0;color:#ccc;font-size:11px;">
               &copy; ${new Date().getFullYear()} SpontiCoupon. All rights reserved.

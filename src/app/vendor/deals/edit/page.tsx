@@ -13,13 +13,13 @@ import {
   Image as ImageIcon, Upload, CheckCircle2, FileText, DollarSign,
   Link as LinkIcon, Wand2, Video, MapPin, Globe, Star, ClipboardList, Sparkles, Rocket, Pause, Calendar, Clock,
   Ticket, Download, Share2, Facebook, Instagram, Twitter, Send, Eye,
-  Heart, MessageCircle, Bookmark, ThumbsUp, CalendarDays, RotateCcw,
+  Heart, MessageCircle, Bookmark, ThumbsUp, CalendarDays, RotateCcw, Repeat,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import type { SelectedImage } from '@/components/vendor/ImagePickerModal';
-import type { Deal, VendorLocation } from '@/lib/types/database';
+import type { Deal, VendorLocation, RepeatInterval } from '@/lib/types/database';
 import { Plus } from 'lucide-react';
 import { PromoCodeTutorial } from '@/components/vendor/PromoCodeTutorial';
 
@@ -170,6 +170,7 @@ function EditDealPageInner() {
   const [vendorCategory, setVendorCategory] = useState<string | null>(null);
   const [vendorWebsite, setVendorWebsite] = useState('');
   const [requiresAppointment, setRequiresAppointment] = useState(false);
+  const [repeatInterval, setRepeatInterval] = useState<RepeatInterval>('none');
   const [vendorName, setVendorName] = useState('');
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
@@ -247,6 +248,7 @@ function EditDealPageInner() {
         expires_at: data.expires_at ? new Date(data.expires_at).toISOString().slice(0, 16) : '',
       });
 
+      setRepeatInterval((data.repeat_interval as RepeatInterval) || 'none');
       setAdditionalImages(data.image_urls || []);
       setVideoUrls(data.video_urls || []);
       // Snapshot the loaded media so auto-save only fires on real, later changes.
@@ -610,6 +612,7 @@ function EditDealPageInner() {
       how_it_works: form.how_it_works || null,
       fine_print: form.fine_print || null,
       requires_appointment: requiresAppointment,
+      repeat_interval: repeatInterval,
       highlights,
       amenities,
       search_tags: searchTags,
@@ -1329,6 +1332,41 @@ function EditDealPageInner() {
             {deal.deal_type === 'regular' && (
               <p className="text-[10px] text-gray-500">Steady deals can last up to 30 days</p>
             )}
+
+            {/* Auto-repost (recurring deal) */}
+            <div className="pt-1">
+              <label className="block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1">
+                <Repeat className="w-3 h-3" /> Repeat this deal?
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {([
+                  { value: 'none', label: 'One-time' },
+                  { value: 'monthly', label: 'Every month' },
+                  { value: 'bimonthly', label: 'Every 2 months' },
+                  { value: 'quarterly', label: 'Every quarter' },
+                ] as { value: RepeatInterval; label: string }[]).map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setRepeatInterval(opt.value)}
+                    className={`p-2 rounded-lg border text-xs font-semibold transition-all ${
+                      repeatInterval === opt.value
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-gray-500 mt-1.5">
+                {repeatInterval === 'none'
+                  ? 'Runs once. Turn on repeat and we’ll automatically repost it — and its social posts — after it expires.'
+                  : repeatInterval === 'monthly'
+                  ? '⚠️ Reposting every month can make a deal feel permanent and lose its urgency. Every 2 months is usually the sweet spot.'
+                  : 'Spacing reposts out keeps the deal feeling special. We’ll auto-repost it (and its social posts) after each run expires.'}
+              </p>
+            </div>
           </BentoCard>
 
           {/* Promo Codes — only for online deals */}

@@ -182,15 +182,16 @@ export default function RootLayout({
     priceRange: "Free for consumers",
     address: {
       "@type": "PostalAddress",
+      streetAddress: "3801 Avalon Park Blvd East, Suite 200",
       addressLocality: "Orlando",
       addressRegion: "FL",
-      postalCode: "32801",
+      postalCode: "32828",
       addressCountry: "US",
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: 28.5383,
-      longitude: -81.3792,
+      latitude: 28.5101067,
+      longitude: -81.1541568,
     },
     areaServed: [
       { "@type": "City", name: "Orlando", containedInPlace: { "@type": "State", name: "Florida" } },

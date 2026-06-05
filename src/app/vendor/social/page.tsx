@@ -967,8 +967,8 @@ export default function VendorSocialPage() {
       </div>
       <p className="text-gray-500 mb-4">
         {locale === 'es'
-          ? 'Crea una publicación a partir de un deal y nosotros la publicamos en @sponticoupon. No necesitas conectar ninguna cuenta — nosotros nos encargamos.'
-          : 'Create a post from any deal and we publish it on @sponticoupon for you. No account to connect — we handle the posting.'}
+          ? 'Crea una publicación a partir de un deal y nosotros la publicamos en @sponticoupon.'
+          : 'Create a post from any deal and we publish it on @sponticoupon for you.'}
       </p>
 
       {message && (
@@ -1009,9 +1009,9 @@ export default function VendorSocialPage() {
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
                     {locale === 'es' ? (
-                      <>No necesitas conectar tus redes sociales. Cada publicación que creas aquí se comparte con <strong>miles de cazadores de ofertas</strong> que siguen a @sponticoupon en Facebook e Instagram. Sin configuración ni costos adicionales — incluido en tu suscripción.</>
+                      <>Cada publicación que creas aquí se comparte con <strong>miles de cazadores de ofertas</strong> que siguen a @sponticoupon en Facebook e Instagram. Sin configuración ni costos adicionales — incluido en tu suscripción.</>
                     ) : (
-                      <>You don&apos;t connect any social accounts. Every post you create here is shared with <strong>thousands of deal-hunters</strong> following @sponticoupon on Facebook and Instagram. No setup, no extra fees — your subscription includes it.</>
+                      <>Every post you create here is shared with <strong>thousands of deal-hunters</strong> following @sponticoupon on Facebook and Instagram. No setup, no extra fees — your subscription includes it.</>
                     )}
                   </p>
 
@@ -1061,12 +1061,6 @@ export default function VendorSocialPage() {
                       <ExternalLink className="w-3 h-3 opacity-60" />
                     </a>
                   </div>
-                  <p className="text-xs text-gray-500 mt-3">
-                    <Info className="w-3 h-3 inline mr-1" />
-                    {locale === 'es'
-                      ? 'Publicar en tus propias cuentas de negocio llegará en una futura actualización.'
-                      : 'Posting to your own business accounts is coming in a future update.'}
-                  </p>
                 </div>
               </div>
             </div>

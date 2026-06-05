@@ -246,6 +246,9 @@ export async function POST(request: NextRequest) {
         requires_appointment: requires_appointment || false,
         search_tags: search_tags || [],
         variants: (deal_type === 'sponti_coupon' ? [] : variants) || [],
+        repeat_interval: ['monthly', 'bimonthly', 'quarterly'].includes(body.repeat_interval)
+          ? body.repeat_interval
+          : 'none',
       })
       .select()
       .single();
@@ -340,6 +343,11 @@ export async function POST(request: NextRequest) {
     how_it_works, highlights, fine_print, image_urls, search_tags,
     requires_appointment, variants, redemption_hours,
   } = body;
+
+  // Recurring deal cadence — sanitize to the allowed set (default one-time).
+  const repeat_interval = ['monthly', 'bimonthly', 'quarterly'].includes(body.repeat_interval)
+    ? body.repeat_interval
+    : 'none';
 
   // Cap Sponti deal quantity at 50
   const finalMaxClaims = deal_type === 'sponti_coupon' && (!max_claims || max_claims > 50)
@@ -442,6 +450,7 @@ export async function POST(request: NextRequest) {
         search_tags: search_tags || [],
         variants: [], // Sponti deals do not support variants
         redemption_hours: redemption_hours || null,
+        repeat_interval,
       })
       .select()
       .single();
@@ -540,6 +549,7 @@ export async function POST(request: NextRequest) {
       requires_appointment: requires_appointment || false,
       search_tags: search_tags || [],
       variants: variants || [],
+      repeat_interval,
     })
     .select()
     .single();

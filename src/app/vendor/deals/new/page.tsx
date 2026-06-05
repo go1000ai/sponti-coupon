@@ -12,11 +12,11 @@ import {
   Tag, AlertCircle, ArrowLeft, Info, Image as ImageIcon,
   Sparkles, Upload, X, Loader2, CheckCircle2, Link as LinkIcon,
   Calendar, Clock, Lock, MapPin, Globe, ChevronDown, Wand2, Video, Save,
-  FileEdit, Trash2, Plus, Download, Ticket, ShieldCheck,
+  FileEdit, Trash2, Plus, Download, Ticket, ShieldCheck, Repeat,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import Link from 'next/link';
-import type { Deal, DealVariant, VendorLocation } from '@/lib/types/database';
+import type { Deal, DealVariant, VendorLocation, RepeatInterval } from '@/lib/types/database';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import ImagePickerModal from '@/components/vendor/ImagePickerModal';
 import { PromoCodeTutorial } from '@/components/vendor/PromoCodeTutorial';
@@ -292,9 +292,12 @@ export default function NewDealPage() {
   const [aiSource, setAiSource] = useState<'ai' | 'template' | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [scheduleMode, setScheduleMode] = useState<'now' | 'scheduled'>('now');
+  const [repeatInterval, setRepeatInterval] = useState<RepeatInterval>('none');
   const [locations, setLocations] = useState<VendorLocation[]>([]);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
+  const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website' | 'business'>('all');
+  const [vendorBusinessType, setVendorBusinessType] = useState<string | null>(null);
+  const [vendorAddress, setVendorAddress] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [additionalImages, setAdditionalImages] = useState<string[]>([]);
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
@@ -378,7 +381,7 @@ export default function NewDealPage() {
     // Fetch vendor category and name for suggested features & fine print
     supabase
       .from('vendors')
-      .select('category, business_name, website, stripe_connect_charges_enabled, paypal_connect_charges_enabled')
+      .select('category, business_name, website, business_type, address, city, state, stripe_connect_charges_enabled, paypal_connect_charges_enabled')
       .eq('id', vendorId)
       .single()
       .then(({ data }) => {
@@ -388,6 +391,12 @@ export default function NewDealPage() {
           if (isAdmin) setAdminVendorName(data.business_name);
         }
         if (data?.website) setVendorWebsite(data.website);
+        setVendorBusinessType(data?.business_type || null);
+        const addr = [data?.address, data?.city, data?.state].filter(Boolean).join(', ');
+        setVendorAddress(addr);
+        // Physical vendors with a Settings address but no separate locations should
+        // default to running the deal at that business address (not Online/Mobile).
+        if (addr && data?.business_type === 'physical') setLocationMode('business');
         setHasIntegratedPayment(!!(data?.stripe_connect_charges_enabled || data?.paypal_connect_charges_enabled));
       });
 
@@ -962,6 +971,7 @@ export default function NewDealPage() {
           search_tags: searchTags,
           variants: dealType === 'regular' && hasVariants ? variants : [],
           redemption_hours: dealType === 'sponti_coupon' ? parseInt(form.redemption_hours) || 24 : null,
+          repeat_interval: repeatInterval,
         })),
       });
 
@@ -1053,6 +1063,7 @@ export default function NewDealPage() {
           amenities: amenities.length > 0 ? amenities : undefined,
           search_tags: searchTags.length > 0 ? searchTags : undefined,
           variants: dealType === 'regular' && hasVariants && variants.length > 0 ? variants : undefined,
+          repeat_interval: repeatInterval,
         })),
       });
       const data = await response.json();
@@ -2313,6 +2324,41 @@ export default function NewDealPage() {
           )}
         </div>
 
+        {/* ── Auto-repost (recurring deal) ─────────────────── */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            <span className="flex items-center gap-1"><Repeat className="w-4 h-4" /> Repeat this deal?</span>
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {([
+              { value: 'none', label: 'One-time' },
+              { value: 'monthly', label: 'Every month' },
+              { value: 'bimonthly', label: 'Every 2 months' },
+              { value: 'quarterly', label: 'Every quarter' },
+            ] as { value: RepeatInterval; label: string }[]).map(opt => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setRepeatInterval(opt.value)}
+                className={`p-2.5 rounded-lg border text-sm font-medium transition-all ${
+                  repeatInterval === opt.value
+                    ? 'border-primary-400 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            {repeatInterval === 'none'
+              ? 'Runs once. Turn on repeat and we’ll automatically repost it — and its social posts — after it expires.'
+              : repeatInterval === 'monthly'
+              ? '⚠️ Tip: reposting every month can make a deal feel permanent and lose its urgency. Every 2 months is usually the sweet spot — it keeps customers coming back for something that feels special.'
+              : 'Great choice — spacing reposts out keeps the deal feeling special so customers return. We’ll auto-repost it (and its social posts) after each run expires.'}
+          </p>
+        </div>
+
         {/* ── Location Selector ────────────────────────────── */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2331,6 +2377,9 @@ export default function NewDealPage() {
               }}
               className="input-field appearance-none pr-10"
             >
+              {locations.length === 0 && vendorAddress && vendorBusinessType === 'physical' && (
+                <option value="business">At my business — {vendorAddress}</option>
+              )}
               {locations.length > 0 && <option value="all">All Locations</option>}
               {locations.length > 0 && <option value="specific">Specific Locations</option>}
               <option value="website">Online / Website</option>
@@ -2471,6 +2520,7 @@ export default function NewDealPage() {
 
           {/* Helper text */}
           <p className="text-xs text-gray-400 mt-1.5">
+            {locationMode === 'business' && `Customers will find this deal at your business address (${vendorAddress}). Change it in Settings.`}
             {locationMode === 'all' && 'This deal will be available at all your locations.'}
             {locationMode === 'specific' && 'Choose which locations offer this deal.'}
             {locationMode === 'website' && 'This deal is available online — customers will use the link to access it.'}

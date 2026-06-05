@@ -167,7 +167,7 @@ function baseShell({
           </table>
         </td></tr>
         <tr><td style="padding:28px 16px;text-align:center;">
-          <p style="margin:0 0 8px;color:#bbb;font-size:11px;line-height:1.4;">SpontiCoupon &bull; Orlando, FL 32801</p>
+          <p style="margin:0 0 8px;color:#bbb;font-size:11px;line-height:1.4;">SpontiCoupon &bull; 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828</p>
           <p style="margin:0;color:#ccc;font-size:11px;">&copy; ${new Date().getFullYear()} Online Commerce Hub, LLC DBA SpontiCoupon</p>
         </td></tr>
       </table>

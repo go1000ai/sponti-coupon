@@ -98,7 +98,7 @@ export async function PATCH(
     status, expires_at, title, description, original_price, deal_price,
     discount_percentage, deposit_amount, max_claims, image_url, image_urls,
     terms_and_conditions, video_urls, amenities, how_it_works, highlights, fine_print,
-    requires_appointment, variants,
+    requires_appointment, variants, repeat_interval,
   } = body;
 
   // If trying to edit content fields (not just status), check if deal has any claims
@@ -133,6 +133,9 @@ export async function PATCH(
   if (fine_print !== undefined) updates.fine_print = fine_print;
   if (requires_appointment !== undefined) updates.requires_appointment = requires_appointment;
   if (variants !== undefined) updates.variants = variants;
+  if (repeat_interval !== undefined && ['none', 'monthly', 'bimonthly', 'quarterly'].includes(repeat_interval)) {
+    updates.repeat_interval = repeat_interval;
+  }
 
   const { data: deal, error } = await supabase
     .from('deals')

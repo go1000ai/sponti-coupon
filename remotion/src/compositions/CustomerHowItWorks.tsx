@@ -12,11 +12,7 @@ import {
 } from 'remotion';
 import { SceneTransition } from '../components/SceneTransition';
 import { PhoneFrame } from '../components/MockupChrome';
-import {
-  PhoneDealDetail,
-  PhoneMyDeals,
-  PhoneStripeCheckout,
-} from '../components/CustomerMockups';
+import { PhoneMyDeals } from '../components/CustomerMockups';
 
 // ════════════════════════════════════════════════════════════════════════════
 //  Customer-facing "How SpontiCoupon Works" — vertical 9:16 explainer.
@@ -83,6 +79,10 @@ const SceneBg: React.FC<{ tone?: 'sponti' | 'steady' | 'green' }> = ({ tone = 's
 };
 
 // ── Bottom info bar (vertical-optimized) ───────────────────────────────────────
+// Landscape reserves a right-side text panel; portrait uses a bottom bar.
+// Keep these in sync with Stage's reserved space.
+const PANEL_PCT = 38; // % of width used by the landscape text panel
+
 const InfoBar: React.FC<{
   step?: string;
   title: string;
@@ -90,62 +90,94 @@ const InfoBar: React.FC<{
   accent?: string;
 }> = ({ step, title, subtitle, accent = ORANGE }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const slideUp = spring({ frame: frame - 5, fps, config: { damping: 14, stiffness: 100 } });
-  const barY = interpolate(slideUp, [0, 1], [160, 0]);
+  const { fps, width, height } = useVideoConfig();
+  const isPortrait = height >= width;
+  const slide = spring({ frame: frame - 5, fps, config: { damping: 14, stiffness: 100 } });
   const textOpacity = interpolate(frame, [12, 24], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
+
+  const Step = step ? (
+    <div
+      style={{
+        fontSize: 24,
+        fontWeight: 800,
+        color: accent,
+        fontFamily: 'Inter, sans-serif',
+        letterSpacing: 4,
+        textTransform: 'uppercase',
+        marginBottom: 12,
+        opacity: textOpacity,
+      }}
+    >
+      {step}
+    </div>
+  ) : null;
+  const Title = (
+    <div
+      style={{
+        fontSize: 52,
+        fontWeight: 800,
+        color: '#FFFFFF',
+        fontFamily: 'Inter, sans-serif',
+        lineHeight: 1.18,
+        marginBottom: 16,
+        opacity: textOpacity,
+      }}
+    >
+      {title}
+    </div>
+  );
+  const Subtitle = (
+    <div
+      style={{
+        fontSize: 28,
+        fontWeight: 400,
+        color: 'rgba(255,255,255,0.80)',
+        fontFamily: 'Inter, sans-serif',
+        lineHeight: 1.45,
+        opacity: textOpacity,
+      }}
+    >
+      {subtitle}
+    </div>
+  );
+
+  if (isPortrait) {
+    const barY = interpolate(slide, [0, 1], [160, 0]);
+    return (
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, transform: `translateY(${barY}px)`, zIndex: 20 }}>
+        <div style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.97))', padding: '110px 64px 80px' }}>
+          {Step}
+          {Title}
+          {Subtitle}
+        </div>
+      </div>
+    );
+  }
+
+  // Landscape — vertical text panel pinned to the right.
+  const barX = interpolate(slide, [0, 1], [220, 0]);
   return (
-    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, transform: `translateY(${barY}px)`, zIndex: 20 }}>
-      <div
-        style={{
-          background: 'linear-gradient(transparent, rgba(0,0,0,0.88) 28%, rgba(0,0,0,0.97))',
-          padding: '110px 64px 80px',
-        }}
-      >
-        {step && (
-          <div
-            style={{
-              fontSize: 24,
-              fontWeight: 800,
-              color: accent,
-              fontFamily: 'Inter, sans-serif',
-              letterSpacing: 4,
-              textTransform: 'uppercase',
-              marginBottom: 12,
-              opacity: textOpacity,
-            }}
-          >
-            {step}
-          </div>
-        )}
-        <div
-          style={{
-            fontSize: 52,
-            fontWeight: 800,
-            color: '#FFFFFF',
-            fontFamily: 'Inter, sans-serif',
-            lineHeight: 1.18,
-            marginBottom: 14,
-            opacity: textOpacity,
-          }}
-        >
-          {title}
-        </div>
-        <div
-          style={{
-            fontSize: 28,
-            fontWeight: 400,
-            color: 'rgba(255,255,255,0.80)',
-            fontFamily: 'Inter, sans-serif',
-            lineHeight: 1.45,
-            opacity: textOpacity,
-          }}
-        >
-          {subtitle}
-        </div>
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        width: `${PANEL_PCT}%`,
+        transform: `translateX(${barX}px)`,
+        zIndex: 20,
+        display: 'flex',
+        alignItems: 'center',
+        background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.92) 24%, rgba(0,0,0,0.97))',
+      }}
+    >
+      <div style={{ padding: '0 80px 0 90px' }}>
+        {Step}
+        {Title}
+        {Subtitle}
       </div>
     </div>
   );
@@ -156,22 +188,29 @@ const Stage: React.FC<{ children: React.ReactNode; gap?: number; pt?: number }> 
   children,
   gap = 40,
   pt = 150,
-}) => (
-  <AbsoluteFill
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap,
-      paddingTop: pt,
-      paddingBottom: 560,
-      fontFamily: 'Inter, sans-serif',
-    }}
-  >
-    {children}
-  </AbsoluteFill>
-);
+}) => {
+  const { width, height } = useVideoConfig();
+  const isPortrait = height >= width;
+  return (
+    <AbsoluteFill
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: isPortrait ? gap : Math.max(20, gap - 8),
+        // Portrait reserves the bottom bar; landscape reserves the right panel.
+        paddingTop: isPortrait ? pt : 70,
+        paddingBottom: isPortrait ? 560 : 70,
+        paddingLeft: isPortrait ? 0 : 70,
+        paddingRight: isPortrait ? 0 : `${PANEL_PCT}%`,
+        fontFamily: 'Inter, sans-serif',
+      }}
+    >
+      {children}
+    </AbsoluteFill>
+  );
+};
 
 // ── Scale wrapper so a fixed-width mockup can be shrunk cleanly ─────────────────
 const Scaled: React.FC<{ scale: number; w: number; h: number; children: React.ReactNode }> = ({
@@ -235,7 +274,7 @@ const HookScene: React.FC = () => {
           }}
         >
           Local deals.<br />
-          <span style={{ color: ORANGE }}>For free.</span>
+          <span style={{ color: ORANGE }}>Real savings.</span>
         </div>
         <div
           style={{
@@ -406,80 +445,106 @@ const BrowseScene: React.FC = () => {
 // ════════════════════════════════════════════════════════════════════════════
 //  SCENE 3 · CLAIM & PAY
 // ════════════════════════════════════════════════════════════════════════════
-const PayChip: React.FC<{ label: string; icon: string }> = ({ label, icon }) => (
-  <div
-    style={{
-      background: 'rgba(255,255,255,0.10)',
-      border: '1px solid rgba(255,255,255,0.18)',
-      color: '#FFF',
-      padding: '12px 18px',
-      borderRadius: 14,
-      fontSize: 24,
-      fontWeight: 700,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      backdropFilter: 'blur(6px)',
-    }}
-  >
-    <span style={{ fontSize: 26 }}>{icon}</span> {label}
-  </div>
-);
+// One payment-path row inside the Steady-deal card.
+const PayPathRow: React.FC<{ icon: string; label: string; delay: number }> = ({ icon, label, delay }) => {
+  const e = useEnter(delay);
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        background: 'rgba(255,255,255,0.08)',
+        border: '1px solid rgba(255,255,255,0.16)',
+        borderRadius: 16,
+        padding: '18px 22px',
+        opacity: e.opacity,
+        transform: `translateY(${e.y}px)`,
+      }}
+    >
+      <span style={{ fontSize: 34 }}>{icon}</span>
+      <span style={{ color: '#FFF', fontSize: 27, fontWeight: 600, lineHeight: 1.25 }}>{label}</span>
+    </div>
+  );
+};
 
 const ClaimPayScene: React.FC = () => {
-  const phone = useEnter(0.3);
-  const chips = useEnter(1.6);
-  const rule = useEnter(3.4);
+  const sponti = useEnter(0.4);
+  const steady = useEnter(1.7);
+  const note = useEnter(5.4);
   return (
-    <Stage gap={36} pt={120}>
-      <div style={{ opacity: phone.opacity, transform: `translateY(${phone.y}px)` }}>
-        <Scaled scale={0.92} w={360} h={780}>
-          <PhoneDealDetail variant="deposit" />
-        </Scaled>
-      </div>
-
+    <Stage gap={26} pt={130}>
+      {/* Sponti Coupons — always full, up front, by card */}
       <div
         style={{
-          opacity: chips.opacity,
-          transform: `translateY(${chips.y}px)`,
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 14,
-          justifyContent: 'center',
-          maxWidth: 820,
+          width: 920,
+          opacity: sponti.opacity,
+          transform: `translateY(${sponti.y}px)`,
+          background: 'rgba(232,99,43,0.13)',
+          border: '2px solid rgba(232,99,43,0.55)',
+          borderRadius: 26,
+          padding: '28px 32px',
         }}
       >
-        <PayChip icon="💳" label="Card" />
-        <PayChip icon="🅥" label="Venmo" />
-        <PayChip icon="⚡" label="Zelle" />
-        <PayChip icon="💲" label="Cash App" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+          <span style={{ background: ORANGE, color: '#FFF', padding: '7px 16px', borderRadius: 999, fontWeight: 900, fontSize: 23 }}>
+            🔥 SPONTI COUPON
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 23, fontWeight: 700 }}>Flash deals</span>
+        </div>
+        <div style={{ color: '#FFF', fontSize: 42, fontWeight: 900, lineHeight: 1.18 }}>
+          Pay in full, up front — <span style={{ color: '#FF9F6F' }}>by card.</span>
+        </div>
       </div>
 
+      {/* Steady Deals — the vendor decides */}
       <div
         style={{
-          opacity: rule.opacity,
-          transform: `translateY(${rule.y}px)`,
-          background: 'rgba(232,99,43,0.14)',
-          border: '1px solid rgba(232,99,43,0.5)',
-          color: '#FFF',
-          borderRadius: 16,
-          padding: '16px 26px',
+          width: 920,
+          opacity: steady.opacity,
+          transform: `translateY(${steady.y}px)`,
+          background: 'rgba(41,171,226,0.13)',
+          border: '2px solid rgba(41,171,226,0.55)',
+          borderRadius: 26,
+          padding: '28px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 14,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ background: BLUE, color: '#FFF', padding: '7px 16px', borderRadius: 999, fontWeight: 900, fontSize: 23 }}>
+            🏷️ STEADY DEAL
+          </span>
+          <span style={{ color: 'rgba(255,255,255,0.78)', fontSize: 23, fontWeight: 700 }}>The vendor decides how you pay</span>
+        </div>
+        <PayPathRow icon="✅" label="Pay in full, up front — with your card" delay={2.2} />
+        <PayPathRow icon="💳" label="Pay a deposit by card — then the rest when you redeem" delay={2.8} />
+        <PayPathRow icon="🕒" label="Just claim it now — and pay when you use it" delay={3.4} />
+      </div>
+
+      {/* The universal rule */}
+      <div
+        style={{
+          width: 920,
+          opacity: note.opacity,
+          transform: `translateY(${note.y}px)`,
+          color: 'rgba(255,255,255,0.88)',
           fontSize: 25,
-          fontWeight: 700,
+          fontWeight: 600,
           textAlign: 'center',
           lineHeight: 1.4,
-          maxWidth: 880,
         }}
       >
-        Deposit: card · Venmo · Zelle · Cash App&nbsp;&nbsp;|&nbsp;&nbsp;Pay in full:{' '}
-        <strong style={{ color: '#FF9F6F' }}>card</strong>&nbsp;&nbsp;|&nbsp;&nbsp;Balance left over:{' '}
-        <strong style={{ color: '#FF9F6F' }}>cash, at the business</strong>
+        Paid up front is by <strong style={{ color: '#FFF' }}>card</strong>. Your deposit is{' '}
+        <strong style={{ color: '#7CE2A8' }}>credited at redemption</strong> — so you just pay the rest with any payment the
+        business accepts, in store or online.
       </div>
 
       <InfoBar
         step="Step 2 · Claim &amp; Pay"
-        title="Tap Claim Deal."
-        subtitle="Most deals are instant and free. Flash deals may ask for a small deposit, or full price up front — then you pay any balance at the business."
+        title="How you pay depends on the deal."
+        subtitle="Sponti Coupons are always paid in full, up front, by card. Steady Deals are flexible — pay in full, leave a deposit, or just claim now and pay when you use it."
       />
     </Stage>
   );
@@ -556,9 +621,10 @@ const RedeemScene: React.FC = () => {
   const stamp = spring({ frame: frame - stampStart, fps, config: { damping: 11, stiffness: 120 } });
   const stampShow = frame >= stampStart;
   const sweep = interpolate(frame % 70, [0, 70], [0, 1]);
+  const credit = spring({ frame: frame - (stampStart + 1.0 * fps), fps, config: { damping: 14, stiffness: 110 } });
 
   return (
-    <Stage gap={40}>
+    <Stage gap={32}>
       <div style={{ position: 'relative', opacity: phone.opacity, transform: `translateY(${phone.y}px)` }}>
         <Scaled scale={1.05} w={360} h={780}>
           <PhoneMyDeals status="deposit-paid" code="8 1 4 2 6 5" />
@@ -607,10 +673,32 @@ const RedeemScene: React.FC = () => {
         )}
       </div>
 
+      {/* deposit-credited callout — appears just after the REDEEMED stamp */}
+      <div
+        style={{
+          opacity: credit,
+          transform: `translateY(${interpolate(credit, [0, 1], [24, 0])}px)`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 14,
+          background: 'rgba(21,128,61,0.18)',
+          border: '1px solid rgba(124,226,168,0.6)',
+          borderRadius: 18,
+          padding: '18px 26px',
+          maxWidth: 880,
+        }}
+      >
+        <span style={{ fontSize: 36 }}>💳</span>
+        <span style={{ color: '#FFF', fontSize: 26, fontWeight: 600, lineHeight: 1.35 }}>
+          Paid a deposit? It&apos;s <strong style={{ color: '#7CE2A8' }}>credited toward your total</strong> — you only pay
+          what&apos;s left.
+        </span>
+      </div>
+
       <InfoBar
         step="Step 4 · Redeem"
         title="Show it. They scan it. Done."
-        subtitle="Show your code or QR to the staff — they scan it and it's verified instantly. Pay anything you still owe right there, directly to the business."
+        subtitle="Redeem in the shop or on the vendor's website. Any deposit you paid is credited toward your total — so you just pay the rest with any payment method the business accepts."
         accent={BLUE}
       />
     </Stage>
@@ -836,7 +924,7 @@ const OutroScene: React.FC = () => {
         </div>
         <div style={{ fontSize: 78, fontWeight: 900, color: '#FFF', textAlign: 'center', lineHeight: 1.1, opacity: headOp }}>
           Real deals.<br />
-          <span style={{ color: ORANGE }}>Zero cost to you.</span>
+          <span style={{ color: ORANGE }}>Right near you.</span>
         </div>
         <div style={{ fontSize: 32, color: 'rgba(255,255,255,0.85)', textAlign: 'center', opacity: headOp, maxWidth: 760 }}>
           Start saving with SpontiCoupon today.
@@ -867,13 +955,13 @@ const OutroScene: React.FC = () => {
 // Scene durations are padded ~1.5s above the ElevenLabs (Rachel) voiceover so
 // narration never clips. VO files live in public/audio/customer-how-it-works/.
 const SCENES = [
-  { key: 'hook', seconds: 9, audio: 'hook' },
-  { key: 'browse', seconds: 18, audio: 'browse' },
-  { key: 'claim', seconds: 29, audio: 'claim' },
-  { key: 'code', seconds: 12, audio: 'code' },
-  { key: 'redeem', seconds: 15, audio: 'redeem' },
-  { key: 'rewards', seconds: 34, audio: 'rewards' },
-  { key: 'outro', seconds: 9, audio: 'outro' },
+  { key: 'hook', seconds: 9, audio: 'hook' },     // VO 7.1s
+  { key: 'browse', seconds: 18, audio: 'browse' }, // VO 16.2s
+  { key: 'claim', seconds: 36, audio: 'claim' },   // VO ~33.7s
+  { key: 'code', seconds: 11, audio: 'code' },     // VO 9.0s
+  { key: 'redeem', seconds: 19, audio: 'redeem' }, // VO 16.8s
+  { key: 'rewards', seconds: 34, audio: 'rewards' }, // VO 31.4s
+  { key: 'outro', seconds: 8, audio: 'outro' },    // VO 5.3s
 ] as const;
 
 const FPS = 30;

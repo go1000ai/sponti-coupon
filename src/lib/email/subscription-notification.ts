@@ -12,7 +12,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
 const FOOTER = `
   <div style="padding: 20px 24px; border-top: 1px solid #eee; text-align: center;">
     <p style="color: #aaa; font-size: 12px; margin: 0;">
-      SpontiCoupon &bull; Online Commerce Hub, LLC &bull; Orlando, FL 32801<br>
+      SpontiCoupon &bull; Online Commerce Hub, LLC &bull; 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828<br>
       <a href="${APP_URL}/privacy" style="color: #aaa;">Privacy Policy</a> &bull;
       <a href="${APP_URL}/terms" style="color: #aaa;">Terms of Service</a>
     </p>
