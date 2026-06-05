@@ -8,6 +8,7 @@ import {
   CalendarDays, LayoutGrid, Send, Save, ChevronLeft, ChevronRight,
   Heart, MessageCircle, Bookmark, ThumbsUp, Globe,
   Sparkles, Video, Image as ImageIcon, Info, ChevronDown, List, Search, Archive,
+  Copy, Hash,
 } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -143,6 +144,167 @@ function getDaysArray(start: Date, end: Date): Date[] {
     dt.setDate(dt.getDate() + 1);
   }
   return arr;
+}
+
+/* ─── Hashtag helpers ─── */
+// Latin letters/digits + accents and ñ (covers EN + ES) without needing the `u` flag.
+const HASHTAG_CHARS = 'A-Za-z0-9_\\u00C0-\\u024F';
+const HASHTAG_RE = new RegExp(`#[${HASHTAG_CHARS}]+`, 'g');
+const HASHTAG_FULL_RE = new RegExp(`^#[${HASHTAG_CHARS}]+$`);
+
+// Unique hashtags in a caption, preserving order (case-insensitive dedupe).
+function extractHashtags(text: string): string[] {
+  const matches = text.match(HASHTAG_RE) || [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const m of matches) {
+    const key = m.toLowerCase();
+    if (!seen.has(key)) { seen.add(key); out.push(m); }
+  }
+  return out;
+}
+
+// Render caption text with hashtags styled blue (like the real platforms).
+function renderCaption(text: string): React.ReactNode {
+  const parts = text.split(new RegExp(`(#[${HASHTAG_CHARS}]+)`, 'g'));
+  return parts.map((part, i) =>
+    HASHTAG_FULL_RE.test(part)
+      ? <span key={i} className="text-[#1d9bf0] font-medium">{part}</span>
+      : <span key={i}>{part}</span>
+  );
+}
+
+// Remove one hashtag token from caption text and tidy up whitespace.
+function removeHashtagFromText(text: string, tag: string): string {
+  const esc = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const re = new RegExp(`${esc}(?![${HASHTAG_CHARS}])`, 'gi');
+  return text
+    .replace(re, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+// Append a hashtag to caption text (dedupes, normalizes spacing/#).
+function addHashtagToText(text: string, raw: string): string {
+  let tag = raw.trim().replace(/\s+/g, '');
+  if (!tag) return text;
+  if (!tag.startsWith('#')) tag = `#${tag}`;
+  if (!HASHTAG_FULL_RE.test(tag)) return text;
+  if (extractHashtags(text).some(t => t.toLowerCase() === tag.toLowerCase())) return text;
+  return `${text.trimEnd()} ${tag}`;
+}
+
+/* ─── Caption block: full caption (blue hashtags) + editable chip row + copy ─── */
+function CaptionBlock({
+  caption,
+  isEditing,
+  onChangeCaption,
+  onToggleEdit,
+  dark = false,
+  rows = 4,
+  es = false,
+}: {
+  caption: string;
+  isEditing: boolean;
+  onChangeCaption: (text: string) => void;
+  onToggleEdit: () => void;
+  dark?: boolean;
+  rows?: number;
+  es?: boolean;
+}) {
+  const [newTag, setNewTag] = useState('');
+  const [copied, setCopied] = useState(false);
+  const hashtags = extractHashtags(caption);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(caption);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* clipboard unavailable */ }
+  };
+
+  const addTag = () => {
+    if (!newTag.trim()) return;
+    onChangeCaption(addHashtagToText(caption, newTag));
+    setNewTag('');
+  };
+
+  const linkColor = dark ? 'text-orange-300' : 'text-[#E8632B]';
+  const chipClass = dark
+    ? 'bg-white/15 text-white border-white/25'
+    : 'bg-blue-50 text-[#1d9bf0] border-blue-100';
+
+  return (
+    <div className="space-y-2">
+      {isEditing ? (
+        <textarea
+          value={caption}
+          onChange={e => onChangeCaption(e.target.value)}
+          rows={rows}
+          className={`w-full rounded px-2 py-1.5 text-sm resize-none ${
+            dark
+              ? 'bg-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-orange-400'
+              : 'border border-gray-300 focus:ring-1 focus:ring-[#E8632B]'
+          }`}
+        />
+      ) : (
+        <p className={`text-sm whitespace-pre-line ${dark ? 'text-white' : 'text-gray-900'}`}>
+          {renderCaption(caption)}
+        </p>
+      )}
+
+      {/* Hashtag chip row — each removable */}
+      {hashtags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {hashtags.map(tag => (
+            <span key={tag} className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${chipClass}`}>
+              {tag}
+              <button
+                onClick={() => onChangeCaption(removeHashtagFromText(caption, tag))}
+                className="opacity-60 hover:opacity-100"
+                title={es ? 'Quitar hashtag' : 'Remove hashtag'}
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Add hashtag + Edit + Copy */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <div className="inline-flex items-center gap-1">
+          <Hash className={`w-3 h-3 ${dark ? 'text-white/50' : 'text-gray-400'}`} />
+          <input
+            type="text"
+            value={newTag}
+            onChange={e => setNewTag(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+            placeholder={es ? 'añadir hashtag' : 'add hashtag'}
+            className={`w-28 text-[11px] rounded-full px-2.5 py-1 border outline-none ${
+              dark
+                ? 'bg-white/10 text-white placeholder-white/40 border-white/20'
+                : 'border-gray-200 placeholder-gray-400 focus:ring-1 focus:ring-blue-300'
+            }`}
+          />
+          <button onClick={addTag} disabled={!newTag.trim()} className={`text-[11px] font-medium disabled:opacity-40 ${linkColor} hover:opacity-80`}>
+            {es ? 'Añadir' : 'Add'}
+          </button>
+        </div>
+        <button onClick={onToggleEdit} className={`text-xs font-medium ${linkColor} hover:opacity-80`}>
+          {isEditing ? (es ? 'Listo' : 'Done') : (es ? 'Editar texto' : 'Edit caption')}
+        </button>
+        <button onClick={copy} className={`text-xs font-medium inline-flex items-center gap-1 ${copied ? 'text-green-500' : linkColor} hover:opacity-80`}>
+          {copied
+            ? <><CheckCircle className="w-3 h-3" /> {es ? 'Copiado' : 'Copied'}</>
+            : <><Copy className="w-3 h-3" /> {es ? 'Copiar' : 'Copy'}</>}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /* ─── Main Page ─── */
@@ -804,7 +966,9 @@ export default function VendorSocialPage() {
         <h1 className="text-2xl font-bold text-gray-900">{t('vendor.social.title')}</h1>
       </div>
       <p className="text-gray-500 mb-4">
-        Track your social media posts and manage connections. When you publish a deal, it gets automatically posted with AI-generated captions.
+        {locale === 'es'
+          ? 'Crea una publicación a partir de un deal y nosotros la publicamos en @sponticoupon. No necesitas conectar ninguna cuenta — nosotros nos encargamos.'
+          : 'Create a post from any deal and we publish it on @sponticoupon for you. No account to connect — we handle the posting.'}
       </p>
 
       {message && (
@@ -839,13 +1003,42 @@ export default function VendorSocialPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    Free promotion to the entire SpontiCoupon community
+                    {locale === 'es'
+                      ? 'Promoción gratuita a toda la comunidad de SpontiCoupon'
+                      : 'Free promotion to the entire SpontiCoupon community'}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
-                    Every deal you post here is shared with <strong>thousands of deal-hunters</strong>{' '}
-                    following @sponticoupon on Facebook and Instagram. No setup, no extra fees —
-                    your subscription includes it.
+                    {locale === 'es' ? (
+                      <>No necesitas conectar tus redes sociales. Cada publicación que creas aquí se comparte con <strong>miles de cazadores de ofertas</strong> que siguen a @sponticoupon en Facebook e Instagram. Sin configuración ni costos adicionales — incluido en tu suscripción.</>
+                    ) : (
+                      <>You don&apos;t connect any social accounts. Every post you create here is shared with <strong>thousands of deal-hunters</strong> following @sponticoupon on Facebook and Instagram. No setup, no extra fees — your subscription includes it.</>
+                    )}
                   </p>
+
+                  {/* How it works — 3 steps, makes the no-connect flow explicit */}
+                  <div className="grid sm:grid-cols-3 gap-2 mb-3">
+                    {(locale === 'es'
+                      ? [
+                          { n: '1', t: 'Crea tu publicación', d: 'Elige un deal, una imagen o Reel, y la IA escribe el texto.' },
+                          { n: '2', t: 'Publica o programa', d: 'Revisa y ajusta el texto, luego publica al instante o prográmalo.' },
+                          { n: '3', t: 'Nosotros la publicamos', d: 'Tu deal sale en el Facebook e Instagram de @sponticoupon.' },
+                        ]
+                      : [
+                          { n: '1', t: 'Create your post', d: 'Pick a deal, choose an image or Reel, and AI writes the caption.' },
+                          { n: '2', t: 'Post now or schedule', d: 'Review and tweak the caption, then post instantly or schedule it.' },
+                          { n: '3', t: 'We publish it for you', d: 'Your deal goes live on @sponticoupon’s Facebook & Instagram.' },
+                        ]
+                    ).map(step => (
+                      <div key={step.n} className="bg-white/70 border border-[#E8632B]/15 rounded-lg p-3">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-[#E8632B] text-white text-[10px] font-bold">{step.n}</span>
+                          <span className="text-xs font-semibold text-gray-800">{step.t}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-snug">{step.d}</p>
+                      </div>
+                    ))}
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-3 text-xs">
                     <a
                       href="https://www.facebook.com/sponticoupon"
@@ -870,7 +1063,9 @@ export default function VendorSocialPage() {
                   </div>
                   <p className="text-xs text-gray-500 mt-3">
                     <Info className="w-3 h-3 inline mr-1" />
-                    Posting to your own business accounts is coming in a future update.
+                    {locale === 'es'
+                      ? 'Publicar en tus propias cuentas de negocio llegará en una futura actualización.'
+                      : 'Posting to your own business accounts is coming in a future update.'}
                   </p>
                 </div>
               </div>
@@ -1416,19 +1611,13 @@ export default function VendorSocialPage() {
                             </div>
                           </div>
                           <div className="px-3 pb-2">
-                            {editingPlatform === 'facebook' ? (
-                              <textarea
-                                value={editedCaptions.facebook || ''}
-                                onChange={e => setEditedCaptions(prev => ({ ...prev, facebook: e.target.value }))}
-                                rows={4}
-                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
-                              />
-                            ) : (
-                              <p className="text-sm text-gray-900 whitespace-pre-line line-clamp-4">{editedCaptions.facebook || ''}</p>
-                            )}
-                            <button onClick={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                              {editingPlatform === 'facebook' ? 'Done' : 'Edit caption'}
-                            </button>
+                            <CaptionBlock
+                              caption={editedCaptions.facebook || ''}
+                              isEditing={editingPlatform === 'facebook'}
+                              onChangeCaption={text => setEditedCaptions(prev => ({ ...prev, facebook: text }))}
+                              onToggleEdit={() => setEditingPlatform(editingPlatform === 'facebook' ? null : 'facebook')}
+                              es={locale === 'es'}
+                            />
                           </div>
                           {(isVideo || displayImg) && (
                             <div className={`${isVideo ? 'aspect-[9/16] max-h-[480px]' : 'aspect-video'} bg-gray-100 relative`}>
@@ -1486,23 +1675,17 @@ export default function VendorSocialPage() {
                             </div>
                             <Bookmark className="w-5 h-5 text-gray-800" />
                           </div>
-                          <div className="px-3 pb-3">
-                            {editingPlatform === 'instagram' ? (
-                              <textarea
-                                value={editedCaptions.instagram || ''}
-                                onChange={e => setEditedCaptions(prev => ({ ...prev, instagram: e.target.value }))}
-                                rows={4}
-                                className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none"
-                              />
-                            ) : (
-                              <p className="text-sm text-gray-900">
-                                <span className="font-semibold">{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>{' '}
-                                <span className="whitespace-pre-line line-clamp-3">{editedCaptions.instagram || ''}</span>
-                              </p>
-                            )}
-                            <button onClick={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                              {editingPlatform === 'instagram' ? 'Done' : 'Edit caption'}
-                            </button>
+                          <div className="px-3 pb-3 space-y-1">
+                            <p className="text-sm font-semibold text-gray-900">
+                              {preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}
+                            </p>
+                            <CaptionBlock
+                              caption={editedCaptions.instagram || ''}
+                              isEditing={editingPlatform === 'instagram'}
+                              onChangeCaption={text => setEditedCaptions(prev => ({ ...prev, instagram: text }))}
+                              onToggleEdit={() => setEditingPlatform(editingPlatform === 'instagram' ? null : 'instagram')}
+                              es={locale === 'es'}
+                            />
                           </div>
                         </div>
                       )}
@@ -1519,19 +1702,16 @@ export default function VendorSocialPage() {
                                 <span className="text-sm font-bold text-gray-900 truncate">{preview.vendor?.business_name || 'SpontiCoupon'}</span>
                                 <span className="text-sm text-gray-500 truncate">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
                               </div>
-                              {editingPlatform === 'twitter' ? (
-                                <textarea
-                                  value={editedCaptions.twitter || ''}
-                                  onChange={e => setEditedCaptions(prev => ({ ...prev, twitter: e.target.value }))}
+                              <div className="mt-1">
+                                <CaptionBlock
+                                  caption={editedCaptions.twitter || ''}
+                                  isEditing={editingPlatform === 'twitter'}
+                                  onChangeCaption={text => setEditedCaptions(prev => ({ ...prev, twitter: text }))}
+                                  onToggleEdit={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')}
                                   rows={3}
-                                  className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#E8632B] resize-none mt-1"
+                                  es={locale === 'es'}
                                 />
-                              ) : (
-                                <p className="text-sm text-gray-900 whitespace-pre-line mt-1 line-clamp-3">{editedCaptions.twitter || ''}</p>
-                              )}
-                              <button onClick={() => setEditingPlatform(editingPlatform === 'twitter' ? null : 'twitter')} className="text-xs text-[#E8632B] hover:text-orange-700 mt-1 font-medium">
-                                {editingPlatform === 'twitter' ? 'Done' : 'Edit'}
-                              </button>
+                              </div>
                               {(isVideo || displayImg) && (
                                 <div className="mt-2 rounded-xl overflow-hidden border border-gray-200 relative">
                                   {isVideo ? (
@@ -1568,19 +1748,15 @@ export default function VendorSocialPage() {
                                 <div className="flex items-center gap-2 mb-1.5">
                                   <span className="text-white text-sm font-semibold">@{preview.vendor?.business_name?.toLowerCase().replace(/\s+/g, '') || 'sponticoupon'}</span>
                                 </div>
-                                {editingPlatform === 'tiktok' ? (
-                                  <textarea
-                                    value={editedCaptions.tiktok || ''}
-                                    onChange={e => setEditedCaptions(prev => ({ ...prev, tiktok: e.target.value }))}
-                                    rows={3}
-                                    className="w-full bg-white/20 text-white rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-[#E8632B] resize-none placeholder-white/50"
-                                  />
-                                ) : (
-                                  <p className="text-white text-xs line-clamp-2">{editedCaptions.tiktok || ''}</p>
-                                )}
-                                <button onClick={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')} className="text-xs text-orange-400 mt-1 font-medium">
-                                  {editingPlatform === 'tiktok' ? 'Done' : 'Edit caption'}
-                                </button>
+                                <CaptionBlock
+                                  caption={editedCaptions.tiktok || ''}
+                                  isEditing={editingPlatform === 'tiktok'}
+                                  onChangeCaption={text => setEditedCaptions(prev => ({ ...prev, tiktok: text }))}
+                                  onToggleEdit={() => setEditingPlatform(editingPlatform === 'tiktok' ? null : 'tiktok')}
+                                  rows={3}
+                                  dark
+                                  es={locale === 'es'}
+                                />
                               </div>
                             </div>
                           )}

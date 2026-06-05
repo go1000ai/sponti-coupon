@@ -280,6 +280,7 @@ export default function NewDealPage() {
   const [customImagePrompt, setCustomImagePrompt] = useState('');
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState('');
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoElapsed, setVideoElapsed] = useState(0);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
@@ -720,12 +721,13 @@ export default function NewDealPage() {
   const handleAiVideoGenerate = async () => {
     const sourceImage = videoSourceImage || form.image_url;
     if (!sourceImage) {
-      setError('Please add a deal image first so Ava can generate a video from it.');
+      setVideoError('Please add a deal image first so Ava can generate a video from it.');
       return;
     }
     setAiVideoLoading(true);
     setVideoProgress(0);
     setVideoElapsed(0);
+    setVideoError('');
     setError('');
     try {
       // Phase 1: Start the video generation
@@ -742,7 +744,7 @@ export default function NewDealPage() {
       });
       const startData = await startRes.json();
       if (!startRes.ok) {
-        setError(startData.error || 'Failed to generate video');
+        setVideoError(startData.error || 'Failed to generate video');
         setAiVideoLoading(false);
         return;
       }
@@ -757,7 +759,7 @@ export default function NewDealPage() {
       // Phase 2: Poll until done
       let operationName = startData.operation_name;
       if (!operationName) {
-        setError('Failed to start video generation');
+        setVideoError('Failed to start video generation');
         setAiVideoLoading(false);
         return;
       }
@@ -777,7 +779,7 @@ export default function NewDealPage() {
         const pollData = await pollRes.json();
 
         if (!pollRes.ok) {
-          setError(pollData.error || 'Video generation failed');
+          setVideoError(pollData.error || 'Video generation failed');
           setAiVideoLoading(false);
           return;
         }
@@ -796,9 +798,9 @@ export default function NewDealPage() {
         // Still processing — loop continues, progress bar updates via the useEffect timer
       }
 
-      setError('Video generation timed out. Please try again.');
+      setVideoError('Video generation timed out. Please try again.');
     } catch {
-      setError('Failed to generate video. Please try again.');
+      setVideoError('Failed to generate video. Please try again.');
     }
     setAiVideoLoading(false);
   };
@@ -1774,6 +1776,15 @@ export default function NewDealPage() {
                       </div>
                     </div>
                   </div>
+                  {videoError && !aiVideoLoading && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-red-700 flex-1">{videoError}</p>
+                      <button type="button" onClick={() => setVideoError('')} className="text-red-400 hover:text-red-600 flex-shrink-0" aria-label="Dismiss">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                   {aiVideoLoading && (
                     <div className="space-y-2">
                       <div className="w-full bg-emerald-100 rounded-full h-2.5 overflow-hidden">

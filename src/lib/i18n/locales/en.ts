@@ -1787,6 +1787,8 @@ const en: Translations = {
       customers: 'Customers',
       locations: 'Locations',
       team: 'Team',
+      appointments: 'Appointments',
+      tutorial: 'Tutorial',
       api: 'API',
       social: 'Social Media',
       branding: 'Branding',

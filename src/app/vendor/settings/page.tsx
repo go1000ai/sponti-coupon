@@ -314,6 +314,32 @@ export default function VendorSettingsPage() {
     }
   };
 
+  // Persist appointment settings + per-day availability. Shared by the section's
+  // own button and the main "Save All Settings" button so both stay in sync.
+  const saveAppointments = async (): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const availArray = Object.entries(appointmentAvailability).map(([dow, val]) => ({
+        day_of_week: Number(dow),
+        start_time: val.start_time,
+        end_time: val.end_time,
+        is_available: val.is_available,
+      }));
+      const res = await fetch('/api/vendor/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: { ...appointmentSettings, enabled: appointmentEnabled },
+          availability: availArray,
+        }),
+      });
+      if (res.ok) return { ok: true };
+      const data = await res.json().catch(() => ({}));
+      return { ok: false, error: data.error || 'Failed to save appointment settings' };
+    } catch {
+      return { ok: false, error: 'Failed to save appointment settings' };
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -371,21 +397,30 @@ export default function VendorSettingsPage() {
 
     if (error || authError) {
       setMessage({ type: 'error', text: t('vendor.settings.saveFailed') });
-    } else {
-      // Auto-geocode the address after saving (skip for online-only vendors)
-      if (businessForm.business_type !== 'online') {
-        try {
-          const geoRes = await fetch('/api/vendor/geocode', { method: 'POST' });
-          const geoData = await geoRes.json();
-          if (geoData.estimated) {
-            setLocationEstimated(true);
-          } else if (geoRes.ok) {
-            setLocationEstimated(false);
-          }
-        } catch {
-          // Geocoding failure is non-blocking
+      setSaving(false);
+      return;
+    }
+
+    // Auto-geocode the address after saving (skip for online-only vendors)
+    if (businessForm.business_type !== 'online') {
+      try {
+        const geoRes = await fetch('/api/vendor/geocode', { method: 'POST' });
+        const geoData = await geoRes.json();
+        if (geoData.estimated) {
+          setLocationEstimated(true);
+        } else if (geoRes.ok) {
+          setLocationEstimated(false);
         }
+      } catch {
+        // Geocoding failure is non-blocking
       }
+    }
+
+    // "Save All Settings" must also persist the Appointment Booking section.
+    const appt = await saveAppointments();
+    if (!appt.ok) {
+      setMessage({ type: 'error', text: `${t('vendor.settings.settingsSaved')} ${appt.error ? `— but appointments: ${appt.error}` : ''}`.trim() });
+    } else {
       setMessage({ type: 'success', text: t('vendor.settings.settingsSaved') });
       setTimeout(() => setMessage(null), 4000);
     }
@@ -1322,32 +1357,13 @@ export default function VendorSettingsPage() {
                     disabled={savingAppointments}
                     onClick={async () => {
                       setSavingAppointments(true);
-                      try {
-                        const availArray = Object.entries(appointmentAvailability).map(([dow, val]) => ({
-                          day_of_week: Number(dow),
-                          start_time: val.start_time,
-                          end_time: val.end_time,
-                          is_available: val.is_available,
-                        }));
-                        const res = await fetch('/api/vendor/availability', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            settings: { ...appointmentSettings, enabled: appointmentEnabled },
-                            availability: availArray,
-                          }),
-                        });
-                        if (res.ok) {
-                          setMessage({ type: 'success', text: 'Appointment settings saved!' });
-                        } else {
-                          const data = await res.json();
-                          setMessage({ type: 'error', text: data.error || 'Failed to save' });
-                        }
-                      } catch {
-                        setMessage({ type: 'error', text: 'Failed to save appointment settings' });
-                      } finally {
-                        setSavingAppointments(false);
+                      const result = await saveAppointments();
+                      if (result.ok) {
+                        setMessage({ type: 'success', text: 'Appointment settings saved!' });
+                      } else {
+                        setMessage({ type: 'error', text: result.error || 'Failed to save appointment settings' });
                       }
+                      setSavingAppointments(false);
                     }}
                     className="w-full btn-primary flex items-center justify-center gap-2"
                   >
@@ -1361,7 +1377,7 @@ export default function VendorSettingsPage() {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end sticky bottom-4">
+        <div className="flex justify-end sticky bottom-4 mt-6">
           <button
             type="submit"
             disabled={saving}

@@ -87,7 +87,7 @@ function useNavItems(): NavItem[] {
         { label: t('vendor.sidebar.avaInsights'), href: '/vendor/insights', icon: <img src="/ava.png" alt="Ava" className="w-4 h-4 rounded-full object-cover" /> },
         { label: t('vendor.sidebar.reviews'), href: '/vendor/reviews', icon: <MessageSquare className="w-4 h-4" /> },
         { label: t('vendor.sidebar.customers'), href: '/vendor/customers', icon: <ShoppingBag className="w-4 h-4" /> },
-        { label: 'Appointments', href: '/vendor/appointments', icon: <Calendar className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.appointments'), href: '/vendor/appointments', icon: <Calendar className="w-4 h-4" /> },
         { label: t('vendor.sidebar.locations'), href: '/vendor/locations', icon: <MapPin className="w-4 h-4" /> },
         { label: t('vendor.sidebar.team'), href: '/vendor/team', icon: <Users className="w-4 h-4" /> },
       ],
@@ -106,7 +106,7 @@ function useNavItems(): NavItem[] {
     },
     { label: t('vendor.sidebar.settings'), href: '/vendor/settings', icon: <Settings className="w-5 h-5" />, dataTour: 'vendor-nav-settings' },
     { label: t('vendor.sidebar.support'), href: '/vendor/support', icon: <img src="/olivia.png" alt="Olivia" className="w-5 h-5 rounded-full object-cover" />, dataTour: 'vendor-nav-support' },
-    { label: 'Tutorial', href: '/vendor/tutorial', icon: <Play className="w-5 h-5" /> },
+    { label: t('vendor.sidebar.tutorial'), href: '/vendor/tutorial', icon: <Play className="w-5 h-5" /> },
   ];
 }
 

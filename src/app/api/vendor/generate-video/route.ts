@@ -9,6 +9,17 @@ import { rateLimit } from '@/lib/rate-limit';
 // Extend Vercel function timeout (Pro: up to 300s, Hobby: 60s)
 export const maxDuration = 300;
 
+// Veo 3.1 Fast — cheapest tier (~$0.10/sec @ 720p ≈ $0.80 per 8-sec video).
+// Quality is more than enough for short social Reels; switch to
+// 'veo-3.1-generate-preview' for premium ($0.40/sec) if ever needed.
+const VEO_MODEL = 'veo-3.1-fast-generate-preview';
+
+// Monthly per-vendor AI video cap (cost control). Counts videos generated in the
+// current calendar month; admins are exempt. Override via env without a deploy.
+// Default 12 ≈ $10/vendor/mo at Veo Fast pricing. When capped, vendors can still
+// add their own videos via Upload / Video URL — only AI generation is limited.
+const MONTHLY_AI_VIDEO_LIMIT = parseInt(process.env.VENDOR_MONTHLY_AI_VIDEO_LIMIT || '12', 10);
+
 // POST /api/vendor/generate-video
 // Two-phase approach to avoid Vercel timeout:
 //   Phase 1: { image_url, title, ... } → starts Veo, returns { operation_name }
@@ -68,6 +79,31 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
+  // Monthly per-vendor cap — protects against runaway video spend. Counts AI
+  // videos saved this calendar month (vendor_media rows). Admins are exempt.
+  if (!isAdmin) {
+    const now = new Date();
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+    const { count: videosThisMonth } = await serviceClient
+      .from('vendor_media')
+      .select('*', { count: 'exact', head: true })
+      .eq('vendor_id', vendorId)
+      .eq('source', 'ai_video')
+      .gte('created_at', monthStart);
+
+    if ((videosThisMonth || 0) >= MONTHLY_AI_VIDEO_LIMIT) {
+      return NextResponse.json(
+        {
+          error: `You've used all ${MONTHLY_AI_VIDEO_LIMIT} of this month's AI-generated videos (resets on the 1st). You can still add your own video any time using the Upload or Video URL options above.`,
+          limit_reached: true,
+          used: videosThisMonth,
+          limit: MONTHLY_AI_VIDEO_LIMIT,
+        },
+        { status: 429 }
+      );
+    }
+  }
+
   const { image_url, video_prompt } = body;
   // All SpontiCoupon videos are vertical 9:16 Reels — no horizontal videos
   const aspectRatio = '9:16' as const;
@@ -122,7 +158,7 @@ export async function POST(request: NextRequest) {
       : `Gentle cinematic camera movement showcasing a ${vendor?.category || 'business'} service. ${formatHint} Professional commercial quality, clean and appealing imagery, warm inviting atmosphere. No text, no logos, no watermarks.`;
 
     // Pre-flight: verify Veo model is accessible with this API key
-    const modelCheckUrl = `https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-preview?key=${geminiKey}`;
+    const modelCheckUrl = `https://generativelanguage.googleapis.com/v1beta/models/${VEO_MODEL}?key=${geminiKey}`;
     const modelCheck = await fetch(modelCheckUrl);
     if (!modelCheck.ok) {
       const modelErr = await modelCheck.text().catch(() => '');
@@ -139,7 +175,7 @@ export async function POST(request: NextRequest) {
     // Build generation request — with or without image
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const generateParams: any = {
-      model: 'veo-3.1-generate-preview',
+      model: VEO_MODEL,
       prompt,
       config: {
         aspectRatio,
@@ -269,7 +305,7 @@ async function handlePoll(operationName: string, userId: string, geminiKey: stri
         const ai = new GoogleGenAI({ apiKey: geminiKey });
         const fallbackPrompt = `Professional commercial video for a local business service. Vertical 9:16 format for Instagram Reels. Cinematic camera movement, warm inviting atmosphere, clean modern visuals. No text, no logos, no people.`;
         const retryOp = await ai.models.generateVideos({
-          model: 'veo-3.1-generate-preview',
+          model: VEO_MODEL,
           prompt: fallbackPrompt,
           config: {
             aspectRatio: '9:16',

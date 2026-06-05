@@ -141,6 +141,7 @@ function EditDealPageInner() {
   const [imgDragOverIdx, setImgDragOverIdx] = useState<number | null>(null);
   const [aiImageLoading, setAiImageLoading] = useState(false);
   const [aiVideoLoading, setAiVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState('');
   const [videoProgress, setVideoProgress] = useState(0);
   const [videoElapsed, setVideoElapsed] = useState(0);
   const [videoSourceImage, setVideoSourceImage] = useState<string>('');
@@ -157,6 +158,11 @@ function EditDealPageInner() {
   const [videoUrls, setVideoUrls] = useState<string[]>([]);
   const [newVideoUrl, setNewVideoUrl] = useState('');
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  // Tracks media auto-save so generated/added media survives a refresh without a full Save.
+  const mediaHydratedRef = useRef(false);
+  const lastSyncedMediaRef = useRef<string | null>(null);
+  const [mediaSaving, setMediaSaving] = useState(false);
   const [highlights, setHighlights] = useState<string[]>([]);
   const [newHighlight, setNewHighlight] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
@@ -243,6 +249,13 @@ function EditDealPageInner() {
 
       setAdditionalImages(data.image_urls || []);
       setVideoUrls(data.video_urls || []);
+      // Snapshot the loaded media so auto-save only fires on real, later changes.
+      lastSyncedMediaRef.current = JSON.stringify({
+        image_url: data.image_url || null,
+        image_urls: data.image_urls || [],
+        video_urls: data.video_urls || [],
+      });
+      mediaHydratedRef.current = true;
       setHighlights(data.highlights || []);
       setAmenities(data.amenities || []);
       setRequiresAppointment(data.requires_appointment || false);
@@ -433,10 +446,11 @@ function EditDealPageInner() {
 
   const handleAiVideoGenerate = async () => {
     const sourceImage = videoSourceImage || form.image_url;
-    if (!sourceImage) { setError('Add a deal image first so Ava can turn it into a video.'); return; }
+    if (!sourceImage) { setVideoError('Add a deal image first so Ava can turn it into a video.'); return; }
     setAiVideoLoading(true);
     setVideoProgress(0);
     setVideoElapsed(0);
+    setVideoError('');
     setError('');
     try {
       // Phase 1: Start
@@ -445,11 +459,11 @@ function EditDealPageInner() {
         body: JSON.stringify({ image_url: sourceImage, title: form.title, description: form.description, video_prompt: videoPrompt || undefined, aspect_ratio: '16:9' }),
       });
       const startData = await startRes.json();
-      if (!startRes.ok) { setError(startData.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
+      if (!startRes.ok) { setVideoError(startData.error || 'Failed to generate video'); setAiVideoLoading(false); return; }
       if (startData.status === 'done' && startData.url) { setVideoUrls(prev => [...prev, startData.url]); setAiVideoLoading(false); return; }
 
       let operationName = startData.operation_name;
-      if (!operationName) { setError('Failed to start video generation'); setAiVideoLoading(false); return; }
+      if (!operationName) { setVideoError('Failed to start video generation'); setAiVideoLoading(false); return; }
 
       // Phase 2: Poll until done
       const maxPollTime = 5 * 60 * 1000;
@@ -462,12 +476,12 @@ function EditDealPageInner() {
           body: JSON.stringify({ operation_name: operationName }),
         });
         const pollData = await pollRes.json();
-        if (!pollRes.ok) { setError(pollData.error || 'Video generation failed'); setAiVideoLoading(false); return; }
+        if (!pollRes.ok) { setVideoError(pollData.error || 'Video generation failed'); setAiVideoLoading(false); return; }
         if (pollData.retried && pollData.operation_name) { operationName = pollData.operation_name; continue; }
         if (pollData.status === 'done' && pollData.url) { setVideoUrls(prev => [...prev, pollData.url]); setAiVideoLoading(false); return; }
       }
-      setError('Video generation timed out. Please try again.');
-    } catch { setError('Failed to generate video.'); }
+      setVideoError('Video generation timed out. Please try again.');
+    } catch { setVideoError('Failed to generate video.'); }
     setAiVideoLoading(false);
   };
 
@@ -537,6 +551,37 @@ function EditDealPageInner() {
   };
 
 
+  // Persist ONLY the media columns to the deal — a targeted update that doesn't
+  // touch other (possibly mid-edit) fields. Keeps generated/added media attached
+  // to the deal so a page refresh never erases it.
+  const syncMediaToDeal = useCallback(async () => {
+    if (!deal || !user) return;
+    const snapshot = JSON.stringify({
+      image_url: form.image_url || null,
+      image_urls: additionalImages,
+      video_urls: videoUrls,
+    });
+    if (snapshot === lastSyncedMediaRef.current) return; // nothing changed
+    setMediaSaving(true);
+    try {
+      const supabase = createClient();
+      const { error: mediaError } = await supabase
+        .from('deals')
+        .update({ image_url: form.image_url || null, image_urls: additionalImages, video_urls: videoUrls })
+        .eq('id', deal.id)
+        .eq('vendor_id', user.id);
+      if (!mediaError) lastSyncedMediaRef.current = snapshot;
+    } catch { /* best-effort; full Save still persists everything */ }
+    finally { setMediaSaving(false); }
+  }, [deal, user, form.image_url, additionalImages, videoUrls]);
+
+  // Debounced auto-save: whenever media changes after load, attach it to the deal.
+  useEffect(() => {
+    if (!deal || !user || !mediaHydratedRef.current) return;
+    const t = setTimeout(() => { void syncMediaToDeal(); }, 700);
+    return () => clearTimeout(t);
+  }, [form.image_url, additionalImages, videoUrls, deal, user, syncMediaToDeal]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!deal || !user) return;
@@ -576,7 +621,8 @@ function EditDealPageInner() {
 
     const { error: updateError } = await supabase.from('deals').update(updates).eq('id', deal.id).eq('vendor_id', user.id);
     if (updateError) setError('Failed to save: ' + updateError.message);
-    else { setShowToast(true); setTimeout(() => router.push('/vendor/deals/calendar'), 2000); }
+    // Saving edits returns to the deals list — the deal isn't being posted/published here.
+    else { setShowToast(true); setTimeout(() => router.push('/vendor/deals'), 2000); }
     setSaving(false);
   };
 
@@ -591,7 +637,13 @@ function EditDealPageInner() {
     } else {
       setDeal(prev => prev ? { ...prev, status: newStatus } : prev);
       setShowToast(true);
-      setTimeout(() => setShowToast(false), 2500);
+      // Going live (posting the deal) sends the vendor to the calendar; other
+      // status changes (pause/draft) just stay put with a confirmation toast.
+      if (newStatus === 'active') {
+        setTimeout(() => router.push('/vendor/deals/calendar'), 1200);
+      } else {
+        setTimeout(() => setShowToast(false), 2500);
+      }
     }
     setSaving(false);
   };
@@ -773,7 +825,14 @@ function EditDealPageInner() {
 
             {/* Image gallery header */}
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-600">Images ({allDealImages.length}/11)</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-medium text-gray-600">Images ({allDealImages.length}/11)</p>
+                {mediaSaving && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                  </span>
+                )}
+              </div>
               <button type="button" onClick={() => setShowImagePicker(true)}
                 className="flex items-center gap-1 px-2.5 py-1 bg-[#E8632B] text-white rounded-lg text-[10px] font-medium hover:bg-[#D55A25] transition-colors">
                 <ImageIcon className="w-3 h-3" /> Browse Library
@@ -827,6 +886,11 @@ function EditDealPageInner() {
                         </button>
                       )}
                       <span className="absolute bottom-0.5 left-0.5 w-4 h-4 rounded-full bg-black/50 text-white text-[9px] font-bold flex items-center justify-center">{i + 1}</span>
+                      <button type="button" onMouseDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); setPreviewImageUrl(img); }}
+                        title="View full size"
+                        className="absolute bottom-0.5 right-0.5 bg-black/60 hover:bg-black/80 text-white rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Eye className="w-3 h-3" />
+                      </button>
                       <button type="button" onClick={(e) => {
                         e.stopPropagation();
                         if (i === 0 && form.image_url) {
@@ -1020,6 +1084,15 @@ function EditDealPageInner() {
                           </div>
                         </div>
                       </div>
+                      {videoError && !aiVideoLoading && (
+                        <div className="flex items-start gap-2 p-2.5 bg-red-50 border border-red-200 rounded-lg">
+                          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-xs text-red-700 flex-1">{videoError}</p>
+                          <button type="button" onClick={() => setVideoError('')} className="text-red-400 hover:text-red-600 flex-shrink-0" aria-label="Dismiss">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                       {aiVideoLoading && (
                         <div className="space-y-1.5">
                           <div className="w-full bg-emerald-100 rounded-full h-2 overflow-hidden">
@@ -1525,6 +1598,42 @@ function EditDealPageInner() {
                 className="px-6 py-2.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg font-semibold text-sm hover:bg-red-500/30 transition-colors">
                 Remove Video
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image preview lightbox */}
+      {previewImageUrl && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] px-4" onClick={() => setPreviewImageUrl(null)}>
+          <div className="relative max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setPreviewImageUrl(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors flex items-center gap-2 text-sm font-medium">
+              <X className="w-5 h-5" /> Close
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={previewImageUrl} alt="" className="w-full rounded-xl shadow-2xl max-h-[80vh] object-contain bg-black"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder-image.svg'; }} />
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <button type="button" onClick={() => setPreviewImageUrl(null)}
+                className="px-6 py-2.5 bg-white text-gray-900 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors">
+                Looks Good
+              </button>
+              {previewImageUrl !== form.image_url && (
+                <button type="button" onClick={() => {
+                  const img = previewImageUrl;
+                  const all = [...allDealImages];
+                  const idx = all.indexOf(img);
+                  if (idx > -1) { all.splice(idx, 1); }
+                  all.unshift(img);
+                  setForm(prev => ({ ...prev, image_url: img }));
+                  setAdditionalImages(all.slice(1));
+                  setPreviewImageUrl(null);
+                }}
+                  className="px-6 py-2.5 bg-[#E8632B]/20 text-orange-200 border border-[#E8632B]/40 rounded-lg font-semibold text-sm hover:bg-[#E8632B]/30 transition-colors">
+                  Set as Main
+                </button>
+              )}
             </div>
           </div>
         </div>
