@@ -16,8 +16,6 @@ import {
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music, Ticket,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
-import { LoyaltyCards } from '@/components/customer/LoyaltyCards';
-import { SpontiPointsWallet } from '@/components/customer/SpontiPointsWallet';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 import type { Claim, Deal, Vendor, BusinessHours } from '@/lib/types/database';
 
@@ -201,16 +199,6 @@ function DashboardMyDealsContent() {
           <button onClick={() => setPaidBanner(false)} className="p-1 hover:bg-green-100 rounded-lg transition-colors">
             <X className="w-4 h-4 text-green-500" />
           </button>
-        </div>
-      )}
-
-      {/* Loyalty Cards */}
-      {!loading && <LoyaltyCards />}
-
-      {/* SpontiPoints Wallet */}
-      {!loading && (
-        <div className="mb-6">
-          <SpontiPointsWallet />
         </div>
       )}
 

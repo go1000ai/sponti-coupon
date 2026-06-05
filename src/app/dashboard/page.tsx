@@ -102,6 +102,17 @@ export default function ConsumerDashboardPage() {
 
   const redeemedCount = claims.filter((c) => c.redeemed).length;
 
+  // Loyalty cards with a reward the customer can claim right now
+  const redeemableCards = loyaltyCards.filter((card) => {
+    const program = card.program;
+    if (!program) return false;
+    if (program.program_type === 'punch_card') {
+      return card.current_punches >= (program.punches_required || 10);
+    }
+    return (card.available_rewards || []).some((r) => card.current_points >= r.points_cost);
+  });
+  const redeemableCount = redeemableCards.length;
+
   const pendingSavings = claims.reduce((sum, claim) => {
     const status = getStatus(claim);
     if (claim.deal && (status === 'active' || status === 'pending_deposit')) {
@@ -188,6 +199,39 @@ export default function ConsumerDashboardPage() {
         </div>
         <p className="text-gray-500 mt-1">{t('customer.dashboard.overview')}</p>
       </div>
+
+      {/* Reward-ready banner — surfaces redeemable loyalty rewards up top */}
+      {redeemableCount > 0 && (
+        <Link
+          href="/dashboard/loyalty"
+          className="block animate-fade-up rounded-2xl bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 p-4 sm:p-5 shadow-lg shadow-emerald-200/50 hover:shadow-xl hover:shadow-emerald-300/50 transition-all group relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_20%,rgba(255,255,255,0.18),transparent_55%)] pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 animate-bounce-subtle">
+                <Gift className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-white font-bold text-base sm:text-lg leading-tight">
+                  {redeemableCount === 1
+                    ? t('customer.dashboard.rewardReadyTitle')
+                    : t('customer.dashboard.rewardsReadyTitle', { count: String(redeemableCount) })}
+                </p>
+                <p className="text-white/80 text-xs sm:text-sm mt-0.5">
+                  {redeemableCount === 1
+                    ? t('customer.dashboard.rewardReadySubtitle')
+                    : t('customer.dashboard.rewardsReadySubtitle')}
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex items-center justify-center gap-1.5 bg-white text-emerald-600 font-bold text-sm px-4 py-2.5 sm:py-2 rounded-xl w-full sm:w-auto flex-shrink-0 group-hover:gap-2.5 transition-all">
+              {redeemableCount === 1 ? t('customer.dashboard.claimReward') : t('customer.dashboard.claimRewards')}
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </div>
+        </Link>
+      )}
 
       {/* Stats cards — staggered */}
       <div data-tour="customer-stats" className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
