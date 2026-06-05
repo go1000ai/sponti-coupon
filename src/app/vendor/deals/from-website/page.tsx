@@ -6,7 +6,6 @@ import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { GatedSection } from '@/components/vendor/UpgradePrompt';
 import MediaPicker from '@/components/vendor/MediaPicker';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   Globe, Loader2, ArrowRight, Tag, Download, Save,
   Image as ImageIcon, ChevronUp, Upload, LinkIcon, FolderOpen,
@@ -75,7 +74,6 @@ function saveHistoryEntry(entry: Omit<ImportHistoryEntry, 'timestamp'>) {
 export default function ImportFromWebsitePage() {
   useAuth();
   const { canAccess, loading: tierLoading } = useVendorTier();
-  const router = useRouter();
 
   const STORAGE_KEY = 'website-import-cache';
 
@@ -100,6 +98,8 @@ export default function ImportFromWebsitePage() {
   const [savingImage, setSavingImage] = useState<number | null>(null);
   const [savingAllImages, setSavingAllImages] = useState(false);
   const [savingDraft, setSavingDraft] = useState<number | null>(null);
+  const [savedDraftIds, setSavedDraftIds] = useState<Record<number, boolean>>({});
+  const [toast, setToast] = useState<string | null>(null);
   const [imageTab, setImageTab] = useState<Record<number, 'website' | 'url' | 'upload' | 'library' | 'ai'>>({});
   const [urlInputs, setUrlInputs] = useState<Record<number, string>>({});
   const [uploadingForDeal, setUploadingForDeal] = useState<number | null>(null);
@@ -234,7 +234,11 @@ export default function ImportFromWebsitePage() {
         }),
       });
       if (res.ok) {
-        router.push('/vendor/deals/calendar');
+        // Stay on the page — mark this card saved and show a brief toast.
+        // The vendor can keep saving other deals and visit Drafts when ready.
+        setSavedDraftIds(prev => ({ ...prev, [idx]: true }));
+        setToast('Draft saved');
+        setTimeout(() => setToast(null), 3000);
       } else {
         const data = await res.json();
         setError(data.error || 'Failed to save draft');
@@ -338,6 +342,16 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
 
   return (
     <div className="max-w-5xl mx-auto">
+      {/* Toast — "Draft saved" confirmation (no redirect) */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 bg-gray-900 text-white rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
+          <CheckCircle2 className="w-5 h-5 text-green-400" />
+          <span className="text-sm font-medium">{toast}</span>
+          <Link href="/vendor/deals?tab=drafts" className="text-sm font-semibold text-green-300 hover:text-green-200 underline">
+            View Drafts
+          </Link>
+        </div>
+      )}
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -1003,17 +1017,26 @@ ${deal.amenities?.length ? `Amenities: ${deal.amenities.join(', ')}` : ''}`;
                         >
                           Create This Deal <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <button
-                          onClick={() => handleSaveDraft(deal, idx)}
-                          disabled={savingDraft === idx}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all disabled:opacity-50"
-                        >
-                          {savingDraft === idx ? (
-                            <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                          ) : (
-                            <><Save className="w-4 h-4" /> Save as Draft</>
-                          )}
-                        </button>
+                        {savedDraftIds[idx] ? (
+                          <Link
+                            href="/vendor/deals?tab=drafts"
+                            className="flex items-center gap-2 px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-medium hover:bg-green-100 transition-all"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Saved — View Drafts
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => handleSaveDraft(deal, idx)}
+                            disabled={savingDraft === idx}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-all disabled:opacity-50"
+                          >
+                            {savingDraft === idx ? (
+                              <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                            ) : (
+                              <><Save className="w-4 h-4" /> Save as Draft</>
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() => copyDealDetails(deal, idx)}
                           className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-all"

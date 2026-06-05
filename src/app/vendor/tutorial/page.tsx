@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Play, RotateCcw, Clock, GraduationCap } from 'lucide-react';
+import { RotateCcw, GraduationCap } from 'lucide-react';
 import { VideoModal } from '@/components/vendor/VideoModal';
+import { TutorialThumb } from '@/components/vendor/TutorialThumb';
 
 export default function TutorialPage() {
   const [activeVideo, setActiveVideo] = useState<'onboarding' | 'tutorial' | 'redemption' | 'loyalty' | null>(null);
@@ -31,19 +32,7 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('onboarding')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="relative min-h-[200px] overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/videos/onboarding-thumb.jpg" alt="Quick Start" className="w-full h-full object-cover absolute inset-0" />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Play className="w-8 h-8 text-white ml-1" />
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <Clock className="w-4 h-4" />
-                1:14
-              </div>
-            </div>
-          </div>
+          <TutorialThumb image="/videos/onboarding-thumb.jpg" alt="Quick Start" duration="1:14" />
           <div className="p-5">
             <h3 className="font-bold text-gray-900 text-lg mb-1">Quick Start</h3>
             <p className="text-sm text-gray-500">3 steps to get your first deal live — import from your website, set up payments, and publish.</p>
@@ -55,19 +44,7 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('tutorial')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="relative min-h-[200px] overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/videos/tutorial-thumb.jpg" alt="Full Tutorial" className="w-full h-full object-cover absolute inset-0" />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Play className="w-8 h-8 text-white ml-1" />
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <Clock className="w-4 h-4" />
-                3:50
-              </div>
-            </div>
-          </div>
+          <TutorialThumb image="/videos/tutorial-thumb.jpg" alt="Full Tutorial" duration="3:50" />
           <div className="p-5">
             <h3 className="font-bold text-gray-900 text-lg mb-1">Full Platform Tutorial</h3>
             <p className="text-sm text-gray-500">Complete walkthrough — website import, Ava AI, deal types, analytics, social posting, and loyalty programs.</p>
@@ -79,19 +56,7 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('redemption')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="relative min-h-[200px] overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" className="w-full h-full object-cover absolute inset-0" />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Play className="w-8 h-8 text-white ml-1" />
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <Clock className="w-4 h-4" />
-                2:56
-              </div>
-            </div>
-          </div>
+          <TutorialThumb image="/videos/customer-redemption-thumb.jpg" alt="Customer Payments & Redemption" duration="2:56" />
           <div className="p-5">
             <h3 className="font-bold text-gray-900 text-lg mb-1">Customer Payments &amp; Redemption</h3>
             <p className="text-sm text-gray-500">How customers claim and pay — full payment, a deposit, or in person — and how every dollar reaches you. SpontiCoupon never holds the money.</p>
@@ -103,19 +68,7 @@ export default function TutorialPage() {
           onClick={() => setActiveVideo('loyalty')}
           className="card p-0 overflow-hidden hover:shadow-xl transition-all group text-left"
         >
-          <div className="relative min-h-[200px] overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" className="w-full h-full object-cover absolute inset-0" />
-            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors flex flex-col items-center justify-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Play className="w-8 h-8 text-white ml-1" />
-              </div>
-              <div className="flex items-center gap-2 text-white/80 text-sm">
-                <Clock className="w-4 h-4" />
-                2:01
-              </div>
-            </div>
-          </div>
+          <TutorialThumb image="/videos/loyalty-program-thumb.jpg" alt="Loyalty Programs" duration="2:01" />
           <div className="p-5">
             <h3 className="font-bold text-gray-900 text-lg mb-1">Loyalty Programs</h3>
             <p className="text-sm text-gray-500">Turn one-time deal-hunters into regulars with punch cards or points — built in and free on Pro &amp; Business.</p>

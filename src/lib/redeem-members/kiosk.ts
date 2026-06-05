@@ -19,6 +19,16 @@ function notify() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(KIOSK_EVENT));
 }
 
+// Mirror the kiosk flag into a cookie so the server middleware can read it and
+// skip the 1-hour inactivity auto-logout — keeping a shared counter device
+// logged in until the owner explicitly exits.
+function setKioskCookie(on: boolean) {
+  if (typeof document === 'undefined') return;
+  document.cookie = on
+    ? `sb-redeem-kiosk=1; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`
+    : 'sb-redeem-kiosk=; path=/; max-age=0; samesite=lax';
+}
+
 export function isKioskActive(): boolean {
   if (typeof window === 'undefined') return false;
   return localStorage.getItem(KIOSK_KEY) === '1';
@@ -27,6 +37,7 @@ export function isKioskActive(): boolean {
 export function startKiosk() {
   if (typeof window === 'undefined') return;
   localStorage.setItem(KIOSK_KEY, '1');
+  setKioskCookie(true);
   notify();
 }
 
@@ -34,6 +45,7 @@ export function clearKiosk() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(KIOSK_KEY);
   sessionStorage.removeItem(MEMBER_KEY);
+  setKioskCookie(false);
   notify();
 }
 

@@ -107,7 +107,10 @@ export async function POST(request: NextRequest) {
       starts_at,
       expires_at,
       timezone: 'UTC',
+      // Future start = scheduled: held as 'draft' + flagged so the
+      // activate-scheduled cron flips it live (and auto-posts) at start time.
       status: new Date(starts_at) > new Date() ? 'draft' : 'active',
+      is_scheduled: new Date(starts_at) > new Date(),
       image_url: image_url || null,
     })
     .select()

@@ -3,16 +3,16 @@
 import { useEffect, useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/hooks/useAuth';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Calendar, ChevronLeft, ChevronRight, Plus, Tag, Clock,
-  List, CalendarDays, FileEdit, Trash2, Loader2,
+  Calendar, ChevronLeft, ChevronRight, Clock, X,
 } from 'lucide-react';
-import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { formatCurrency } from '@/lib/utils';
+import { getDealImage } from '@/lib/constants';
 import type { Deal } from '@/lib/types/database';
 import { useLanguage } from '@/lib/i18n';
+import DealsNavHeader from '@/components/vendor/DealsNavHeader';
+import { isWipDraft, isScheduled } from '@/lib/deal-lifecycle';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -31,27 +31,24 @@ function getFirstDayOfMonth(year: number, month: number) {
 export default function DealsCalendarPage() {
   const { user } = useAuth();
   const { t } = useLanguage();
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'deals' | 'drafts'>('deals');
   const [deals, setDeals] = useState<Deal[]>([]);
-  const [drafts, setDrafts] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deletingDraft, setDeletingDraft] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [zoomDeal, setZoomDeal] = useState<Deal | null>(null);
 
   useEffect(() => {
     if (!user) return;
     fetchDeals();
-    fetchDrafts();
   }, [user, currentMonth, currentYear]);
 
   async function fetchDeals() {
     setLoading(true);
     const supabase = createClient();
 
-    // Get deals that overlap with the current month
+    // Get deals that overlap with the current month. Work-in-progress drafts
+    // are excluded below — the calendar only shows active and scheduled deals.
     const monthStart = new Date(currentYear, currentMonth, 1).toISOString();
     const monthEnd = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
 
@@ -63,28 +60,9 @@ export default function DealsCalendarPage() {
       .gte('expires_at', monthStart)
       .order('starts_at', { ascending: true });
 
-    setDeals(data || []);
+    // Drop WIP drafts — they have no real run date and belong in My Deals → Drafts.
+    setDeals((data || []).filter(d => !isWipDraft(d)));
     setLoading(false);
-  }
-
-  async function fetchDrafts() {
-    if (!user) return;
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('deals')
-      .select('*')
-      .eq('vendor_id', user.id)
-      .eq('status', 'draft')
-      .order('created_at', { ascending: false });
-    setDrafts(data || []);
-  }
-
-  async function handleDeleteDraft(id: string) {
-    setDeletingDraft(id);
-    const supabase = createClient();
-    await supabase.from('deals').delete().eq('id', id);
-    setDrafts(prev => prev.filter(d => d.id !== id));
-    setDeletingDraft(null);
   }
 
   const prevMonth = () => {
@@ -144,183 +122,13 @@ export default function DealsCalendarPage() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Calendar className="w-8 h-8 text-primary-500" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t('vendor.deals.title')}</h1>
-            <p className="text-gray-500 text-sm mt-1">{t('vendor.calendar.subtitle')}</p>
-          </div>
-        </div>
-        <Link href="/vendor/deals/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> {t('vendor.deals.newDeal')}
-        </Link>
-      </div>
+      <DealsNavHeader view="calendar" showTabs={false} />
 
-      {/* Tabs: My Deals / Drafts */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
-          <button
-            onClick={() => setActiveTab('deals')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'deals'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <CalendarDays className="w-4 h-4" /> {t('vendor.deals.title')}
-          </button>
-          <button
-            onClick={() => { setActiveTab('drafts'); fetchDrafts(); }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === 'drafts'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <FileEdit className="w-4 h-4" /> {t('vendor.calendar.drafts')}
-            {drafts.length > 0 && (
-              <span className="bg-amber-100 text-amber-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                {drafts.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* List/Calendar toggle (only on deals tab) */}
-        {activeTab === 'deals' && (
-          <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-            <Link
-              href="/vendor/deals"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-gray-500 hover:text-gray-900 transition-colors"
-              title="List View"
-            >
-              <List className="w-3.5 h-3.5" /> {t('vendor.deals.listView')}
-            </Link>
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-white text-gray-900 shadow-sm"
-              title={t('vendor.deals.calendarView')}
-            >
-              <CalendarDays className="w-3.5 h-3.5" /> {t('vendor.deals.calendarView')}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ═══════════════ DRAFTS TAB ═══════════════ */}
-      {activeTab === 'drafts' && (
-        <div>
-          {drafts.length === 0 ? (
-            <div className="card p-12 text-center">
-              <FileEdit className="w-16 h-16 text-gray-200 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">{t('vendor.calendar.noDraftsYet')}</h3>
-              <p className="text-sm text-gray-400 mb-6">
-                {t('vendor.calendar.noDraftsDesc')}
-              </p>
-              <Link
-                href="/vendor/deals/new"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#E8632B] text-white rounded-xl font-medium text-sm hover:bg-[#D55A25] transition-all"
-              >
-                <Plus className="w-4 h-4" /> {t('vendor.deals.createDeal')}
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {drafts.map(draft => (
-                <div
-                  key={draft.id}
-                  className="card overflow-hidden hover:shadow-lg transition-all group cursor-pointer"
-                  onClick={() => router.push(`/vendor/deals/edit?id=${draft.id}`)}
-                >
-                  {/* Image or Placeholder */}
-                  {draft.image_url ? (
-                    <div className="aspect-[16/10] bg-gray-100">
-                      <img src={draft.image_url} alt="" className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="aspect-[16/10] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-                      <FileEdit className="w-10 h-10 text-amber-300" />
-                    </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-bold text-gray-900 truncate">
-                          {draft.title || t('vendor.calendar.untitledDraft')}
-                        </h3>
-                        {draft.description && (
-                          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{draft.description}</p>
-                        )}
-                      </div>
-                      <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        draft.deal_type === 'sponti_coupon'
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {draft.deal_type === 'sponti_coupon' ? 'Sponti' : 'Steady'}
-                      </span>
-                    </div>
-
-                    {/* Pricing */}
-                    {(draft.deal_price > 0 || draft.original_price > 0) && (
-                      <div className="flex items-center gap-2 mt-3">
-                        {draft.deal_price > 0 && (
-                          <span className="text-lg font-bold text-primary-500">{formatCurrency(draft.deal_price)}</span>
-                        )}
-                        {draft.original_price > 0 && (
-                          <span className="text-sm text-gray-400 line-through">{formatCurrency(draft.original_price)}</span>
-                        )}
-                        {draft.discount_percentage > 0 && (
-                          <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                            {Math.round(draft.discount_percentage)}% off
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                      <span className="text-xs text-gray-400">
-                        Saved {new Date(draft.created_at).toLocaleDateString()}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <Link
-                          href={`/vendor/deals/edit?id=${draft.id}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
-                          title="Edit draft"
-                        >
-                          <FileEdit className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDeleteDraft(draft.id); }}
-                          disabled={deletingDraft === draft.id}
-                          className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-50"
-                          title="Delete draft"
-                        >
-                          {deletingDraft === draft.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ═══════════════ DEALS TAB ═══════════════ */}
-      {activeTab === 'deals' && <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar Grid */}
-        <div className="lg:col-span-2 card p-6">
+      {/* The calendar shows only published deals — active now and scheduled for
+          a future date. Work-in-progress drafts live in My Deals → Drafts. */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Calendar Grid — overflow-visible so the day hover-preview isn't clipped */}
+        <div className="lg:col-span-2 card p-6 !overflow-visible">
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-6">
             <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -368,16 +176,20 @@ export default function DealsCalendarPage() {
                 const dayDeals = dealsByDay[day] || [];
                 const isToday = isCurrentMonth && day === today.getDate();
                 const isSelected = day === selectedDay;
-                const hasActive = dayDeals.some(d => d.status === 'active');
-                const hasDraft = dayDeals.some(d => d.status === 'draft');
-                const hasPaused = dayDeals.some(d => d.status === 'paused');
-                const hasExpired = dayDeals.every(d => d.status === 'expired') && dayDeals.length > 0;
 
                 return (
-                  <button
+                  <div
                     key={day}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedDay(day === selectedDay ? null : day)}
-                    className={`aspect-square rounded-lg p-1 text-left transition-all relative ${
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedDay(day === selectedDay ? null : day);
+                      }
+                    }}
+                    className={`aspect-square rounded-lg p-1 text-left transition-all relative cursor-pointer ${
                       isSelected
                         ? 'bg-primary-500 text-white shadow-lg shadow-primary-200/50 ring-2 ring-primary-300'
                         : isToday
@@ -391,29 +203,66 @@ export default function DealsCalendarPage() {
                       {day}
                     </span>
 
-                    {/* Deal status indicators */}
-                    {dayDeals.length > 0 && (
-                      <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center gap-0.5">
-                        {hasActive && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`} />
-                        )}
-                        {hasDraft && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/70' : 'bg-blue-400'}`} />
-                        )}
-                        {hasPaused && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50' : 'bg-yellow-400'}`} />
-                        )}
-                        {hasExpired && !hasActive && !hasDraft && !hasPaused && (
-                          <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/40' : 'bg-gray-300'}`} />
-                        )}
-                        {dayDeals.length > 1 && (
-                          <span className={`text-[8px] font-bold ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
-                            {dayDeals.length}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </button>
+                    {/* Deal thumbnail — hover it (not the date) to preview, click it to zoom */}
+                    {dayDeals.length > 0 && (() => {
+                      // Show the most relevant deal: active first, then scheduled, else first.
+                      const primary =
+                        dayDeals.find(d => d.status === 'active') ||
+                        dayDeals.find(d => isScheduled(d)) ||
+                        dayDeals[0];
+                      const ring =
+                        primary.status === 'active' ? 'ring-green-500' :
+                        isScheduled(primary) ? 'ring-blue-400' :
+                        primary.status === 'paused' ? 'ring-yellow-400' :
+                        'ring-gray-300';
+                      const thumb = getDealImage(primary.image_url, primary.category?.slug);
+                      return (
+                        <div className="absolute inset-x-1 bottom-1 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setZoomDeal(primary); }}
+                            className="group/thumb relative cursor-zoom-in"
+                            aria-label={`Zoom ${primary.title}`}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={thumb}
+                              alt={primary.title}
+                              className={`w-9 h-9 rounded-md object-cover ring-2 ${ring} shadow-sm bg-white transition-transform group-hover/thumb:scale-110`}
+                            />
+                            {dayDeals.length > 1 && (
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary-500 text-white text-[9px] font-bold shadow">
+                                {dayDeals.length}
+                              </span>
+                            )}
+
+                            {/* Preview on hovering the thumbnail only */}
+                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-44 origin-bottom opacity-0 scale-95 transition-all duration-150 group-hover/thumb:opacity-100 group-hover/thumb:scale-100">
+                              <div className="overflow-hidden rounded-xl bg-white shadow-xl ring-1 ring-gray-200">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={thumb} alt={primary.title} className="h-28 w-full object-cover" />
+                                <div className="p-2 text-left">
+                                  <p className="text-[11px] font-semibold leading-tight text-gray-900 line-clamp-2">{primary.title}</p>
+                                  <div className="mt-1 flex items-center gap-1.5">
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                      primary.status === 'active' ? 'bg-green-100 text-green-700' :
+                                      isScheduled(primary) ? 'bg-blue-100 text-blue-700' :
+                                      primary.status === 'paused' ? 'bg-yellow-100 text-yellow-700' :
+                                      'bg-gray-100 text-gray-500'
+                                    }`}>
+                                      {isScheduled(primary) ? t('vendor.calendar.scheduled') : primary.status}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-primary-500">{formatCurrency(primary.deal_price)}</span>
+                                  </div>
+                                  <p className="mt-1 text-[9px] text-gray-400">Click to zoom{dayDeals.length > 1 ? ` · +${dayDeals.length - 1} more this day` : ''}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  </div>
                 );
               })}
             </div>
@@ -460,47 +309,35 @@ export default function DealsCalendarPage() {
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-3">
+                /* 2x2 bento of the day's deal images — click a tile to zoom */
+                <div className="grid grid-cols-2 gap-3">
                   {selectedDeals.map(deal => {
-                    const isSponti = deal.deal_type === 'sponti_coupon';
+                    const img = getDealImage(deal.image_url, deal.category?.slug);
                     return (
-                      <Link
+                      <button
                         key={deal.id}
-                        href={`/vendor/deals/edit?id=${deal.id}`}
-                        className="block p-3 rounded-xl border border-gray-200 hover:border-primary-300 hover:shadow-sm transition-all"
+                        type="button"
+                        onClick={() => setZoomDeal(deal)}
+                        className="group relative aspect-square overflow-hidden rounded-xl border border-gray-200 text-left cursor-zoom-in transition-all hover:border-primary-300 hover:shadow-md"
                       >
-                        <div className="flex items-center gap-2 mb-1">
-                          {isSponti ? (
-                            <SpontiIcon className="w-4 h-4 text-primary-500" />
-                          ) : (
-                            <Tag className="w-4 h-4 text-secondary-400" />
-                          )}
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                            isSponti ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {isSponti ? 'Sponti' : 'Steady'}
-                          </span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                            deal.status === 'active' ? 'bg-green-100 text-green-700' :
-                            deal.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-gray-100 text-gray-500'
-                          }`}>
-                            {deal.status}
-                          </span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt={deal.title} className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
+                        <span className={`absolute top-2 left-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                          deal.status === 'active' ? 'bg-green-500 text-white' :
+                          isScheduled(deal) ? 'bg-blue-500 text-white' :
+                          deal.status === 'paused' ? 'bg-yellow-400 text-white' :
+                          'bg-gray-400 text-white'
+                        }`}>
+                          {isScheduled(deal) ? t('vendor.calendar.scheduled') : deal.status}
+                        </span>
+                        <div className="absolute inset-x-0 bottom-0 p-2">
+                          <p className="text-white text-xs font-semibold leading-tight line-clamp-2">{deal.title}</p>
+                          <p className="text-white/90 text-[10px] font-medium mt-0.5">
+                            {formatCurrency(deal.deal_price)} · {Math.round(deal.discount_percentage)}% off
+                          </p>
                         </div>
-                        <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{deal.title}</h4>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
-                          <span className="font-semibold text-primary-500">{formatCurrency(deal.deal_price)}</span>
-                          <span className="line-through">{formatCurrency(deal.original_price)}</span>
-                          <span className="text-green-600 font-medium">{Math.round(deal.discount_percentage)}% off</span>
-                        </div>
-                        <div className="flex items-center gap-1 mt-1 text-[10px] text-gray-400">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {new Date(deal.starts_at).toLocaleDateString()} — {new Date(deal.expires_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </Link>
+                      </button>
                     );
                   })}
                 </div>
@@ -530,7 +367,7 @@ export default function DealsCalendarPage() {
               </div>
               <div className="bg-blue-50 rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-blue-500">
-                  {deals.filter(d => d.status === 'draft').length}
+                  {deals.filter(isScheduled).length}
                 </p>
                 <p className="text-[10px] text-gray-400">Scheduled</p>
               </div>
@@ -543,7 +380,53 @@ export default function DealsCalendarPage() {
             </div>
           </div>
         </div>
-      </div>}
+      </div>
+
+      {/* Zoom lightbox — opens when a deal thumbnail/tile is clicked */}
+      {zoomDeal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onClick={() => setZoomDeal(null)}
+        >
+          <div
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setZoomDeal(null)}
+              className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white transition-colors hover:bg-black/70"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getDealImage(zoomDeal.image_url, zoomDeal.category?.slug)}
+              alt={zoomDeal.title}
+              className="max-h-[60vh] w-full bg-gray-900 object-contain"
+            />
+            <div className="p-4">
+              <h3 className="font-bold text-gray-900">{zoomDeal.title}</h3>
+              <div className="mt-2 flex items-center gap-3 text-sm">
+                <span className="font-bold text-primary-500">{formatCurrency(zoomDeal.deal_price)}</span>
+                <span className="text-gray-400 line-through">{formatCurrency(zoomDeal.original_price)}</span>
+                <span className="font-medium text-green-600">{Math.round(zoomDeal.discount_percentage)}% off</span>
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+                <Clock className="w-3 h-3" />
+                {new Date(zoomDeal.starts_at).toLocaleDateString()} — {new Date(zoomDeal.expires_at).toLocaleDateString()}
+              </div>
+              <Link
+                href={`/vendor/deals/edit?id=${zoomDeal.id}`}
+                className="btn-primary mt-4 inline-flex w-full items-center justify-center gap-2 text-sm"
+              >
+                Edit deal
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

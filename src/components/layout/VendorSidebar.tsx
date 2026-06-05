@@ -56,6 +56,11 @@ function useNavItems(): NavItem[] {
       icon: <LayoutDashboard className="w-5 h-5" />,
     },
     {
+      label: t('vendor.sidebar.scanRedeem'),
+      href: '/vendor/scan',
+      icon: <ScanLine className="w-5 h-5" />,
+    },
+    {
       label: t('vendor.sidebar.groupDeals'),
       href: '/vendor/deals',
       icon: <Tag className="w-5 h-5" />,
@@ -63,7 +68,6 @@ function useNavItems(): NavItem[] {
       children: [
         { label: t('vendor.sidebar.myDeals'), href: '/vendor/deals', icon: <Tag className="w-4 h-4" /> },
         { label: t('vendor.sidebar.websiteImport'), href: '/vendor/deals/from-website', icon: <Globe className="w-4 h-4" /> },
-        { label: t('vendor.sidebar.scanRedeem'), href: '/vendor/scan', icon: <ScanLine className="w-4 h-4" /> },
       ],
     },
     {
@@ -73,9 +77,9 @@ function useNavItems(): NavItem[] {
       dataTour: 'vendor-nav-social',
       children: [
         { label: t('vendor.sidebar.social'), href: '/vendor/social', icon: <Share2 className="w-4 h-4" /> },
-        { label: t('vendor.sidebar.mediaLibrary'), href: '/vendor/media', icon: <ImagePlus className="w-4 h-4" /> },
         { label: t('vendor.sidebar.loyalty'), href: '/vendor/loyalty', icon: <Gift className="w-4 h-4" /> },
         { label: t('vendor.sidebar.branding'), href: '/vendor/branding', icon: <Palette className="w-4 h-4" /> },
+        { label: t('vendor.sidebar.mediaLibrary'), href: '/vendor/media', icon: <ImagePlus className="w-4 h-4" /> },
       ],
     },
     {

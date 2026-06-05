@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { resolveDealByParam } from '@/lib/deal-slug';
 
 export const runtime = 'edge';
 
@@ -11,17 +12,10 @@ export async function GET(
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
 
-  // Accept UUID or SEO slug
-  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-  const column = isUUID ? 'id' : 'slug';
+  // Accept UUID, current SEO slug, or a retired slug (deals.previous_slugs)
+  const { deal } = await resolveDealByParam(supabase, id, '*, vendor:vendors(*)');
 
-  const { data: deal, error } = await supabase
-    .from('deals')
-    .select('*, vendor:vendors(*)')
-    .eq(column, id)
-    .single();
-
-  if (error || !deal) {
+  if (!deal) {
     return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
   }
 
@@ -104,7 +98,7 @@ export async function PATCH(
     status, expires_at, title, description, original_price, deal_price,
     discount_percentage, deposit_amount, max_claims, image_url, image_urls,
     terms_and_conditions, video_urls, amenities, how_it_works, highlights, fine_print,
-    requires_appointment, variants,
+    requires_appointment, variants, repeat_interval,
   } = body;
 
   // If trying to edit content fields (not just status), check if deal has any claims
@@ -139,6 +133,9 @@ export async function PATCH(
   if (fine_print !== undefined) updates.fine_print = fine_print;
   if (requires_appointment !== undefined) updates.requires_appointment = requires_appointment;
   if (variants !== undefined) updates.variants = variants;
+  if (repeat_interval !== undefined && ['none', 'monthly', 'bimonthly', 'quarterly'].includes(repeat_interval)) {
+    updates.repeat_interval = repeat_interval;
+  }
 
   const { data: deal, error } = await supabase
     .from('deals')

@@ -119,6 +119,14 @@ export default function ScanPage() {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const scannerContainerId = 'qr-reader';
 
+  // Open straight into the QR scanner when linked with ?mode=qr
+  // (e.g. the dashboard "Or scan QR code" shortcut).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'qr') {
+      setMode('qr');
+    }
+  }, []);
+
   // Start/stop camera scanner when mode changes
   useEffect(() => {
     if (mode === 'qr' && step === 'input') {

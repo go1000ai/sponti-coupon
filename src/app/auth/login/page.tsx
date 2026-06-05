@@ -56,6 +56,9 @@ function LoginForm() {
         window.location.href = '/vendor/dashboard';
       } else if (data.role === 'admin') {
         window.location.href = '/admin';
+      } else if (data.role === 'worker') {
+        // Staff accounts land on their redeem-only screen.
+        window.location.href = '/staff/redeem';
       } else if (data.role === 'customer') {
         window.location.href = redirect !== '/' ? redirect : '/dashboard';
       } else {

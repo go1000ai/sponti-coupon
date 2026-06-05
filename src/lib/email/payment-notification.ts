@@ -86,7 +86,7 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
 
           <div style="padding: 20px 24px; border-top: 1px solid #eee; text-align: center;">
             <p style="color: #aaa; font-size: 12px; margin: 0;">
-              SpontiCoupon &bull; Orlando, FL 32801
+              SpontiCoupon &bull; 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828
             </p>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 import { rankDeals } from '@/lib/ranking/deal-ranker';
 import { loadRankingConfig } from '@/lib/ranking/ranking-weights';
-import { slugify } from '@/lib/utils';
+import { generateUniqueDealSlug } from '@/lib/deal-slug';
 import { notifyNewDeal } from '@/lib/email/admin-notification';
 
 export const runtime = 'edge';
@@ -201,6 +201,70 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
   }
 
+  // Draft mode — save work-in-progress immediately, BEFORE the publish gates.
+  // Drafts aren't published, so they must not be blocked by an inactive/trialing
+  // subscription, a missing business address, or the monthly deal cap. Those
+  // gates only apply when the deal is actually published (active/scheduled).
+  if (body.status === 'draft') {
+    const {
+      deal_type, title, description, original_price, deal_price,
+      deposit_amount, max_claims, starts_at, expires_at, timezone, image_url,
+      location_ids, website_url, terms_and_conditions, video_urls, amenities,
+      how_it_works, highlights, fine_print, image_urls, search_tags,
+      requires_appointment, variants,
+    } = body;
+    const discount_percentage = original_price && deal_price
+      ? ((original_price - deal_price) / original_price) * 100
+      : 0;
+    const now = new Date().toISOString();
+    const { data: draft, error: draftErr } = await db
+      .from('deals')
+      .insert({
+        vendor_id: vendorId,
+        deal_type: deal_type || 'regular',
+        title: title || 'Untitled Draft',
+        description: description || null,
+        original_price: original_price || 0,
+        deal_price: deal_price || 0,
+        discount_percentage,
+        deposit_amount: deposit_amount || null,
+        max_claims: max_claims || 50,
+        starts_at: starts_at || now,
+        expires_at: expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        status: 'draft',
+        image_url: image_url || null,
+        image_urls: image_urls || [],
+        location_ids: location_ids || null,
+        website_url: website_url || null,
+        terms_and_conditions: terms_and_conditions || null,
+        video_urls: video_urls || [],
+        amenities: amenities || [],
+        how_it_works: how_it_works || null,
+        highlights: highlights || [],
+        fine_print: fine_print || null,
+        requires_appointment: requires_appointment || false,
+        search_tags: search_tags || [],
+        variants: (deal_type === 'sponti_coupon' ? [] : variants) || [],
+        repeat_interval: ['monthly', 'bimonthly', 'quarterly'].includes(body.repeat_interval)
+          ? body.repeat_interval
+          : 'none',
+      })
+      .select()
+      .single();
+
+    if (draftErr) {
+      return NextResponse.json({ error: draftErr.message }, { status: 500 });
+    }
+    // Generate SEO slug
+    if (draft) {
+      const slug = await generateUniqueDealSlug(db, (vendor.business_name || '') + ' ' + (title || 'deal'), draft.id);
+      await db.from('deals').update({ slug }).eq('id', draft.id);
+      draft.slug = slug;
+    }
+    return NextResponse.json({ deal: draft });
+  }
+
   // Admin skips subscription and location checks
   if (!isAdmin) {
     if (!vendor?.subscription_tier || vendor.subscription_status !== 'active') {
@@ -280,61 +344,15 @@ export async function POST(request: NextRequest) {
     requires_appointment, variants, redemption_hours,
   } = body;
 
+  // Recurring deal cadence — sanitize to the allowed set (default one-time).
+  const repeat_interval = ['monthly', 'bimonthly', 'quarterly'].includes(body.repeat_interval)
+    ? body.repeat_interval
+    : 'none';
+
   // Cap Sponti deal quantity at 50
   const finalMaxClaims = deal_type === 'sponti_coupon' && (!max_claims || max_claims > 50)
     ? 50
     : max_claims;
-
-  // Draft mode — save the deal immediately with minimal validation
-  if (body.status === 'draft') {
-    const discount_percentage = original_price && deal_price
-      ? ((original_price - deal_price) / original_price) * 100
-      : 0;
-    const now = new Date().toISOString();
-    const { data: draft, error: draftErr } = await db
-      .from('deals')
-      .insert({
-        vendor_id: vendorId,
-        deal_type: deal_type || 'regular',
-        title: title || 'Untitled Draft',
-        description: description || null,
-        original_price: original_price || 0,
-        deal_price: deal_price || 0,
-        discount_percentage,
-        deposit_amount: deposit_amount || null,
-        max_claims: max_claims || 50,
-        starts_at: starts_at || now,
-        expires_at: expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-        status: 'draft',
-        image_url: image_url || null,
-        image_urls: image_urls || [],
-        location_ids: location_ids || null,
-        website_url: website_url || null,
-        terms_and_conditions: terms_and_conditions || null,
-        video_urls: video_urls || [],
-        amenities: amenities || [],
-        how_it_works: how_it_works || null,
-        highlights: highlights || [],
-        fine_print: fine_print || null,
-        requires_appointment: requires_appointment || false,
-        search_tags: search_tags || [],
-        variants: (deal_type === 'sponti_coupon' ? [] : variants) || [],
-      })
-      .select()
-      .single();
-
-    if (draftErr) {
-      return NextResponse.json({ error: draftErr.message }, { status: 500 });
-    }
-    // Generate SEO slug
-    if (draft) {
-      const slug = slugify((vendor.business_name || '') + ' ' + (title || 'deal')) + '-' + draft.id.slice(0, 8);
-      await db.from('deals').update({ slug }).eq('id', draft.id);
-      draft.slug = slug;
-    }
-    return NextResponse.json({ deal: draft });
-  }
 
   // Check if vendor is trying to schedule a future deal without the custom_scheduling feature (admin skips)
   if (!isAdmin && new Date(starts_at) > new Date() && !tierConfig.custom_scheduling) {
@@ -394,8 +412,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Determine if the deal is scheduled for the future
-    const dealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
+    // A future start date means the deal is scheduled: keep it out of public
+    // view ('draft') and flag it so the activate-scheduled cron flips it live.
+    const isFuture = new Date(starts_at) > new Date();
+    const dealStatus = isFuture ? 'draft' : 'active';
 
     // Create the deal with benchmark reference
     const { data: deal, error: createError } = await db
@@ -414,6 +434,7 @@ export async function POST(request: NextRequest) {
         expires_at,
         timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         status: dealStatus,
+        is_scheduled: isFuture,
         image_url,
         image_urls: image_urls || [],
         benchmark_deal_id: regularDeal.id,
@@ -429,6 +450,7 @@ export async function POST(request: NextRequest) {
         search_tags: search_tags || [],
         variants: [], // Sponti deals do not support variants
         redemption_hours: redemption_hours || null,
+        repeat_interval,
       })
       .select()
       .single();
@@ -439,7 +461,7 @@ export async function POST(request: NextRequest) {
 
     // Generate SEO slug
     if (deal) {
-      const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
+      const slug = await generateUniqueDealSlug(db, (vendor.business_name || '') + ' ' + title, deal.id);
       await db.from('deals').update({ slug }).eq('id', deal.id);
       deal.slug = slug;
     }
@@ -492,8 +514,10 @@ export async function POST(request: NextRequest) {
     }, { status: 400 });
   }
 
-  // Determine if the deal is scheduled for the future
-  const regularDealStatus = new Date(starts_at) > new Date() ? 'draft' : 'active';
+  // A future start date means the deal is scheduled: keep it out of public
+  // view ('draft') and flag it so the activate-scheduled cron flips it live.
+  const isFuture = new Date(starts_at) > new Date();
+  const regularDealStatus = isFuture ? 'draft' : 'active';
 
   const { data: deal, error: createError } = await db
     .from('deals')
@@ -511,6 +535,7 @@ export async function POST(request: NextRequest) {
       expires_at,
       timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
       status: regularDealStatus,
+      is_scheduled: isFuture,
       image_url,
       image_urls: image_urls || [],
       location_ids: location_ids || null,
@@ -524,6 +549,7 @@ export async function POST(request: NextRequest) {
       requires_appointment: requires_appointment || false,
       search_tags: search_tags || [],
       variants: variants || [],
+      repeat_interval,
     })
     .select()
     .single();
@@ -534,7 +560,7 @@ export async function POST(request: NextRequest) {
 
   // Generate SEO slug
   if (deal) {
-    const slug = slugify((vendor.business_name || '') + ' ' + title) + '-' + deal.id.slice(0, 8);
+    const slug = await generateUniqueDealSlug(db, (vendor.business_name || '') + ' ' + title, deal.id);
     await db.from('deals').update({ slug }).eq('id', deal.id);
     deal.slug = slug;
   }

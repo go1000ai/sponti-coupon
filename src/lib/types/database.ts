@@ -1,10 +1,41 @@
 export type DealType = 'regular' | 'sponti_coupon';
 export type DealStatus = 'draft' | 'active' | 'expired' | 'paused';
+/** Auto-repost cadence for recurring deals. */
+export type RepeatInterval = 'none' | 'monthly' | 'bimonthly' | 'quarterly';
 export type NotificationType = 'new_deal' | 'deal_expiring' | 'redemption_confirmed' | 'digest';
 export type NotificationChannel = 'push' | 'email';
 export type SubscriptionTier = 'starter' | 'pro' | 'business' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete';
-export type UserRole = 'vendor' | 'customer' | 'admin';
+export type UserRole = 'vendor' | 'customer' | 'admin' | 'worker';
+
+/** Per-worker feature permissions. `redeem` is always granted; the rest are owner-toggled. */
+export interface WorkerPermissions {
+  redeem: boolean;
+  loyalty: boolean;
+  deals: boolean;
+  analytics: boolean;
+  appointments: boolean;
+}
+
+export const DEFAULT_WORKER_PERMISSIONS: WorkerPermissions = {
+  redeem: true,
+  loyalty: false,
+  deals: false,
+  analytics: false,
+  appointments: false,
+};
+
+export interface WorkerAccount {
+  id: string;
+  vendor_id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  permissions: WorkerPermissions;
+  status: 'active' | 'disabled';
+  created_at: string;
+  updated_at: string;
+}
 export type PaymentProcessorType = 'stripe' | 'square' | 'paypal' | 'venmo' | 'zelle' | 'cashapp';
 export type LoyaltyProgramType = 'punch_card' | 'points';
 export type LoyaltyTransactionType = 'earn_punch' | 'earn_points' | 'redeem_punch_reward' | 'redeem_points_reward';
@@ -146,6 +177,8 @@ export interface DealVariant {
 export interface Deal {
   id: string;
   slug: string;
+  /** Retired slugs kept so old URLs can 301-redirect to the current slug. */
+  previous_slugs?: string[];
   vendor_id: string;
   deal_type: DealType;
   title: string;
@@ -160,6 +193,10 @@ export interface Deal {
   expires_at: string;
   timezone: string;
   status: DealStatus;
+  /** True when a 'draft' deal is actually scheduled to auto-publish at starts_at. */
+  is_scheduled: boolean;
+  /** Auto-repost cadence after expiry. 'none' = one-time (default). */
+  repeat_interval: RepeatInterval;
   image_url: string | null;
   image_urls: string[];
   benchmark_deal_id: string | null;

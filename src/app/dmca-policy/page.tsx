@@ -46,7 +46,7 @@ export default function DmcaPolicyPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-3 text-sm space-y-1">
             <p><strong>Agent:</strong> Legal Department, Online Commerce Hub, LLC</p>
             <p><strong>Company:</strong> Online Commerce Hub, LLC DBA SpontiCoupon</p>
-            <p><strong>Address:</strong> Orlando, FL 32801, United States</p>
+            <p><strong>Address:</strong> 3801 Avalon Park Blvd East, Suite 200, Orlando, FL 32828, United States</p>
             <p><strong>Email:</strong>{' '}
               <a href="mailto:legal@sponticoupon.com" className="text-primary-500 hover:underline">
                 legal@sponticoupon.com
