@@ -35,3 +35,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# sensitive contact / lead data — PII, never commit
+/contacts-i-drive.json
+/marketing/leads/
+
+# large media artifacts (Remotion renders, voiceover audio, marketing assets)
+/remotion/out/
+/remotion/public/audio/
+/remotion/src/assets/audio/
+/remotion/public/screenshots/
+/marketing/flyer-*.jpg
