@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { generateOAuthNonce, setOAuthNonceCookie, encodeOAuthState } from '@/lib/oauth-state';
 
 const SQUARE_BASE_URL = process.env.SQUARE_ENVIRONMENT === 'production'
   ? 'https://connect.squareup.com'
@@ -40,7 +41,13 @@ export async function GET(request: NextRequest) {
     'ONLINE_STORE_SITE_READ',
   ].join('+');
 
-  const authorizeUrl = `${SQUARE_BASE_URL}/oauth2/authorize?client_id=${clientId}&scope=${scopes}&session=false&state=${user.id}`;
+  // CSRF nonce in an HttpOnly cookie; identity is re-derived from the session
+  // at the callback, so `state` is only used to carry the nonce.
+  const nonce = generateOAuthNonce();
+  const state = encodeOAuthState({ userId: user.id, nonce });
+  const authorizeUrl = `${SQUARE_BASE_URL}/oauth2/authorize?client_id=${clientId}&scope=${scopes}&session=false&state=${state}`;
 
-  return NextResponse.redirect(authorizeUrl);
+  const res = NextResponse.redirect(authorizeUrl);
+  setOAuthNonceCookie(res, 'square', nonce);
+  return res;
 }

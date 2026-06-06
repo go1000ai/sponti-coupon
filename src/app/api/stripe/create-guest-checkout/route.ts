@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
+import { rateLimit } from '@/lib/rate-limit';
 import { SUBSCRIPTION_TIERS } from '@/lib/types/database';
 import type { SubscriptionTier } from '@/lib/types/database';
 
 const VALID_TIERS = ['starter', 'pro', 'business', 'enterprise'];
 
 export async function POST(request: NextRequest) {
+  // Unauthenticated (guest signup) — cap Stripe Checkout Session creation per IP.
+  const limited = rateLimit(request, { maxRequests: 15, windowMs: 10 * 60 * 1000, identifier: 'guest-checkout' });
+  if (limited) return limited;
+
   try {
     const { tier, interval = 'month' } = await request.json();
 

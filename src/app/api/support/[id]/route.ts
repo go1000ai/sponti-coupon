@@ -125,7 +125,10 @@ export async function POST(
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     fetch(`${appUrl}/api/support/ai-reply`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-internal-secret': process.env.SUPPORT_INTERNAL_SECRET || '',
+      },
       body: JSON.stringify({ ticket_id: id }),
     }).catch(err => console.error('[AI Reply] Trigger error:', err));
   }

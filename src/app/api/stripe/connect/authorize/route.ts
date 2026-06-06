@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getStripe } from '@/lib/stripe';
+import { generateOAuthNonce, setOAuthNonceCookie } from '@/lib/oauth-state';
 
 // GET /api/stripe/connect/authorize
 // Creates a Stripe Standard account (or reuses existing) and redirects vendor to onboarding
@@ -46,15 +47,21 @@ export async function GET(request: NextRequest) {
         .eq('id', user.id);
     }
 
+    // CSRF nonce — echoed in the return_url and set as an HttpOnly cookie.
+    // The callback re-derives the vendor id from the session, not from the URL.
+    const nonce = generateOAuthNonce();
+
     // Create an Account Link for onboarding
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${appUrl}/api/stripe/connect/authorize`,
-      return_url: `${appUrl}/api/stripe/connect/callback?account_id=${accountId}&vendor_id=${user.id}`,
+      return_url: `${appUrl}/api/stripe/connect/callback?account_id=${accountId}&nonce=${nonce}`,
       type: 'account_onboarding',
     });
 
-    return NextResponse.redirect(accountLink.url);
+    const res = NextResponse.redirect(accountLink.url);
+    setOAuthNonceCookie(res, 'stripe', nonce);
+    return res;
   } catch (error) {
     console.error('[Stripe Connect] Account Link error:', error);
     return NextResponse.redirect(

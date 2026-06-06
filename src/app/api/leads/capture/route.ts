@@ -18,8 +18,16 @@ export async function POST(request: NextRequest) {
 
   const { name, email, phone, business_name, source, notes, sms_consent } = body;
 
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  if (!email || typeof email !== 'string' || !email.includes('@') || email.length > 254) {
     return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
+  }
+
+  // Reject oversized fields so they can't be relayed to the admin email / GHL webhook.
+  const overLimit = [
+    [name, 200], [phone, 40], [business_name, 200], [source, 80], [notes, 2000],
+  ].some(([v, max]) => typeof v === 'string' && v.length > (max as number));
+  if (overLimit) {
+    return NextResponse.json({ error: 'One or more fields exceed the maximum length' }, { status: 400 });
   }
 
   const supabase = await createServiceRoleClient();

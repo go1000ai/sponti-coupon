@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { randomBytes } from 'crypto';
+import { generateOAuthNonce, setOAuthNonceCookie, encodeOAuthState } from '@/lib/oauth-state';
 
 const TIKTOK_AUTH_URL = 'https://www.tiktok.com/v2/auth/authorize/';
 
@@ -36,16 +36,14 @@ export async function GET(request: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').trim();
   const callbackUrl = `${appUrl}/api/social/connect/tiktok/callback`;
 
-  const state = JSON.stringify({
-    csrf: randomBytes(16).toString('hex'),
-    userId: user.id,
-    isBrand,
-  });
-  const encodedState = Buffer.from(state).toString('base64url');
+  const nonce = generateOAuthNonce();
+  const encodedState = encodeOAuthState({ userId: user.id, isBrand, nonce });
 
   const scopes = 'user.info.basic,video.upload';
 
   const authUrl = `${TIKTOK_AUTH_URL}?client_key=${clientKey}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scopes)}&state=${encodedState}&response_type=code`;
 
-  return NextResponse.redirect(authUrl);
+  const res = NextResponse.redirect(authUrl);
+  setOAuthNonceCookie(res, 'tiktok', nonce);
+  return res;
 }

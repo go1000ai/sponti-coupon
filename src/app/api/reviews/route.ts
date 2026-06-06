@@ -164,6 +164,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate claim_id ownership — only attribute a claim that actually belongs
+    // to this customer (and matches the deal). Otherwise drop it rather than
+    // trusting an arbitrary, possibly someone else's, claim id from the body.
+    let validatedClaimId: string | null = null;
+    if (claim_id) {
+      let claimQuery = supabase
+        .from('claims')
+        .select('id')
+        .eq('id', claim_id)
+        .eq('customer_id', user.id);
+      if (deal_id) claimQuery = claimQuery.eq('deal_id', deal_id);
+      const { data: ownedClaim } = await claimQuery.maybeSingle();
+      validatedClaimId = ownedClaim?.id ?? null;
+    }
+
     // Create review
     const { data: review, error: insertError } = await supabase
       .from('reviews')
@@ -171,7 +186,7 @@ export async function POST(request: NextRequest) {
         vendor_id,
         customer_id: user.id,
         deal_id: deal_id || null,
-        claim_id: claim_id || null,
+        claim_id: validatedClaimId,
         rating,
         comment: sanitizeText(comment),
         is_verified: true, // They redeemed a deal, so it's verified

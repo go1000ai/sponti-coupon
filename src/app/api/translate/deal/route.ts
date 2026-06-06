@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { rateLimit } from '@/lib/rate-limit';
 import { GoogleGenAI } from '@google/genai';
+
+// Public endpoint (called by unauthenticated visitors browsing deals in Spanish),
+// so abuse protection is rate-limiting + batch caps rather than auth.
+const MAX_BATCH = 25;
 
 // POST /api/translate/deal — translate deal content to a target locale
 // Accepts: { dealId: string, locale: string }
 // Returns cached translation or generates one via Gemini
 export async function POST(request: NextRequest) {
+  // 60 single-deal translations / 5 min / IP — generous for a page of deals,
+  // but caps AI token-burn from an unauthenticated caller.
+  const limited = rateLimit(request, { maxRequests: 60, windowMs: 5 * 60 * 1000, identifier: 'translate-deal' });
+  if (limited) return limited;
+
   const body = await request.json();
   const { dealId, locale } = body;
 
@@ -117,11 +127,19 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 // POST /api/translate/deal — also support batch translation
 // To batch: POST with { dealIds: string[], locale: string }
 export async function PUT(request: NextRequest) {
+  // Batch endpoint fans out one AI call per uncached id — rate-limit and cap the
+  // array length so it can't be used as a cost-amplification relay.
+  const limited = rateLimit(request, { maxRequests: 20, windowMs: 5 * 60 * 1000, identifier: 'translate-deal-batch' });
+  if (limited) return limited;
+
   const body = await request.json();
   const { dealIds, locale } = body;
 
   if (!dealIds?.length || !locale || locale === 'en') {
     return NextResponse.json({ error: 'dealIds array and non-English locale required' }, { status: 400 });
+  }
+  if (!Array.isArray(dealIds) || dealIds.length > MAX_BATCH) {
+    return NextResponse.json({ error: `dealIds must be an array of at most ${MAX_BATCH}` }, { status: 400 });
   }
 
   const supabase = await createServiceRoleClient();

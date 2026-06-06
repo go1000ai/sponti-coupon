@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { getSquareForVendor } from '@/lib/square';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce, decodeOAuthState } from '@/lib/oauth-state';
 
 const SQUARE_TOKEN_URL = process.env.SQUARE_ENVIRONMENT === 'production'
   ? 'https://connect.squareup.com/oauth2/token'
@@ -12,14 +13,26 @@ const SQUARE_TOKEN_URL = process.env.SQUARE_ENVIRONMENT === 'production'
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const vendorId = searchParams.get('state');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  if (!code || !vendorId) {
+  if (!code) {
     return NextResponse.redirect(
       `${appUrl}/vendor/payments?connect_error=missing_params`
     );
   }
+
+  // CSRF + identity: verify the nonce cookie and take the vendor id from the
+  // authenticated session — never from the `state` param.
+  const state = decodeOAuthState<{ userId: string; nonce?: string }>(searchParams.get('state'));
+  if (!verifyOAuthNonce(request, 'square', state?.nonce)) {
+    return NextResponse.redirect(`${appUrl}/vendor/payments?connect_error=invalid_state`);
+  }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(`${appUrl}/auth/login?redirect=/vendor/payments`);
+  }
+  const vendorId = user.id;
 
   try {
     // Exchange authorization code for tokens

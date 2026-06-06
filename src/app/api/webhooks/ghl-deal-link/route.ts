@@ -16,13 +16,16 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
  * }
  */
 export async function POST(request: NextRequest) {
-  // Verify webhook secret (same secret as support webhook)
+  // Verify webhook secret (same secret as support webhook) — FAIL CLOSED:
+  // an unset secret must reject, not silently allow unauthenticated email sends.
   const secret = process.env.GHL_SUPPORT_WEBHOOK_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!secret) {
+    console.error('[GHL Deal Link Webhook] GHL_SUPPORT_WEBHOOK_SECRET is not configured — rejecting.');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 503 });
+  }
+  const authHeader = request.headers.get('authorization');
+  if (authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   let body: Record<string, unknown>;

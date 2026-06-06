@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyAdmin } from '@/lib/admin';
 import Anthropic from '@anthropic-ai/sdk';
+
+/**
+ * Authorize a caller: either an internal server-to-server call carrying the
+ * shared secret, OR an authenticated admin (the dashboard "draft" button).
+ * Returns null when authorized, or a NextResponse to short-circuit when not.
+ */
+async function authorize(request: NextRequest): Promise<NextResponse | null> {
+  const expected = process.env.SUPPORT_INTERNAL_SECRET;
+  const provided = request.headers.get('x-internal-secret');
+  if (expected && provided && provided === expected) return null; // internal call
+  if (await verifyAdmin()) return null; // admin dashboard call
+  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+}
 
 const SYSTEM_PROMPT = `You are the support assistant for SpontiCoupon, a coupon and deals marketplace platform.
 
@@ -17,6 +31,9 @@ Vendors create deals/coupons that customers claim and redeem. Subscription tiers
 
 // POST /api/support/ai-reply — Generate AI reply for a support ticket
 export async function POST(request: NextRequest) {
+  const denied = await authorize(request);
+  if (denied) return denied;
+
   const serviceClient = await createServiceRoleClient();
 
   let body: { ticket_id: string; draft_only?: boolean; admin_draft?: string };

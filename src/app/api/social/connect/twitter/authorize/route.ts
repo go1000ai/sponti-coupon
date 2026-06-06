@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { generateOAuthNonce, setOAuthNonceCookie, encodeOAuthState } from '@/lib/oauth-state';
 import { randomBytes, createHash } from 'crypto';
 
 const TWITTER_AUTH_URL = 'https://twitter.com/i/oauth2/authorize';
@@ -40,18 +41,15 @@ export async function GET(request: NextRequest) {
   const codeVerifier = randomBytes(32).toString('base64url');
   const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
 
-  // State includes the code_verifier (stored temporarily)
-  const state = JSON.stringify({
-    csrf: randomBytes(16).toString('hex'),
-    userId: user.id,
-    isBrand,
-    codeVerifier,
-  });
-  const encodedState = Buffer.from(state).toString('base64url');
+  // State includes the code_verifier (PKCE) plus the CSRF nonce.
+  const nonce = generateOAuthNonce();
+  const encodedState = encodeOAuthState({ userId: user.id, isBrand, codeVerifier, nonce });
 
   const scopes = 'tweet.write tweet.read users.read offline.access';
 
   const authUrl = `${TWITTER_AUTH_URL}?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent(scopes)}&state=${encodedState}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
 
-  return NextResponse.redirect(authUrl);
+  const res = NextResponse.redirect(authUrl);
+  setOAuthNonceCookie(res, 'twitter', nonce);
+  return res;
 }

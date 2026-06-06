@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce, decodeOAuthState } from '@/lib/oauth-state';
 
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v2/userinfo';
@@ -22,13 +23,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${settingsUrl}?gcal_error=auth_failed`);
   }
 
-  // Decode state
-  let state: { userId: string };
-  try {
-    state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
-  } catch {
+  // CSRF + identity: verify the nonce cookie and take the vendor id from the
+  // authenticated session — never from `state.userId`.
+  const state = decodeOAuthState<{ userId: string; nonce?: string }>(stateParam);
+  if (!verifyOAuthNonce(request, 'google-calendar', state?.nonce)) {
     return NextResponse.redirect(`${settingsUrl}?gcal_error=invalid_state`);
   }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(`${appUrl}/auth/login?redirect=/vendor/settings`);
+  }
+  const vendorId = user.id;
 
   const redirectUri = `${appUrl}/api/vendor/google-calendar/callback`;
 
@@ -77,7 +83,7 @@ export async function GET(request: NextRequest) {
     const { error: upsertError } = await supabase
       .from('vendor_google_calendar')
       .upsert({
-        vendor_id: state.userId,
+        vendor_id: vendorId,
         google_email: googleEmail,
         access_token_encrypted: encrypt(access_token),
         refresh_token_encrypted: encrypt(refresh_token),

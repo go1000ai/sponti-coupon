@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce } from '@/lib/oauth-state';
 
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   const error = request.nextUrl.searchParams.get('error');
 
   // Decode state early to determine correct redirect path
-  let state: { userId: string; isBrand: boolean } = { userId: '', isBrand: false };
+  let state: { userId: string; isBrand: boolean; nonce?: string } = { userId: '', isBrand: false };
   if (stateParam) {
     try {
       state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
@@ -31,9 +32,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`${basePath}${sep}social_error=${errorReason}`, appUrl));
   }
 
-  if (!state.userId) {
+  // CSRF + identity from session (never trust state.userId). Brand = admin-only.
+  if (!verifyOAuthNonce(request, 'instagram', state.nonce)) {
     return NextResponse.redirect(new URL(`${basePath}${sep}social_error=invalid_state`, appUrl));
   }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(new URL(`/auth/login?redirect=${encodeURIComponent(basePath)}`, appUrl));
+  }
+  const { data: sessionProfile } = await authClient
+    .from('user_profiles').select('role').eq('id', user.id).single();
+  if (state.isBrand && sessionProfile?.role !== 'admin') {
+    return NextResponse.redirect(new URL(`/vendor/social?social_error=admin_only`, appUrl));
+  }
+  const sessionUserId = user.id;
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
@@ -106,7 +119,7 @@ export async function GET(request: NextRequest) {
     const { error: upsertError } = await supabase
       .from('social_connections')
       .upsert({
-        vendor_id: state.isBrand ? null : state.userId,
+        vendor_id: state.isBrand ? null : sessionUserId,
         is_brand_account: state.isBrand,
         platform: 'instagram',
         access_token: encrypt(pageToken),

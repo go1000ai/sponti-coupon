@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { randomBytes } from 'crypto';
+import { generateOAuthNonce, setOAuthNonceCookie, encodeOAuthState } from '@/lib/oauth-state';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 
@@ -24,10 +24,8 @@ export async function GET(request: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').trim();
   const redirectUri = `${appUrl}/api/vendor/google-calendar/callback`;
 
-  const state = Buffer.from(JSON.stringify({
-    csrf: randomBytes(16).toString('hex'),
-    userId: user.id,
-  })).toString('base64url');
+  const nonce = generateOAuthNonce();
+  const state = encodeOAuthState({ userId: user.id, nonce });
 
   const params = new URLSearchParams({
     client_id: clientId,
@@ -39,5 +37,7 @@ export async function GET(request: NextRequest) {
     state,
   });
 
-  return NextResponse.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);
+  const res = NextResponse.redirect(`${GOOGLE_AUTH_URL}?${params.toString()}`);
+  setOAuthNonceCookie(res, 'google-calendar', nonce);
+  return res;
 }

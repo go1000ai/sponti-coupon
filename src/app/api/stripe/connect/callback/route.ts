@@ -1,20 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
+import { verifyOAuthNonce } from '@/lib/oauth-state';
 
 // GET /api/stripe/connect/callback?account_id=acct_xxx&vendor_id=xxx
 // Called when vendor returns from Stripe onboarding
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const accountId = searchParams.get('account_id');
-  const vendorId = searchParams.get('vendor_id');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  if (!accountId || !vendorId) {
+  if (!accountId) {
     return NextResponse.redirect(
       `${appUrl}/vendor/payments?connect_error=missing_params`
     );
   }
+
+  // CSRF + identity: verify the nonce cookie and take the vendor id from the
+  // authenticated session — never from the `vendor_id` query param.
+  if (!verifyOAuthNonce(request, 'stripe', searchParams.get('nonce'))) {
+    return NextResponse.redirect(`${appUrl}/vendor/payments?connect_error=invalid_state`);
+  }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(`${appUrl}/auth/login?redirect=/vendor/payments`);
+  }
+  const vendorId = user.id;
 
   try {
     // Check the account status

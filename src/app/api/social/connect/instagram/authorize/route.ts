@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { randomBytes } from 'crypto';
+import { generateOAuthNonce, setOAuthNonceCookie, encodeOAuthState } from '@/lib/oauth-state';
 
 const META_OAUTH_URL = 'https://www.facebook.com/v21.0/dialog/oauth';
 
@@ -40,12 +40,8 @@ export async function GET(request: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').trim();
   const callbackUrl = `${appUrl}/api/social/connect/instagram/callback`;
 
-  const state = JSON.stringify({
-    csrf: randomBytes(16).toString('hex'),
-    userId: user.id,
-    isBrand,
-  });
-  const encodedState = Buffer.from(state).toString('base64url');
+  const nonce = generateOAuthNonce();
+  const encodedState = encodeOAuthState({ userId: user.id, isBrand, nonce });
 
   // Facebook Login for Business uses config_id instead of individual scopes
   const configId = process.env.META_LOGIN_CONFIG_ID;
@@ -54,5 +50,7 @@ export async function GET(request: NextRequest) {
     ? `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&config_id=${configId}&state=${encodedState}&response_type=code`
     : `${META_OAUTH_URL}?client_id=${appId}&redirect_uri=${encodeURIComponent(callbackUrl)}&scope=${encodeURIComponent('pages_manage_posts,pages_read_engagement,pages_show_list,instagram_basic,instagram_content_publish')}&state=${encodedState}&response_type=code`;
 
-  return NextResponse.redirect(authUrl);
+  const res = NextResponse.redirect(authUrl);
+  setOAuthNonceCookie(res, 'instagram', nonce);
+  return res;
 }

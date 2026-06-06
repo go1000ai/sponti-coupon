@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce } from '@/lib/oauth-state';
 
 const TIKTOK_API_URL = 'https://open.tiktokapis.com/v2';
 
@@ -18,12 +19,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/vendor/social?social_error=access_denied', appUrl));
   }
 
-  let state: { userId: string; isBrand: boolean };
+  let state: { userId: string; isBrand: boolean; nonce?: string };
   try {
     state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
   } catch {
     return NextResponse.redirect(new URL('/vendor/social?social_error=invalid_state', appUrl));
   }
+
+  // CSRF + identity from session (never trust state.userId). Brand = admin-only.
+  if (!verifyOAuthNonce(request, 'tiktok', state.nonce)) {
+    return NextResponse.redirect(new URL('/vendor/social?social_error=invalid_state', appUrl));
+  }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(new URL('/auth/login?redirect=/admin?tab=social', appUrl));
+  }
+  const { data: sessionProfile } = await authClient
+    .from('user_profiles').select('role').eq('id', user.id).single();
+  if (state.isBrand && sessionProfile?.role !== 'admin') {
+    return NextResponse.redirect(new URL('/vendor/social?social_error=admin_only', appUrl));
+  }
+  const sessionUserId = user.id;
 
   const clientKey = process.env.TIKTOK_CLIENT_KEY;
   const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
@@ -72,7 +89,7 @@ export async function GET(request: NextRequest) {
     const { error: upsertError } = await supabase
       .from('social_connections')
       .upsert({
-        vendor_id: state.isBrand ? null : state.userId,
+        vendor_id: state.isBrand ? null : sessionUserId,
         is_brand_account: state.isBrand,
         platform: 'tiktok',
         access_token: encrypt(accessToken),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce } from '@/lib/oauth-state';
 
 /**
  * GET /api/social/connect/twitter/callback
@@ -16,12 +17,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/vendor/social?social_error=access_denied', appUrl));
   }
 
-  let state: { userId: string; isBrand: boolean; codeVerifier: string };
+  let state: { userId: string; isBrand: boolean; codeVerifier: string; nonce?: string };
   try {
     state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
   } catch {
     return NextResponse.redirect(new URL('/vendor/social?social_error=invalid_state', appUrl));
   }
+
+  // CSRF + identity from session (never trust state.userId). Brand = admin-only.
+  if (!verifyOAuthNonce(request, 'twitter', state.nonce)) {
+    return NextResponse.redirect(new URL('/vendor/social?social_error=invalid_state', appUrl));
+  }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(new URL('/auth/login?redirect=/admin?tab=social', appUrl));
+  }
+  const { data: sessionProfile } = await authClient
+    .from('user_profiles').select('role').eq('id', user.id).single();
+  if (state.isBrand && sessionProfile?.role !== 'admin') {
+    return NextResponse.redirect(new URL('/vendor/social?social_error=admin_only', appUrl));
+  }
+  const sessionUserId = user.id;
 
   const clientId = process.env.TWITTER_CLIENT_ID;
   const clientSecret = process.env.TWITTER_CLIENT_SECRET;
@@ -71,7 +88,7 @@ export async function GET(request: NextRequest) {
     const { error: upsertError } = await supabase
       .from('social_connections')
       .upsert({
-        vendor_id: state.isBrand ? null : state.userId,
+        vendor_id: state.isBrand ? null : sessionUserId,
         is_brand_account: state.isBrand,
         platform: 'twitter',
         access_token: encrypt(accessToken),

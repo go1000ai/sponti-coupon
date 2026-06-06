@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceRoleClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { encrypt } from '@/lib/social/crypto';
+import { verifyOAuthNonce } from '@/lib/oauth-state';
 
 const META_GRAPH_URL = 'https://graph.facebook.com/v21.0';
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
   const error = request.nextUrl.searchParams.get('error');
 
   // Decode state early to determine correct redirect path
-  let state: { userId: string; isBrand: boolean } = { userId: '', isBrand: false };
+  let state: { userId: string; isBrand: boolean; nonce?: string } = { userId: '', isBrand: false };
   if (stateParam) {
     try {
       state = JSON.parse(Buffer.from(stateParam, 'base64url').toString());
@@ -32,9 +33,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(`${basePath}${sep}social_error=${errorReason}`, appUrl));
   }
 
-  if (!state.userId) {
+  // CSRF + identity: verify the nonce cookie and re-derive identity from the
+  // logged-in session (never trust state.userId). Brand connections are admin-only.
+  if (!verifyOAuthNonce(request, 'facebook', state.nonce)) {
     return NextResponse.redirect(new URL(`${basePath}${sep}social_error=invalid_state`, appUrl));
   }
+  const authClient = await createServerSupabaseClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  if (!user) {
+    return NextResponse.redirect(new URL(`/auth/login?redirect=${encodeURIComponent(basePath)}`, appUrl));
+  }
+  const { data: sessionProfile } = await authClient
+    .from('user_profiles').select('role').eq('id', user.id).single();
+  if (state.isBrand && sessionProfile?.role !== 'admin') {
+    return NextResponse.redirect(new URL(`/vendor/social?social_error=admin_only`, appUrl));
+  }
+  const sessionUserId = user.id;
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;
@@ -188,10 +202,10 @@ export async function GET(request: NextRequest) {
       avatar: p.picture?.data?.url || null,
     }));
 
-    console.log('[FB OAuth] Saving pages for picker. userId:', state.userId, 'isBrand:', state.isBrand, 'pageCount:', pages.length);
+    console.log('[FB OAuth] Saving pages for picker. userId:', sessionUserId, 'isBrand:', state.isBrand, 'pageCount:', pages.length);
 
     // Delete any existing facebook connection for this vendor to avoid upsert conflicts
-    const vendorId = state.isBrand ? null : state.userId;
+    const vendorId = state.isBrand ? null : sessionUserId;
     await supabase
       .from('social_connections')
       .delete()
