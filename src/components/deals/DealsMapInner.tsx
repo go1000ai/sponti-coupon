@@ -45,44 +45,44 @@ function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
   const imageUrl = deal.image_url || (deal.image_urls && deal.image_urls.length > 0 ? deal.image_urls[0] : null);
 
   return (
-    <div className="w-60">
+    <div className="w-40">
       {imageUrl && (
-        <Link href={`/deals/${deal.id}`} className="block mb-2">
+        <Link href={`/deals/${deal.id}`} className="block mb-1.5">
           <img
             src={imageUrl}
             alt={deal.title}
-            className="w-full h-28 object-cover rounded-lg"
+            className="w-full h-16 object-cover rounded-md"
           />
         </Link>
       )}
-      <div className="flex items-start gap-2 mb-2">
+      <div className="flex items-center gap-1.5 mb-1">
         <DealTypeBadge type={deal.deal_type} size="sm" />
-        <span className="text-xs font-bold text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">
+        <span className="text-[10px] font-bold text-primary-500 bg-primary-50 px-1.5 py-0.5 rounded-full">
           {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
         </span>
       </div>
       <Link
         href={`/deals/${deal.id}`}
-        className="font-bold text-sm text-gray-900 hover:text-primary-500 transition-colors line-clamp-2 block"
+        className="font-bold text-xs leading-snug text-gray-900 hover:text-primary-500 transition-colors line-clamp-2 block"
       >
         {deal.title}
       </Link>
       {vendor && (
-        <p className="text-xs text-gray-500 mt-1">{vendor.business_name}</p>
+        <p className="text-[10px] text-gray-500 mt-0.5 truncate">{vendor.business_name}</p>
       )}
-      <div className="flex items-center gap-2 mt-2">
-        <span className="text-gray-400 line-through text-xs">{formatCurrency(deal.original_price)}</span>
-        <span className="text-primary-500 font-bold text-sm">{formatCurrency(deal.deal_price)}</span>
+      <div className="flex items-center gap-1.5 mt-1">
+        <span className="text-gray-400 line-through text-[10px]">{formatCurrency(deal.original_price)}</span>
+        <span className="text-primary-500 font-bold text-xs">{formatCurrency(deal.deal_price)}</span>
+        {distance != null && (
+          <span className="flex items-center gap-0.5 ml-auto text-[10px] text-gray-400">
+            <Navigation className="w-2.5 h-2.5" />
+            {distance.toFixed(1)}
+          </span>
+        )}
       </div>
-      {distance != null && (
-        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
-          <Navigation className="w-3 h-3" />
-          {t('dealsMap.milesAway', { distance: distance.toFixed(1) })}
-        </div>
-      )}
       <Link
         href={`/deals/${deal.id}`}
-        className="mt-3 block text-center bg-gradient-to-r from-primary-500 to-orange-500 text-white text-xs font-semibold py-2 rounded-lg hover:from-primary-600 hover:to-orange-600 transition-all"
+        className="mt-2 block text-center bg-gradient-to-r from-primary-500 to-orange-500 text-white text-[11px] font-semibold py-1.5 rounded-md hover:from-primary-600 hover:to-orange-600 transition-all"
       >
         {t('dealsMap.viewDeal')}
       </Link>
@@ -227,7 +227,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
               position={[deal.vendor!.lat!, deal.vendor!.lng!]}
               icon={deal.deal_type === 'sponti_coupon' ? spontiIcon : steadyIcon}
             >
-              <Popup maxWidth={280} minWidth={260}>
+              <Popup maxWidth={200} minWidth={160}>
                 <DealPopupCard deal={deal} />
               </Popup>
             </Marker>

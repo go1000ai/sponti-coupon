@@ -452,6 +452,6 @@ body {
     border-radius: 9999px !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
   }
-  /* Keep the popup comfortably inside the screen on small viewports. */
-  .leaflet-popup-content { margin: 14px 16px !important; }
+  /* Keep the popup compact and inside the screen on small viewports. */
+  .leaflet-popup-content { margin: 10px 12px !important; }
 }
