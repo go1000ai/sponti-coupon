@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, ArrowRight, Gift, ShieldCheck, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n';
 
 export type WizardAnswers = Record<string, 'yes' | 'no'>;
 
@@ -14,36 +15,15 @@ export function formatAnswersForNotes(answers: WizardAnswers): string {
 
 interface Question {
   id: string;
-  prompt: string;
-  yesLabel?: string;
-  noLabel?: string;
+  key: string;
 }
 
+// Prompts and yes/no labels live in i18n at foundingVendor.wizard.<key>[yes|no]
 const QUESTIONS: Question[] = [
-  {
-    id: 'decision_maker',
-    prompt: 'Are you the owner or the person who decides on promotions?',
-    yesLabel: 'Yes, that’s me',
-    noLabel: 'No, not me',
-  },
-  {
-    id: 'slow_days',
-    prompt: 'Do you have slow days or unbooked time you’d love to fill?',
-    yesLabel: 'Yes, all the time',
-    noLabel: 'No, we’re always booked',
-  },
-  {
-    id: 'ready_to_post',
-    prompt: 'Are you ready to post your first deal within 7 days?',
-    yesLabel: 'Yes, ready to go',
-    noLabel: 'Not yet',
-  },
-  {
-    id: 'weekly_checkin',
-    prompt: 'Are you open to a quick check-in each week as we refine the product together?',
-    yesLabel: 'Yes, happy to help',
-    noLabel: 'No, just want to use it',
-  },
+  { id: 'decision_maker', key: 'q1' },
+  { id: 'slow_days', key: 'q2' },
+  { id: 'ready_to_post', key: 'q3' },
+  { id: 'weekly_checkin', key: 'q4' },
 ];
 
 interface Props {
@@ -51,6 +31,7 @@ interface Props {
 }
 
 export function QualificationWizard({ onQualified }: Props) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<WizardAnswers>({});
   const [disqualified, setDisqualified] = useState(false);
@@ -84,7 +65,7 @@ export function QualificationWizard({ onQualified }: Props) {
     e.preventDefault();
     setDqError(null);
     if (!dqEmail.trim() || !dqEmail.includes('@')) {
-      setDqError('Please enter a valid email.');
+      setDqError(t('foundingVendor.wizard.dqEmailInvalid'));
       return;
     }
     setDqSubmitting(true);
@@ -104,7 +85,7 @@ export function QualificationWizard({ onQualified }: Props) {
       }
       setDqSaved(true);
     } catch (err) {
-      setDqError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setDqError(err instanceof Error ? err.message : t('foundingVendor.wizard.dqError'));
     } finally {
       setDqSubmitting(false);
     }
@@ -118,27 +99,27 @@ export function QualificationWizard({ onQualified }: Props) {
             <Gift className="w-7 h-7 text-amber-600" />
           </div>
           <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2">
-            The founding program isn&apos;t the right fit yet
+            {t('foundingVendor.wizard.dqTitle')}
           </h3>
           <p className="text-gray-600 text-sm mb-5">
-            No worries &mdash; our standard founders offer is still open. Same quality, slightly different terms.
+            {t('foundingVendor.wizard.dqBody')}
           </p>
 
           <div className="bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 rounded-2xl p-5 text-white text-left mb-5">
             <div className="flex items-center gap-2 mb-2">
               <Gift className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">Standard founders offer</span>
+              <span className="text-xs font-bold uppercase tracking-wider">{t('foundingVendor.wizard.dqOfferLabel')}</span>
             </div>
             <p className="text-2xl font-black leading-tight">
-              3 months free + <span className="text-amber-100">20% off forever</span>
+              {t('foundingVendor.wizard.dqOfferA')}<span className="text-amber-100">{t('foundingVendor.wizard.dqOfferStrong')}</span>
             </p>
-            <p className="text-white/90 text-xs mt-1">Available on Pro and Business plans &middot; while signups last</p>
+            <p className="text-white/90 text-xs mt-1">{t('foundingVendor.wizard.dqAvailable')}</p>
           </div>
 
           {!dqSaved ? (
             <form onSubmit={handleDqSubmit} className="text-left space-y-3 mb-4">
               <label className="block text-sm font-semibold text-gray-700">
-                Want us to follow up when the timing&apos;s better?
+                {t('foundingVendor.wizard.dqFollowupLabel')}
               </label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -160,13 +141,13 @@ export function QualificationWizard({ onQualified }: Props) {
                 className="w-full bg-gray-900 hover:bg-gray-800 disabled:opacity-60 text-white font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 {dqSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                {dqSubmitting ? 'Saving…' : 'Keep me posted'}
+                {dqSubmitting ? t('foundingVendor.wizard.dqSaving') : t('foundingVendor.wizard.dqSubmit')}
               </button>
             </form>
           ) : (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 text-emerald-700 text-sm flex items-center gap-2 justify-center">
               <CheckCircle2 className="w-4 h-4" />
-              We&apos;ll be in touch.
+              {t('foundingVendor.wizard.dqSaved')}
             </div>
           )}
 
@@ -174,7 +155,7 @@ export function QualificationWizard({ onQualified }: Props) {
             href="/pricing#plans"
             className="group inline-flex items-center justify-center gap-2 w-full bg-primary-500 hover:bg-primary-600 text-white font-extrabold py-3 rounded-xl transition-colors"
           >
-            See the standard offer
+            {t('foundingVendor.wizard.dqSeeOffer')}
             <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
           </Link>
 
@@ -190,7 +171,7 @@ export function QualificationWizard({ onQualified }: Props) {
             }}
             className="block w-full mt-3 text-xs text-gray-400 hover:text-gray-600"
           >
-            Go back and review my answers
+            {t('foundingVendor.wizard.dqGoBack')}
           </button>
         </div>
       </div>
@@ -209,12 +190,12 @@ export function QualificationWizard({ onQualified }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <ShieldCheck className="w-4 h-4" />
             <span className="text-[11px] font-bold uppercase tracking-wider">
-              See if you qualify
+              {t('foundingVendor.wizard.eyebrow')}
             </span>
           </div>
-          <h2 className="font-extrabold text-lg lg:text-3xl leading-tight">4 quick questions &middot; under 30 seconds</h2>
+          <h2 className="font-extrabold text-lg lg:text-3xl leading-tight">{t('foundingVendor.wizard.title')}</h2>
           <p className="hidden lg:block text-sm text-white/85 mt-3 leading-relaxed">
-            Answer yes to all four and you&rsquo;re in &mdash; no payment, no credit card.
+            {t('foundingVendor.wizard.sub')}
           </p>
         </div>
         {/* Progress bar */}
@@ -225,14 +206,14 @@ export function QualificationWizard({ onQualified }: Props) {
           />
         </div>
         <p className="relative text-[11px] text-white/80 mt-1.5">
-          Question {step + 1} of {QUESTIONS.length}
+          {t('foundingVendor.wizard.questionOf', { step: step + 1, total: QUESTIONS.length })}
         </p>
       </div>
 
       {/* Question body */}
       <div className="p-6 sm:p-8 lg:p-10 lg:flex-1 lg:flex lg:flex-col lg:justify-center">
         <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-6">
-          {q.prompt}
+          {t(`foundingVendor.wizard.${q.key}`)}
         </h3>
 
         <div className="grid sm:grid-cols-2 gap-3">
@@ -245,7 +226,7 @@ export function QualificationWizard({ onQualified }: Props) {
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <span className="font-bold text-gray-900">{q.yesLabel || 'Yes'}</span>
+              <span className="font-bold text-gray-900">{t(`foundingVendor.wizard.${q.key}yes`)}</span>
             </div>
             <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-primary-500 group-hover:translate-x-1 transition-all" />
           </button>
@@ -259,7 +240,7 @@ export function QualificationWizard({ onQualified }: Props) {
               <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
                 <span className="text-lg">&times;</span>
               </div>
-              <span className="font-semibold text-gray-700">{q.noLabel || 'No'}</span>
+              <span className="font-semibold text-gray-700">{t(`foundingVendor.wizard.${q.key}no`)}</span>
             </div>
           </button>
         </div>
@@ -271,7 +252,7 @@ export function QualificationWizard({ onQualified }: Props) {
             className="mt-5 inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back
+            {t('foundingVendor.wizard.back')}
           </button>
         )}
       </div>

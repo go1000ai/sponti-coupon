@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useLanguage } from '@/lib/i18n';
 import {
   Mail, Lock, Phone, MapPin, Building2, CheckCircle, Gift, Sparkles, Store,
   Tag, Megaphone, DollarSign, Zap, Clock, ArrowRight, CheckCircle2, Star,
@@ -24,16 +25,17 @@ interface SpotStatus {
 }
 
 const BENEFITS = [
-  { icon: Tag, title: '150 deals/mo', desc: '50 Sponti + 100 Steady' },
-  { icon: Megaphone, title: 'We post to social', desc: 'Our FB + IG, every deal' },
-  { icon: DollarSign, title: 'Zero commissions', desc: 'Keep 100% of every sale' },
-  { icon: Zap, title: 'Full Business plan', desc: 'Same access as $199/mo' },
-  { icon: ShieldCheck, title: 'No credit card', desc: 'Not at signup. Period.' },
-  { icon: Star, title: '20% off forever', desc: 'If you stay after trial' },
+  { icon: Tag, key: 'b1' },
+  { icon: Megaphone, key: 'b2' },
+  { icon: DollarSign, key: 'b3' },
+  { icon: Zap, key: 'b4' },
+  { icon: ShieldCheck, key: 'b5' },
+  { icon: Star, key: 'b6' },
 ];
 
 export default function FoundingVendorPage() {
   const router = useRouter();
+  const { t, setLocale } = useLanguage();
   const [status, setStatus] = useState<SpotStatus | null>(null);
   const [animatedUsed, setAnimatedUsed] = useState(0);
   const [form, setForm] = useState({
@@ -57,6 +59,12 @@ export default function FoundingVendorPage() {
       .then((d: SpotStatus) => setStatus(d))
       .catch(() => setStatus({ used: 0, max: MAX_SPOTS, remaining: MAX_SPOTS, full: false }));
   }, []);
+
+  // Honor ?lang=es / ?lang=en so a scanned Spanish QR opens the page in Spanish
+  useEffect(() => {
+    const lang = new URLSearchParams(window.location.search).get('lang');
+    if (lang === 'es' || lang === 'en') setLocale(lang);
+  }, [setLocale]);
 
   // Animated count-up for the "X of 15" number
   useEffect(() => {
@@ -102,13 +110,13 @@ export default function FoundingVendorPage() {
     e.preventDefault();
     setError('');
 
-    if (form.password !== form.confirmPassword) return setError('Passwords do not match');
-    if (form.password.length < 6) return setError('Password must be at least 6 characters');
-    if (!form.businessName.trim()) return setError('Business name is required');
+    if (form.password !== form.confirmPassword) return setError(t('foundingVendor.errPasswordsMatch'));
+    if (form.password.length < 6) return setError(t('foundingVendor.errPasswordLength'));
+    if (!form.businessName.trim()) return setError(t('foundingVendor.errBusinessName'));
     if (!form.isOnlineBusiness && (!form.address.trim() || !form.city.trim() || !form.state.trim() || !form.zip.trim())) {
-      return setError('Business address is required for physical locations');
+      return setError(t('foundingVendor.errAddress'));
     }
-    if (!agree) return setError('Please agree to the Vendor Terms');
+    if (!agree) return setError(t('foundingVendor.errAgree'));
 
     setLoading(true);
     const supabase = createClient();
@@ -192,13 +200,12 @@ export default function FoundingVendorPage() {
                 <CheckCircle className="w-12 h-12 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">You&rsquo;re almost in!</h1>
-            <p className="text-gray-600 mb-1">We sent a confirmation link to</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{t('foundingVendor.successTitle')}</h1>
+            <p className="text-gray-600 mb-1">{t('foundingVendor.successSentTo')}</p>
             <p className="text-lg font-bold text-primary-600 mb-6">{form.email}</p>
             <div className="bg-gradient-to-br from-primary-50 to-orange-50 border border-primary-100 rounded-2xl p-5">
               <p className="text-sm text-gray-700 leading-relaxed">
-                Click the link to activate your <strong>Founding Vendor</strong> account.
-                Your 3 free months start the moment you confirm. No credit card needed.
+                {t('foundingVendor.successBodyA')}<strong>{t('foundingVendor.successBodyStrong')}</strong>{t('foundingVendor.successBodyB')}
               </p>
             </div>
           </div>
@@ -217,13 +224,12 @@ export default function FoundingVendorPage() {
             <div className="inline-flex bg-gradient-to-br from-primary-500 to-orange-500 rounded-full p-5 mb-6 shadow-xl">
               <Sparkles className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">All 15 founding spots are claimed</h1>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{t('foundingVendor.soldTitle')}</h1>
             <p className="text-gray-600 mb-6">
-              You can still get in &mdash; and lock in <strong className="text-primary-600">20% off forever</strong>
-              {' '}as one of our first 200 vendors.
+              {t('foundingVendor.soldBodyA')}<strong className="text-primary-600">{t('foundingVendor.soldBodyStrong')}</strong>{t('foundingVendor.soldBodyB')}
             </p>
             <Link href="/pricing" className="btn-primary inline-flex items-center gap-2 px-8 py-3.5 text-base font-bold shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all">
-              See Pricing <ArrowRight className="w-4 h-4" />
+              {t('foundingVendor.seePricing')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -249,9 +255,9 @@ export default function FoundingVendorPage() {
         <div className="relative flex items-center justify-center gap-2 px-4">
           <Flame className="w-4 h-4 text-primary-400 animate-pulse" />
           <span className="font-bold text-primary-300">
-            Only {remaining} of {MAX_SPOTS} founding spots left
+            {t('foundingVendor.spotsLeft', { remaining, max: MAX_SPOTS })}
           </span>
-          <span className="hidden sm:inline text-gray-400">&middot; 3 months free &middot; no credit card</span>
+          <span className="hidden sm:inline text-gray-400">&middot; {t('foundingVendor.tickerNote')}</span>
         </div>
       </div>
 
@@ -268,44 +274,43 @@ export default function FoundingVendorPage() {
                 <div className="absolute inset-0 bg-primary-400 rounded-full blur opacity-50 animate-pulse" />
               </div>
               <span className="text-xs font-bold text-primary-700 uppercase tracking-wider">
-                Founding Vendor Offer
+                {t('foundingVendor.badge')}
               </span>
             </div>
 
             {/* Headline */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.02] text-gray-900 tracking-tight animate-fade-up" style={{ animationDelay: '100ms' }}>
-              3 months <span className="relative inline-block">
-                <span className="gradient-text">free</span>
+              {t('foundingVendor.h1Prefix')} <span className="relative inline-block">
+                <span className="gradient-text">{t('foundingVendor.h1Free')}</span>
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" preserveAspectRatio="none">
                   <path d="M2 8 Q 50 2, 100 6 T 198 6" stroke="url(#g1)" strokeWidth="4" fill="none" strokeLinecap="round" />
                   <defs><linearGradient id="g1"><stop offset="0%" stopColor="#E8632B" /><stop offset="100%" stopColor="#FF8F65" /></linearGradient></defs>
                 </svg>
               </span>.
               <br />
-              <span className="text-gray-900">No credit </span>
-              <span className="gradient-text">card</span>.
+              <span className="text-gray-900">{t('foundingVendor.h2Prefix')}</span>
+              <span className="gradient-text">{t('foundingVendor.h2Card')}</span>.
             </h1>
 
             {/* Subhead */}
             <p className="text-lg sm:text-xl text-gray-600 max-w-xl leading-relaxed animate-fade-up" style={{ animationDelay: '200ms' }}>
-              We&rsquo;re launching with <strong className="text-gray-900">15 founding vendors</strong>.
-              Full Business-plan access for 90 days. Walk away anytime &mdash; no card, no risk.
+              {t('foundingVendor.subheadA')}<strong className="text-gray-900">{t('foundingVendor.subheadStrong')}</strong>{t('foundingVendor.subheadB')}
             </p>
 
             {/* Live progress card */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/70 shadow-xl max-w-xl animate-fade-up" style={{ animationDelay: '300ms' }}>
               <div className="flex justify-between items-end mb-3">
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">Founding spots</p>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">{t('foundingVendor.foundingSpots')}</p>
                   <p className="text-3xl font-extrabold text-gray-900">
                     <span className="tabular-nums">{animatedUsed}</span>
                     <span className="text-gray-400 text-xl"> / {MAX_SPOTS}</span>
-                    <span className="text-base font-bold text-primary-600 ml-2">claimed</span>
+                    <span className="text-base font-bold text-primary-600 ml-2">{t('foundingVendor.claimed')}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-xs font-bold border border-primary-200">
                   <Clock className="w-3.5 h-3.5" />
-                  Limited
+                  {t('foundingVendor.limited')}
                 </div>
               </div>
               {/* Animated progress bar */}
@@ -319,7 +324,7 @@ export default function FoundingVendorPage() {
               </div>
               <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
                 <Flame className="w-3.5 h-3.5 text-orange-500" />
-                Spots usually fill in under 2 weeks
+                {t('foundingVendor.fillNote')}
               </p>
             </div>
 
@@ -327,7 +332,7 @@ export default function FoundingVendorPage() {
             <div className="grid sm:grid-cols-2 gap-3 max-w-2xl">
               {BENEFITS.map((b, i) => (
                 <div
-                  key={b.title}
+                  key={b.key}
                   className="group flex items-start gap-3 bg-white/80 backdrop-blur rounded-xl p-4 border border-white/70 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:bg-white transition-all duration-300 animate-fade-up"
                   style={{ animationDelay: `${i * 60 + 400}ms` }}
                 >
@@ -335,8 +340,8 @@ export default function FoundingVendorPage() {
                     <b.icon className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-900">{b.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{b.desc}</p>
+                    <p className="text-sm font-bold text-gray-900">{t(`foundingVendor.${b.key}Title`)}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{t(`foundingVendor.${b.key}Desc`)}</p>
                   </div>
                 </div>
               ))}
@@ -344,9 +349,9 @@ export default function FoundingVendorPage() {
 
             {/* Trust strip */}
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600 pt-4 border-t border-gray-200/60 animate-fade-up" style={{ animationDelay: '900ms' }}>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> No credit card</div>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Cancel anytime</div>
-              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Keep 100% of sales</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('foundingVendor.trustNoCard')}</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('foundingVendor.trustCancel')}</div>
+              <div className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('foundingVendor.trustKeep')}</div>
             </div>
           </div>
 
@@ -357,30 +362,29 @@ export default function FoundingVendorPage() {
                 <div className="shrink-0 bg-gradient-to-br from-primary-500 to-orange-500 rounded-xl p-2 text-white shadow-md">
                   <HeartHandshake className="w-5 h-5" />
                 </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">We&rsquo;re on your team</h2>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">{t('foundingVendor.teamTitle')}</h2>
               </div>
               <p className="text-gray-600 mb-3 leading-relaxed">
-                You run your business &mdash; we&rsquo;ll bring you the customers. Our job is to market you
-                and get more people through your door.
+                {t('foundingVendor.teamIntro')}
               </p>
               <div className="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 border border-primary-200 rounded-full px-3.5 py-1.5 mb-5 text-sm font-bold">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                At no charge to you &mdash; for 3 months
+                {t('foundingVendor.teamBadge')}
               </div>
               <ul className="space-y-3">
                 {[
-                  { icon: Megaphone, title: 'We market your business for you', desc: 'Every deal you post, we promote to local customers on our Facebook & Instagram.' },
-                  { icon: Store, title: 'We get more people in the door', desc: 'Flash deals create urgency that fills your slow days and quiet hours.' },
-                  { icon: Sparkles, title: 'We build your deals with you', desc: 'Our AI helps you create and price offers — no guesswork, no extra work.' },
-                  { icon: Users, title: 'A real person in your corner', desc: 'We set you up personally and check in to keep it working for you.' },
+                  { icon: Megaphone, key: 'team1' },
+                  { icon: Store, key: 'team2' },
+                  { icon: Sparkles, key: 'team3' },
+                  { icon: Users, key: 'team4' },
                 ].map((item) => (
-                  <li key={item.title} className="flex items-start gap-3">
+                  <li key={item.key} className="flex items-start gap-3">
                     <div className="shrink-0 mt-0.5 bg-primary-50 text-primary-600 rounded-lg p-1.5 border border-primary-100">
                       <item.icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{item.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                      <p className="text-sm font-bold text-gray-900">{t(`foundingVendor.${item.key}Title`)}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{t(`foundingVendor.${item.key}Desc`)}</p>
                     </div>
                   </li>
                 ))}
@@ -412,8 +416,8 @@ export default function FoundingVendorPage() {
                       <CheckCircle2 className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="font-extrabold text-lg leading-tight">You qualify &mdash; claim your spot</h2>
-                      <p className="text-xs text-white/90">Takes under 60 seconds &middot; no payment</p>
+                      <h2 className="font-extrabold text-lg leading-tight">{t('foundingVendor.qualifyTitle')}</h2>
+                      <p className="text-xs text-white/90">{t('foundingVendor.qualifySub')}</p>
                     </div>
                   </div>
                 </div>
@@ -426,17 +430,17 @@ export default function FoundingVendorPage() {
                     </div>
                   )}
 
-                  <Field label="Business Name" required>
+                  <Field label={t('foundingVendor.fieldBusinessName')} required>
                     <Building2 className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder="Your business" required />
+                    <input name="businessName" value={form.businessName} onChange={handleChange} className="input-field pl-10" placeholder={t('foundingVendor.phBusiness')} required />
                   </Field>
 
-                  <Field label="Email">
+                  <Field label={t('foundingVendor.fieldEmail')}>
                     <Mail className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                     <input name="email" type="email" value={form.email} onChange={handleChange} className="input-field pl-10" placeholder="you@business.com" required />
                   </Field>
 
-                  <Field label="Phone">
+                  <Field label={t('foundingVendor.fieldPhone')}>
                     <Phone className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                     <input name="phone" value={form.phone} onChange={handleChange} className="input-field pl-10" placeholder="(555) 555-5555" />
                   </Field>
@@ -449,55 +453,55 @@ export default function FoundingVendorPage() {
                       className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500"
                     />
                     <div>
-                      <span className="text-sm font-semibold text-gray-800">Online-only business</span>
-                      <p className="text-xs text-gray-500">No storefront &middot; nationwide reach</p>
+                      <span className="text-sm font-semibold text-gray-800">{t('foundingVendor.onlineBusiness')}</span>
+                      <p className="text-xs text-gray-500">{t('foundingVendor.onlineDesc')}</p>
                     </div>
                   </label>
 
                   {!form.isOnlineBusiness && (
                     <>
-                      <Field label="Business Address" required>
+                      <Field label={t('foundingVendor.fieldAddress')} required>
                         <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                        <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder="123 Main St" required />
+                        <input name="address" value={form.address} onChange={handleChange} className="input-field pl-10" placeholder={t('foundingVendor.phAddress')} required />
                       </Field>
                       <div className="grid grid-cols-3 gap-2">
-                        <Field label="City" required>
+                        <Field label={t('foundingVendor.fieldCity')} required>
                           <input name="city" value={form.city} onChange={handleChange} className="input-field" placeholder="Orlando" required />
                         </Field>
-                        <Field label="State" required>
+                        <Field label={t('foundingVendor.fieldState')} required>
                           <input name="state" value={form.state} onChange={handleChange} className="input-field" placeholder="FL" required />
                         </Field>
-                        <Field label="Zip" required>
+                        <Field label={t('foundingVendor.fieldZip')} required>
                           <input name="zip" value={form.zip} onChange={handleChange} className="input-field" placeholder="32801" required />
                         </Field>
                       </div>
                     </>
                   )}
 
-                  <Field label="Category">
+                  <Field label={t('foundingVendor.fieldCategory')}>
                     <select name="category" value={form.category} onChange={handleChange} className="input-field">
-                      <option value="">Select category</option>
-                      <option value="restaurant">Restaurant</option>
-                      <option value="salon">Salon &amp; Beauty</option>
-                      <option value="fitness">Fitness &amp; Gym</option>
-                      <option value="wellness">Wellness &amp; Spa</option>
-                      <option value="cafe">Café &amp; Coffee</option>
-                      <option value="retail">Retail &amp; Shopping</option>
-                      <option value="entertainment">Entertainment</option>
-                      <option value="automotive">Automotive</option>
-                      <option value="photography">Photography</option>
-                      <option value="other">Other</option>
+                      <option value="">{t('foundingVendor.selectCategory')}</option>
+                      <option value="restaurant">{t('foundingVendor.catRestaurant')}</option>
+                      <option value="salon">{t('foundingVendor.catSalon')}</option>
+                      <option value="fitness">{t('foundingVendor.catFitness')}</option>
+                      <option value="wellness">{t('foundingVendor.catWellness')}</option>
+                      <option value="cafe">{t('foundingVendor.catCafe')}</option>
+                      <option value="retail">{t('foundingVendor.catRetail')}</option>
+                      <option value="entertainment">{t('foundingVendor.catEntertainment')}</option>
+                      <option value="automotive">{t('foundingVendor.catAutomotive')}</option>
+                      <option value="photography">{t('foundingVendor.catPhotography')}</option>
+                      <option value="other">{t('foundingVendor.catOther')}</option>
                     </select>
                   </Field>
 
-                  <Field label="Password">
+                  <Field label={t('foundingVendor.fieldPassword')}>
                     <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder="At least 6 characters" required />
+                    <input name="password" type="password" value={form.password} onChange={handleChange} className="input-field pl-10" placeholder={t('foundingVendor.phPassword')} required />
                   </Field>
 
-                  <Field label="Confirm Password">
+                  <Field label={t('foundingVendor.fieldConfirm')}>
                     <Lock className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
-                    <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder="Repeat password" required />
+                    <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} className="input-field pl-10" placeholder={t('foundingVendor.phConfirm')} required />
                   </Field>
 
                   <label className="flex items-start gap-2 cursor-pointer pt-1">
@@ -508,11 +512,11 @@ export default function FoundingVendorPage() {
                       className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 shrink-0"
                     />
                     <span className="text-[11px] text-gray-500 leading-relaxed">
-                      I agree to the{' '}
-                      <Link href="/vendor-terms" target="_blank" className="text-primary-600 hover:underline font-semibold">Vendor Terms</Link>
-                      {' '}and{' '}
-                      <Link href="/terms" target="_blank" className="text-primary-600 hover:underline font-semibold">Terms of Service</Link>.
-                      My 3 free months end automatically &mdash; no auto-charge, no card on file.
+                      {t('foundingVendor.agreePre')}
+                      <Link href="/vendor-terms" target="_blank" className="text-primary-600 hover:underline font-semibold">{t('foundingVendor.vendorTerms')}</Link>
+                      {t('foundingVendor.agreeAnd')}
+                      <Link href="/terms" target="_blank" className="text-primary-600 hover:underline font-semibold">{t('foundingVendor.termsOfService')}</Link>
+                      {t('foundingVendor.agreePost')}
                     </span>
                   </label>
 
@@ -527,12 +531,12 @@ export default function FoundingVendorPage() {
                       {loading ? (
                         <>
                           <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Creating account...
+                          {t('foundingVendor.ctaCreating')}
                         </>
                       ) : (
                         <>
                           <Gift className="w-5 h-5" />
-                          Claim My 3 Free Months
+                          {t('foundingVendor.ctaClaim')}
                           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
@@ -540,7 +544,7 @@ export default function FoundingVendorPage() {
                   </button>
 
                   <p className="text-[11px] text-gray-400 text-center flex items-center justify-center gap-1.5 pt-1">
-                    <Store className="w-3 h-3" /> No credit card &middot; cancel anytime &middot; full Business plan
+                    <Store className="w-3 h-3" /> {t('foundingVendor.formFooter')}
                   </p>
                 </form>
               </div>
@@ -549,8 +553,8 @@ export default function FoundingVendorPage() {
 
             {qualified && (
               <p className="text-center text-sm text-gray-500 mt-6">
-                Already have an account?{' '}
-                <Link href="/auth/login" className="text-primary-600 font-bold hover:underline">Sign in</Link>
+                {t('foundingVendor.alreadyAccount')}{' '}
+                <Link href="/auth/login" className="text-primary-600 font-bold hover:underline">{t('foundingVendor.signIn')}</Link>
               </p>
             )}
           </div>
@@ -559,11 +563,11 @@ export default function FoundingVendorPage() {
       {/* Bottom marquee */}
       <div className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white py-6 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-sm">
-          <Stat value="$0" label="Credit card needed" />
-          <Stat value="0%" label="Commissions" highlight />
-          <Stat value="100%" label="Of sales you keep" />
-          <Stat value="90 days" label="Free trial" />
-          <Stat value="20% off" label="Forever (Pro/Business)" highlight />
+          <Stat value="$0" label={t('foundingVendor.marqueeCardLabel')} />
+          <Stat value="0%" label={t('foundingVendor.marqueeCommissions')} highlight />
+          <Stat value="100%" label={t('foundingVendor.marqueeKeep')} />
+          <Stat value={t('foundingVendor.marqueeTrialValue')} label={t('foundingVendor.marqueeTrialLabel')} />
+          <Stat value="20% off" label={t('foundingVendor.marqueeDiscountLabel')} highlight />
         </div>
       </div>
     </div>
