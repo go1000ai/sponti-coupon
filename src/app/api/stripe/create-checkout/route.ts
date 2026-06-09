@@ -14,7 +14,7 @@ const TIER_NAMES: Record<string, string> = {
 /* ─── Founders Launch Config ─── */
 const FOUNDERS_LAUNCH = {
   active: new Date() <= new Date('2026-04-30T23:59:59-04:00'), // Expires end of April 30, 2026 ET
-  freeTrialDays: 60,                  // 2 months free
+  freeTrialDays: 90,                  // 3 months free
   couponId: 'FOUNDERS20',             // 20% off forever — create this in Stripe Dashboard
   eligiblePlans: ['pro', 'business'], // only these plans get the founders deal
 };
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       FOUNDERS_LAUNCH.eligiblePlans.includes(tier);
 
     const trialDays = isFoundersEligible
-      ? FOUNDERS_LAUNCH.freeTrialDays  // 60 days (2 months free)
+      ? FOUNDERS_LAUNCH.freeTrialDays  // 90 days (3 months free)
       : 14;                            // standard 14-day trial
 
     // Build the checkout session config

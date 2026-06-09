@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import {
   Mail, Lock, Phone, MapPin, Building2, CheckCircle, Gift, Sparkles, Store,
   Tag, Megaphone, DollarSign, Zap, Clock, ArrowRight, CheckCircle2, Star,
-  Flame, ShieldCheck,
+  Flame, ShieldCheck, HeartHandshake, Users,
 } from 'lucide-react';
 import { QualificationWizard, type WizardAnswers, formatAnswersForNotes } from '@/components/founding-vendor/QualificationWizard';
 
@@ -350,13 +350,52 @@ export default function FoundingVendorPage() {
             </div>
           </div>
 
-          {/* ── RIGHT: wizard OR form card ─────────────────────────────── */}
+          {/* ── RIGHT: We're on your team ─────────────────────────────── */}
           <div className="lg:col-span-2 lg:sticky lg:top-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
-            <div className="relative">
-              {/* Glow */}
-              <div className="absolute -inset-1 bg-gradient-to-br from-primary-400 via-orange-400 to-amber-300 rounded-3xl blur-xl opacity-40 animate-pulse pointer-events-none" />
+            <div className="relative bg-white/80 backdrop-blur-xl rounded-2xl p-6 sm:p-7 border border-white/70 shadow-xl">
+              <div className="flex items-center gap-2.5 mb-2">
+                <div className="shrink-0 bg-gradient-to-br from-primary-500 to-orange-500 rounded-xl p-2 text-white shadow-md">
+                  <HeartHandshake className="w-5 h-5" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900">We&rsquo;re on your team</h2>
+              </div>
+              <p className="text-gray-600 mb-3 leading-relaxed">
+                You run your business &mdash; we&rsquo;ll bring you the customers. Our job is to market you
+                and get more people through your door.
+              </p>
+              <div className="inline-flex items-center gap-1.5 bg-primary-50 text-primary-700 border border-primary-200 rounded-full px-3.5 py-1.5 mb-5 text-sm font-bold">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                At no charge to you &mdash; for 3 months
+              </div>
+              <ul className="space-y-3">
+                {[
+                  { icon: Megaphone, title: 'We market your business for you', desc: 'Every deal you post, we promote to local customers on our Facebook & Instagram.' },
+                  { icon: Store, title: 'We get more people in the door', desc: 'Flash deals create urgency that fills your slow days and quiet hours.' },
+                  { icon: Sparkles, title: 'We build your deals with you', desc: 'Our AI helps you create and price offers — no guesswork, no extra work.' },
+                  { icon: Users, title: 'A real person in your corner', desc: 'We set you up personally and check in to keep it working for you.' },
+                ].map((item) => (
+                  <li key={item.title} className="flex items-start gap-3">
+                    <div className="shrink-0 mt-0.5 bg-primary-50 text-primary-600 rounded-lg p-1.5 border border-primary-100">
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
 
-              {!qualified ? (
+        {/* ── Bottom: full-width questionnaire / sign-up ─────────────────── */}
+        <div className="mt-10 lg:mt-16 animate-fade-up" style={{ animationDelay: '300ms' }}>
+          <div className="relative">
+            {/* Glow */}
+            <div className="absolute -inset-1 bg-gradient-to-br from-primary-400 via-orange-400 to-amber-300 rounded-3xl blur-xl opacity-40 animate-pulse pointer-events-none" />
+
+            {!qualified ? (
                 <QualificationWizard
                   onQualified={(answers) => {
                     setWizardAnswers(answers);
@@ -364,7 +403,7 @@ export default function FoundingVendorPage() {
                   }}
                 />
               ) : (
-              <div className="relative bg-white rounded-3xl shadow-2xl border border-white/80 overflow-hidden">
+              <div className="relative max-w-2xl mx-auto w-full bg-white rounded-3xl shadow-2xl border border-white/80 overflow-hidden">
                 {/* Gradient header */}
                 <div className="relative bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 px-6 py-5 text-white overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
@@ -516,7 +555,6 @@ export default function FoundingVendorPage() {
             )}
           </div>
         </div>
-      </div>
 
       {/* Bottom marquee */}
       <div className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white py-6 overflow-hidden">

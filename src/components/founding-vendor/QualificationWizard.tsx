@@ -130,7 +130,7 @@ export function QualificationWizard({ onQualified }: Props) {
               <span className="text-xs font-bold uppercase tracking-wider">Standard founders offer</span>
             </div>
             <p className="text-2xl font-black leading-tight">
-              2 months free + <span className="text-amber-100">20% off forever</span>
+              3 months free + <span className="text-amber-100">20% off forever</span>
             </p>
             <p className="text-white/90 text-xs mt-1">Available on Pro and Business plans &middot; while signups last</p>
           </div>
@@ -201,9 +201,9 @@ export function QualificationWizard({ onQualified }: Props) {
   const progressPct = ((step + 1) / QUESTIONS.length) * 100;
 
   return (
-    <div className="relative bg-white rounded-3xl shadow-2xl border border-white/80 overflow-hidden">
-      {/* Gradient header */}
-      <div className="relative bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 px-6 py-5 text-white overflow-hidden">
+    <div className="relative bg-white rounded-3xl shadow-2xl border border-white/80 overflow-hidden lg:flex">
+      {/* Gradient header — side panel on desktop */}
+      <div className="relative bg-gradient-to-br from-primary-500 via-orange-500 to-amber-500 px-6 py-5 lg:px-10 lg:py-10 text-white overflow-hidden lg:w-[38%] lg:flex lg:flex-col lg:justify-center">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
@@ -212,10 +212,13 @@ export function QualificationWizard({ onQualified }: Props) {
               See if you qualify
             </span>
           </div>
-          <h2 className="font-extrabold text-lg leading-tight">4 quick questions &middot; under 30 seconds</h2>
+          <h2 className="font-extrabold text-lg lg:text-3xl leading-tight">4 quick questions &middot; under 30 seconds</h2>
+          <p className="hidden lg:block text-sm text-white/85 mt-3 leading-relaxed">
+            Answer yes to all four and you&rsquo;re in &mdash; no payment, no credit card.
+          </p>
         </div>
         {/* Progress bar */}
-        <div className="relative mt-4 h-1.5 bg-white/20 rounded-full overflow-hidden">
+        <div className="relative mt-4 lg:mt-6 h-1.5 bg-white/20 rounded-full overflow-hidden">
           <div
             className="h-full bg-white rounded-full transition-all duration-500 ease-out"
             style={{ width: `${progressPct}%` }}
@@ -227,16 +230,16 @@ export function QualificationWizard({ onQualified }: Props) {
       </div>
 
       {/* Question body */}
-      <div className="p-6 sm:p-8">
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight mb-6">
+      <div className="p-6 sm:p-8 lg:p-10 lg:flex-1 lg:flex lg:flex-col lg:justify-center">
+        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-6">
           {q.prompt}
         </h3>
 
-        <div className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => handleAnswer('yes')}
-            className="group w-full flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50/40 transition-all text-left"
+            className="group flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-primary-500 hover:bg-primary-50/40 transition-all text-left"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-colors">
@@ -250,7 +253,7 @@ export function QualificationWizard({ onQualified }: Props) {
           <button
             type="button"
             onClick={() => handleAnswer('no')}
-            className="group w-full flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all text-left"
+            className="group flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-all text-left"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center">
