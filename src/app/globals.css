@@ -427,3 +427,31 @@ body {
   mask-composite: exclude;
   pointer-events: none;
 }
+
+/* ─── Leaflet map: larger, clearer popup close button ─── */
+.leaflet-popup-close-button {
+  width: 30px !important;
+  height: 30px !important;
+  font: 22px/28px Tahoma, Verdana, sans-serif !important;
+  color: #555 !important;
+  padding: 0 !important;
+}
+
+/* On touch devices, give the close button a 40px tap target with a visible
+   chip so it never disappears behind map overlays and is easy to hit. */
+@media (hover: none) and (pointer: coarse) {
+  .leaflet-popup-close-button {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 26px !important;
+    line-height: 38px !important;
+    top: 6px !important;
+    right: 6px !important;
+    color: #333 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+  }
+  /* Keep the popup comfortably inside the screen on small viewports. */
+  .leaflet-popup-content { margin: 14px 16px !important; }
+}

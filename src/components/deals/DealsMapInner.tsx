@@ -163,8 +163,8 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
 
   return (
     <div className="relative">
-      {/* Map legend */}
-      <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-3 text-xs space-y-1.5">
+      {/* Map legend — bottom-left so it never covers a popup's close button (top-right) */}
+      <div className="absolute bottom-3 left-3 z-[500] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg p-2.5 sm:p-3 text-xs space-y-1.5">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-primary-500" />
           <span className="text-gray-600">{t('dealsMap.spontiCoupons')}</span>
