@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
-import { Navigation, Search } from 'lucide-react';
+import { Navigation, Search, X } from 'lucide-react';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { useLanguage } from '@/lib/i18n';
@@ -38,14 +38,32 @@ const userIcon = new L.Icon({
 
 function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
   const { t } = useLanguage();
+  const map = useMap();
   const deal = useTranslatedDeal(rawDeal);
   const vendor = deal.vendor;
   const distance = (deal as Deal & { distance?: number }).distance;
 
   const imageUrl = deal.image_url || (deal.image_urls && deal.image_urls.length > 0 ? deal.image_urls[0] : null);
 
+  const closePopup = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    map.closePopup();
+  };
+
   return (
-    <div className="w-40">
+    <div className="relative w-40">
+      {/* Custom close button — a real button so it reliably catches taps
+          (Leaflet's default <a> close button misses taps on mobile). */}
+      <button
+        type="button"
+        aria-label="Close"
+        onPointerUp={closePopup}
+        onClick={closePopup}
+        style={{ touchAction: 'manipulation' }}
+        className="absolute top-1 right-1 z-[1000] w-9 h-9 flex items-center justify-center rounded-full bg-white/95 text-gray-700 shadow-md border border-gray-200 active:bg-gray-100"
+      >
+        <X className="w-4 h-4" strokeWidth={2.5} />
+      </button>
       {imageUrl && (
         <Link href={`/deals/${deal.id}`} className="block mb-1.5">
           <img
@@ -105,19 +123,22 @@ function ChangeView({ center, zoom }: { center: [number, number]; zoom?: number 
   return null;
 }
 
-// Detects when the user pans/zooms and shows "Search this area"
+// Detects when the user pans/zooms and shows "Search this area".
+// We listen to dragend/zoomend (user-initiated) instead of moveend, because a
+// popup opening auto-pans the map and fires moveend — which previously fed a
+// setState -> re-render -> auto-pan loop ("Maximum update depth exceeded"),
+// making the page sluggish and dropping taps while a popup was open.
 function MapMoveHandler({ onMoved }: { onMoved: (center: { lat: number; lng: number }, radiusMiles: number) => void }) {
+  const report = (map: L.Map) => {
+    const center = map.getCenter();
+    const bounds = map.getBounds();
+    // Approximate radius in miles from center to corner
+    const distMiles = center.distanceTo(bounds.getNorthEast()) / 1609.34;
+    onMoved({ lat: center.lat, lng: center.lng }, Math.ceil(distMiles));
+  };
   useMapEvents({
-    moveend(e) {
-      const map = e.target;
-      const center = map.getCenter();
-      const bounds = map.getBounds();
-      // Calculate approximate radius in miles from center to corner
-      const ne = bounds.getNorthEast();
-      const distMeters = center.distanceTo(ne); // meters
-      const distMiles = distMeters / 1609.34;
-      onMoved({ lat: center.lat, lng: center.lng }, Math.ceil(distMiles));
-    },
+    dragend(e) { report(e.target); },
+    zoomend(e) { report(e.target); },
   });
   return null;
 }
@@ -227,7 +248,7 @@ export default function DealsMapInner({ deals, userLocation, onSearchArea }: Dea
               position={[deal.vendor!.lat!, deal.vendor!.lng!]}
               icon={deal.deal_type === 'sponti_coupon' ? spontiIcon : steadyIcon}
             >
-              <Popup maxWidth={200} minWidth={160}>
+              <Popup maxWidth={200} minWidth={160} closeButton={false}>
                 <DealPopupCard deal={deal} />
               </Popup>
             </Marker>
