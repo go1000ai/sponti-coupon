@@ -23,6 +23,17 @@ const nextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        // /join/free now points everyone at the founding-vendor 3-months-free signup.
+        // Temporary (307) so it isn't hard-cached by browsers if it changes later.
+        source: '/join/free',
+        destination: '/founding-vendor',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
