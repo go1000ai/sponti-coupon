@@ -68,9 +68,9 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
           )}
         </div>
 
-        {/* Countdown overlay — shows for all active deals */}
+        {/* Countdown overlay — DESKTOP only (mobile shows it below the image to keep the photo clear) */}
         {deal.status === 'active' && (
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+          <div className="hidden sm:block absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <div className={`flex items-center gap-2 text-xs mb-1 font-bold ${isSponti ? 'text-primary-300' : 'text-white'}`}>
               <Clock className="w-3 h-3" />
               <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
@@ -82,6 +82,16 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
 
       {/* Content */}
       <div className="p-3 sm:p-4 flex flex-col flex-1">
+        {/* Countdown timer BELOW the image — MOBILE only */}
+        {deal.status === 'active' && (
+          <div className="sm:hidden mb-2">
+            <div className={`flex items-center gap-1 text-[10px] font-bold mb-0.5 ${isSponti ? 'text-primary-600' : 'text-secondary-600'}`}>
+              <Clock className="w-2.5 h-2.5" />
+              <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
+            </div>
+            <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} hideSeconds />
+          </div>
+        )}
         <h3 className="font-bold text-sm sm:text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
           {deal.title}
         </h3>

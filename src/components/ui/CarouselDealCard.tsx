@@ -52,7 +52,7 @@ export function CarouselDealCard({
       href={`/deals/${deal.slug || deal.id}`}
       className={`snap-start shrink-0 ${CARD_WIDTH} block group ${isOwnDeal ? 'opacity-50' : ''}`}
     >
-      {/* ── MOBILE: image + timer/badges on top, info below (matches the /deals card) ── */}
+      {/* ── MOBILE: clean image on top, timer + info below it ── */}
       <div className="sm:hidden flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-gray-100">
         <div className={`relative h-32 ${fallbackGradient}`}>
           <Image src={imageUrl} alt={deal.title} fill className="object-cover" />
@@ -62,18 +62,18 @@ export function CarouselDealCard({
           <span className="absolute top-2 right-2 bg-white text-primary-500 font-bold text-[11px] px-2 py-0.5 rounded-full shadow">
             {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
           </span>
-          {/* Countdown timer overlay — bold orange for Sponti, blue for Steady */}
+        </div>
+        <div className="p-2.5 flex flex-col flex-1">
+          {/* Countdown timer BELOW the image — bold orange for Sponti, blue for Steady */}
           {deal.status === 'active' && (
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-2 pt-5 pb-1.5">
-              <div className={`flex items-center gap-1 text-[10px] font-bold mb-0.5 ${isSponti ? 'text-primary-300' : 'text-white/90'}`}>
+            <div className="mb-1.5">
+              <div className={`flex items-center gap-1 text-[10px] font-bold mb-0.5 ${isSponti ? 'text-primary-600' : 'text-secondary-600'}`}>
                 <Clock className="w-2.5 h-2.5" />
                 <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
               </div>
               <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} hideSeconds />
             </div>
           )}
-        </div>
-        <div className="p-2.5 flex flex-col flex-1">
           <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">{deal.title}</h3>
           {deal.vendor && (
             <p className="text-gray-500 text-[11px] mt-0.5 line-clamp-1">{deal.vendor.business_name}</p>
