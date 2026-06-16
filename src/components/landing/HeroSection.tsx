@@ -131,9 +131,21 @@ export function HeroSection() {
               {t('home.hero.headlineLine3')}
             </h1>
 
-            {/* Urgency badge — live deal count (always rendered, fades in when stats load) */}
+            {/* Mobile: "Browse Deals Now" button — navigating to /deals auto-requests location */}
+            <button
+              onClick={() => router.push('/deals')}
+              className={`sm:hidden mt-4 inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-full px-5 py-2.5 text-sm shadow-lg transition-all duration-200 active:scale-95 ${
+                mounted ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <Flame className="w-4 h-4" />
+              {t('home.hero.browseDealsNow')}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+
+            {/* Desktop/tablet: urgency badge — live deal count (fades in when stats load) */}
             <div
-              className={`mt-4 h-9 transition-opacity duration-700 ease-out ${
+              className={`hidden sm:block mt-4 h-9 transition-opacity duration-700 ease-out ${
                 stats && stats.totalActive > 0 && mounted ? 'opacity-100' : 'opacity-0'
               }`}
             >
