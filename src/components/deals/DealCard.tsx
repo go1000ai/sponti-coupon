@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, MapPin, Tag, ShieldCheck, Users, Store } from 'lucide-react';
+import { Clock, MapPin, Tag, Users, Store } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import { DealTypeBadge } from '@/components/ui/SpontiBadge';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
@@ -50,10 +50,6 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
         {/* Badges - top left */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <DealTypeBadge type={deal.deal_type} size="md" />
-          {/* Verified badge */}
-          <span className="inline-flex items-center gap-1 bg-green-500/90 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full shadow w-fit">
-            <ShieldCheck className="w-2.5 h-2.5" /> {t('dealDetail.verified')}
-          </span>
         </div>
 
         {/* Discount badge - top right */}
