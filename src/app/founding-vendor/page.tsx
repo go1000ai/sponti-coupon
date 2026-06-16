@@ -14,8 +14,6 @@ import { QualificationWizard, type WizardAnswers, formatAnswersForNotes } from '
 
 const PROMO_CODE = 'FOUNDING15';
 const MAX_SPOTS = 15;
-// Social-proof floor: never show below this number of claimed spots until real count surpasses it.
-const DISPLAY_FLOOR = 7;
 
 interface SpotStatus {
   used: number;
@@ -37,7 +35,6 @@ export default function FoundingVendorPage() {
   const router = useRouter();
   const { t, setLocale } = useLanguage();
   const [status, setStatus] = useState<SpotStatus | null>(null);
-  const [animatedUsed, setAnimatedUsed] = useState(0);
   const [form, setForm] = useState({
     email: '', password: '', confirmPassword: '',
     businessName: '', phone: '',
@@ -65,25 +62,6 @@ export default function FoundingVendorPage() {
     const lang = new URLSearchParams(window.location.search).get('lang');
     if (lang === 'es' || lang === 'en') setLocale(lang);
   }, [setLocale]);
-
-  // Animated count-up for the "X of 15" number
-  useEffect(() => {
-    if (!status) return;
-    const target = Math.max(status.used, DISPLAY_FLOOR);
-    if (target === 0) { setAnimatedUsed(0); return; }
-    const duration = 1200;
-    const start = performance.now();
-    let raf = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      // ease-out-cubic
-      const eased = 1 - Math.pow(1 - t, 3);
-      setAnimatedUsed(Math.round(target * eased));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [status]);
 
   // Parallax on background blobs
   useEffect(() => {
@@ -237,11 +215,6 @@ export default function FoundingVendorPage() {
     );
   }
 
-  const rawUsed = status?.used ?? 0;
-  const used = Math.max(rawUsed, DISPLAY_FLOOR);
-  const remaining = MAX_SPOTS - used;
-  const progressPct = Math.min(100, Math.round((used / MAX_SPOTS) * 100));
-
   // ─── Main page ────────────────────────────────────────────────────────
   return (
     <div className="relative overflow-hidden">
@@ -255,7 +228,7 @@ export default function FoundingVendorPage() {
         <div className="relative flex items-center justify-center gap-2 px-4">
           <Flame className="w-4 h-4 text-primary-400 animate-pulse" />
           <span className="font-bold text-primary-300">
-            {t('foundingVendor.spotsLeft', { remaining, max: MAX_SPOTS })}
+            {t('foundingVendor.spotsLeft')}
           </span>
           <span className="hidden sm:inline text-gray-400">&middot; {t('foundingVendor.tickerNote')}</span>
         </div>
@@ -297,29 +270,16 @@ export default function FoundingVendorPage() {
               {t('foundingVendor.subheadA')}<strong className="text-gray-900">{t('foundingVendor.subheadStrong')}</strong>{t('foundingVendor.subheadB')}
             </p>
 
-            {/* Live progress card */}
+            {/* Limited-offer card */}
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-white/70 shadow-xl max-w-xl animate-fade-up" style={{ animationDelay: '300ms' }}>
-              <div className="flex justify-between items-end mb-3">
+              <div className="flex justify-between items-start gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-1">{t('foundingVendor.foundingSpots')}</p>
-                  <p className="text-3xl font-extrabold text-gray-900">
-                    <span className="tabular-nums">{animatedUsed}</span>
-                    <span className="text-gray-400 text-xl"> / {MAX_SPOTS}</span>
-                    <span className="text-base font-bold text-primary-600 ml-2">{t('foundingVendor.claimed')}</span>
-                  </p>
+                  <p className="text-3xl font-extrabold gradient-text leading-tight">{t('foundingVendor.veryLimited')}</p>
                 </div>
-                <div className="flex items-center gap-1.5 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-xs font-bold border border-primary-200">
+                <div className="flex items-center gap-1.5 bg-primary-50 text-primary-700 px-3 py-1.5 rounded-full text-xs font-bold border border-primary-200 shrink-0">
                   <Clock className="w-3.5 h-3.5" />
                   {t('foundingVendor.limited')}
-                </div>
-              </div>
-              {/* Animated progress bar */}
-              <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary-500 via-orange-500 to-amber-400 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${progressPct}%` }}
-                >
-                  <div className="absolute inset-0 bg-white/30 animate-shimmer" />
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
