@@ -81,17 +81,17 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
       </div>
 
       {/* Content */}
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className="font-bold text-base sm:text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
+      <div className="p-3 sm:p-4 flex flex-col flex-1">
+        <h3 className="font-bold text-sm sm:text-lg text-gray-900 group-hover:text-primary-500 transition-colors line-clamp-2">
           {deal.title}
         </h3>
 
         {deal.vendor && (
-          <p className="text-gray-500 text-sm mt-1">{deal.vendor.business_name}</p>
+          <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-1">{deal.vendor.business_name}</p>
         )}
 
         {deal.description && (
-          <p className="text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">{deal.description}</p>
+          <p className="hidden sm:block text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">{deal.description}</p>
         )}
 
         {/* Pricing with savings */}
@@ -119,7 +119,7 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
 
         {/* Payment logos */}
         {paymentLogos && paymentLogos.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-2">
+          <div className="hidden sm:flex items-center gap-1.5 mt-2">
             {paymentLogos.map(type => {
               const proc = PAYMENT_PROCESSORS[type as PaymentProcessorType];
               return proc ? (
@@ -130,7 +130,7 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
         )}
 
         {/* Distance & social proof row */}
-        <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+        <div className="hidden sm:flex items-center justify-between mt-3 text-xs text-gray-400">
           <div className="flex items-center gap-3">
             {distance != null && (
               <span className="flex items-center gap-1">
