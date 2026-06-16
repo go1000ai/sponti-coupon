@@ -95,9 +95,9 @@ export function FeaturedDeals() {
 
         {/* Deals Carousel */}
         {loading ? (
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+          <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4 sm:overflow-x-auto sm:scrollbar-hide">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="shrink-0 w-[85%] sm:w-[280px] lg:w-[300px] h-[280px] sm:h-[320px] lg:h-[360px] bg-gray-200 rounded-2xl animate-pulse" />
+              <div key={i} className="w-full sm:w-[280px] lg:w-[300px] h-[200px] sm:h-[320px] lg:h-[360px] bg-gray-200 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : deals.length === 0 ? (

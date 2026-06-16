@@ -71,7 +71,7 @@ export function DealCarousel({
       {/* Scroll container */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2"
+        className="grid grid-cols-2 gap-3 sm:flex sm:gap-4 sm:overflow-x-auto sm:snap-x sm:snap-mandatory sm:scrollbar-hide sm:pb-2"
       >
         {children}
       </div>

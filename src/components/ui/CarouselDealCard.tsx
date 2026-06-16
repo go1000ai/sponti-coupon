@@ -8,12 +8,22 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
 import { useLanguage } from '@/lib/i18n';
+import { useCountdown } from '@/lib/hooks/useCountdown';
 import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import type { Deal } from '@/lib/types/database';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
-const CARD_WIDTH = 'w-[calc(100%-1rem)] max-w-[calc(100vw-3rem)] sm:w-[280px] lg:w-[300px]';
+const CARD_WIDTH = 'w-full sm:w-[280px] lg:w-[300px]';
+
+/* Compact "time left" label for the mobile card footer — keeps the image clean. */
+function CompactCountdown({ expiresAt }: { expiresAt: string }) {
+  const { days, hours, minutes, expired } = useCountdown(expiresAt);
+  const { t } = useLanguage();
+  if (expired) return <span className="text-red-500">{t('countdown.expired')}</span>;
+  const label = days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  return <span className="tabular-nums">{label}</span>;
+}
 
 interface CarouselDealCardProps {
   deal: DealWithDistance;
@@ -45,14 +55,57 @@ export function CarouselDealCard({
 
   const glowColor = isSponti ? 'shadow-primary-500/30' : 'shadow-accent-500/20';
 
+  const showCountdownRow = showCountdown || (isSponti && deal.status === 'active');
+
   return (
     <Link
       href={`/deals/${deal.slug || deal.id}`}
-      className={`snap-start shrink-0 ${CARD_WIDTH} ${heightClass} block relative rounded-2xl overflow-hidden deal-card-shine group
-        shadow-lg ${glowColor} hover:shadow-xl hover:shadow-primary-500/40
-        ring-1 ring-white/10 hover:ring-primary-400/50
-        hover:-translate-y-1 transition-all duration-500 ease-out ${isOwnDeal ? 'opacity-50' : ''}`}
+      className={`snap-start shrink-0 ${CARD_WIDTH} block group ${isOwnDeal ? 'opacity-50' : ''}`}
     >
+      {/* ── MOBILE: image on top, info (incl. days left) below — keeps the image fully visible ── */}
+      <div className="sm:hidden flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-gray-100">
+        <div className={`relative h-32 ${fallbackGradient}`}>
+          <Image src={imageUrl} alt={deal.title} fill className="object-cover" />
+          <div className="absolute top-2 left-2">
+            <DealTypeBadge type={deal.deal_type} size="sm" />
+          </div>
+          <span className="absolute top-2 right-2 bg-white text-primary-500 font-bold text-[11px] px-2 py-0.5 rounded-full shadow">
+            {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
+          </span>
+          {isOwnDeal && (
+            <span className="absolute bottom-2 left-2 inline-flex items-center gap-0.5 bg-secondary-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+              <Store className="w-2.5 h-2.5" /> {t('dealDetail.yourDeal')}
+            </span>
+          )}
+        </div>
+        <div className="p-2.5 flex flex-col flex-1">
+          {showCountdownRow && (
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-primary-600 mb-1">
+              <Clock className="w-3 h-3" />
+              <CompactCountdown expiresAt={deal.expires_at} />
+            </div>
+          )}
+          <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">{deal.title}</h3>
+          {deal.vendor && (
+            <p className="text-gray-500 text-[11px] mt-0.5 line-clamp-1">{deal.vendor.business_name}</p>
+          )}
+          <div className="mt-auto pt-1.5 flex items-baseline gap-1.5">
+            <span className="text-primary-500 font-bold text-base">{formatCurrency(deal.deal_price)}</span>
+            <span className="text-gray-400 line-through text-xs">{formatCurrency(deal.original_price)}</span>
+          </div>
+          <span className="inline-block mt-1 w-fit bg-green-50 text-green-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+            {t('dealDetail.youSaveAmount', { amount: formatCurrency(savings) })}
+          </span>
+        </div>
+      </div>
+
+      {/* ── DESKTOP: full-image card with overlaid info (unchanged) ── */}
+      <div
+        className={`hidden sm:block relative ${heightClass} rounded-2xl overflow-hidden deal-card-shine
+          shadow-lg ${glowColor} hover:shadow-xl hover:shadow-primary-500/40
+          ring-1 ring-white/10 hover:ring-primary-400/50
+          hover:-translate-y-1 transition-all duration-500 ease-out`}
+      >
       {/* Background image */}
       <div className={`absolute inset-0 ${fallbackGradient}`}>
         <Image
@@ -153,6 +206,7 @@ export function CarouselDealCard({
           ? 'bg-gradient-to-r from-transparent via-primary-500 to-transparent'
           : 'bg-gradient-to-r from-transparent via-accent-400 to-transparent'
       }`} />
+      </div>
     </Link>
   );
 }
@@ -167,7 +221,7 @@ interface ViewAllCardProps {
 export function ViewAllCard({ href, variant = 'light' }: ViewAllCardProps) {
   const { t } = useLanguage();
   return (
-    <div className={`snap-start shrink-0 ${CARD_WIDTH} h-[320px] sm:h-[340px] lg:h-[360px]`}>
+    <div className={`snap-start shrink-0 ${CARD_WIDTH} h-full min-h-[180px] sm:h-[340px] lg:h-[360px]`}>
       <Link
         href={href}
         className={`flex items-center justify-center h-full rounded-2xl border-2 border-dashed transition-all group ${
