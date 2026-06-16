@@ -8,22 +8,12 @@ import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { getDealImage } from '@/lib/constants';
 import { useLanguage } from '@/lib/i18n';
-import { useCountdown } from '@/lib/hooks/useCountdown';
 import { useTranslatedDeal } from '@/lib/hooks/useTranslatedDeal';
 import type { Deal } from '@/lib/types/database';
 
 type DealWithDistance = Deal & { distance?: number | null; is_featured?: boolean };
 
 const CARD_WIDTH = 'w-full sm:w-[280px] lg:w-[300px]';
-
-/* Compact "time left" label for the mobile card footer — keeps the image clean. */
-function CompactCountdown({ expiresAt }: { expiresAt: string }) {
-  const { days, hours, minutes, expired } = useCountdown(expiresAt);
-  const { t } = useLanguage();
-  if (expired) return <span className="text-red-500">{t('countdown.expired')}</span>;
-  const label = days > 0 ? `${days}d ${hours}h` : hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  return <span className="tabular-nums">{label}</span>;
-}
 
 interface CarouselDealCardProps {
   deal: DealWithDistance;
@@ -55,14 +45,14 @@ export function CarouselDealCard({
 
   const glowColor = isSponti ? 'shadow-primary-500/30' : 'shadow-accent-500/20';
 
-  const showCountdownRow = showCountdown || (isSponti && deal.status === 'active');
+  const remaining = deal.max_claims ? Math.max(0, deal.max_claims - deal.claims_count) : 0;
 
   return (
     <Link
       href={`/deals/${deal.slug || deal.id}`}
       className={`snap-start shrink-0 ${CARD_WIDTH} block group ${isOwnDeal ? 'opacity-50' : ''}`}
     >
-      {/* ── MOBILE: image on top, info (incl. days left) below — keeps the image fully visible ── */}
+      {/* ── MOBILE: image + timer/badges on top, info below (matches the /deals card) ── */}
       <div className="sm:hidden flex flex-col h-full rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-gray-100">
         <div className={`relative h-32 ${fallbackGradient}`}>
           <Image src={imageUrl} alt={deal.title} fill className="object-cover" />
@@ -72,30 +62,42 @@ export function CarouselDealCard({
           <span className="absolute top-2 right-2 bg-white text-primary-500 font-bold text-[11px] px-2 py-0.5 rounded-full shadow">
             {formatPercentage(deal.discount_percentage)} {t('dealDetail.off')}
           </span>
-          {isOwnDeal && (
-            <span className="absolute bottom-2 left-2 inline-flex items-center gap-0.5 bg-secondary-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-              <Store className="w-2.5 h-2.5" /> {t('dealDetail.yourDeal')}
-            </span>
+          {/* Countdown timer overlay — bold orange for Sponti, blue for Steady */}
+          {deal.status === 'active' && (
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-2 pt-5 pb-1.5">
+              <div className={`flex items-center gap-1 text-[10px] font-bold mb-0.5 ${isSponti ? 'text-primary-300' : 'text-white/90'}`}>
+                <Clock className="w-2.5 h-2.5" />
+                <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
+              </div>
+              <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} hideSeconds />
+            </div>
           )}
         </div>
         <div className="p-2.5 flex flex-col flex-1">
-          {showCountdownRow && (
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-primary-600 mb-1">
-              <Clock className="w-3 h-3" />
-              <CompactCountdown expiresAt={deal.expires_at} />
-            </div>
-          )}
           <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">{deal.title}</h3>
           {deal.vendor && (
             <p className="text-gray-500 text-[11px] mt-0.5 line-clamp-1">{deal.vendor.business_name}</p>
           )}
           <div className="mt-auto pt-1.5 flex items-baseline gap-1.5">
-            <span className="text-primary-500 font-bold text-base">{formatCurrency(deal.deal_price)}</span>
             <span className="text-gray-400 line-through text-xs">{formatCurrency(deal.original_price)}</span>
+            <span className="text-primary-500 font-bold text-base">{formatCurrency(deal.deal_price)}</span>
           </div>
           <span className="inline-block mt-1 w-fit bg-green-50 text-green-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
             {t('dealDetail.youSaveAmount', { amount: formatCurrency(savings) })}
           </span>
+          {deal.max_claims != null && (
+            <div className="mt-2">
+              <div className="flex justify-between text-[10px] mb-0.5">
+                <span className="text-gray-500">{t('dealDetail.claimedCount', { count: String(deal.claims_count) })}</span>
+                <span className={remaining <= 5 ? 'text-red-500 font-semibold' : 'text-gray-500'}>
+                  {t('dealDetail.onlyLeft', { count: String(remaining) })}
+                </span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-1">
+                <div className="bg-primary-500 h-1 rounded-full" style={{ width: `${Math.min((deal.claims_count / deal.max_claims) * 100, 100)}%` }} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

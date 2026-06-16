@@ -71,11 +71,11 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
         {/* Countdown overlay — shows for all active deals */}
         {deal.status === 'active' && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-            <div className="flex items-center gap-2 text-white text-xs mb-1">
+            <div className={`flex items-center gap-2 text-xs mb-1 font-bold ${isSponti ? 'text-primary-300' : 'text-white'}`}>
               <Clock className="w-3 h-3" />
               <span>{isSponti ? t('dealDetail.spontiExpires') : t('dealDetail.steadyEnds')}</span>
             </div>
-            <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} />
+            <CountdownTimer expiresAt={deal.expires_at} size="sm" variant={isSponti ? 'sponti' : 'steady'} hideSeconds />
           </div>
         )}
       </div>
@@ -155,10 +155,10 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
           <div className="mt-2">
             <div className="flex justify-between text-xs text-gray-500 mb-1">
               <span>{t('dealDetail.claimedCount', { count: String(deal.claims_count) })}</span>
-              <span className={`font-medium ${deal.max_claims - deal.claims_count <= 5 ? 'text-red-500' : 'text-gray-500'}`}>
-                {deal.max_claims - deal.claims_count <= 5
-                  ? t('dealDetail.onlyLeft', { count: String(deal.max_claims - deal.claims_count) })
-                  : t('dealDetail.left', { count: String(deal.max_claims - deal.claims_count) })
+              <span className={`font-medium ${Math.max(0, deal.max_claims - deal.claims_count) <= 5 ? 'text-red-500' : 'text-gray-500'}`}>
+                {Math.max(0, deal.max_claims - deal.claims_count) <= 5
+                  ? t('dealDetail.onlyLeft', { count: String(Math.max(0, deal.max_claims - deal.claims_count)) })
+                  : t('dealDetail.left', { count: String(Math.max(0, deal.max_claims - deal.claims_count)) })
                 }
               </span>
             </div>

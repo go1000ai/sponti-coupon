@@ -7,10 +7,12 @@ interface CountdownTimerProps {
   expiresAt: string;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'sponti' | 'steady';
+  /** Hide the seconds box — keeps the timer narrow enough for compact 2-up cards. */
+  hideSeconds?: boolean;
   onExpire?: () => void;
 }
 
-export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', onExpire }: CountdownTimerProps) {
+export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', hideSeconds = false, onExpire }: CountdownTimerProps) {
   const { days, hours, minutes, seconds, expired } = useCountdown(expiresAt);
   const { t } = useLanguage();
 
@@ -55,11 +57,15 @@ export function CountdownTimer({ expiresAt, size = 'md', variant = 'sponti', onE
         <div className="font-bold tabular-nums">{String(minutes).padStart(2, '0')}</div>
         <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.min')}</div>
       </div>
-      <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
-      <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
-        <div className="font-bold tabular-nums">{String(seconds).padStart(2, '0')}</div>
-        <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.sec')}</div>
-      </div>
+      {!hideSeconds && (
+        <>
+          <span className={`${isUrgent ? 'text-red-500' : 'text-gray-900'} font-bold`}>:</span>
+          <div className={`countdown-box ${variantClass} ${sizeClasses[size]}`}>
+            <div className="font-bold tabular-nums">{String(seconds).padStart(2, '0')}</div>
+            <div className={`${labelSize[size]} text-gray-300`}>{t('countdown.sec')}</div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
