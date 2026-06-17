@@ -6,6 +6,10 @@ import {
   sendCancellationConfirmationEmail,
 } from '@/lib/email/subscription-notification';
 
+// Give the handler room for the Stripe retrieve + Supabase writes + email so a
+// short serverless timeout can't kill it mid-processing and cause a retry storm.
+export const maxDuration = 30;
+
 // Plan pricing map for email notifications (must match SUBSCRIPTION_TIERS)
 const TIER_PRICES: Record<string, { monthly: number; annual: number }> = {
   starter: { monthly: 49, annual: 39 },
