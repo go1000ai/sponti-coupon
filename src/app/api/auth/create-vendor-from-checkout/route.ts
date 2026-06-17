@@ -147,13 +147,17 @@ export async function POST(request: NextRequest) {
           return new Date().toISOString();
         };
 
+        // Stripe API 2025-03-31+ moved current_period_start/end onto the items.
+        const subRecord = subscription as unknown as Record<string, unknown>;
+        const subItem = (subRecord.items as { data?: Array<Record<string, unknown>> } | undefined)?.data?.[0];
+
         await supabase.from('subscriptions').insert({
           vendor_id: userId,
           stripe_subscription_id: stripeSubscriptionId,
           tier,
           status: dbStatus,
-          current_period_start: toISO((subscription as unknown as Record<string, unknown>).current_period_start),
-          current_period_end: toISO((subscription as unknown as Record<string, unknown>).current_period_end),
+          current_period_start: toISO(subRecord.current_period_start ?? subItem?.current_period_start),
+          current_period_end: toISO(subRecord.current_period_end ?? subItem?.current_period_end),
         });
       }
     }

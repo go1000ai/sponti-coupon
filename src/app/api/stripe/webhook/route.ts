@@ -14,6 +14,30 @@ const TIER_PRICES: Record<string, { monthly: number; annual: number }> = {
   enterprise: { monthly: 499, annual: 399 },
 };
 
+// Stripe API 2025-03-31+ moved current_period_start/end off the Subscription
+// object and onto its items. Read from either location and never build an
+// invalid Date (which would throw and 500 the whole webhook).
+type SubscriptionShape = {
+  id: string;
+  status: string;
+  current_period_start?: number;
+  current_period_end?: number;
+  trial_start?: number | null;
+  trial_end?: number | null;
+  metadata?: Record<string, string>;
+  items?: { data: Array<{ price?: { id: string }; current_period_start?: number; current_period_end?: number }> };
+};
+
+function subscriptionPeriod(sub: SubscriptionShape): { start: string | null; end: string | null } {
+  const item = sub.items?.data?.[0];
+  const startTs = sub.current_period_start ?? item?.current_period_start;
+  const endTs = sub.current_period_end ?? item?.current_period_end;
+  return {
+    start: typeof startTs === 'number' ? new Date(startTs * 1000).toISOString() : null,
+    end: typeof endTs === 'number' ? new Date(endTs * 1000).toISOString() : null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
@@ -55,6 +79,7 @@ export async function POST(request: NextRequest) {
     console.error('[Stripe Webhook] Dedupe insert error (continuing):', dedupeError.message);
   }
 
+  try {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -71,13 +96,7 @@ export async function POST(request: NextRequest) {
           const subscriptionResponse = await getStripe().subscriptions.retrieve(
             session.subscription as string
           );
-          const subscription = subscriptionResponse as unknown as {
-            id: string;
-            current_period_start: number;
-            current_period_end: number;
-            status: string;
-            items?: { data: Array<{ price?: { id: string } }> };
-          };
+          const subscription = subscriptionResponse as unknown as SubscriptionShape;
 
           // Resolve tier from Stripe price ID (canonical source), fallback to metadata
           const verifiedTier = (subscription.items?.data?.[0]?.price?.id
@@ -90,14 +109,16 @@ export async function POST(request: NextRequest) {
             ? 'active'
             : subscription.status;
 
+          const period = subscriptionPeriod(subscription);
+
           // Upsert to prevent duplicate inserts if webhook fires twice
           await supabase.from('subscriptions').upsert({
             vendor_id: vendorId,
             stripe_subscription_id: subscription.id,
             tier: verifiedTier,
             status: dbStatus,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            current_period_start: period.start,
+            current_period_end: period.end,
           }, { onConflict: 'stripe_subscription_id', ignoreDuplicates: true });
 
           await supabase
@@ -117,15 +138,7 @@ export async function POST(request: NextRequest) {
         const subscriptionResponse = await getStripe().subscriptions.retrieve(
           session.subscription as string
         );
-        const subscription = subscriptionResponse as unknown as {
-          id: string;
-          current_period_start: number;
-          current_period_end: number;
-          trial_start: number | null;
-          trial_end: number | null;
-          status: string;
-          items?: { data: Array<{ price?: { id: string } }> };
-        };
+        const subscription = subscriptionResponse as unknown as SubscriptionShape;
 
         // Resolve tier from Stripe price ID (canonical source), fallback to metadata
         const verifiedTier = (subscription.items?.data?.[0]?.price?.id
@@ -139,14 +152,16 @@ export async function POST(request: NextRequest) {
           ? 'active'
           : subscription.status;
 
+        const period = subscriptionPeriod(subscription);
+
         // Upsert to prevent duplicate inserts if webhook fires twice
         await supabase.from('subscriptions').upsert({
           vendor_id: vendorId,
           stripe_subscription_id: subscription.id,
           tier: verifiedTier,
           status: dbStatus,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_start: period.start,
+          current_period_end: period.end,
         }, { onConflict: 'stripe_subscription_id', ignoreDuplicates: true });
 
         await supabase
@@ -193,14 +208,7 @@ export async function POST(request: NextRequest) {
     }
 
     case 'customer.subscription.updated': {
-      const subObj = event.data.object as unknown as {
-        id: string;
-        status: string;
-        metadata?: Record<string, string>;
-        items?: { data: Array<{ price?: { id: string } }> };
-        current_period_start: number;
-        current_period_end: number;
-      };
+      const subObj = event.data.object as unknown as SubscriptionShape;
       const stripeSubId = subObj.id;
 
       // Determine status
@@ -219,11 +227,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Update subscriptions table
-      const updateData: Record<string, unknown> = {
-        status,
-        current_period_start: new Date(subObj.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subObj.current_period_end * 1000).toISOString(),
-      };
+      const period = subscriptionPeriod(subObj);
+      const updateData: Record<string, unknown> = { status };
+      if (period.start) updateData.current_period_start = period.start;
+      if (period.end) updateData.current_period_end = period.end;
       if (resolvedTier) {
         updateData.tier = resolvedTier;
       }
@@ -341,6 +348,12 @@ export async function POST(request: NextRequest) {
       }
       break;
     }
+  }
+  } catch (err: unknown) {
+    // Log the real cause and return 500 so Stripe retries (instead of a silent crash).
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[Stripe Webhook] Handler error for ${event.type} (${event.id}):`, message);
+    return NextResponse.json({ error: 'Handler error' }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

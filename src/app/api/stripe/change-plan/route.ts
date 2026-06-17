@@ -161,9 +161,14 @@ export async function POST(request: NextRequest) {
         metadata: { tier: newTier, interval, pending_downgrade: 'true' },
       });
 
-      // Get period end for user messaging
-      const rawSub = updatedSub as unknown as { current_period_end: number };
-      const periodEnd = new Date(rawSub.current_period_end * 1000);
+      // Get period end for user messaging. Stripe API 2025-03-31+ moved
+      // current_period_end from the subscription onto its items.
+      const rawSub = updatedSub as unknown as {
+        current_period_end?: number;
+        items?: { data?: Array<{ current_period_end?: number }> };
+      };
+      const periodEndTs = rawSub.current_period_end ?? rawSub.items?.data?.[0]?.current_period_end;
+      const periodEnd = typeof periodEndTs === 'number' ? new Date(periodEndTs * 1000) : null;
 
       // Note: We do NOT update the vendor's tier yet — it stays at current tier
       // The webhook for invoice.paid or subscription.updated at next renewal will update it
@@ -172,8 +177,10 @@ export async function POST(request: NextRequest) {
         success: true,
         action: 'downgrade',
         tier: newTier,
-        effectiveDate: periodEnd.toISOString(),
-        message: `Your plan will change to ${TIER_NAMES[newTier]} on ${periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. You'll keep your current features until then.`,
+        effectiveDate: periodEnd ? periodEnd.toISOString() : null,
+        message: periodEnd
+          ? `Your plan will change to ${TIER_NAMES[newTier]} on ${periodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. You'll keep your current features until then.`
+          : `Your plan will change to ${TIER_NAMES[newTier]} at the end of your current billing period. You'll keep your current features until then.`,
       });
     }
   } catch (error: unknown) {
