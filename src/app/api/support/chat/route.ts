@@ -655,7 +655,7 @@ export async function POST(request: NextRequest) {
   try {
     const client = new Anthropic({ apiKey: anthropicKey });
     const response = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: userRole === 'vendor' ? 600 : 300,
       system: systemPrompt,
       messages: messages.map((m) => ({

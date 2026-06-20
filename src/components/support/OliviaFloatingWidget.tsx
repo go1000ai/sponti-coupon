@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { X, RotateCcw } from 'lucide-react';
 import { OliviaChatbot, OliviaAvatar } from './OliviaChatbot';
@@ -18,6 +18,17 @@ export function OliviaFloatingWidget() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [chatKey, setChatKey] = useState(0);
   const [showTeaser, setShowTeaser] = useState(false);
+
+  // Draggable position for the floating button (null = default bottom-right)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  // Restore saved position
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const saved = localStorage.getItem('olivia-pos');
+    if (saved) { try { setPos(JSON.parse(saved)); } catch { /* ignore */ } }
+  }, []);
 
   // Check sessionStorage on mount
   useEffect(() => {
@@ -80,13 +91,53 @@ export function OliviaFloatingWidget() {
     }
   };
 
+  // Drag-to-move: press & hold, drag, release. Window-level listeners make the drag
+  // keep working even when the pointer leaves the small button. A press that doesn't
+  // move (a real click) opens the chat instead.
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    const el = btnRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const start = { sx: e.clientX, sy: e.clientY, ox: rect.left, oy: rect.top, moved: false };
+    let latest: { x: number; y: number } | null = null;
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ev.clientX - start.sx, dy = ev.clientY - start.sy;
+      if (!start.moved && Math.hypot(dx, dy) > 4) start.moved = true;
+      if (start.moved) {
+        ev.preventDefault();
+        const size = 56;
+        const x = Math.max(8, Math.min(window.innerWidth - size - 8, start.ox + dx));
+        const y = Math.max(8, Math.min(window.innerHeight - size - 8, start.oy + dy));
+        latest = { x, y };
+        setPos(latest);
+      }
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      if (start.moved) {
+        if (latest) localStorage.setItem('olivia-pos', JSON.stringify(latest));
+      } else {
+        handleOpen(); // it was a tap/click, not a drag → open chat
+      }
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  };
+
   return (
     <>
       {/* Floating Bubble */}
       {!isOpen && (
         <button
-          onClick={handleOpen}
-          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[55] w-14 h-14 rounded-full bg-gradient-to-br from-secondary-500 to-secondary-600 shadow-lg shadow-secondary-500/25 hover:shadow-xl hover:shadow-secondary-500/35 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center group"
+          ref={btnRef}
+          onPointerDown={handlePointerDown}
+          style={pos ? { left: pos.x, top: pos.y, right: 'auto', bottom: 'auto' } : undefined}
+          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-[55] w-14 h-14 rounded-full bg-gradient-to-br from-secondary-500 to-secondary-600 shadow-lg shadow-secondary-500/25 hover:shadow-xl hover:shadow-secondary-500/35 hover:scale-110 active:scale-95 transition-[transform,box-shadow] duration-300 flex items-center justify-center group touch-none select-none cursor-grab active:cursor-grabbing"
           aria-label={t('chatbot.chatWith', { name: 'Olivia' })}
         >
           <OliviaAvatar size={36} />

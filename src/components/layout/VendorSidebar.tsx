@@ -294,7 +294,7 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
           <div className="w-9 h-9 rounded-full bg-gray-700/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
             ) : (
               <User className="w-4 h-4 text-gray-300" />
             )}

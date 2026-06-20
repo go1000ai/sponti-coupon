@@ -136,7 +136,7 @@ ${prompt ? `\nVENDOR'S DEAL IDEA (THIS IS THE MOST IMPORTANT INPUT — base the 
 Generate a specific, compelling deal based on the vendor's idea above. The description must be detailed and vivid — describe what the customer will actually experience, taste, or receive. Do NOT write generic marketing fluff.${isSponti ? ' For Sponti deals, price aggressively — these are time-limited impulse deals that should feel like an amazing, can\'t-miss opportunity.' : ''}`;
 
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1500,
         messages: [
           { role: 'user', content: userPrompt },

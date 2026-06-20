@@ -141,7 +141,19 @@ export default function ImportFromWebsitePage() {
         return;
       }
       setAnalysis(data.analysis);
-      setWebsiteImages(data.website_images || []);
+      const imgs: string[] = data.website_images || [];
+      setWebsiteImages(imgs);
+      // Auto-save the extracted images to the Media Library so they're available
+      // in the "Library" tab everywhere (e.g. when editing the generated deal).
+      imgs.slice(0, 8).forEach((imgUrl, i) => {
+        fetch('/api/vendor/media', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: imgUrl, type: 'image', source: 'url', title: `Website import - Image ${i + 1}` }),
+        })
+          .then((r) => { if (r.ok) setSavedImages((prev) => ({ ...prev, [i]: true })); })
+          .catch(() => {});
+      });
       // Save to import history
       const updated = saveHistoryEntry({
         url: url.trim(),

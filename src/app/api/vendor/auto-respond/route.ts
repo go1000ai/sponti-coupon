@@ -144,7 +144,7 @@ async function processVendorAutoResponses(
       const userMessage = `Business: ${vendor.business_name}\nCategory: ${vendor.category || ''}\nLocation: ${vendor.city || ''}, ${vendor.state || ''}\nCustomer rating: ${review.rating} stars\nCustomer review: ${review.comment || '(no text)'}\nCustomer name: ${customerName}\n\nWrite a reply to this review.`;
 
       const message = await client.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 300,
         messages: [{ role: 'user', content: userMessage }],
         system: systemPrompt,

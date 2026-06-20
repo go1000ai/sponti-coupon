@@ -98,6 +98,7 @@ export interface Vendor {
   email: string;
   phone: string | null;
   address: string | null;
+  suite: string | null;
   city: string | null;
   state: string | null;
   zip: string | null;

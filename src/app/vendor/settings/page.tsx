@@ -92,6 +92,7 @@ export default function VendorSettingsPage() {
     email: '',
     phone: '',
     address: '',
+    suite: '',
     city: '',
     state: '',
     zip: '',
@@ -169,6 +170,7 @@ export default function VendorSettingsPage() {
           email: data.email || '',
           phone: formatPhoneNumber(data.phone || ''),
           address: data.address || '',
+          suite: data.suite || '',
           city: data.city || '',
           state: data.state || '',
           zip: data.zip || '',
@@ -364,6 +366,15 @@ export default function VendorSettingsPage() {
 
     const supabase = createClient();
 
+    // Normalize the website — let partners type just "www.site.com" and auto-add https://
+    const rawSite = businessForm.website.trim();
+    const website = rawSite
+      ? (/^https?:\/\//i.test(rawSite) ? rawSite : `https://${rawSite.replace(/^\/+/, '')}`)
+      : null;
+    if (website && website !== businessForm.website) {
+      setBusinessForm((f) => ({ ...f, website }));
+    }
+
     // Save personal name to auth user_metadata
     const { error: authError } = await supabase.auth.updateUser({
       data: {
@@ -380,12 +391,13 @@ export default function VendorSettingsPage() {
         email: businessForm.email,
         phone: businessForm.phone || null,
         address: businessForm.address,
+        suite: businessForm.suite || null,
         city: businessForm.city,
         state: businessForm.state,
         zip: businessForm.zip,
         category: businessForm.category || null,
         description: businessForm.description || null,
-        website: businessForm.website || null,
+        website,
         business_type: businessForm.business_type,
         social_links: cleanedSocial,
         business_hours: hoursForm,
@@ -521,7 +533,7 @@ export default function VendorSettingsPage() {
               <div className="w-20 h-20 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {vendor?.logo_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={vendor.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                  <img src={vendor.logo_url} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <Camera className="w-8 h-8 text-gray-300" />
                 )}
@@ -751,12 +763,13 @@ export default function VendorSettingsPage() {
                 <input
                   id="website"
                   name="website"
-                  type="url"
+                  type="text"
                   value={businessForm.website}
                   onChange={handleBusinessChange}
                   className="input-field"
-                  placeholder="https://www.yourbusiness.com"
+                  placeholder="www.yourbusiness.com"
                 />
+                <p className="text-xs text-gray-400 mt-1">Just type your address (e.g. www.yourbusiness.com) — we&rsquo;ll add the https:// automatically.</p>
               </div>
 
               {/* Online Business toggle */}
@@ -806,6 +819,23 @@ export default function VendorSettingsPage() {
                       placeholder="123 Main St"
                       required
                     />
+                    <p className="text-xs text-gray-400 mt-1">Street only — used to place you on the map.</p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="suite" className="block text-sm font-medium text-gray-700 mb-1">
+                      <MapPin className="w-4 h-4 inline mr-1" /> Suite / Unit <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="suite"
+                      name="suite"
+                      type="text"
+                      value={businessForm.suite}
+                      onChange={handleBusinessChange}
+                      className="input-field"
+                      placeholder="Suite 106"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Shown publicly with your address, but kept out of the map lookup.</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">

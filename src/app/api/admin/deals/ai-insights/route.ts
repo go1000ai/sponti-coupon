@@ -92,7 +92,7 @@ export async function POST() {
     const anthropic = new Anthropic({ apiKey });
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       system: `You are a deal performance analyst for SpontiCoupon, a local deals marketplace. Analyze the following deal data and provide actionable insights for the platform admin. Be specific — reference actual deal titles, numbers, and percentages. Be concise and direct.
 

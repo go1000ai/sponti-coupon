@@ -19,6 +19,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [vendorName, setVendorName] = useState<string | null>(null);
+  const [vendorEmail, setVendorEmail] = useState<string | null>(null);
   const [vendorLogoUrl, setVendorLogoUrl] = useState<string | null>(null);
   const [promoExpiresAt, setPromoExpiresAt] = useState<string | null>(null);
   const [promoCode, setPromoCode] = useState<string | null>(null);
@@ -56,11 +57,12 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     supabase
       .from('vendors')
-      .select('business_name, logo_url, promo_expires_at, promo_code')
+      .select('business_name, email, logo_url, promo_expires_at, promo_code')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.business_name) setVendorName(data.business_name);
+        if (data?.email) setVendorEmail(data.email);
         if (data?.logo_url) setVendorLogoUrl(data.logo_url);
         if (data?.promo_expires_at) setPromoExpiresAt(data.promo_expires_at);
         if (data?.promo_code) setPromoCode(data.promo_code);
@@ -156,7 +158,7 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
         onSignOut={signOut}
         userName={vendorName || 'Vendor'}
         personalName={user?.user_metadata?.full_name || user?.email?.split('@')[0] || ''}
-        userEmail={user?.email || ''}
+        userEmail={vendorEmail || user?.email || ''}
         logoUrl={vendorLogoUrl}
         isAlsoCustomer={isAlsoCustomer}
         onSwitchToCustomer={() => switchRole('customer')}

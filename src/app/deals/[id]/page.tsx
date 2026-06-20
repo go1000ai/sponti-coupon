@@ -427,7 +427,7 @@ export default function DealDetailPage() {
     h = h % 12 || 12;
     return `${h}:${m} ${ampm}`;
   };
-  const fullAddress = vendor ? [vendor.address, vendor.city, vendor.state, vendor.zip].filter(Boolean).join(', ') : '';
+  const fullAddress = vendor ? [vendor.address, vendor.suite, vendor.city, vendor.state, vendor.zip].filter(Boolean).join(', ') : '';
 
   // Current day status
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -538,7 +538,7 @@ export default function DealDetailPage() {
               {vendor && (
                 <div className="flex items-center gap-3 mt-4 justify-center sm:justify-start">
                   {vendor.logo_url ? (
-                    <Image src={vendor.logo_url} alt={vendor.business_name} width={44} height={44} className="rounded-xl object-cover" />
+                    <Image src={vendor.logo_url} alt={vendor.business_name} width={44} height={44} className="rounded-xl object-contain" />
                   ) : (
                     <div className="w-11 h-11 rounded-xl bg-primary-100 flex items-center justify-center">
                       <Store className="w-5 h-5 text-primary-600" />
@@ -1091,7 +1091,7 @@ export default function DealDetailPage() {
                     {/* Vendor header */}
                     <div className="flex items-center gap-4">
                       {vendor.logo_url ? (
-                        <Image src={vendor.logo_url} alt={vendor.business_name} width={64} height={64} className="rounded-2xl object-cover" />
+                        <Image src={vendor.logo_url} alt={vendor.business_name} width={64} height={64} className="rounded-2xl object-contain" />
                       ) : (
                         <div className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center">
                           <Store className="w-8 h-8 text-primary-600" />

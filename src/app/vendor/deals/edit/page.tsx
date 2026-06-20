@@ -187,7 +187,9 @@ function EditDealPageInner() {
   // Location state
   const [locations, setLocations] = useState<VendorLocation[]>([]);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website'>('all');
+  const [locationMode, setLocationMode] = useState<'all' | 'specific' | 'none' | 'website' | 'business'>('all');
+  const [vendorAddress, setVendorAddress] = useState('');
+  const [vendorBusinessType, setVendorBusinessType] = useState<string | null>(null);
   const [websiteUrl, setWebsiteUrl] = useState('');
 
   // Promo code state (online deals)
@@ -292,17 +294,28 @@ function EditDealPageInner() {
     // Fetch vendor category and name for suggested features & fine print
     supabase
       .from('vendors')
-      .select('category, business_name, website')
+      .select('category, business_name, website, business_type, address, suite, city, state')
       .eq('id', user.id)
       .single()
       .then(({ data }) => {
         if (data?.category) setVendorCategory(data.category);
         if (data?.business_name) setVendorName(data.business_name);
         if (data?.website) setVendorWebsite(data.website);
+        if (data?.business_type) setVendorBusinessType(data.business_type);
+        const addr = [data?.address, data?.suite, data?.city, data?.state].filter(Boolean).join(', ');
+        if (addr) setVendorAddress(addr);
       });
 
     fetchDeal();
   }, [dealId, user]);
+
+  // For a single-location physical partner, a null location means "at my business".
+  // Show that clearly once vendor info has loaded (instead of the hidden "All locations").
+  useEffect(() => {
+    if (locationMode === 'all' && locations.length === 0 && vendorBusinessType === 'physical' && vendorAddress) {
+      setLocationMode('business');
+    }
+  }, [locationMode, locations.length, vendorBusinessType, vendorAddress]);
 
   // Fetch promo code stats for online deals
   const fetchPromoStats = useCallback(async () => {
@@ -679,7 +692,7 @@ function EditDealPageInner() {
   const mediaCount = (form.image_url ? 1 : 0) + additionalImages.length;
   const mediaSummary = `${mediaCount} image${mediaCount !== 1 ? 's' : ''}${videoUrls.length > 0 ? `, ${videoUrls.length} video${videoUrls.length > 1 ? 's' : ''}` : ''}`;
   const detailsSummary = `${highlights.length} highlights, ${amenities.length} features, ${searchTags.length} tags`;
-  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'website' ? 'Online' : 'Mobile / No fixed location';
+  const locationSummary = locationMode === 'all' ? 'All locations' : locationMode === 'specific' ? `${selectedLocationIds.length} location${selectedLocationIds.length !== 1 ? 's' : ''}` : locationMode === 'business' ? 'At my business' : locationMode === 'website' ? 'Online' : 'Mobile / No fixed location';
   const promoSummary = promoStats && promoStats.total > 0
     ? `${promoStats.available} available, ${promoStats.claimed} claimed`
     : 'No codes yet';
@@ -1258,6 +1271,9 @@ function EditDealPageInner() {
               }} className="input-field appearance-none pr-10 text-sm">
                 {locations.length > 0 && <option value="all">All Locations</option>}
                 {locations.length > 0 && <option value="specific">Specific Locations</option>}
+                {locations.length === 0 && vendorAddress && vendorBusinessType === 'physical' && (
+                  <option value="business">At my business — {vendorAddress}</option>
+                )}
                 <option value="website">Online / Website</option>
                 <option value="none">Mobile / No Fixed Location</option>
               </select>
