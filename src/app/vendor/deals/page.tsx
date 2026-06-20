@@ -8,7 +8,7 @@ import { useVendorTier } from '@/lib/hooks/useVendorTier';
 import { formatCurrency, formatPercentage } from '@/lib/utils';
 import { CountdownTimer } from '@/components/ui/CountdownTimer';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Tag, Pause, Play, Trash2, TrendingUp, Lock, Globe, MapPin } from 'lucide-react';
+import { Tag, Pause, Play, Trash2, TrendingUp, Lock, Globe, MapPin, Share2, Check } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import type { Deal } from '@/lib/types/database';
 import { useLanguage } from '@/lib/i18n';
@@ -34,6 +34,16 @@ export default function VendorDealsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'paused'>('all');
   const [loading, setLoading] = useState(true);
   const [dealsThisMonth, setDealsThisMonth] = useState(0);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Copy a deal's public SpontiCoupon link, ready to paste on social media
+  const copyDealLink = (deal: Deal) => {
+    const base = process.env.NEXT_PUBLIC_APP_URL || 'https://sponticoupon.com';
+    const url = `${base}/deals/${deal.slug || deal.id}`;
+    navigator.clipboard?.writeText(url);
+    setCopiedId(deal.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -261,6 +271,15 @@ export default function VendorDealsPage() {
                       <span className="font-bold text-gray-900">{deal.claims_count}</span> {t('vendor.deals.stats.claims')}
                     </span>
                     <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                      {deal.status === 'active' && (
+                        <button
+                          onClick={() => copyDealLink(deal)}
+                          className="p-1.5 text-secondary-500 hover:bg-secondary-50 rounded-lg transition-colors"
+                          title="Copy share link for social media"
+                        >
+                          {copiedId === deal.id ? <Check className="w-4 h-4 text-green-600" /> : <Share2 className="w-4 h-4" />}
+                        </button>
+                      )}
                       {deal.status === 'active' && (
                         <button
                           onClick={() => handleStatusChange(deal.id, 'paused')}

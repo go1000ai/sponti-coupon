@@ -84,7 +84,7 @@ Writing rules (professional quality + scroll-stopping engagement are the #1 prio
 
 Per-platform:
 - facebook: 150-350 chars. 1-2 tight sentences. Include the claim link URL inline. End with 2-3 hashtags.
-- instagram: 150-300 chars. Punchy first-line hook. Say "Link in bio to claim!". Do NOT include the URL. End with 6-9 hashtags on a new line.
+- instagram: 150-300 chars. Punchy first-line hook. Then put the claim link URL on its OWN line preceded by "Copy & paste to claim 👉 " (Instagram captions aren't tappable, so make the link easy to copy). End with 6-9 hashtags on a new line.
 - twitter: Under 240 chars (leave room for the link). Punchy and professional. Include the claim link. 1-2 hashtags.
 - tiktok: 80-150 chars. Casual but clean. 3-5 hashtags.
 
@@ -206,7 +206,7 @@ function templateCaptions(
 
   return {
     facebook: `${hook}${urgency} Tap to claim it before it's gone 👉 ${claimUrl} ${tags.slice(0, 3).join(' ')}`,
-    instagram: `${hook}${urgency} 🔗 Link in bio to claim!\n\n${tags.join(' ')}`,
+    instagram: `${hook}${urgency}\n\nCopy & paste to claim 👉 ${claimUrl}\n\n${tags.join(' ')}`,
     twitter: `${hook}${urgency} Claim it 👉 ${claimUrl} ${tags.slice(0, 2).join(' ')}`,
     tiktok: `${discount}% off ${deal.title} at ${bizName}${location} 🤑${urgency} ${tags.slice(0, 4).join(' ')}`,
   };
