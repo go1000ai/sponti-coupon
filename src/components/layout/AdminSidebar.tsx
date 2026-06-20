@@ -37,6 +37,7 @@ import {
   Target,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useLanguage } from '@/lib/i18n';
@@ -135,9 +136,11 @@ interface AdminSidebarProps {
   userName?: string | null;
   userEmail?: string | null;
   userAvatar?: string | null;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export default function AdminSidebar({ onSignOut, userName, userEmail, userAvatar }: AdminSidebarProps) {
+export default function AdminSidebar({ onSignOut, userName, userEmail, userAvatar, collapsed = false, onToggleCollapse }: AdminSidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
@@ -178,10 +181,13 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
     });
   };
 
-  const sidebarContent = (
+  // Flattened list of all nav items — used for the collapsed icon-only rail.
+  const allItems = navGroups.flatMap((g) => g.items);
+
+  const renderContent = (compact: boolean) => (
     <div className="flex flex-col h-full">
       {/* Branding */}
-      <div className="p-6 border-b border-gray-700/30">
+      <div className={`border-b border-gray-700/30 ${compact ? 'p-3' : 'p-6'}`}>
         <div className="flex flex-col items-center justify-center gap-2 w-full text-center">
           <a href="/" target="_blank" rel="noopener noreferrer">
             <Image
@@ -189,68 +195,92 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
               alt="SpontiCoupon"
               width={160}
               height={120}
-              className="w-40 h-auto mx-auto hover:opacity-80 transition-opacity"
+              className={`h-auto mx-auto hover:opacity-80 transition-opacity ${compact ? 'w-11' : 'w-40'}`}
               priority
             />
           </a>
-          <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 block w-full text-center">
-            {t('admin.sidebar.adminPortal')}
-          </span>
+          {!compact && (
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 block w-full text-center">
+              {t('admin.sidebar.adminPortal')}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 overflow-y-auto">
-        {navGroups.map((group) => {
-          const open = openGroups.has(group.label);
-          const groupHasActive = group.items.some(i => isActive(i.href));
-          return (
-            <div key={group.label} className="mb-2">
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                className={`w-full flex items-center justify-between px-4 py-1.5 mb-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-                  groupHasActive
-                    ? 'text-primary-400'
-                    : 'text-gray-400 hover:text-gray-200'
+      {compact ? (
+        <nav className="flex-1 px-2 py-4 overflow-y-auto">
+          {allItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.label}
+                className={`flex items-center justify-center w-full h-11 mb-1 rounded-lg transition-all duration-200 ${
+                  active
+                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                    : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
                 }`}
-                aria-expanded={open}
               >
-                <span>{group.label}</span>
-                <ChevronRight
-                  className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
-                />
-              </button>
-              {open && (
-                <div className="space-y-0.5">
-                  {group.items.map((item) => {
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          active
-                            ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
-                            : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
-                        }`}
-                      >
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
+                {item.icon}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : (
+        <nav className="flex-1 px-3 py-4 overflow-y-auto">
+          {navGroups.map((group) => {
+            const open = openGroups.has(group.label);
+            const groupHasActive = group.items.some(i => isActive(i.href));
+            return (
+              <div key={group.label} className="mb-2">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(group.label)}
+                  className={`w-full flex items-center justify-between px-4 py-1.5 mb-1 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-colors ${
+                    groupHasActive
+                      ? 'text-primary-400'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                  aria-expanded={open}
+                >
+                  <span>{group.label}</span>
+                  <ChevronRight
+                    className={`w-3 h-3 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+                  />
+                </button>
+                {open && (
+                  <div className="space-y-0.5">
+                    {group.items.map((item) => {
+                      const active = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            active
+                              ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
+                              : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
+                          }`}
+                        >
+                          {item.icon}
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      )}
 
       {/* User Info + Sign Out */}
-      <div className="p-4 border-t border-gray-700/30">
-        {(userName || userEmail) && (
+      <div className={`border-t border-gray-700/30 ${compact ? 'p-2' : 'p-4'}`}>
+        {!compact && (userName || userEmail) && (
           <div className="px-4 py-3 mb-2">
             <div className="flex items-center gap-3">
               {userAvatar ? (
@@ -277,13 +307,18 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
             </div>
           </div>
         )}
-        <LanguageToggle className="w-full justify-center mb-2 bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
+        {!compact && (
+          <LanguageToggle className="w-full justify-center mb-2 bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
+        )}
         <button
           onClick={onSignOut}
-          className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+          title={t('nav.signOut')}
+          className={`flex items-center rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 ${
+            compact ? 'justify-center w-full h-11' : 'gap-3 w-full px-4 py-3'
+          }`}
         >
           <LogOut className="w-5 h-5" />
-          <span>{t('nav.signOut')}</span>
+          {!compact && <span>{t('nav.signOut')}</span>}
         </button>
       </div>
     </div>
@@ -308,7 +343,7 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
         />
       )}
 
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar (always full width) */}
       <aside
         className={`lg:hidden fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 transform transition-transform duration-300 ease-in-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
@@ -321,12 +356,27 @@ export default function AdminSidebar({ onSignOut, userName, userEmail, userAvata
         >
           <X className="w-5 h-5" />
         </button>
-        {sidebarContent}
+        {renderContent(false)}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-gray-900 z-30">
-        {sidebarContent}
+      {/* Desktop sidebar (collapsible) */}
+      <aside
+        className={`hidden lg:block fixed inset-y-0 left-0 bg-gray-900 z-30 transition-[width] duration-300 ease-in-out ${
+          collapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {/* Collapse / expand toggle — sits on the sidebar's right edge */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            title={collapsed ? 'Expand menu' : 'Collapse menu'}
+            aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
+            className="absolute top-6 -right-3 z-40 w-6 h-6 flex items-center justify-center rounded-full bg-gray-800 border border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 shadow-md transition-colors"
+          >
+            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          </button>
+        )}
+        {renderContent(collapsed)}
       </aside>
     </>
   );

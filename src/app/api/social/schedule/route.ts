@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
   // Verify deal exists and user has access
   const { data: deal } = await serviceClient
     .from('deals')
-    .select('id, title, image_url, vendor_id')
+    .select('id, slug, title, image_url, vendor_id')
     .eq('id', deal_id)
     .single();
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   const imageUrl = rawImageUrl && rawImageUrl.startsWith('/') ? `${APP_URL}${rawImageUrl}` : rawImageUrl;
   const rawVideoUrl = customVideoUrl || null;
   const videoUrl = rawVideoUrl && rawVideoUrl.startsWith('/') ? `${APP_URL}${rawVideoUrl}` : rawVideoUrl;
-  const claimUrl = `${APP_URL}/deals/${deal.id}`;
+  const claimUrl = `${APP_URL}/deals/${(deal as { slug?: string | null }).slug || deal.id}`;
   const now = new Date().toISOString();
 
   // If post_now, trigger immediate posting via auto-post endpoint

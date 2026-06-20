@@ -12,10 +12,12 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [notFoundToast, setNotFoundToast] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotFoundToast(false);
     setLoading(true);
 
     try {
@@ -26,6 +28,13 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await res.json();
+
+      // Email isn't registered — prompt them to create an account.
+      if (res.status === 404 && data.notFound) {
+        setNotFoundToast(true);
+        setLoading(false);
+        return;
+      }
 
       if (!res.ok) {
         setError(data.error || 'Failed to send reset email.');
@@ -42,6 +51,31 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
+      {/* Email-not-found toast */}
+      {notFoundToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[92%] max-w-md">
+          <div className="bg-red-600 text-white rounded-xl shadow-lg px-4 py-3 flex items-start gap-3">
+            <Mail className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold">This email is not in the database.</p>
+              <p className="text-red-100">
+                Please{' '}
+                <Link href="/auth/signup" className="underline font-semibold hover:text-white">
+                  start a new account
+                </Link>.
+              </p>
+            </div>
+            <button
+              onClick={() => setNotFoundToast(false)}
+              className="text-red-100 hover:text-white text-lg leading-none"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">

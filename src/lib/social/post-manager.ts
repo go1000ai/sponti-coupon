@@ -31,7 +31,7 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
   const { data: deal, error: dealError } = await supabase
     .from('deals')
     .select(`
-      id, title, description, deal_type, original_price, deal_price,
+      id, slug, title, description, deal_type, original_price, deal_price,
       discount_percentage, image_url, vendor_id
     `)
     .eq('id', dealId)
@@ -90,6 +90,7 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
   // 4. Build deal object for caption generation
   const dealForPost: DealForSocialPost = {
     id: deal.id,
+    slug: deal.slug,
     title: deal.title,
     description: deal.description,
     deal_type: deal.deal_type,
@@ -119,7 +120,7 @@ export async function postDealToSocial(dealId: string, vendorId: string, options
   } else {
     captions = await generateCaptions(dealForPost, undefined, supabase, deal.id);
   }
-  const claimUrl = `${APP_URL}/deals/${deal.id}`;
+  const claimUrl = `${APP_URL}/deals/${deal.slug || deal.id}`;
 
   // If we have existing pending post records (from schedule UI), fetch their media info
   let imageUrl = deal.image_url || '';

@@ -108,7 +108,7 @@ function buildEmailHtml({
               <!-- Orange gradient header -->
               <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="background: linear-gradient(135deg, #FF6B35, #FF8F65); padding: 32px 32px 24px; text-align: center;">
+                  <td bgcolor="#FF6B35" style="background-color: #FF6B35; background-image: linear-gradient(135deg, #FF6B35, #FF8F65); padding: 32px 32px 24px; text-align: center;">
                     <div style="font-size: 40px; margin-bottom: 8px;">&#11088;</div>
                     <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; line-height: 1.3;">
                       How was your experience?
@@ -137,13 +137,24 @@ function buildEmailHtml({
                     <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
                       <tr>
                         <td align="center">
-                          <a href="${escapeHtml(reviewUrl)}" target="_blank"
-                             style="display: inline-block; background: linear-gradient(135deg, #FF6B35, #FF8F65); color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none; padding: 14px 40px; border-radius: 12px; letter-spacing: 0.3px;">
-                            Leave a Review
-                          </a>
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td align="center" bgcolor="#FF6B35" style="border-radius: 12px;">
+                                <a href="${escapeHtml(reviewUrl)}" target="_blank"
+                                   style="display: inline-block; background-color: #FF6B35; background-image: linear-gradient(135deg, #FF6B35, #FF8F65); color: #ffffff; font-size: 16px; font-weight: 700; text-decoration: none; padding: 14px 40px; border-radius: 12px; letter-spacing: 0.3px; border: 1px solid #FF6B35;">
+                                  &#9733; Leave a Review
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
                         </td>
                       </tr>
                     </table>
+
+                    <!-- Login note -->
+                    <p style="margin: 14px 0 0; color: #888; font-size: 13px; line-height: 1.5; text-align: center;">
+                      You&rsquo;ll be asked to log in to your SpontiCoupon account, then you can rate your visit and write your review.
+                    </p>
 
                     <!-- Deal info box -->
                     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 28px;">

@@ -79,6 +79,16 @@ export async function POST(
     }, { status: 403 });
   }
 
+  // Anti-fraud: a vendor cannot redeem a deal they claimed for their OWN business
+  // (claimer == vendor = same account). This kills self-dealing at the source, which
+  // also means they can never leave a (fake) review of their own business.
+  if (claim.customer_id === claim.deal?.vendor_id) {
+    return NextResponse.json({
+      error: 'You cannot redeem your own deal',
+      code: 'OWN_DEAL',
+    }, { status: 403 });
+  }
+
   // Check if already redeemed
   if (claim.redeemed) {
     return NextResponse.json({

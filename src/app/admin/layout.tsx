@@ -1,11 +1,26 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import AdminSidebar from '@/components/layout/AdminSidebar';
 import { Ban } from 'lucide-react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, role, loading, signOut, firstName, lastName, avatarUrl } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+
+  // Remember the collapsed preference across page loads.
+  useEffect(() => {
+    setCollapsed(localStorage.getItem('adminSidebarCollapsed') === '1');
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('adminSidebarCollapsed', next ? '1' : '0');
+      return next;
+    });
+  };
 
   if (loading) {
     return (
@@ -34,8 +49,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         userName={[firstName, lastName].filter(Boolean).join(' ') || null}
         userEmail={user?.email || null}
         userAvatar={avatarUrl || null}
+        collapsed={collapsed}
+        onToggleCollapse={toggleCollapsed}
       />
-      <main className="lg:ml-64 min-h-screen">
+      <main className={`min-h-screen transition-[margin] duration-300 ease-in-out ${collapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8">
           {children}
         </div>

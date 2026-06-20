@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
   // Fetch deal
   const { data: deal, error: dealError } = await serviceClient
     .from('deals')
-    .select('id, title, description, deal_type, original_price, deal_price, discount_percentage, image_url, vendor_id')
+    .select('id, slug, title, description, deal_type, original_price, deal_price, discount_percentage, image_url, vendor_id')
     .eq('id', deal_id)
     .single();
 
@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
 
   const dealForPost: DealForSocialPost = {
     id: deal.id,
+    slug: deal.slug,
     title: deal.title,
     description: deal.description,
     deal_type: deal.deal_type,
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
   // Generate captions
   const captions = await generateCaptions(dealForPost, tone || undefined);
   const imageUrl = deal.image_url || "";
-  const claimUrl = `${APP_URL}/deals/${deal.id}`;
+  const claimUrl = `${APP_URL}/deals/${deal.slug || deal.id}`;
 
   // Separate library into images and videos
   const libraryImages = (mediaLibrary || []).filter(m => m.type === 'image').map(m => m.url);

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       deal_id,
       redeemed_at,
       customer:customers(id, email, first_name, last_name, review_email_opt_out, timezone),
-      deal:deals(id, title, vendor_id, vendor:vendors(business_name))
+      deal:deals(id, slug, title, vendor_id, vendor:vendors(business_name))
     `)
     .eq('redeemed', true)
     .is('review_request_sent_at', null)
@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       } | null;
       const deal = claim.deal as unknown as {
         id: string;
+        slug: string | null;
         title: string;
         vendor_id: string;
         vendor: { business_name: string } | null;
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
         : customer.email.split('@')[0];
 
       const businessName = deal.vendor?.business_name || 'the business';
-      const reviewUrl = `${appUrl}/deals/${deal.id}`;
+      const reviewUrl = `${appUrl}/deals/${deal.slug || deal.id}?review=1`;
 
       await sendReviewRequestEmail({
         to: customer.email,

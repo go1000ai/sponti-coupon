@@ -26,6 +26,7 @@ export default function DashboardSettingsPage() {
     state: '',
     zip: '',
     email_digest_opt_in: true,
+    email_preferred_deals: true,
   });
 
   useEffect(() => {
@@ -54,6 +55,7 @@ export default function DashboardSettingsPage() {
             state: data.state || '',
             zip: data.zip || '',
             email_digest_opt_in: data.email_digest_opt_in,
+            email_preferred_deals: data.email_preferred_deals ?? true,
           });
         }
         setLoading(false);
@@ -211,6 +213,21 @@ export default function DashboardSettingsPage() {
                 <Mail className="w-4 h-4" /> {t('customer.account.dailyDealDigest')}
               </p>
               <p className="text-sm text-gray-500">{t('customer.account.dailyDealDigestDesc')}</p>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 cursor-pointer mt-4">
+            <input
+              type="checkbox"
+              checked={form.email_preferred_deals}
+              onChange={e => setForm(f => ({ ...f, email_preferred_deals: e.target.checked }))}
+              className="w-5 h-5 text-primary-500 rounded border-gray-300 focus:ring-primary-500"
+            />
+            <div>
+              <p className="font-medium text-gray-900 flex items-center gap-1">
+                <Mail className="w-4 h-4" /> New deals in my categories
+              </p>
+              <p className="text-sm text-gray-500">Email me when new deals match the types and area I picked in Deals For You.</p>
             </div>
           </label>
         </div>

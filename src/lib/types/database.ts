@@ -151,6 +151,11 @@ export interface Customer {
   push_token: string | null;
   email_digest_opt_in: boolean;
   review_email_opt_out: boolean;
+  preferred_categories: string[] | null;
+  email_preferred_deals: boolean;
+  location_zip: string | null;
+  deal_radius_miles: number | null;
+  last_deal_digest_at: string | null;
   timezone: string;
   created_at: string;
 }

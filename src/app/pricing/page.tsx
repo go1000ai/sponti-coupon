@@ -482,7 +482,7 @@ export default function PricingPage() {
                 })}
               </p>
               <p className="text-sm text-amber-400 mt-2 font-semibold">
-                ⏳ Spots are filling up fast — secure your founding vendor pricing today!
+                ⏳ Spots are filling up fast — secure your founding partner pricing today!
               </p>
             </div>
           )}
@@ -712,13 +712,13 @@ export default function PricingPage() {
             <div className="text-center mb-8">
               <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 text-xs font-bold px-4 py-1.5 rounded-full mb-3 uppercase tracking-wider">
                 <Flame className="w-3.5 h-3.5" />
-                Founding Vendors &middot; Limited Offer
+                Founding Partners &middot; Limited Offer
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-                Founding Vendor Program
+                Founding Partner Program
               </h2>
               <p className="text-gray-500 mt-2 max-w-xl mx-auto">
-                A limited-time invitation to help shape SpontiCoupon. Reserved for the first 15 vendors — while signups last.
+                A limited-time invitation to help shape SpontiCoupon. Reserved for the first 15 partners — while signups last.
               </p>
             </div>
           </ScrollReveal>
@@ -751,7 +751,7 @@ export default function PricingPage() {
                     </h3>
 
                     <p className="text-white/90 text-base sm:text-lg mt-3 max-w-md">
-                      Reserved for the first 15 founding vendors. Full Business plan access, no card on file, no auto-charge. Apply for your invitation in under a minute.
+                      Reserved for the first 15 founding partners. Full Business plan access, no card on file, no auto-charge. Apply for your invitation in under a minute.
                     </p>
 
                     {/* Stat tiles */}
@@ -794,7 +794,7 @@ export default function PricingPage() {
                       />
                     </div>
                     <p className="text-[11px] text-white/70 mt-1.5">
-                      {foundersDisplayUsed} of {foundersMax} founding vendors invited
+                      {foundersDisplayUsed} of {foundersMax} founding partners invited
                     </p>
 
                     {foundersFull ? (

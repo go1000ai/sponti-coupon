@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     .update({
       email: toEmail,
       email_sent_at: new Date().toISOString(),
-      status: 'contacted',
+      status: 'email_sent',
       updated_at: new Date().toISOString(),
     })
     .eq('id', leadId)

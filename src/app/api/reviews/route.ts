@@ -91,14 +91,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify user is a customer
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('role')
+    // Allow anyone with a customer record to review — dual-role (vendor+customer)
+    // accounts have role='vendor' but a valid customers row. Actual eligibility
+    // (must have redeemed a deal) is enforced by the can_customer_review check below.
+    const { data: customerRecord } = await supabase
+      .from('customers')
+      .select('id')
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.role !== 'customer') {
+    if (!customerRecord) {
       return NextResponse.json({ error: 'Only customers can leave reviews' }, { status: 403 });
     }
 
@@ -111,6 +113,12 @@ export async function POST(request: NextRequest) {
 
     if (rating < 1 || rating > 5 || !Number.isInteger(rating)) {
       return NextResponse.json({ error: 'Rating must be an integer between 1 and 5' }, { status: 400 });
+    }
+
+    // Anti-fraud: a vendor cannot review their own business (vendor.id === user.id).
+    // Dual-role accounts may review OTHER vendors they genuinely redeemed from.
+    if (vendor_id === user.id) {
+      return NextResponse.json({ error: 'You cannot review your own business' }, { status: 403 });
     }
 
     // Verify customer has redeemed a deal from this vendor

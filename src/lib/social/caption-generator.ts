@@ -18,7 +18,7 @@ export async function generateCaptions(
   supabaseClient?: SupabaseClient,
   dealId?: string,
 ): Promise<PlatformCaptions> {
-  const claimUrl = `${APP_URL}/deals/${deal.id}`;
+  const claimUrl = `${APP_URL}/deals/${deal.slug || deal.id}`;
   const discount = Math.round(deal.discount_percentage);
 
   // --- Cache read ---

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -14,6 +14,7 @@ import {
   X, MapPin, Tag, Shield, Phone, Globe, Mail, Send, Trash2, Loader2, AlertTriangle,
   Sparkles, Zap, ArrowRight, ArrowUpDown, Flame, Trophy, Target,
   Wifi, Car, PawPrint, Coffee, UtensilsCrossed, Music, Ticket, CalendarClock,
+  Star,
 } from 'lucide-react';
 import { SpontiIcon } from '@/components/ui/SpontiIcon';
 import AppointmentPicker from '@/components/appointments/AppointmentPicker';
@@ -65,6 +66,7 @@ function DashboardMyDealsContent() {
     price_high: t('customer.myDeals.sortPriceHigh'),
     category: t('customer.myDeals.sortCategory'),
   };
+  const router = useRouter();
   const [claims, setClaims] = useState<Claim[]>([]);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
@@ -379,10 +381,21 @@ function DashboardMyDealsContent() {
                       {t('customer.myDeals.payRemaining')}
                     </p>
                   ) : status === 'redeemed' && claim.redeemed_at ? (
-                    <p className="text-xs text-gray-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
-                      {t('customer.myDeals.used', { date: formatDate(claim.redeemed_at) })}
-                    </p>
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-blue-400" />
+                        {t('customer.myDeals.used', { date: formatDate(claim.redeemed_at) })}
+                      </p>
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); router.push(`/deals/${deal.slug || deal.id}?review=1`); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); router.push(`/deals/${deal.slug || deal.id}?review=1`); } }}
+                        className="relative z-20 inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 rounded-lg text-xs font-semibold bg-primary-500 text-white hover:bg-primary-600 transition-colors"
+                      >
+                        <Star className="w-3.5 h-3.5" /> Leave a Review
+                      </span>
+                    </div>
                   ) : status === 'expired' ? (
                     <p className="text-xs text-gray-400 flex items-center gap-1.5">
                       <XCircle className="w-3.5 h-3.5 text-gray-400" />

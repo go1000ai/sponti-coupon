@@ -4,7 +4,7 @@ import { notifyNewSignup } from '@/lib/email/admin-notification';
 
 const VALID_PROMOS: Record<string, { tier: string; freeMonths: number; maxUses?: number }> = {
   PUERTORICO6: { tier: 'business', freeMonths: 3 },
-  FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 15 },
+  FOUNDING15: { tier: 'business', freeMonths: 3 },
 };
 
 export async function POST(request: NextRequest) {

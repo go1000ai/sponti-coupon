@@ -36,23 +36,33 @@ export async function GET(request: NextRequest) {
   }
 
   const HEADERS = [
-    'Business Name', 'Address', 'Phone', 'Website',
-    'Category', 'City', 'State', 'Rating', 'Reviews',
-    'Status', 'On Groupon', 'Notes', 'Saved On',
+    'Business Name', 'Contact Name', 'Email', 'Phone', 'Website',
+    'Address', 'City', 'State', 'Zip', 'Category', 'Rating', 'Reviews',
+    'Status', 'Visited', 'On Groupon', 'Offer', 'Original Price', 'Deal Price',
+    'Deal Type', 'Payment Method', 'Notes', 'Saved On',
   ];
 
   const rows = (leads || []).map((l) => [
     l.business_name,
-    l.address,
+    l.contact_name,
+    l.email,
     l.phone,
     l.website,
-    l.category,
+    l.address,
     l.city,
     l.state,
+    l.zip,
+    l.category,
     l.rating,
     l.review_count,
     l.status,
+    l.visited ? 'Yes' : 'No',
     l.on_groupon ? 'Yes' : 'No',
+    l.deal_offer,
+    l.original_price,
+    l.deal_price,
+    l.deal_type,
+    l.payment_method,
     l.notes,
     l.created_at ? new Date(l.created_at).toLocaleDateString('en-US') : '',
   ].map(escapeCell).join(','));

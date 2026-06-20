@@ -65,7 +65,7 @@ function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
         <X className="w-4 h-4" strokeWidth={2.5} />
       </button>
       {imageUrl && (
-        <Link href={`/deals/${deal.id}`} className="block mb-1.5">
+        <Link href={`/deals/${deal.slug || deal.id}`} className="block mb-1.5">
           <img
             src={imageUrl}
             alt={deal.title}
@@ -80,7 +80,7 @@ function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
         </span>
       </div>
       <Link
-        href={`/deals/${deal.id}`}
+        href={`/deals/${deal.slug || deal.id}`}
         className="font-bold text-xs leading-snug text-gray-900 hover:text-primary-500 transition-colors line-clamp-2 block"
       >
         {deal.title}
@@ -99,7 +99,7 @@ function DealPopupCard({ deal: rawDeal }: { deal: Deal }) {
         )}
       </div>
       <Link
-        href={`/deals/${deal.id}`}
+        href={`/deals/${deal.slug || deal.id}`}
         className="mt-2 block text-center bg-gradient-to-r from-primary-500 to-orange-500 text-white text-[11px] font-semibold py-1.5 rounded-md hover:from-primary-600 hover:to-orange-600 transition-all"
       >
         {t('dealsMap.viewDeal')}

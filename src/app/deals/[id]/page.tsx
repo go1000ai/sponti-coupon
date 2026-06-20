@@ -93,6 +93,7 @@ export default function DealDetailPage() {
   const [totalReviews, setTotalReviews] = useState(0);
   const [canReview, setCanReview] = useState(false);
   const [reviewWaitMessage, setReviewWaitMessage] = useState<string | null>(null);
+  const [reviewBlockedMsg, setReviewBlockedMsg] = useState<'not_redeemed' | 'already_reviewed' | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -114,6 +115,16 @@ export default function DealDetailPage() {
     }
     fetchDeal();
   }, [params.id]);
+
+  // SEO: show the clean slug (deal name) in the address bar even when the page
+  // was reached via UUID — rewrites the URL without a reload, preserving query.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !deal?.slug) return;
+    const desired = `/deals/${deal.slug}`;
+    if (window.location.pathname !== desired) {
+      window.history.replaceState(null, '', desired + window.location.search);
+    }
+  }, [deal?.slug]);
 
   useEffect(() => {
     if (!deal?.vendor_id) return;
@@ -139,6 +150,24 @@ export default function DealDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, deal]);
 
+  // Deep-link from review-request email (/deals/[id]?review=1) → open the reviews tab
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('review') === '1' || sp.get('tab') === 'reviews') {
+      setActiveTab('reviews');
+    }
+  }, []);
+
+  // Once the customer is confirmed eligible, auto-open the review form for the email deep-link
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('review') === '1' && user && canReview) {
+      setShowReviewForm(true);
+    }
+  }, [user, canReview]);
+
   const fetchReviews = async () => {
     if (!deal?.vendor_id) return;
     setReviewsLoading(true);
@@ -161,16 +190,19 @@ export default function DealDetailPage() {
       const eligRes = await fetch(`/api/reviews/eligibility?vendor_id=${deal.vendor_id}&deal_id=${deal.id}`);
       if (eligRes.ok) {
         const eligData = await eligRes.json();
-        if (eligData.has_reviewed) { setCanReview(false); setReviewWaitMessage(null); return; }
-        if (eligData.can_review) { setCanReview(true); setReviewWaitMessage(null); return; }
+        if (eligData.has_reviewed) { setCanReview(false); setReviewWaitMessage(null); setReviewBlockedMsg('already_reviewed'); return; }
+        if (eligData.can_review) { setCanReview(true); setReviewWaitMessage(null); setReviewBlockedMsg(null); return; }
         if (eligData.wait_hours !== undefined && eligData.wait_hours !== null) {
           setCanReview(false);
+          setReviewBlockedMsg(null);
           const hoursLeft = Math.ceil(eligData.wait_hours);
           setReviewWaitMessage(hoursLeft <= 1 ? 'You can leave a review in less than 1 hour' : `You can leave a review in about ${hoursLeft} hour${hoursLeft > 1 ? 's' : ''}`);
           return;
         }
+        // Logged in but not eligible and no wait period → no redeemed claim for this deal
         setCanReview(false);
         setReviewWaitMessage(null);
+        setReviewBlockedMsg('not_redeemed');
       }
     } catch { /* Non-critical */ }
   };
@@ -385,6 +417,16 @@ export default function DealDetailPage() {
   const vendor = deal.vendor;
   const hours = vendor?.business_hours as BusinessHours | undefined;
   const social = vendor?.social_links as VendorSocialLinks | undefined;
+  // Convert "17:00" → "5:00 PM"
+  const fmt12 = (t?: string) => {
+    if (!t) return '';
+    const [hStr, m = '00'] = t.split(':');
+    let h = parseInt(hStr, 10);
+    if (isNaN(h)) return t;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${m} ${ampm}`;
+  };
   const fullAddress = vendor ? [vendor.address, vendor.city, vendor.state, vendor.zip].filter(Boolean).join(', ') : '';
 
   // Current day status
@@ -913,10 +955,36 @@ export default function DealDetailPage() {
                       )}
                     </div>
 
+                    {!user && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-primary-50 border border-primary-200 px-4 py-3 rounded-lg">
+                        <p className="text-sm text-gray-700">{t('dealDetail.logInToReview')}</p>
+                        <Link
+                          href={`/auth/login?redirect=${encodeURIComponent(`/deals/${params.id}?review=1`)}`}
+                          className="btn-primary text-sm flex items-center justify-center gap-2 whitespace-nowrap"
+                        >
+                          <Star className="w-4 h-4" /> {t('dealDetail.logInToReviewBtn')}
+                        </Link>
+                      </div>
+                    )}
+
                     {user && !canReview && reviewWaitMessage && (
                       <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
                         <Clock className="w-4 h-4 flex-shrink-0" />
                         <span>{reviewWaitMessage}</span>
+                      </div>
+                    )}
+
+                    {user && !canReview && !reviewWaitMessage && reviewBlockedMsg === 'not_redeemed' && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-lg">
+                        <Star className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                        <span>You can leave a review once you&rsquo;ve redeemed this deal at the business.</span>
+                      </div>
+                    )}
+
+                    {user && reviewBlockedMsg === 'already_reviewed' && (
+                      <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg">
+                        <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                        <span>Thanks — you&rsquo;ve already reviewed this deal.</span>
                       </div>
                     )}
 
@@ -1186,7 +1254,7 @@ export default function DealDetailPage() {
                                   {day}{isToday ? ` ${t('dealDetail.todayLabel')}` : ''}
                                 </span>
                                 <span className={dayData?.closed ? 'text-red-500' : isToday ? 'text-primary-600' : 'text-gray-600'}>
-                                  {dayData?.closed ? t('dealDetail.closedText') : dayData ? `${dayData.open} - ${dayData.close}` : '—'}
+                                  {dayData?.closed ? t('dealDetail.closedText') : dayData ? `${fmt12(dayData.open)} - ${fmt12(dayData.close)}` : '—'}
                                 </span>
                               </div>
                             );

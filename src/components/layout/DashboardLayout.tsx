@@ -21,6 +21,8 @@ import {
   ArrowLeftRight,
   Calendar,
   PlayCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
@@ -44,7 +46,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, role, signOut, switchRole } = useAuth();
   const isVendorInCustomerMode = role === 'vendor';
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+
+  // Remember the collapsed preference across page loads
+  useEffect(() => {
+    setCollapsed(localStorage.getItem('dashboardSidebarCollapsed') === '1');
+  }, []);
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('dashboardSidebarCollapsed', next ? '1' : '0');
+      return next;
+    });
+  };
 
   // Scroll main content to top on route change
   useEffect(() => {
@@ -64,40 +79,45 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   const allItems = [...navItems, browseItem];
 
-  const renderSidebarContent = (enableTourAttrs: boolean) => (
+  const renderSidebarContent = (enableTourAttrs: boolean, compact = false) => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="p-5 border-b border-gray-700/30">
+      <div className={`border-b border-gray-700/30 ${compact ? 'p-3 flex justify-center' : 'p-5'}`}>
         <a href="/" target="_blank" rel="noopener noreferrer" className="block">
           <Image
             src="/logo.png"
             alt="SpontiCoupon"
             width={180}
             height={54}
-            className="h-11 w-auto brightness-110 hover:opacity-80 transition-opacity"
+            className={`w-auto brightness-110 hover:opacity-80 transition-opacity ${compact ? 'h-8' : 'h-11'}`}
           />
         </a>
-        <p className="text-[11px] text-gray-400 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Customer Portal</p>
+        {!compact && (
+          <p className="text-[11px] text-gray-400 mt-1.5 ml-0.5 tracking-wide uppercase font-medium">Customer Portal</p>
+        )}
       </div>
 
       {/* Switch to Vendor (only shown for vendors in customer mode) */}
       {isVendorInCustomerMode && (
-        <div className="px-3 pt-3 pb-1">
+        <div className={compact ? 'px-2 pt-3 pb-1' : 'px-3 pt-3 pb-1'}>
           <button
             onClick={() => {
               setMobileOpen(false);
               switchRole('vendor');
             }}
-            className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-lg text-sm font-medium bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 hover:text-primary-200 transition-all duration-200 border border-primary-500/20"
+            title="Switch Back to Vendor"
+            className={`flex items-center rounded-lg text-sm font-medium bg-primary-500/15 text-primary-300 hover:bg-primary-500/25 hover:text-primary-200 transition-all duration-200 border border-primary-500/20 ${
+              compact ? 'justify-center w-full h-11' : 'gap-2.5 w-full px-4 py-2.5'
+            }`}
           >
             <ArrowLeftRight className="w-4 h-4" />
-            <span>Switch to Vendor</span>
+            {!compact && <span>Switch Back to Vendor</span>}
           </button>
         </div>
       )}
 
       {/* Navigation */}
-      <nav {...(enableTourAttrs ? { 'data-tour': 'customer-sidebar' } : {})} className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav {...(enableTourAttrs ? { 'data-tour': 'customer-sidebar' } : {})} className={`flex-1 py-4 space-y-1 overflow-y-auto ${compact ? 'px-2' : 'px-3'}`}>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
@@ -106,15 +126,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               key={item.href}
               href={item.href}
               onClick={() => setMobileOpen(false)}
+              title={compact ? item.label : undefined}
               {...(enableTourAttrs && item.dataTour ? { 'data-tour': item.dataTour } : {})}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center rounded-lg text-sm font-medium transition-all duration-200 ${
+                compact ? 'justify-center h-11' : 'gap-3 px-4 py-3'
+              } ${
                 active
                   ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
                   : 'text-gray-300 hover:bg-gray-700/20 hover:text-white'
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
-              <span>{item.label}</span>
+              {!compact && <span>{item.label}</span>}
             </Link>
           );
         })}
@@ -124,15 +147,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <Link
             href={browseItem.href}
             onClick={() => setMobileOpen(false)}
+            title={compact ? browseItem.label : undefined}
             {...(enableTourAttrs ? { 'data-tour': browseItem.dataTour } : {})}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center rounded-lg text-sm font-medium transition-all duration-200 ${
+              compact ? 'justify-center h-11' : 'gap-3 px-4 py-3'
+            } ${
               isActive(browseItem.href)
                 ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25'
                 : 'text-primary-300 hover:bg-gray-700/20 hover:text-primary-200'
             }`}
           >
             <Compass className="w-5 h-5 flex-shrink-0" />
-            <span>{browseItem.label}</span>
+            {!compact && <span>{browseItem.label}</span>}
           </Link>
         </div>
       </nav>
@@ -140,30 +166,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* User Info + Sign Out (bottom) */}
       <div className="border-t border-gray-700/30">
         {/* User profile info */}
-        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+        <div className={`pt-4 pb-2 flex items-center ${compact ? 'px-2 justify-center' : 'px-4 gap-3'}`}>
           <div className="w-9 h-9 rounded-full bg-gray-700/40 flex items-center justify-center flex-shrink-0">
             <User className="w-4 h-4 text-gray-300" />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-white truncate">{userName}</p>
-            <p className="text-[11px] text-gray-400 truncate">{userEmail}</p>
-          </div>
+          {!compact && (
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-white truncate">{userName}</p>
+              <p className="text-[11px] text-gray-400 truncate">{userEmail}</p>
+            </div>
+          )}
         </div>
         {/* Language Toggle */}
-        <div className="px-4 pt-2">
-          <LanguageToggle className="w-full justify-center bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
-        </div>
+        {!compact && (
+          <div className="px-4 pt-2">
+            <LanguageToggle className="w-full justify-center bg-gray-700/30 hover:bg-gray-700/50 text-gray-300" />
+          </div>
+        )}
         {/* Sign Out button */}
-        <div className="px-4 pb-4 pt-1">
+        <div className={compact ? 'px-2 pb-4 pt-1' : 'px-4 pb-4 pt-1'}>
           <button
             onClick={() => {
               setMobileOpen(false);
               signOut();
             }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200"
+            title={compact ? 'Sign Out' : undefined}
+            className={`flex items-center rounded-lg text-sm font-medium text-gray-300 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 ${
+              compact ? 'justify-center w-full h-11' : 'gap-3 w-full px-4 py-2.5'
+            }`}
           >
             <LogOut className="w-5 h-5" />
-            <span>Sign Out</span>
+            {!compact && <span>Sign Out</span>}
           </button>
         </div>
       </div>
@@ -205,13 +238,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         {renderSidebarContent(false)}
       </aside>
 
-      {/* Desktop sidebar — has data-tour attrs for guided tour */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-gray-900 z-30">
-        {renderSidebarContent(true)}
+      {/* Desktop sidebar — collapsible; has data-tour attrs for guided tour */}
+      <aside className={`hidden lg:block fixed inset-y-0 left-0 bg-gray-900 z-30 transition-[width] duration-300 ease-in-out ${collapsed ? 'w-20' : 'w-64'}`}>
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? 'Expand menu' : 'Collapse menu'}
+          aria-label={collapsed ? 'Expand menu' : 'Collapse menu'}
+          className="absolute top-6 -right-3 z-40 w-6 h-6 flex items-center justify-center rounded-full bg-gray-800 border border-gray-600 text-gray-300 hover:text-white hover:bg-gray-700 shadow-md transition-colors"
+        >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+        {renderSidebarContent(true, collapsed)}
       </aside>
 
       {/* Main content area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 transition-[margin] duration-300 ease-in-out ${collapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
         {/* Top bar with page title + notification bell */}
         <div className="flex items-center justify-between gap-3 px-4 lg:px-8 py-3 bg-white border-b border-gray-100 pl-16 lg:pl-8">
           <h2 className="font-semibold text-gray-900 text-sm lg:text-base">

@@ -43,7 +43,10 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const {
     business_name, address, phone, website,
-    category, city, state, rating, review_count, place_id,
+    category, city, state, rating, review_count, place_id, on_groupon,
+    // Manual cold-call intake fields (all optional)
+    contact_name, email, zip, status, notes,
+    deal_offer, original_price, deal_price, deal_type, payment_method,
   } = body;
 
   if (!business_name) {
@@ -52,12 +55,21 @@ export async function POST(request: NextRequest) {
 
   const serviceClient = await createServiceRoleClient();
 
+  // Only include keys that were actually provided so we never overwrite
+  // defaults with undefined and the Yelp-save path keeps working unchanged.
+  const insert: Record<string, unknown> = { business_name };
+  const optional = {
+    address, phone, website, category, city, state, rating, review_count,
+    place_id, on_groupon, contact_name, email, zip, status, notes,
+    deal_offer, original_price, deal_price, deal_type, payment_method,
+  };
+  for (const [key, value] of Object.entries(optional)) {
+    if (value !== undefined && value !== '') insert[key] = value;
+  }
+
   const { data: lead, error } = await serviceClient
     .from('vendor_leads')
-    .insert({
-      business_name, address, phone, website,
-      category, city, state, rating, review_count, place_id,
-    })
+    .insert(insert)
     .select()
     .single();
 
@@ -84,7 +96,11 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  const allowedFields = ['status', 'on_groupon', 'notes'];
+  const allowedFields = [
+    'status', 'on_groupon', 'visited', 'visited_at', 'notes', 'email', 'contact_name', 'phone', 'website',
+    'category', 'address', 'city', 'state', 'zip',
+    'deal_offer', 'original_price', 'deal_price', 'deal_type', 'payment_method',
+  ];
   const updateData: Record<string, unknown> = {};
   for (const field of allowedFields) {
     if (field in fields) {

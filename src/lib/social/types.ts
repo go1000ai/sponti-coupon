@@ -39,6 +39,7 @@ export interface PlatformCaptions {
 
 export interface DealForSocialPost {
   id: string;
+  slug: string | null;
   title: string;
   description: string | null;
   deal_type: 'regular' | 'sponti_coupon';
