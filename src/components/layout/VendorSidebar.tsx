@@ -29,6 +29,7 @@ import {
   Share2,
   Play,
   Calendar,
+  ShieldCheck,
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 import { LanguageToggle } from '@/components/ui/LanguageToggle';
@@ -103,6 +104,7 @@ function useNavItems(): NavItem[] {
       children: [
         { label: t('vendor.sidebar.subscription'), href: '/vendor/subscription', icon: <CreditCard className="w-4 h-4" /> },
         { label: t('vendor.sidebar.getPaid'), href: '/vendor/payments', icon: <DollarSign className="w-4 h-4" /> },
+        { label: 'Deposits to verify', href: '/vendor/deposits', icon: <ShieldCheck className="w-4 h-4" /> },
         // API access hidden from sidebar — not relevant for non-technical vendors.
         // The /vendor/api page still exists; an admin can hand out a key directly to
         // enterprise vendors who explicitly request one.

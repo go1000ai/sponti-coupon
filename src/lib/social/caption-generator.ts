@@ -75,6 +75,7 @@ Writing rules (professional quality + scroll-stopping engagement are the #1 prio
 - The first line is everything. It must stop the scroll in the first 1-2 seconds. Use one of: a bold/contrarian claim, a sharp question, a curiosity gap, a vivid sensory line, or the number/stakes (the % off or the savings). NEVER open with "Check out this deal" or "Don't miss out".
 - Make the reader FEEL the want — sensory, specific, benefit-led language ("warm, fresh-pressed... " beats "great food"). Sound like a real local brand a customer already trusts.
 - Trigger ONE emotion per caption: FOMO, craving/desire, relief, or the thrill of a steal.
+- ALWAYS state the location — name the business's city and state (e.g. "Winter Garden, Florida") somewhere in the caption so locals know it's near them and out-of-towners know it's not for them. This is required, never omit it.
 - End with exactly ONE clear, confident call to action (claim it now / link in bio / tap to claim). Don't bury it.
 - Use 1-3 tasteful, relevant emojis — never more, never decorative spam.
 - Brand voice: ${tone ? `${tone}` : 'warm, confident, local-first, and professional'}.
@@ -195,7 +196,8 @@ function templateCaptions(
   discount: number
 ): PlatformCaptions {
   const bizName = deal.vendor.business_name;
-  const location = deal.vendor.city ? ` in ${deal.vendor.city}` : '';
+  const cityState = [deal.vendor.city, deal.vendor.state].filter(Boolean).join(', ');
+  const location = cityState ? ` in ${cityState}` : '';
   const isSponti = deal.deal_type === 'sponti_coupon';
   const tags = buildHashtagSeeds(deal);
 

@@ -25,7 +25,7 @@ function ProcessorLogo({ type, size = 40 }: { type: PaymentProcessorType; size?:
   const [imgError, setImgError] = useState(false);
   const isSquare = SQUARE_LOGOS.has(type);
 
-  if (imgError) {
+  if (imgError || !processor.logo) {
     return (
       <div
         className="rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shrink-0"
@@ -85,6 +85,9 @@ export default function VendorPaymentsPage() {
 
   // Add form state
   const [showAddForm, setShowAddForm] = useState(false);
+  // 'location' = Venmo/Zelle/Cash App accepted in person; 'link' = an external merchant
+  // deposit link (your own Square/PayPal/Stripe) that runs the deposit charge online.
+  const [addMode, setAddMode] = useState<'location' | 'link'>('location');
   const [newProcessorType, setNewProcessorType] = useState<PaymentProcessorType>('venmo');
   const [newPaymentLink, setNewPaymentLink] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
@@ -122,7 +125,11 @@ export default function VendorPaymentsPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPaymentLink.trim()) {
-      setError('Payment link is required');
+      setError(addMode === 'link' ? 'Payment link URL is required' : 'Payment info is required');
+      return;
+    }
+    if (addMode === 'link' && !/^https:\/\//i.test(newPaymentLink.trim())) {
+      setError('Enter the full https:// link to your deposit checkout page');
       return;
     }
 
@@ -351,6 +358,35 @@ export default function VendorPaymentsPage() {
         </div>
       </div>
 
+      {/* Online deposit link — external merchant account (optional, vendor bears the risk) */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <ExternalLink className="w-5 h-5 text-gray-500" />
+          <h3 className="font-semibold text-gray-900 text-sm">Online Deposit Link (your own merchant account)</h3>
+          <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">OPTIONAL</span>
+        </div>
+        <p className="text-xs text-gray-500 leading-relaxed">
+          Prefer to use your own merchant account instead of connecting one above? Add a fixed-amount
+          <strong> deposit link</strong> below. When a customer claims a deal with a deposit, they pay that
+          deposit through your link and get their redemption code right away.
+        </p>
+        <ol className="mt-3 space-y-1.5 text-xs text-gray-600 list-decimal list-inside">
+          <li>Create a fixed-price checkout link in your own merchant account (this is the deposit amount). You set this up with your provider — it isn’t something we can configure for you.</li>
+          <li>The customer pays it online and gets a reference code + their redemption code.</li>
+          <li>You confirm the deposit landed in <strong>your</strong> account (match the reference code + amount), then collect the balance in person at redemption.</li>
+        </ol>
+        <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 leading-relaxed">
+            <strong>Deposits go directly to your merchant account.</strong> Because these payments are
+            handled entirely by your own provider, SpontiCoupon doesn&rsquo;t hold, process, or confirm them
+            on your behalf. We recommend reviewing each reported deposit in your own account — matching the
+            reference code and amount — before crediting it. If a deposit hasn&rsquo;t arrived yet, simply
+            leave it unverified and collect the full amount when the customer redeems.
+          </p>
+        </div>
+      </div>
+
       {/* Success/Error messages */}
       {success && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4 flex items-center gap-2 text-green-700 text-sm animate-fade-in">
@@ -373,38 +409,67 @@ export default function VendorPaymentsPage() {
         <div id="add-method-form" className="card p-6 mb-6 border-primary-200 ring-1 ring-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Smartphone className="w-4 h-4 text-blue-500" />
-            Add In-Person Payment Method
+            Add Payment Method
           </h3>
+
+          {/* Mode toggle: accepted at location vs. online deposit link */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => { setAddMode('location'); setNewProcessorType('venmo'); setNewPaymentLink(''); }}
+              className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                addMode === 'location' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><Smartphone className="w-4 h-4 text-blue-500" /> At my location</span>
+              <span className="text-[11px] text-gray-500">Venmo, Zelle, Cash App — paid in person</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setAddMode('link'); setNewProcessorType('other'); setNewPaymentLink(''); }}
+              className={`flex flex-col items-start gap-1 p-3 rounded-xl border-2 text-left transition-all ${
+                addMode === 'link' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className="text-sm font-semibold text-gray-900 flex items-center gap-1.5"><ExternalLink className="w-4 h-4 text-gray-500" /> Online deposit link</span>
+              <span className="text-[11px] text-gray-500">Your own merchant account — takes the deposit online</span>
+            </button>
+          </div>
+
           <p className="text-xs text-gray-500 mb-4">
-            Let customers know which payment methods you accept at your location.
+            {addMode === 'link'
+              ? 'Paste a fixed-amount checkout link from your own merchant account. You verify each deposit yourself — SpontiCoupon never touches the money.'
+              : 'Let customers know which payment methods you accept at your location.'}
           </p>
           <form onSubmit={handleAdd} className="space-y-4">
-            {/* Processor selector — only in-person methods */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-              <div className="grid grid-cols-3 gap-2">
-                {MANUAL_PROCESSORS.map(([key, processor]) => (
-                  <button
-                    type="button"
-                    key={key}
-                    onClick={() => setNewProcessorType(key)}
-                    className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
-                      newProcessorType === key
-                        ? 'border-primary-500 bg-primary-50 shadow-md'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <ProcessorLogo type={key} size={32} />
-                    <span className="text-[10px] font-medium text-gray-600">{processor.name}</span>
-                  </button>
-                ))}
+            {/* Processor selector — only for in-person methods. Deposit links use the vendor's own account. */}
+            {addMode === 'location' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {MANUAL_PROCESSORS.map(([key, processor]) => (
+                    <button
+                      type="button"
+                      key={key}
+                      onClick={() => setNewProcessorType(key)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200 ${
+                        newProcessorType === key
+                          ? 'border-primary-500 bg-primary-50 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <ProcessorLogo type={key} size={32} />
+                      <span className="text-[10px] font-medium text-gray-600">{processor.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Payment info */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {PAYMENT_PROCESSORS[newProcessorType].name} Username / Info
+                {addMode === 'link' ? 'Deposit Link URL' : `${PAYMENT_PROCESSORS[newProcessorType].name} Username / Info`}
               </label>
               <input
                 type="text"
@@ -415,7 +480,9 @@ export default function VendorPaymentsPage() {
                 required
               />
               <p className="text-xs text-gray-400 mt-1">
-                {PAYMENT_PROCESSORS[newProcessorType].helpText}
+                {addMode === 'link'
+                  ? 'Use a fixed-amount checkout link from your own merchant account. You’ll need to create this link with your provider — setup isn’t something we’re able to handle for you.'
+                  : PAYMENT_PROCESSORS[newProcessorType].helpText}
               </p>
             </div>
 

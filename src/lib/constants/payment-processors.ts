@@ -1,6 +1,6 @@
 import type { PaymentTier } from '@/lib/types/database';
 
-export type PaymentProcessorType = 'stripe' | 'square' | 'paypal' | 'venmo' | 'zelle' | 'cashapp';
+export type PaymentProcessorType = 'stripe' | 'square' | 'paypal' | 'venmo' | 'zelle' | 'cashapp' | 'other';
 
 export interface PaymentProcessorInfo {
   name: string;
@@ -89,6 +89,17 @@ export const PAYMENT_PROCESSORS: Record<PaymentProcessorType, PaymentProcessorIn
     supportsDeposit: false,
     integratable: false,
     supportedTiers: ['manual'],
+  },
+  other: {
+    name: 'Merchant Account',
+    placeholder: 'https://your-checkout-link.com',
+    color: '#6B7280',
+    bgColor: 'bg-gray-500',
+    logo: '',
+    helpText: 'Paste a fixed-amount checkout link from your own merchant account.',
+    supportsDeposit: true,
+    integratable: false,
+    supportedTiers: ['link'],
   },
 } as const;
 

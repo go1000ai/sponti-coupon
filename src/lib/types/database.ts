@@ -246,6 +246,8 @@ export interface Claim {
   stripe_checkout_session_id: string | null;
   deposit_amount_paid: number | null;
   payment_reference: string | null;
+  deposit_reported_at: string | null;
+  deposit_verified_at: string | null;
   appointment_id: string | null;
   expires_at: string;
   created_at: string;

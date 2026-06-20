@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Clock, MapPin, Tag, Users, Store } from 'lucide-react';
@@ -25,6 +26,7 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
   const deal = useTranslatedDeal(rawDeal);
   const isSponti = deal.deal_type === 'sponti_coupon';
   const savings = deal.original_price - deal.deal_price;
+  const [descExpanded, setDescExpanded] = useState(false);
 
   return (
     <Link href={`/deals/${deal.slug || deal.id}`} className={`card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col ${isOwnDeal ? 'ring-2 ring-primary-300 opacity-60' : ''}`}>
@@ -97,7 +99,23 @@ export function DealCard({ deal: rawDeal, distance, isOwnDeal, paymentLogos }: D
         )}
 
         {deal.description && (
-          <p className="hidden sm:block text-gray-500 text-xs mt-1 line-clamp-2 leading-relaxed">{deal.description}</p>
+          <div className="hidden sm:block mt-1">
+            <p
+              className="text-gray-500 text-xs leading-relaxed"
+              style={descExpanded ? undefined : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+            >
+              {deal.description}
+            </p>
+            {deal.description.length > 90 && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDescExpanded((v) => !v); }}
+                className="text-[11px] font-semibold text-primary-500 hover:text-primary-600 mt-0.5"
+              >
+                {descExpanded ? 'Show less' : 'Read more'}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Pricing with savings */}

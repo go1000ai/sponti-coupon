@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { v4 as uuidv4 } from 'uuid';
-import { withUniqueRedemptionCode } from '@/lib/qr';
+import { withUniqueRedemptionCode, generatePaymentReference } from '@/lib/qr';
 import { getStripe } from '@/lib/stripe';
 import { rateLimitDb } from '@/lib/rate-limit';
 import { assignPromoCode, getAvailableCodeCount } from '@/lib/promo-codes';
@@ -295,8 +295,20 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // ── TIER 3: Legacy static payment link (Stripe/Square/PayPal link) ──
-  if (primaryMethod && primaryMethod.payment_link.startsWith('https://')) {
+  // ── External merchant link (Square / PayPal / Stripe link, etc.) ──
+  // The deposit charge runs ONLINE on the vendor's own merchant account. We can't trust a
+  // webhook for an arbitrary link, so we don't withhold the code: the customer pays via the
+  // link, reports it, and we issue the QR + code immediately (see /api/claims/report-deposit).
+  // The vendor verifies the deposit landed in their account from the notification or at
+  // redemption, matching on the reference code + amount + time we show them.
+  const externalLink = (primaryMethod && primaryMethod.payment_link.startsWith('https://'))
+    ? { link: primaryMethod.payment_link, processor: primaryMethod.processor_type }
+    : (deal.vendor?.stripe_payment_link?.startsWith('https://'))
+      ? { link: deal.vendor.stripe_payment_link, processor: 'stripe' }
+      : null;
+
+  if (externalLink) {
+    const paymentReference = generatePaymentReference();
     const { data: claim, error: claimError } = await supabase
       .from('claims')
       .insert({
@@ -305,8 +317,9 @@ export async function POST(request: NextRequest) {
         session_token: sessionToken,
         deposit_confirmed: false,
         expires_at: claimExpiresAt,
-        payment_method_type: primaryMethod.processor_type,
+        payment_method_type: externalLink.processor,
         payment_tier: 'link',
+        payment_reference: paymentReference,
       })
       .select()
       .single();
@@ -315,40 +328,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: claimError.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      claim,
+    const params = new URLSearchParams({
       session_token: sessionToken,
-      redirect_url: `${primaryMethod.payment_link}?client_reference_id=${sessionToken}`,
-      payment_tier: 'link',
-      deposit_amount: deal.deposit_amount,
+      processor: externalLink.processor,
+      amount: String(deal.deposit_amount),
+      deal_title: deal.title,
+      link: externalLink.link,
+      reference: paymentReference,
     });
-  }
-
-  // ── Fallback: legacy stripe_payment_link on vendor record ──
-  const legacyLink = deal.vendor?.stripe_payment_link;
-  if (legacyLink && legacyLink.startsWith('https://')) {
-    const { data: claim, error: claimError } = await supabase
-      .from('claims')
-      .insert({
-        deal_id,
-        customer_id: user.id,
-        session_token: sessionToken,
-        deposit_confirmed: false,
-        expires_at: claimExpiresAt,
-        payment_method_type: 'stripe',
-        payment_tier: 'link',
-      })
-      .select()
-      .single();
-
-    if (claimError) {
-      return NextResponse.json({ error: claimError.message }, { status: 500 });
-    }
 
     return NextResponse.json({
       claim,
       session_token: sessionToken,
-      redirect_url: `${legacyLink}?client_reference_id=${sessionToken}`,
+      redirect_url: `${APP_URL}/claim/deposit?${params.toString()}`,
       payment_tier: 'link',
       deposit_amount: deal.deposit_amount,
     });

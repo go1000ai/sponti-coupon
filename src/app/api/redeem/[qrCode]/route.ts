@@ -313,6 +313,7 @@ export async function POST(
   return NextResponse.json({
     success: true,
     redemption_id: redemptionRecord?.id || null,
+    claim_id: claim.id,
     customer: {
       name: `${claim.customer?.first_name || ''} ${claim.customer?.last_name || ''}`.trim(),
       email: claim.customer?.email,
@@ -327,6 +328,9 @@ export async function POST(
     },
     payment_method_type: claim.payment_method_type,
     payment_tier: claim.payment_tier,
+    payment_reference: claim.payment_reference,
+    deposit_reported_at: claim.deposit_reported_at,
+    deposit_verified_at: claim.deposit_verified_at,
     remaining_balance: remainingBalance,
     redeemed_at: new Date().toISOString(),
     loyalty: loyaltyInfo,
@@ -394,6 +398,9 @@ export async function GET(
       deposit_confirmed: claim.deposit_confirmed,
       payment_method_type: claim.payment_method_type,
       payment_tier: claim.payment_tier,
+      payment_reference: claim.payment_reference,
+      deposit_reported_at: claim.deposit_reported_at,
+      deposit_verified_at: claim.deposit_verified_at,
       customer_id: claim.customer_id,
       deal: claim.deal,
       remaining_balance: remainingBalance,

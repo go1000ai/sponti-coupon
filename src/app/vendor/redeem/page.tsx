@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ScanLine, Delete, Loader2, CheckCircle2, XCircle, LogOut, UserCog,
-  Star, Sparkles, ArrowLeft, ShieldCheck,
+  Star, Sparkles, ArrowLeft, ShieldCheck, BadgeCheck,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -17,10 +17,16 @@ interface LoyaltyAward { program_name: string; earned: string; current: string; 
 interface RedeemResult {
   success: boolean;
   error?: string;
+  claim_id?: string;
   customer?: { name: string; email: string };
   deal?: { title: string; deal_price: number; original_price: number };
   loyalty_awards?: LoyaltyAward[];
   remaining_balance?: number;
+  payment_tier?: string | null;
+  payment_method_type?: string | null;
+  payment_reference?: string | null;
+  deposit_reported_at?: string | null;
+  deposit_verified_at?: string | null;
 }
 
 export default function RedeemKioskPage() {
@@ -36,6 +42,7 @@ export default function RedeemKioskPage() {
   const [code, setCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [result, setResult] = useState<RedeemResult | null>(null);
+  const [verifyingDeposit, setVerifyingDeposit] = useState(false);
 
   // Exit modal
   const [showExit, setShowExit] = useState(false);
@@ -116,7 +123,24 @@ export default function RedeemKioskPage() {
     setRedeeming(false);
   };
 
-  const resetRedeem = () => { setCode(''); setResult(null); };
+  const resetRedeem = () => { setCode(''); setResult(null); setVerifyingDeposit(false); };
+
+  // Vendor confirms an external-merchant deposit landed in their own account.
+  const verifyDeposit = async () => {
+    if (!result?.claim_id) return;
+    setVerifyingDeposit(true);
+    try {
+      const res = await fetch('/api/vendor/verify-deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claim_id: result.claim_id }),
+      });
+      if (res.ok) {
+        setResult((r) => (r ? { ...r, deposit_verified_at: new Date().toISOString() } : r));
+      }
+    } catch { /* leave unverified — vendor can also verify from the deposits queue */ }
+    setVerifyingDeposit(false);
+  };
 
   // ── Exit kiosk (owner password) ──
   const confirmExit = async () => {
@@ -246,6 +270,34 @@ export default function RedeemKioskPage() {
                   )}
                   {result.remaining_balance != null && result.remaining_balance > 0 && (
                     <p className="text-sm text-amber-600 font-semibold mt-1">Collect balance: {formatCurrency(result.remaining_balance)}</p>
+                  )}
+
+                  {/* External-merchant deposit: vendor verifies it landed in their own account */}
+                  {result.payment_tier === 'link' && result.deposit_reported_at && (
+                    result.deposit_verified_at ? (
+                      <div className="mt-3 bg-green-50 border border-green-200 rounded-xl p-3 flex items-center justify-center gap-2 text-green-700 text-sm font-semibold">
+                        <BadgeCheck className="w-4 h-4" /> Deposit verified
+                        {result.payment_reference ? ` · ${result.payment_reference}` : ''}
+                      </div>
+                    ) : (
+                      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 text-left">
+                        <p className="text-sm font-semibold text-amber-800">Deposit reported — not yet verified</p>
+                        <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+                          Check your merchant account for a deposit
+                          {result.deal ? ` of ${formatCurrency(result.deal.deal_price - (result.remaining_balance ?? 0))}` : ''}
+                          {result.payment_reference ? <> with reference <span className="font-mono font-bold">{result.payment_reference}</span></> : ''}.
+                          If it didn&rsquo;t land, collect the full amount instead.
+                        </p>
+                        <button
+                          onClick={verifyDeposit}
+                          disabled={verifyingDeposit}
+                          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {verifyingDeposit ? <Loader2 className="w-4 h-4 animate-spin" /> : <BadgeCheck className="w-4 h-4" />}
+                          I confirmed the deposit in my account
+                        </button>
+                      </div>
+                    )
                   )}
                   {result.loyalty_awards && result.loyalty_awards.length > 0 && (
                     <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-left">

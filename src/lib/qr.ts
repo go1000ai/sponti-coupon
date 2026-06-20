@@ -69,6 +69,22 @@ export async function withUniqueRedemptionCode<T>(
   return { data: null, error: lastError ?? { code: '23505', message: 'redemption_code collision exhausted retries' } };
 }
 
+/**
+ * Generate a short, human-readable payment reference for external-merchant deposits
+ * (e.g. "SC-7F3K"). The customer is asked to put it on their payment note where the
+ * processor allows it, and it's shown on the vendor's redemption screen so they can
+ * match the charge in their own merchant account. Uses an unambiguous alphabet
+ * (no 0/O/1/I) so it's easy to read off a screen and type.
+ */
+export function generatePaymentReference(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `SC-${code}`;
+}
+
 export function getRedemptionUrl(qrCodeId: string): string {
   return `${APP_URL}/redeem/${qrCodeId}`;
 }
