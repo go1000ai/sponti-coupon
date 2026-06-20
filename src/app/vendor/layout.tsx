@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client';
 import VendorSidebar from '@/components/layout/VendorSidebar';
 import { Ban, CreditCard } from 'lucide-react';
 import { PromoCountdownBanner } from '@/components/vendor/PromoCountdownBanner';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { isKioskActive, KIOSK_EVENT } from '@/lib/redeem-members/kiosk';
 
 function VendorLayoutInner({ children }: { children: React.ReactNode }) {
@@ -165,10 +164,8 @@ function VendorLayoutInner({ children }: { children: React.ReactNode }) {
         onBecomeCustomer={becomeCustomer}
       />
       <main className="lg:ml-64 min-h-screen">
-        {/* Top bar with notification bell */}
-        <div className="flex items-center justify-end px-4 sm:px-6 lg:px-8 py-2.5 pl-20 lg:pl-8 bg-white border-b border-gray-100">
-          <NotificationBell />
-        </div>
+        {/* Mobile spacer so content clears the fixed hamburger button (bell now lives in the sidebar). */}
+        <div className="h-14 lg:hidden" />
         <div className="p-4 sm:p-6 lg:p-8">
           {promoExpiresAt && <PromoCountdownBanner promoExpiresAt={promoExpiresAt} promoCode={promoCode} />}
           {children}

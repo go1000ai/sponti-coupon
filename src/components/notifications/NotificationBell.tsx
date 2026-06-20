@@ -34,7 +34,16 @@ function iconFor(type: string) {
   return <Bell className="w-4 h-4 text-primary-500" />;
 }
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  /** Which side the dropdown panel is anchored to. Default 'right' (top-bar usage). */
+  align?: 'left' | 'right';
+  /** Open the panel upward instead of downward — for use at the bottom of a sidebar. */
+  dropUp?: boolean;
+  /** Override the bell button styling (e.g. for a dark sidebar). */
+  buttonClassName?: string;
+}
+
+export function NotificationBell({ align = 'right', dropUp = false, buttonClassName }: NotificationBellProps = {}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -111,7 +120,7 @@ export function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={toggle}
-        className="relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+        className={buttonClassName || 'relative p-2 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors'}
         aria-label="Notifications"
       >
         <Bell className="w-5 h-5" />
@@ -123,7 +132,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+        <div className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} ${dropUp ? 'bottom-full mb-2' : 'mt-2'} w-80 sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden`}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <p className="font-bold text-gray-900 text-sm">Notifications</p>
             {unread > 0 && (

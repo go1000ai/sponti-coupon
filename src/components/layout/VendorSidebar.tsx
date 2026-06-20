@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 import {
   LayoutDashboard,
   Tag,
@@ -306,6 +307,11 @@ export default function VendorSidebar({ onSignOut, userName, personalName, userE
             <p className="text-[11px] text-gray-400 truncate">{personalName}</p>
             <p className="text-[10px] text-gray-500 truncate">{userEmail}</p>
           </div>
+          <NotificationBell
+            dropUp
+            align="left"
+            buttonClassName="relative flex-shrink-0 p-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700/50 transition-colors"
+          />
         </div>
         {/* Language Toggle */}
         <div className="px-4 pt-2">
