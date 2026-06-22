@@ -463,9 +463,11 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Starter',
     price: 49,
     annualPrice: 39, // ~20% off ($470/yr)
-    deals_per_month: 6, // total (sponti + regular)
-    sponti_deals_per_month: 2,
-    regular_deals_per_month: 4,
+    deals_per_month: 6 as number, // total pool — any mix of sponti + steady
+    ai_videos_per_month: 0 as number, // AI video cap (cost control)
+    ai_images_per_month: 0 as number, // AI image cap
+    sponti_deals_per_month: -1, // no separate cap (pooled)
+    regular_deals_per_month: -1, // no separate cap (pooled)
     basic_charts: false, // KPI cards only, no charts
     advanced_analytics: false,
     ai_insights: false,
@@ -475,8 +477,9 @@ export const SUBSCRIPTION_TIERS = {
     custom_scheduling: false,
     priority_support: false,
     multi_location: false,
+    max_locations: 1 as number,
     team_access: false,
-    max_team_members: 0,
+    max_team_members: 0 as number,
     api_access: false,
     custom_branding: false,
     loyalty_program: false,
@@ -488,9 +491,11 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Pro',
     price: 99,
     annualPrice: 79, // ~20% off ($950/yr)
-    deals_per_month: 45, // total (sponti + regular)
-    sponti_deals_per_month: 15,
-    regular_deals_per_month: 30,
+    deals_per_month: 20 as number, // total pool — any mix of sponti + steady
+    ai_videos_per_month: 0 as number, // AI video cap (cost control)
+    ai_images_per_month: 0 as number, // AI image cap
+    sponti_deals_per_month: -1, // no separate cap (pooled)
+    regular_deals_per_month: -1, // no separate cap (pooled)
     basic_charts: true, // 3 basic charts (claims, revenue, redemption)
     advanced_analytics: false, // NO 8+ charts / data tables
     ai_insights: false, // NO AI
@@ -500,8 +505,9 @@ export const SUBSCRIPTION_TIERS = {
     custom_scheduling: true,
     priority_support: true,
     multi_location: false,
+    max_locations: 1 as number,
     team_access: false,
-    max_team_members: 0,
+    max_team_members: 0 as number,
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
@@ -513,9 +519,11 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Business',
     price: 199,
     annualPrice: 159, // ~20% off ($1,910/yr)
-    deals_per_month: 150, // total (sponti + regular)
-    sponti_deals_per_month: 50,
-    regular_deals_per_month: 100,
+    deals_per_month: 50 as number, // total pool — any mix of sponti + steady
+    ai_videos_per_month: 3 as number, // AI video cap (cost control)
+    ai_images_per_month: 50 as number, // AI image cap (cheap — ~1 per deal)
+    sponti_deals_per_month: -1, // no separate cap (pooled)
+    regular_deals_per_month: -1, // no separate cap (pooled)
     basic_charts: true,
     advanced_analytics: true, // Full 8+ charts + data tables
     ai_insights: true, // AI Insights & scoring
@@ -525,8 +533,9 @@ export const SUBSCRIPTION_TIERS = {
     custom_scheduling: true,
     priority_support: true,
     multi_location: true,
+    max_locations: 3 as number,
     team_access: true,
-    max_team_members: 5,
+    max_team_members: 3 as number,
     api_access: false,
     custom_branding: false,
     loyalty_program: true,
@@ -538,7 +547,9 @@ export const SUBSCRIPTION_TIERS = {
     name: 'Enterprise',
     price: 499,
     annualPrice: 399, // ~20% off ($4,790/yr)
-    deals_per_month: -1, // unlimited
+    deals_per_month: 500 as number, // capped: 10 locations x 50 deals
+    ai_videos_per_month: 8 as number, // fair-use cap (video = the cost driver)
+    ai_images_per_month: 200 as number, // AI image cap
     sponti_deals_per_month: -1, // unlimited
     regular_deals_per_month: -1, // unlimited
     basic_charts: true,
@@ -550,8 +561,9 @@ export const SUBSCRIPTION_TIERS = {
     custom_scheduling: true,
     priority_support: true,
     multi_location: true,
+    max_locations: 10 as number,
     team_access: true,
-    max_team_members: -1, // unlimited
+    max_team_members: 10 as number,
     api_access: true,
     custom_branding: true,
     loyalty_program: true,
@@ -565,7 +577,7 @@ export const SUBSCRIPTION_TIERS = {
 export const TIER_ORDER: SubscriptionTier[] = ['starter', 'pro', 'business', 'enterprise'];
 
 // Feature flag keys (excluding non-boolean fields)
-export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'max_team_members' | 'stripe_price_id' | 'stripe_annual_price_id'>;
+export type TierFeature = Exclude<keyof typeof SUBSCRIPTION_TIERS['starter'], 'name' | 'price' | 'annualPrice' | 'deals_per_month' | 'sponti_deals_per_month' | 'regular_deals_per_month' | 'ai_videos_per_month' | 'ai_images_per_month' | 'max_locations' | 'max_team_members' | 'stripe_price_id' | 'stripe_annual_price_id'>;
 
 // Appointment Booking System
 export type AppointmentStatus = 'pending' | 'confirmed' | 'rescheduled' | 'cancelled' | 'completed' | 'no_show';

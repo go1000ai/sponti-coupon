@@ -309,11 +309,7 @@ function VendorDashboard() {
         const tierConfig = SUBSCRIPTION_TIERS[tier];
         const isUnlimited = tierConfig.deals_per_month === -1;
         const totalLimit = tierConfig.deals_per_month;
-        const spontiLimit = tierConfig.sponti_deals_per_month;
-        const regularLimit = tierConfig.regular_deals_per_month;
         const totalPct = isUnlimited ? 0 : Math.min((monthlyDeals.total / totalLimit) * 100, 100);
-        const spontiPct = isUnlimited ? 0 : Math.min((monthlyDeals.sponti / spontiLimit) * 100, 100);
-        const regularPct = isUnlimited ? 0 : Math.min((monthlyDeals.regular / regularLimit) * 100, 100);
 
         return (
           <div className="card p-4 sm:p-5 mb-8 animate-fade-up" style={{ animationDelay: '600ms' }}>
@@ -324,52 +320,23 @@ function VendorDashboard() {
               </h3>
               <span className="text-xs text-gray-400 capitalize">{t('vendor.dashboard.plan', { name: tierConfig.name })}</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Total */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500">{t('vendor.dashboard.total')}</span>
-                  <span className="font-medium text-gray-900">
-                    {monthlyDeals.total}{isUnlimited ? '' : ` / ${totalLimit}`}
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${totalPct >= 90 ? 'bg-red-500' : totalPct >= 70 ? 'bg-yellow-500' : 'bg-primary-500'}`}
-                    style={{ width: isUnlimited ? '15%' : `${totalPct}%` }}
-                  />
-                </div>
+            <div>
+              <div className="flex justify-between text-xs mb-1">
+                <span className="text-gray-500">{t('vendor.dashboard.total')}</span>
+                <span className="font-medium text-gray-900">
+                  {monthlyDeals.total}{isUnlimited ? '' : ` / ${totalLimit}`}
+                </span>
               </div>
-              {/* Sponti */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500">Sponti</span>
-                  <span className="font-medium text-gray-900">
-                    {monthlyDeals.sponti}{isUnlimited ? '' : ` / ${spontiLimit}`}
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${spontiPct >= 90 ? 'bg-red-500' : spontiPct >= 70 ? 'bg-yellow-500' : 'bg-orange-500'}`}
-                    style={{ width: isUnlimited ? '15%' : `${spontiPct}%` }}
-                  />
-                </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${totalPct >= 90 ? 'bg-red-500' : totalPct >= 70 ? 'bg-yellow-500' : 'bg-primary-500'}`}
+                  style={{ width: isUnlimited ? '15%' : `${totalPct}%` }}
+                />
               </div>
-              {/* Regular */}
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-500">Steady</span>
-                  <span className="font-medium text-gray-900">
-                    {monthlyDeals.regular}{isUnlimited ? '' : ` / ${regularLimit}`}
-                  </span>
-                </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${regularPct >= 90 ? 'bg-red-500' : regularPct >= 70 ? 'bg-yellow-500' : 'bg-accent-500'}`}
-                    style={{ width: isUnlimited ? '15%' : `${regularPct}%` }}
-                  />
-                </div>
-              </div>
+              {/* Pooled limit — sponti/steady shown for info only, any mix allowed */}
+              <p className="text-xs text-gray-400 mt-1.5">
+                {monthlyDeals.sponti} Sponti · {monthlyDeals.regular} Steady
+              </p>
             </div>
             {!isUnlimited && totalPct >= 80 && (
               <p className="text-xs text-yellow-600 mt-2">
