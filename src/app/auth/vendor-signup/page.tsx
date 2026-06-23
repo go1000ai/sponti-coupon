@@ -144,9 +144,26 @@ export default function VendorSignupPage() {
                       <Check className="w-4 h-4 text-green-500" />
                       {tier.deals_per_month === -1 ? 'Unlimited' : tier.deals_per_month} deals/month
                     </li>
-                    {tier.multi_location && (
+                    <li className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      {tier.max_locations === -1 ? 'Unlimited' : tier.max_locations} location{tier.max_locations === 1 ? '' : 's'}
+                    </li>
+                    {tier.ai_videos_per_month !== 0 && (
                       <li className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" /> Multi-location
+                        <Check className="w-4 h-4 text-green-500" />
+                        {tier.ai_videos_per_month === -1 ? 'Unlimited' : tier.ai_videos_per_month} AI videos/month
+                      </li>
+                    )}
+                    {tier.ai_images_per_month !== 0 && (
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        {tier.ai_images_per_month === -1 ? 'Unlimited' : tier.ai_images_per_month} AI images/month
+                      </li>
+                    )}
+                    {tier.max_team_members !== 0 && (
+                      <li className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        {tier.max_team_members === -1 ? 'Unlimited' : tier.max_team_members} team member{tier.max_team_members === 1 ? '' : 's'}
                       </li>
                     )}
                     {tier.api_access && (
@@ -330,6 +347,7 @@ export default function VendorSignupPage() {
                 <ul className="space-y-1">
                   <li>{formatCurrency(SUBSCRIPTION_TIERS[selectedTier].price)}/month</li>
                   <li>{SUBSCRIPTION_TIERS[selectedTier].deals_per_month === -1 ? 'Unlimited' : SUBSCRIPTION_TIERS[selectedTier].deals_per_month} deals per month</li>
+                  <li>{SUBSCRIPTION_TIERS[selectedTier].max_locations === -1 ? 'Unlimited' : SUBSCRIPTION_TIERS[selectedTier].max_locations} location{SUBSCRIPTION_TIERS[selectedTier].max_locations === 1 ? '' : 's'}</li>
                   <li>Zero transaction fees</li>
                 </ul>
               </div>

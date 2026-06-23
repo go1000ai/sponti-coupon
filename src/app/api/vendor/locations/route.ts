@@ -62,11 +62,24 @@ export async function POST(request: NextRequest) {
     .single();
 
   const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-  if (!SUBSCRIPTION_TIERS[tier].multi_location) {
-    return NextResponse.json(
-      { error: 'Multi-location support requires a Business plan or higher.' },
-      { status: 403 }
-    );
+
+  // Enforce the per-tier location cap. Every tier gets at least 1 location
+  // (starter/pro = 1), so a vendor can always create their FIRST location —
+  // we only block once they've hit their cap. -1 means unlimited.
+  const maxLoc = SUBSCRIPTION_TIERS[tier].max_locations;
+  if (maxLoc !== -1) {
+    const countClient = await createServiceRoleClient();
+    const { count: existingLocations } = await countClient
+      .from('vendor_locations')
+      .select('*', { count: 'exact', head: true })
+      .eq('vendor_id', user.id);
+
+    if ((existingLocations || 0) >= maxLoc) {
+      return NextResponse.json(
+        { error: `Your plan includes ${maxLoc} location${maxLoc === 1 ? '' : 's'}. Upgrade to add more.` },
+        { status: 403 }
+      );
+    }
   }
 
   const body = await request.json();

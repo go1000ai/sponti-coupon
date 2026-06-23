@@ -14,12 +14,6 @@ export const maxDuration = 300;
 // 'veo-3.1-generate-preview' for premium ($0.40/sec) if ever needed.
 const VEO_MODEL = 'veo-3.1-fast-generate-preview';
 
-// Monthly per-vendor AI video cap (cost control). Counts videos generated in the
-// current calendar month; admins are exempt. Override via env without a deploy.
-// Default 12 ≈ $10/vendor/mo at Veo Fast pricing. When capped, vendors can still
-// add their own videos via Upload / Video URL — only AI generation is limited.
-const MONTHLY_AI_VIDEO_LIMIT = parseInt(process.env.VENDOR_MONTHLY_AI_VIDEO_LIMIT || '12', 10);
-
 // POST /api/vendor/generate-video
 // Two-phase approach to avoid Vercel timeout:
 //   Phase 1: { image_url, title, ... } → starts Veo, returns { operation_name }
@@ -54,15 +48,7 @@ export async function POST(request: NextRequest) {
     .eq('id', vendorId)
     .single();
 
-  if (!isAdmin) {
-    const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-    if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
-      return NextResponse.json(
-        { error: 'AI Video Generation requires a Business plan or higher.' },
-        { status: 403 }
-      );
-    }
-  }
+  const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
 
   const geminiKey = process.env.GEMINI_API_KEY;
   if (!geminiKey) {
@@ -79,28 +65,36 @@ export async function POST(request: NextRequest) {
   const limited = rateLimit(request, { maxRequests: 5, windowMs: 60 * 60 * 1000, identifier: 'ai-generate-video' });
   if (limited) return limited;
 
-  // Monthly per-vendor cap — protects against runaway video spend. Counts AI
-  // videos saved this calendar month (vendor_media rows). Admins are exempt.
+  // Monthly per-vendor cap — protects against runaway video spend. The cap is
+  // driven by the vendor's subscription tier (vendor_media rows with
+  // source='ai_video' this month). Admins are exempt. Vendors can still add
+  // their own videos via Upload / Video URL — only AI generation is capped.
   if (!isAdmin) {
-    const now = new Date();
-    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
-    const { count: videosThisMonth } = await serviceClient
-      .from('vendor_media')
-      .select('*', { count: 'exact', head: true })
-      .eq('vendor_id', vendorId)
-      .eq('source', 'ai_video')
-      .gte('created_at', monthStart);
-
-    if ((videosThisMonth || 0) >= MONTHLY_AI_VIDEO_LIMIT) {
+    const cap = SUBSCRIPTION_TIERS[tier].ai_videos_per_month;
+    if (cap === 0) {
       return NextResponse.json(
-        {
-          error: `You've used all ${MONTHLY_AI_VIDEO_LIMIT} of this month's AI-generated videos (resets on the 1st). You can still add your own video any time using the Upload or Video URL options above.`,
-          limit_reached: true,
-          used: videosThisMonth,
-          limit: MONTHLY_AI_VIDEO_LIMIT,
-        },
-        { status: 429 }
+        { error: 'AI video generation is available on the Business and Enterprise plans. Upgrade to create AI videos.' },
+        { status: 403 }
       );
+    }
+    if (cap !== -1) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const monthStart = startOfMonth.toISOString();
+      const { count: videosThisMonth } = await serviceClient
+        .from('vendor_media')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+        .eq('source', 'ai_video')
+        .gte('created_at', monthStart);
+
+      if ((videosThisMonth || 0) >= cap) {
+        return NextResponse.json(
+          { error: `You've reached your ${cap} AI video limit for this month. It resets next month, or upgrade your plan.` },
+          { status: 403 }
+        );
+      }
     }
   }
 

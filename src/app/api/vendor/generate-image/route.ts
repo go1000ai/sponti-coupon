@@ -44,14 +44,36 @@ export async function POST(request: NextRequest) {
     .eq('id', vendorId)
     .single();
 
-  // Check tier access — skip for admin
+  // Check tier access + monthly cap — skip for admin. The cap is driven by the
+  // vendor's subscription tier (vendor_media rows with source='ai_generated'
+  // this month).
   if (!isAdmin) {
     const tier = (vendor?.subscription_tier as SubscriptionTier) || 'starter';
-    if (!SUBSCRIPTION_TIERS[tier].ai_deal_assistant) {
+    const cap = SUBSCRIPTION_TIERS[tier].ai_images_per_month;
+    if (cap === 0) {
       return NextResponse.json(
-        { error: 'AI Image Generation requires a Business plan or higher. Upgrade at /vendor/subscription.' },
+        { error: 'AI image generation is available on the Business and Enterprise plans. Upgrade to create AI images.' },
         { status: 403 }
       );
+    }
+    if (cap !== -1) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const monthStart = startOfMonth.toISOString();
+      const { count: imagesThisMonth } = await serviceClient
+        .from('vendor_media')
+        .select('*', { count: 'exact', head: true })
+        .eq('vendor_id', vendorId)
+        .eq('source', 'ai_generated')
+        .gte('created_at', monthStart);
+
+      if ((imagesThisMonth || 0) >= cap) {
+        return NextResponse.json(
+          { error: `You've reached your ${cap} AI image limit for this month. It resets next month, or upgrade your plan.` },
+          { status: 403 }
+        );
+      }
     }
   }
 

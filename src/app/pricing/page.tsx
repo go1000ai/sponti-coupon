@@ -142,8 +142,34 @@ export default function PricingPage() {
 
   /* ─────── Translated Feature Comparison Matrix ─────── */
   const FEATURE_MATRIX = useMemo(() => [
-    { feature: t('pricing.featureSpontiDeals'), starter: '2', pro: '15', business: '50', enterprise: t('pricing.unlimited') },
-    { feature: t('pricing.featureSteadyDeals'), starter: '4', pro: '30', business: '100', enterprise: t('pricing.unlimited') },
+    {
+      feature: t('pricing.featureSpontiDeals'),
+      starter: String(SUBSCRIPTION_TIERS.starter.deals_per_month),
+      pro: String(SUBSCRIPTION_TIERS.pro.deals_per_month),
+      business: String(SUBSCRIPTION_TIERS.business.deals_per_month),
+      enterprise: String(SUBSCRIPTION_TIERS.enterprise.deals_per_month),
+    },
+    {
+      feature: t('pricing.featureSteadyDeals'),
+      starter: String(SUBSCRIPTION_TIERS.starter.max_locations),
+      pro: String(SUBSCRIPTION_TIERS.pro.max_locations),
+      business: String(SUBSCRIPTION_TIERS.business.max_locations),
+      enterprise: String(SUBSCRIPTION_TIERS.enterprise.max_locations),
+    },
+    {
+      feature: t('pricing.featureAiVideos'),
+      starter: String(SUBSCRIPTION_TIERS.starter.ai_videos_per_month),
+      pro: String(SUBSCRIPTION_TIERS.pro.ai_videos_per_month),
+      business: String(SUBSCRIPTION_TIERS.business.ai_videos_per_month),
+      enterprise: String(SUBSCRIPTION_TIERS.enterprise.ai_videos_per_month),
+    },
+    {
+      feature: t('pricing.featureAiImages'),
+      starter: String(SUBSCRIPTION_TIERS.starter.ai_images_per_month),
+      pro: String(SUBSCRIPTION_TIERS.pro.ai_images_per_month),
+      business: String(SUBSCRIPTION_TIERS.business.ai_images_per_month),
+      enterprise: String(SUBSCRIPTION_TIERS.enterprise.ai_images_per_month),
+    },
     { feature: t('pricing.featureQrCode'), starter: true, pro: true, business: true, enterprise: true },
     { feature: t('pricing.featureBackupCodes'), starter: true, pro: true, business: true, enterprise: true },
     { feature: t('pricing.featureBasicAnalytics'), starter: true, pro: true, business: true, enterprise: true },
@@ -157,7 +183,7 @@ export default function PricingPage() {
     { feature: t('pricing.featureCustomScheduling'), starter: false, pro: true, business: true, enterprise: true },
     { feature: t('pricing.featureLoyaltyRewards'), starter: false, pro: true, business: true, enterprise: true },
     { feature: t('pricing.featureMultiLocation'), starter: false, pro: false, business: true, enterprise: true },
-    { feature: t('pricing.featureTeamMembers'), starter: '0', pro: '0', business: t('pricing.upTo5'), enterprise: t('pricing.unlimited') },
+    { feature: t('pricing.featureTeamMembers'), starter: String(SUBSCRIPTION_TIERS.starter.max_team_members), pro: String(SUBSCRIPTION_TIERS.pro.max_team_members), business: String(SUBSCRIPTION_TIERS.business.max_team_members), enterprise: String(SUBSCRIPTION_TIERS.enterprise.max_team_members) },
     { feature: t('pricing.featurePrioritySupport'), starter: false, pro: true, business: true, enterprise: true },
     { feature: t('pricing.featureFeaturedHomepage'), starter: false, pro: false, business: true, enterprise: true },
     { feature: t('pricing.featureDedicatedSupport'), starter: false, pro: false, business: true, enterprise: true },
@@ -665,6 +691,9 @@ export default function PricingPage() {
                     <h3 className="text-xl font-bold text-white">{t('pricing.enterprise.name')}</h3>
                     <p className="text-white text-sm mt-0.5 opacity-90">
                       {t('pricing.enterpriseTagline')}
+                    </p>
+                    <p className="text-white text-xs mt-1.5 opacity-90">
+                      {t('pricing.enterprisePriceNote')}
                     </p>
                   </div>
                 </div>
