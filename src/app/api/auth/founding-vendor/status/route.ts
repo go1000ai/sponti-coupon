@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@/lib/supabase/server';
 
 const PROMO_CODE = 'FOUNDING15';
-const MAX_USES = 15;
+const MAX_USES = 50;
 
 export async function GET() {
   const supabase = await createServiceRoleClient();

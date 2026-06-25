@@ -7,7 +7,7 @@ import {
   Settings, Save, Loader2, Building2, Globe, Clock, Bell,
   Instagram, Facebook, Twitter, MapPin, Phone, Mail,
   Link as LinkIcon, Star, ChevronDown, ChevronUp, Camera,
-  ExternalLink, AlertTriangle, Info, Calendar,
+  ExternalLink, AlertTriangle, Info, Calendar, Lock, Eye, EyeOff,
 } from 'lucide-react';
 import { AIAssistButton } from '@/components/ui/AIAssistButton';
 import { useVendorTier } from '@/lib/hooks/useVendorTier';
@@ -44,7 +44,7 @@ const DEFAULT_NOTIFICATIONS: VendorNotificationPreferences = {
   email_digest: true,
 };
 
-type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour' | 'appointments';
+type SettingsSection = 'business' | 'social' | 'hours' | 'notifications' | 'auto_response' | 'tour' | 'appointments' | 'password';
 
 const DEFAULT_AUTO_RESPONSE: AutoResponseSettings = {
   enabled: false,
@@ -145,6 +145,12 @@ export default function VendorSettingsPage() {
   // Logo upload
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+
+  // Change password
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
 
 
   useEffect(() => {
@@ -438,6 +444,41 @@ export default function VendorSettingsPage() {
       setTimeout(() => setMessage(null), 4000);
     }
     setSaving(false);
+  };
+
+  const passwordValid = newPassword.length >= 8 && /[A-Z]/.test(newPassword) && /[a-z]/.test(newPassword) && /[0-9]/.test(newPassword);
+
+  const handleChangePassword = async () => {
+    if (!passwordValid) {
+      setMessage({ type: 'error', text: 'Password must be at least 8 characters and include uppercase, lowercase, and a number.' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+    setSavingPassword(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/auth/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to update password');
+      }
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setMessage({ type: 'success', text: 'Password updated successfully.' });
+      setTimeout(() => setMessage(null), 4000);
+    } catch (err) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Failed to update password' });
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   if (loading) {
@@ -1403,6 +1444,74 @@ export default function VendorSettingsPage() {
                   </button>
                 </>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* ===== CHANGE PASSWORD ===== */}
+        <div className="card mt-4 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('password')}
+            className="w-full flex items-center justify-between p-6 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-primary-500" />
+              <h2 className="text-lg font-bold text-gray-900">Change Password</h2>
+            </div>
+            {expandedSection === 'password' ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+          </button>
+
+          {expandedSection === 'password' && (
+            <div className="px-6 pb-6 space-y-4 border-t border-gray-100 pt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="input-field !pl-10 !pr-10"
+                    placeholder="Min. 8 characters"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">At least 8 characters, with an uppercase letter, a lowercase letter, and a number.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="input-field !pl-10"
+                    placeholder="Re-enter new password"
+                    autoComplete="new-password"
+                  />
+                </div>
+                {confirmPassword && newPassword !== confirmPassword && (
+                  <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={savingPassword || !passwordValid || newPassword !== confirmPassword}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-primary-500 rounded-xl hover:bg-primary-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {savingPassword ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                {savingPassword ? 'Updating...' : 'Update Password'}
+              </button>
             </div>
           )}
         </div>

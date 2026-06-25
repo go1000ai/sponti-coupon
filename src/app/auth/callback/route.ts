@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       type PromoConfig = { tier: string; freeMonths: number; maxUses?: number };
       const VALID_PROMOS: Record<string, PromoConfig> = {
         PUERTORICO6: { tier: 'business', freeMonths: 3 },
-        FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 15 },
+        FOUNDING15: { tier: 'business', freeMonths: 3, maxUses: 50 },
       };
       let promoConfig: PromoConfig | null = VALID_PROMOS[promoCode] || null;
 

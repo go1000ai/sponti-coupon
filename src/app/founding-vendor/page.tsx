@@ -13,7 +13,7 @@ import {
 import { QualificationWizard, type WizardAnswers, formatAnswersForNotes } from '@/components/founding-vendor/QualificationWizard';
 
 const PROMO_CODE = 'FOUNDING15';
-const MAX_SPOTS = 15;
+const MAX_SPOTS = 50;
 
 interface SpotStatus {
   used: number;
